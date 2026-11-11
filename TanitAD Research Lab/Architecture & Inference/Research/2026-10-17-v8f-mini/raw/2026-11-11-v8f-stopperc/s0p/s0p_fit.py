@@ -97,13 +97,65 @@ def decide_outcomes(s):
 
 
 # ============================================================================================ io
+class _ShardCat:
+    """Read-only lazy concatenation along axis 0 of memory-mapped shard arrays: len, shape, dtype, ndim, int / slice indexing (all the fit code does to a grid array).  Nothing is copied or held in RAM."""
+
+    def __init__(self, parts):
+        self.parts = list(parts)
+        self.cum = np.concatenate([[0], np.cumsum([len(p) for p in self.parts])]).astype(np.int64)
+        self.shape = (int(self.cum[-1]),) + tuple(self.parts[0].shape[1:])
+        self.dtype, self.ndim = self.parts[0].dtype, len(self.shape)
+
+    def __len__(self):
+        return self.shape[0]
+
+    def __getitem__(self, idx):
+        if isinstance(idx, (int, np.integer)):
+            i = int(idx) + (self.shape[0] if idx < 0 else 0)
+            k = int(np.searchsorted(self.cum, i, side="right")) - 1
+            return self.parts[k][i - int(self.cum[k])]
+        assert isinstance(idx, slice) and idx.step in (None, 1), "_ShardCat supports int and unit-step slices only"
+        lo, hi, _ = idx.indices(self.shape[0])
+        out = [p[max(lo, int(c0)) - int(c0):min(hi, int(c0) + len(p)) - int(c0)] for p, c0 in zip(self.parts, self.cum[:-1]) if max(lo, int(c0)) < min(hi, int(c0) + len(p))]
+        return np.concatenate(out) if out else self.parts[0][0:0]
+
+
+def shard_dirs(path):
+    """The shard_<i> sub-directories of a sharded train dir, in numeric order (empty list if it is not one)."""
+    subs = [d for d in os.listdir(path) if d.startswith("shard_") and d[6:].isdigit() and os.path.isdir(os.path.join(path, d))]
+    return [os.path.join(path, d) for d in sorted(subs, key=lambda d: int(d[6:]))]
+
+
+def _load_dir(path):
+    d = {}
+    for k in L.FIELDS:
+        d[k] = np.load(os.path.join(path, k + ".npy"), mmap_mode="r" if k in ("v40", "v160", "mean") else None)
+    d["meta"] = json.load(open(os.path.join(path, "meta.json"), encoding="utf-8"))
+    return d
+
+
 def load_any(path):
-    """A npz file (eval) or a directory of .npy + meta.json (train side, written by s0p_extract_train.py).  Directory arrays are memory-mapped."""
+    """A npz file (eval), a directory of .npy + meta.json (train side, written by s0p_extract_train.py), or a directory of shard_<i>/ such directories (--shard i/K): the shards are concatenated in order.
+    Directory arrays are memory-mapped (shard grids lazily, never copied)."""
     if os.path.isdir(path):
+        sd = shard_dirs(path)
+        if not sd:
+            return _load_dir(path)
+        parts = [_load_dir(p) for p in sd]
+        ks = {m["meta"].get("shard", {}).get("k") for m in parts}
+        assert len(ks) == 1 and None not in ks and ks.pop() == len(parts), f"{path}: shard dirs {len(parts)} do not match the K in their meta (a shard is missing or extra)"
+        assert [m["meta"]["shard"]["i"] for m in parts] == list(range(len(parts))), f"{path}: shard indices are not 0..K-1"
+        assert len({m["meta"]["sample_sha256"] for m in parts}) == 1, f"{path}: shards come from different samples"
         d = {}
         for k in L.FIELDS:
-            d[k] = np.load(os.path.join(path, k + ".npy"), mmap_mode="r" if k in ("v40", "v160", "mean") else None)
-        d["meta"] = json.load(open(os.path.join(path, "meta.json"), encoding="utf-8"))
+            d[k] = _ShardCat([m[k] for m in parts]) if k in ("v40", "v160", "mean") else np.concatenate([m[k] for m in parts])
+        meta = dict(parts[0]["meta"])
+        c2 = [m["meta"].get("c2_second_route_max_abs", {}) for m in parts]
+        meta["c2_second_route_max_abs"] = {k: max(c[k] for c in c2) for k in c2[0]} if c2 and c2[0] else {}
+        meta["n_sample"] = int(len(d["y"]))
+        meta["causal_limit_ok_false_fraction"] = sum(m["meta"]["causal_limit_ok_false_fraction"] * len(m["y"]) for m in parts) / len(d["y"])
+        meta["shards"] = len(parts)
+        d["meta"] = meta
         return d
     return L.load_npz(path)
 

@@ -42,6 +42,19 @@ def parse_exclude(s):
     return int(a), int(b)
 
 
+def parse_shard(s):
+    if not s:
+        return None
+    i, k = (int(x) for x in s.split("/"))
+    assert k >= 1 and 0 <= i < k, f"--shard {s}: need 0 <= i < K"
+    return i, k
+
+
+def shard_bounds(n, i, k):
+    """contiguous slice i of k of n sorted windows; the k slices tile [0, n) exactly."""
+    return (i * n) // k, ((i + 1) * n) // k
+
+
 def build_pool(J, D, exclude):
     """-> clips (list, train clips in select order), wins (list of (ci, t, 0, 0)), clip_of_win (str array), ws (int array), pos, neg (bool arrays), info dict."""
     clips_all = [str(c) for c in J["clip"].tolist()]
@@ -79,7 +92,9 @@ def main(argv=None):
     ap.add_argument("--expect-pool", default=",".join(map(str, BANKED_POOL)), help="n_observed,n_pos,n_neg, or 'none' (tests / smokes only)")
     ap.add_argument("--eval-cache-dir", default=None, help="a dir holding eval/clips/*.pt: train/eval clip ids must be disjoint (D.assert_disjoint). Skipped with --split eval.")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--shard", default=None, help="i/K: after the deterministic sample is drawn, process only contiguous slice i of K of the sorted sample (window i*N//K .. (i+1)*N//K) into <out-dir>/shard_<i>/. Concatenated in order, the K shards equal an unsharded run byte for byte.")
     a = ap.parse_args(argv)
+    shard = parse_shard(a.shard)
 
     tree = L.setup_tree(a.tree)
     from tanitad.data import v8f_mini_data as D
@@ -105,9 +120,24 @@ def main(argv=None):
     ctl["n_sample"], ctl["n_pos_sample"], ctl["n_neg_sample"] = int(len(sel)), int(len(ip)), int(len(ineg))
     sample_sha = hashlib.sha256((json.dumps([[str(clip_of[i]), int(ws_all[i])] for i in sel]) + str(y.tolist())).encode()).hexdigest()
     ctl["sample_sha256"] = sample_sha
+    prog_key = sample_sha
+    if shard:
+        lo_s, hi_s = shard_bounds(len(sel), *shard)
+        ctl["shard"] = {"i": shard[0], "k": shard[1], "lo": lo_s, "hi": hi_s, "n_total": int(len(sel))}
+        prog_key = f"{sample_sha}#shard{shard[0]}/{shard[1]}"
+        if a.dry_run:                                               # the full sample, once, at the root: pool + sample + counts only
+            os.makedirs(a.out_dir, exist_ok=True)
+            with open(os.path.join(a.out_dir, "sample.json"), "w", encoding="utf-8") as f:
+                json.dump({"clip": [str(clip_of[i]) for i in sel], "ws": [int(ws_all[i]) for i in sel], "y": y.tolist(), "sha256": sample_sha}, f)
+            ctl["shard"]["n_shard_pos"] = int(y[lo_s:hi_s].sum())
+        sel, y = sel[lo_s:hi_s], y[lo_s:hi_s]
+        a.out_dir = os.path.join(a.out_dir, f"shard_{shard[0]}")
+        ctl["n_shard"], ctl["n_pos_shard"] = int(len(sel)), int(y.sum())
+        assert len(sel) > 0, "empty shard"
     os.makedirs(a.out_dir, exist_ok=True)
-    with open(os.path.join(a.out_dir, "sample.json"), "w", encoding="utf-8") as f:
-        json.dump({"clip": [str(clip_of[i]) for i in sel], "ws": [int(ws_all[i]) for i in sel], "y": y.tolist(), "sha256": sample_sha}, f)
+    if not shard or not a.dry_run:                                  # a shard's own sample.json = its slice; sample_sha256 is the FULL sample's
+        with open(os.path.join(a.out_dir, "sample.json"), "w", encoding="utf-8") as f:
+            json.dump({"clip": [str(clip_of[i]) for i in sel], "ws": [int(ws_all[i]) for i in sel], "y": y.tolist(), "sha256": sample_sha}, f)
     if a.dry_run:
         print(json.dumps(ctl, indent=1))
         return ctl
@@ -120,11 +150,11 @@ def main(argv=None):
     N = len(sel)
     # open the arrays (resumable)
     prog_path = os.path.join(a.out_dir, "progress.json")
-    prog = json.load(open(prog_path, encoding="utf-8")) if os.path.exists(prog_path) else {"n_clips_done": 0, "sample_sha256": sample_sha, "c2": {"p10f": 0.0, "nav": 0.0, "limit": 0.0, "limit_ok": 0.0}, "n_limit_not_ok": 0}
-    assert prog["sample_sha256"] == sample_sha, "progress.json belongs to a different sample"
+    prog = json.load(open(prog_path, encoding="utf-8")) if os.path.exists(prog_path) else {"n_clips_done": 0, "sample_sha256": prog_key, "c2": {"p10f": 0.0, "nav": 0.0, "limit": 0.0, "limit_ok": 0.0}, "n_limit_not_ok": 0}
+    assert prog["sample_sha256"] == prog_key, "progress.json belongs to a different sample"
     mode = "r+" if prog["n_clips_done"] > 0 and os.path.exists(os.path.join(a.out_dir, "E.npy")) else "w+"
     if mode == "w+":
-        prog = {"n_clips_done": 0, "sample_sha256": sample_sha, "c2": {"p10f": 0.0, "nav": 0.0, "limit": 0.0, "limit_ok": 0.0}, "n_limit_not_ok": 0}
+        prog = {"n_clips_done": 0, "sample_sha256": prog_key, "c2": {"p10f": 0.0, "nav": 0.0, "limit": 0.0, "limit_ok": 0.0}, "n_limit_not_ok": 0}
     mm = {}
     for k, shape, dt in (("E", (N, L.E_DIM), np.float32), ("v40", (N, 40, 1024), np.uint8), ("v160", (N, 160, 1024), np.uint8), ("mean", (N, 1024), np.float16)):
         mm[k] = np.lib.format.open_memmap(os.path.join(a.out_dir, k + ".npy"), mode=mode, dtype=dt, shape=shape)

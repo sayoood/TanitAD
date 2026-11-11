@@ -17,7 +17,7 @@ import time
 sys.dont_write_bytecode = True
 HERE = os.path.dirname(os.path.abspath(__file__))
 ARGVS_SHA256 = "192168f16d52bcc6af12e1f28c180600bcbb47629d13340229641c835b64ac8f"            # frozen/argvs_slowwm.json (make_argvs_slowwm.py from R35H s0/s1 argv.txt, MEASURED 2026-11-11)
-ARGVS_FILE = os.path.join(HERE, "frozen", "argvs_slowwm.json")
+ARGVS_FILE = os.path.join(HERE, "argvs_slowwm.json") if os.path.exists(os.path.join(HERE, "argvs_slowwm.json")) else os.path.join(HERE, "frozen", "argvs_slowwm.json")   # box 2: flat next to the checker (ship stage); dev box: frozen/ (the STOPBAL checker rule)
 CARD_SHA256 = "7c2775e39f9b1271342a0c588780d3da8b4d63dfb56d06de9fef4c50bc8594ca"
 #: pinned inputs of the basis stage, shipped from the dev box and re-hashed on box 2 (the builder and the 8-clip list live beside the card; nothing is copied into this package)
 BASIS_CODE_SHA256 = {"slow_basis.py": "d6778c8a831266a65c40f66ca125f656b3c10593a21dd90b07462eca4e89add4", "clips8.json": "f4a034b7a51d52d2609912a575af6637f3da44ee699f2e2970c7f4d3a67421f3"}

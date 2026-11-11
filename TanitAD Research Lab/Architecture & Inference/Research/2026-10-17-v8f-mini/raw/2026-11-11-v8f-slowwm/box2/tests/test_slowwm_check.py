@@ -275,6 +275,34 @@ for k, v in _env.items():
     else:
         os.environ[k] = v
 
+# ---- box-2 layout (2026-11-12, the PILOT_SLOW_s0 crash): the ship stage puts the checker and argvs_slowwm.json FLAT in slowwm\check; the checker must find the
+#      argv file there, and the line it had (frozen/ only) must go red on the same layout.
+import importlib.util  # noqa: E402
+import shutil  # noqa: E402
+
+
+def _flat_layout_argvs(src_text):
+    d = tempfile.mkdtemp(prefix="slowwm_flat_", dir=os.environ.get("SLOWWM_TEST_TMP"))
+    try:
+        open(os.path.join(d, "slowwm_check.py"), "w", encoding="utf-8", newline="\n").write(src_text)
+        shutil.copyfile(os.path.join(PKG, "frozen", "argvs_slowwm.json"), os.path.join(d, "argvs_slowwm.json"))
+        spec = importlib.util.spec_from_file_location("slowwm_check_flat", os.path.join(d, "slowwm_check.py"))
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        try:
+            return sorted(m.frozen_argvs())
+        except (FileNotFoundError, SystemExit):
+            return None
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+
+
+_src = open(os.path.join(PKG, "slowwm_check.py"), encoding="utf-8").read()
+_old_line = 'ARGVS_FILE = os.path.join(HERE, "frozen", "argvs_slowwm.json")\n'
+_new_line = [ln for ln in _src.splitlines(True) if ln.startswith("ARGVS_FILE = ")]
+ok("box-2 flat layout: the checker finds argvs_slowwm.json next to itself", len(_new_line) == 1 and _flat_layout_argvs(_src) == sorted(CK.frozen_argvs()))
+ok("RED: the frozen/-only line cannot find the argv file in the box-2 layout", len(_new_line) == 1 and _flat_layout_argvs(_src.replace(_new_line[0], _old_line)) is None)
+
 # ---- the wait-state function of the chain (pure shell; extracted by running the chain's own pred_state) is covered by tests/test_slowwm_wait.sh
 print(f"UNIT ok={OK} bad={BAD}")
 sys.exit(1 if BAD else 0)

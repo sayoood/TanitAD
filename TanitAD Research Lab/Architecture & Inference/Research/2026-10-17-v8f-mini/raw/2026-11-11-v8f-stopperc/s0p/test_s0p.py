@@ -306,3 +306,92 @@ def test_extractor_refuses_overlapping_train_and_eval_clips(tmp_path):
     with pytest.raises(AssertionError, match="overlap"):
         X.main(["--tree", TREE, "--cache-dir", str(root), "--join", str(root / "join_train.npz"), "--tracks", str(root / "native_tracks.pt"), "--out-dir", str(tmp_path / "o"), "--exclude", "none",
                 "--n-pos", "5", "--n-neg", "5", "--expect-pool", "none", "--eval-cache-dir", str(tmp_path / "evalroot"), "--dry-run"])
+
+
+# ------------------------------------------------------------------------------------------------ shards (--shard i/K) and load_any over shard dirs
+def _extract_shards(root, out, K):
+    return [_extract(root, out, extra=("--shard", f"{i}/{K}")) for i in range(K)]
+
+
+def _cat_shards(out, K, k):
+    return np.concatenate([np.load(out / f"shard_{i}" / f"{k}.npy") for i in range(K)])
+
+
+@pytest.mark.parametrize("K", [4, 3])
+def test_shards_concatenate_to_the_unsharded_run_byte_for_byte(tmp_path, K):
+    root, D, J = _world(tmp_path)
+    ref = _extract(root, tmp_path / "ref")
+    metas = _extract_shards(root, tmp_path / "sh", K)
+    out = tmp_path / "sh"
+    assert [m["shard"]["lo"] for m in metas] == [(i * 80) // K for i in range(K)] and metas[-1]["shard"]["hi"] == 80
+    assert sum(m["n_shard"] for m in metas) == 80 and all(m["sample_sha256"] == ref["sample_sha256"] for m in metas)
+    for k in L.FIELDS:
+        a, b = np.load(tmp_path / "ref" / f"{k}.npy"), _cat_shards(out, K, k)
+        assert a.dtype == b.dtype and a.shape == b.shape and a.tobytes() == b.tobytes(), f"{k}: concatenated shards differ from the unsharded run"
+    for i in range(K):                                              # every shard's own manifest verifies (complete shard)
+        for line in open(out / f"shard_{i}" / "MANIFEST.sha256", encoding="utf-8"):
+            h, n = line.split()
+            assert L.sha256_file(str(out / f"shard_{i}" / n)) == h
+    # load_any over the parent dir equals the unsharded load, lazily, including slices that straddle shard boundaries
+    t, u = F.load_any(str(out)), F.load_any(str(tmp_path / "ref"))
+    for k in ("E", "y", "clip", "ws", "eid"):
+        assert np.array_equal(np.asarray(t[k]), np.asarray(u[k])), k
+    for k in ("v40", "v160", "mean"):
+        assert len(t[k]) == len(u[k]) and t[k].shape == u[k].shape and t[k].dtype == u[k].dtype
+        for lo, hi in ((0, 80), (0, 1), (19, 41), (79, 80), (30, 31), (50, 200)):
+            assert np.array_equal(t[k][lo:hi], u[k][lo:hi]), (k, lo, hi)
+        assert np.array_equal(t[k][-1], u[k][-1]) and np.array_equal(t[k][41], u[k][41])
+    assert F.fit_pca(t["v40"])["n_tokens"] == F.fit_pca(u["v40"])["n_tokens"]
+    pa, pb = F.fit_pca(t["v40"]), F.fit_pca(u["v40"])
+    assert np.allclose(pa["mean"], pb["mean"]) and np.allclose(F.project(t["v40"], pa), F.project(u["v40"], pb))
+    assert t["meta"]["shards"] == K and t["meta"]["n_sample"] == 80
+
+
+def test_shard_regression_arms_go_red(tmp_path):
+    root, D, J = _world(tmp_path)
+    ref = _extract(root, tmp_path / "ref")
+    _extract_shards(root, tmp_path / "sh", 4)
+    out = tmp_path / "sh"
+    # a flipped byte in one shard breaks the byte comparison (the check is not vacuous)
+    m = np.load(out / "shard_2" / "v160.npy")
+    m[0, 0, 0] ^= 1
+    assert _cat_shards(out, 4, "v160").tobytes() == np.load(tmp_path / "ref" / "v160.npy").tobytes()   # control: the unmutated shards are equal
+    np.save(out / "shard_2" / "v160_mut.npy", m)
+    mutated = np.concatenate([np.load(out / f"shard_{i}" / ("v160_mut.npy" if i == 2 else "v160.npy")) for i in range(4)])
+    assert mutated.tobytes() != np.load(tmp_path / "ref" / "v160.npy").tobytes()
+    # swapped shard order breaks it too
+    swapped = np.concatenate([np.load(out / f"shard_{i}" / "E.npy") for i in (1, 0, 2, 3)])
+    assert swapped.tobytes() != np.load(tmp_path / "ref" / "E.npy").tobytes()
+    # load_any refuses a missing shard and a mixed sample
+    import shutil
+    shutil.copytree(out, tmp_path / "miss")
+    shutil.rmtree(tmp_path / "miss" / "shard_3")
+    with pytest.raises(AssertionError, match="do not match the K"):
+        F.load_any(str(tmp_path / "miss"))
+    shutil.copytree(out, tmp_path / "mix")
+    mp = tmp_path / "mix" / "shard_1" / "meta.json"
+    mj = json.load(open(mp, encoding="utf-8"))
+    mj["sample_sha256"] = "0" * 64
+    json.dump(mj, open(mp, "w", encoding="utf-8"))
+    with pytest.raises(AssertionError, match="different samples"):
+        F.load_any(str(tmp_path / "mix"))
+
+
+def test_shard_dry_run_resume_and_arg_guards(tmp_path):
+    root, D, J = _world(tmp_path)
+    import s0p_extract_train as X
+    assert X.parse_shard(None) is None and X.parse_shard("2/4") == (2, 4)
+    for bad in ("4/4", "-1/4", "0/0"):
+        with pytest.raises(AssertionError):
+            X.parse_shard(bad)
+    tiles = [X.shard_bounds(80, i, 4) for i in range(4)]
+    assert tiles[0][0] == 0 and tiles[-1][1] == 80 and all(tiles[i][1] == tiles[i + 1][0] for i in range(3))
+    d = _extract(root, tmp_path / "dry", extra=("--shard", "1/4", "--dry-run"))
+    assert d["shard"]["lo"] == 20 and d["shard"]["hi"] == 40 and d["n_shard"] == 20
+    assert (tmp_path / "dry" / "sample.json").exists() and not (tmp_path / "dry" / "shard_1" / "E.npy").exists()
+    # a shard dir resumed under a different K is refused (its progress key names the shard)
+    import shutil
+    _extract(root, tmp_path / "x", extra=("--shard", "1/4"))
+    shutil.copytree(tmp_path / "x" / "shard_1", tmp_path / "y" / "shard_1")
+    with pytest.raises(AssertionError, match="different sample"):
+        _extract(root, tmp_path / "y", extra=("--shard", "1/3"))
