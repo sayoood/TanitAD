@@ -1,0 +1,437 @@
+{
+ "tool": "stopdec_read.py",
+ "card": "theory/stopdec/PREREAD_V8F_STOPDEC.md",
+ "tier": "T1-kin first tick, oracle diagnostic, never driving performance; STRATEGIC: PAUSED (PI item 25)",
+ "estimator": "episode-cluster bootstrap (taniteval.ci.stat_cluster_bootstrap), B=2000, seed 0; answers 'another draw of episodes' only",
+ "definitions": {
+  "goal_stop": "sigmoid goal prob of STOP_POINT (code[:, 6]) >= 0.5",
+  "lon_stop": "argmax of the 7-way lon softmax (code[:, 27:34]) == STOP",
+  "lon_slow": "argmax lon in {HOLD, STOP, DECELERATE}",
+  "LON9": [
+   "HOLD",
+   "CREEP",
+   "STOP",
+   "FOLLOW",
+   "DECELERATE",
+   "ACCELERATE",
+   "KEEP"
+  ],
+  "primary": [
+   "STOP_POINT",
+   "goal_stop"
+  ],
+  "bars": {
+   "hit_sees": 0.6,
+   "hit_misses": 0.4,
+   "ratio_sees": 2.0,
+   "min_group_windows": 50
+  }
+ },
+ "tree": "F:/TanitAD-scratch/stopbal_read/tree",
+ "smoke": 0,
+ "controls": {
+  "BAL-L2_s0": {
+   "ckpt_sha256": "0bfbd3abfec923d1905d3730c3b9db1e6ba175dae6566efc4a76240c7125dcd5",
+   "manifest_ok": true,
+   "smoke": 0,
+   "top1_vs_dump_ol_max_abs_m": 0.0,
+   "g_vs_dump_max_abs_m": 0.0,
+   "v0_vs_dump_max_abs_mps": 0.0,
+   "ident_vs_top1_max_abs_m": 0.0,
+   "own_all_vs_ident_max_abs_m": 0.0,
+   "goal_prob_in_0_1": true,
+   "lon_prob_rows_sum_to_1_max_dev": 2.034933572758746e-07,
+   "n_windows": 2399,
+   "n_has": 2365,
+   "n_present_speed_cells": 11702,
+   "group_counts_has": {
+    "STOP_POINT": 117,
+    "REG_STOP": 137,
+    "REG_DECEL": 487
+   }
+  }
+ },
+ "arms": {
+  "BAL-L2_s0": {
+   "n_windows_read": 2351,
+   "n_episodes": 139,
+   "mean_mse_all_mps2": 7.070487025578022,
+   "groups": {
+    "STOP_POINT": {
+     "n_windows": 117,
+     "mean_mse_in": 27.748957511453593,
+     "mean_mse_complement": 5.987505357338344,
+     "decisions": {
+      "goal_stop": {
+       "n_hit": 16,
+       "n_miss": 101,
+       "n_fp_in_complement": 13,
+       "hit": {
+        "point": 0.13675213675213677,
+        "lo": 0.04165805785123967,
+        "hi": 0.25210462563403735
+       },
+       "fpr": {
+        "point": 0.005819158460161146,
+        "lo": 0.0018026137899954935,
+        "hi": 0.010714644932626603
+       },
+       "mse_hit": {
+        "point": 15.211971212456369,
+        "lo": 9.125619559989389,
+        "hi": 23.707933009427297
+       },
+       "mse_miss": {
+        "point": 29.7350147469383,
+        "lo": 20.314845640946487,
+        "hi": 39.95561255824378
+       },
+       "ratio_hit_vs_comp": {
+        "point": 2.5406192236324983,
+        "lo": 1.5494031536576234,
+        "hi": 3.9888723943902242
+       },
+       "miss_mass_share": {
+        "point": 0.9231903995699686,
+        "lo": 0.8476240326587976,
+        "hi": 0.9811726694863364
+       }
+      },
+      "lon_stop": {
+       "n_hit": 64,
+       "n_miss": 53,
+       "n_fp_in_complement": 297,
+       "hit": {
+        "point": 0.5470085470085471,
+        "lo": 0.4196109693877551,
+        "hi": 0.6842105263157895
+       },
+       "fpr": {
+        "point": 0.13294538943598927,
+        "lo": 0.09801062196246946,
+        "hi": 0.1684797874938935
+       },
+       "mse_hit": {
+        "point": 16.895052281459773,
+        "lo": 12.665952825289008,
+        "hi": 21.422206138815177
+       },
+       "mse_miss": {
+        "point": 40.85556005333293,
+        "lo": 26.9939294238721,
+        "hi": 56.3928265452861
+       },
+       "ratio_hit_vs_comp": {
+        "point": 2.8217181068160606,
+        "lo": 2.137883508785386,
+        "hi": 3.6754554914828677
+       },
+       "miss_mass_share": {
+        "point": 0.6696564552502285,
+        "lo": 0.5164581873519918,
+        "hi": 0.7741815771359739
+       }
+      },
+      "lon_slow": {
+       "n_hit": 72,
+       "n_miss": 45,
+       "n_fp_in_complement": 574,
+       "hit": {
+        "point": 0.6153846153846154,
+        "lo": 0.47745914519170335,
+        "hi": 0.7596249999999999
+       },
+       "fpr": {
+        "point": 0.25693822739480754,
+        "lo": 0.21073826694574482,
+        "hi": 0.3062809341372691
+       },
+       "mse_hit": {
+        "point": 17.23537638342816,
+        "lo": 13.216623177161384,
+        "hi": 21.544530585635226
+       },
+       "mse_miss": {
+        "point": 44.5706873162943,
+        "lo": 29.119449284294724,
+        "hi": 62.28304708771305
+       },
+       "ratio_hit_vs_comp": {
+        "point": 2.8785571544089423,
+        "lo": 2.237288851198397,
+        "hi": 3.7102325980099073
+       },
+       "miss_mass_share": {
+        "point": 0.6226588395010444,
+        "lo": 0.434791696194393,
+        "hi": 0.7409871129265436
+       }
+      }
+     }
+    },
+    "REG_STOP": {
+     "n_windows": 132,
+     "mean_mse_in": 18.24313346215097,
+     "mean_mse_complement": 6.4058681298467794,
+     "decisions": {
+      "goal_stop": {
+       "n_hit": 18,
+       "n_miss": 114,
+       "n_fp_in_complement": 11,
+       "hit": {
+        "point": 0.13636363636363635,
+        "lo": 0.06451612903225806,
+        "hi": 0.20563970351272945
+       },
+       "fpr": {
+        "point": 0.004957187922487607,
+        "lo": 0.0013422818791946308,
+        "hi": 0.009615594925634295
+       },
+       "mse_hit": {
+        "point": 15.33779834925338,
+        "lo": 8.821800640950956,
+        "hi": 21.944540873201927
+       },
+       "mse_miss": {
+        "point": 18.701870585240062,
+        "lo": 12.899929946633204,
+        "hi": 26.086112731149232
+       },
+       "ratio_hit_vs_comp": {
+        "point": 2.3943356370060402,
+        "lo": 1.4423091519932896,
+        "hi": 3.371085390734644
+       },
+       "miss_mass_share": {
+        "point": 0.8786263043126011,
+        "lo": 0.7881129269223848,
+        "hi": 0.9601468234451944
+       }
+      },
+      "lon_stop": {
+       "n_hit": 75,
+       "n_miss": 57,
+       "n_fp_in_complement": 286,
+       "hit": {
+        "point": 0.5681818181818182,
+        "lo": 0.4639175257731959,
+        "hi": 0.6904761904761905
+       },
+       "fpr": {
+        "point": 0.1288868859846778,
+        "lo": 0.09376226158864114,
+        "hi": 0.16386931391138249
+       },
+       "mse_hit": {
+        "point": 16.403913381652956,
+        "lo": 12.582698928244648,
+        "hi": 21.016525530752222
+       },
+       "mse_miss": {
+        "point": 20.66315988385888,
+        "lo": 11.440910452261896,
+        "hi": 33.46052156609185
+       },
+       "ratio_hit_vs_comp": {
+        "point": 2.5607635138822813,
+        "lo": 2.024339012619248,
+        "hi": 3.2882872217959074
+       },
+       "miss_mass_share": {
+        "point": 0.4788566836038271,
+        "lo": 0.32067436687020356,
+        "hi": 0.6234766645390921
+       }
+      },
+      "lon_slow": {
+       "n_hit": 94,
+       "n_miss": 38,
+       "n_fp_in_complement": 552,
+       "hit": {
+        "point": 0.7121212121212122,
+        "lo": 0.5855158174692049,
+        "hi": 0.819047619047619
+       },
+       "fpr": {
+        "point": 0.2487607030193781,
+        "lo": 0.20404611907280945,
+        "hi": 0.29866589382883524
+       },
+       "mse_hit": {
+        "point": 14.468392658818226,
+        "lo": 10.972507597942313,
+        "hi": 19.089386045918946
+       },
+       "mse_miss": {
+        "point": 27.580650186184602,
+        "lo": 15.91916731025842,
+        "hi": 40.59567133741111
+       },
+       "ratio_hit_vs_comp": {
+        "point": 2.258615439085583,
+        "lo": 1.7561096427895626,
+        "hi": 2.964295110376549
+       },
+       "miss_mass_share": {
+        "point": 0.4261782950070616,
+        "lo": 0.23581976936660357,
+        "hi": 0.5961413512435918
+       }
+      }
+     }
+    },
+    "REG_DECEL": {
+     "n_windows": 487,
+     "mean_mse_in": 12.218952741275826,
+     "mean_mse_complement": 5.7253674957792935,
+     "decisions": {
+      "goal_stop": {
+       "n_hit": 6,
+       "n_miss": 481,
+       "n_fp_in_complement": 23,
+       "hit": {
+        "point": 0.012320328542094456,
+        "lo": 0.0019082155400110294,
+        "hi": 0.02845547739158606
+       },
+       "fpr": {
+        "point": 0.012339055793991416,
+        "lo": 0.005466947425346422,
+        "hi": 0.020487765193553418
+       },
+       "mse_hit": {
+        "point": 9.87230595121941,
+        "lo": 4.148516739207411,
+        "hi": 12.292643256108123
+       },
+       "mse_miss": {
+        "point": 12.24822484260709,
+        "lo": 9.113031831356517,
+        "hi": 16.091638018412514
+       },
+       "ratio_hit_vs_comp": {
+        "point": 1.7243095676386213,
+        "lo": 0.7468317794656505,
+        "hi": 2.3266262319457724
+       },
+       "miss_mass_share": {
+        "point": 0.9900222354290829,
+        "lo": 0.9727576996745783,
+        "hi": 0.9993029763565914
+       }
+      },
+      "lon_stop": {
+       "n_hit": 76,
+       "n_miss": 411,
+       "n_fp_in_complement": 285,
+       "hit": {
+        "point": 0.15605749486652978,
+        "lo": 0.10262261551140948,
+        "hi": 0.21684404612398675
+       },
+       "fpr": {
+        "point": 0.15289699570815452,
+        "lo": 0.11246005046257358,
+        "hi": 0.19273802792959
+       },
+       "mse_hit": {
+        "point": 8.228792203947547,
+        "lo": 5.742021632081286,
+        "hi": 10.8192925880689
+       },
+       "mse_miss": {
+        "point": 12.956792645988598,
+        "lo": 9.296020443359781,
+        "hi": 17.504473809039247
+       },
+       "ratio_hit_vs_comp": {
+        "point": 1.437251357229691,
+        "lo": 0.9880620150479281,
+        "hi": 1.9573716060439554
+       },
+       "miss_mass_share": {
+        "point": 0.8952122238006589,
+        "lo": 0.8239860983009932,
+        "hi": 0.942250104800469
+       }
+      },
+      "lon_slow": {
+       "n_hit": 226,
+       "n_miss": 261,
+       "n_fp_in_complement": 420,
+       "hit": {
+        "point": 0.46406570841889117,
+        "lo": 0.36363636363636365,
+        "hi": 0.5630272497348454
+       },
+       "fpr": {
+        "point": 0.22532188841201717,
+        "lo": 0.17730487180628507,
+        "hi": 0.2743273984790677
+       },
+       "mse_hit": {
+        "point": 6.583940060793175,
+        "lo": 5.061013547242563,
+        "hi": 8.377951062902328
+       },
+       "mse_miss": {
+        "point": 17.098312380314443,
+        "lo": 11.906027268327266,
+        "hi": 23.652588093753113
+       },
+       "ratio_hit_vs_comp": {
+        "point": 1.1499593808863477,
+        "lo": 0.8641800534746816,
+        "hi": 1.513272848335006
+       },
+       "miss_mass_share": {
+        "point": 0.7517218095263788,
+        "lo": 0.6231804936641661,
+        "hi": 0.8397821422987752
+       }
+      }
+     }
+    }
+   },
+   "lon_argmax_census": {
+    "STOP_POINT": {
+     "HOLD": 0,
+     "CREEP": 0,
+     "STOP": 64,
+     "FOLLOW": 24,
+     "DECELERATE": 8,
+     "ACCELERATE": 14,
+     "KEEP": 7
+    },
+    "REG_STOP": {
+     "HOLD": 19,
+     "CREEP": 0,
+     "STOP": 75,
+     "FOLLOW": 10,
+     "DECELERATE": 0,
+     "ACCELERATE": 28,
+     "KEEP": 0
+    },
+    "REG_DECEL": {
+     "HOLD": 0,
+     "CREEP": 0,
+     "STOP": 76,
+     "FOLLOW": 89,
+     "DECELERATE": 150,
+     "ACCELERATE": 39,
+     "KEEP": 133
+    }
+   },
+   "goal_stop_prob_mean": {
+    "STOP_POINT": 0.1807499005516213,
+    "REG_STOP": 0.20478292551265578,
+    "REG_DECEL": 0.03554494643484839
+   }
+  }
+ },
+ "verdict": {
+  "status": "NOT-EVALUATED",
+  "reason": "both PARITY_DAGOACC seeds are needed"
+ }
+}
