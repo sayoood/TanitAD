@@ -1,4 +1,4 @@
-# MM_REVIEW_WMPOOL: Master Mind review of the WMPOOL code half (2026-11-11 ~03:20, before any WMPOOL cache build or run)
+# MM_REVIEW_WMPOOL: Master Mind review of the WMPOOL code half (2026-11-11 ~02:45, before any WMPOOL cache build or run)
 
 Card `PREREG_V8F_WMPOOL.md` (frozen 2026-11-11 01:18:11, sha256 `01e4dd80...`); code by a Sonnet agent (`IMPL_CHOICES_WMPOOL.md`, sha256 `639f2b5d...`, written before the code; `wmpool.diff`, sha256 `fb208bc7...`).
 
@@ -24,7 +24,7 @@ One zero-initialised query `pool_q` [256]; weights `softmax(cells . q / sqrt(256
 4. A commit carrying the patch for the box-2 tree ship. `stack/tanitad` is held by another session (RefCV9) until it reports K2M1N20 launched, so the patch is banked here as a diff, as EGOWM's was.
 5. The box-2 slot after STOPBAL is the PI's ordering call.
 
-## 6. Box-2 package (`box2/`, Sonnet agent; reviewed 2026-11-11 ~04:30, before any WMPOOL run)
+## 6. Box-2 package (`box2/`, Sonnet agent; reviewed 2026-11-11 ~03:25, before any WMPOOL run)
 * `PACKAGE_MANIFEST.sha256`: 27 files, `sha256sum -c` clean. Unit tests rerun by the Master Mind: `UNIT ok=379 bad=0`, as the agent's `tests/UNIT_RESULT.log`. The stub dry run (153 ok, 0 failed, 13 min) was not rerun.
 * Chain: wait for STOPBAL's end (DONE, or a STOP that is not a busy / GPU stop, rc=12), then ship (tree of `abc01481`), cells (`zcells.py build`, `manifest`, `check3` = card control 3), pilot (200 steps of P-ATT_s0, gates all three argvs, 72 h rule), P-ATT_s0, P-ATT_s1, P-ATT_rep_s2. GPU idle line `WMPOOL_GPU_IDLE_MIB`, default 3,500 MiB.
 * Package constants fixed before any data (the card states no tolerance): check3 recomputed-cell identity 1e-5; stored fp16 cells vs the cached token mean 5e-3 max abs per element (`wmpool_check.py:49`); the measured values are recorded either way.
