@@ -97,6 +97,7 @@ fi
 # manifest's step count and the supervisor refused a valid launch).
 unset CODE PYTHON GATE_TOKEN GATE_ARGV_FILE GATE_KEY_FILE TRAIN_CMD STEPS OUT_DIR
 unset ZEROGRAD_GATE ZEROGRAD_ALLOW ZEROGRAD_CONTROL ZEROGRAD_EXCLUDE ZEROGRAD_CKPT
+unset PAUSE_AT_STEP PAUSE_POLL_S PAUSE_SETTLE_S
 # Sourced ONCE, on purpose (rule 7).
 # shellcheck disable=SC1090
 . "$MANIFEST"
@@ -181,6 +182,35 @@ if [ -n "${GATE_KEY_FILE:-}" ]; then GATE_ARGS+=(--key-file "$GATE_KEY_FILE"); f
 mkdir -p "$OUT_DIR" "$RUNS_DIR"
 
 log() { echo "[sup:${ARM}] $(date -u +%Y-%m-%dT%H:%M:%SZ 200>&-) $*" | tee -a "$SUPLOG" 200>&-; }
+
+# ---- OPT-IN one-shot PAUSE (PI 2026-11-11, "early D1"): PAUSE_AT_STEP=<N> in the manifest ------------------------------- #
+# Default OFF: with PAUSE_AT_STEP unset or empty nothing below runs and every path of this script is unchanged.
+# When set, the supervisor STOPS the trainer once `ckpt_full_<N>.pt` is on disk AND the step-<N> eval row is in
+# metrics.jsonl (and the checkpoints have been quiet for PAUSE_SETTLE_S s: the B1 guard re-writes ckpt.pt just after the
+# eval, and a SIGTERM inside a torch.save would corrupt the resume source). It then writes ${OUT_DIR}/PAUSED.json, writes NO
+# done-marker, and exits 7 without relaunching. The pause is ONE-SHOT: PAUSED.json present = already spent, so the next
+# supervisor start on the SAME manifest RESUMES (same gate verify, same argv, same --out; train() resumes ckpt.pt).
+PAUSE_AT="${PAUSE_AT_STEP:-}"
+PAUSE_POLL_S="${PAUSE_POLL_S:-15}"
+PAUSE_SETTLE_S="${PAUSE_SETTLE_S:-45}"
+PAUSE_LATCH="${OUT_DIR}/PAUSED.json"
+PAUSE_ARMED=0
+if [ -n "$PAUSE_AT" ]; then
+  case "$PAUSE_AT" in
+    *[!0-9]*|0*) echo "[sup:${ARM}] REFUSED: PAUSE_AT_STEP=${PAUSE_AT} -- must be a positive integer (a typo must not disable the pause)"; exit 2 ;;
+  esac
+  case "$PAUSE_POLL_S" in ''|*[!0-9]*|0) echo "[sup:${ARM}] REFUSED: PAUSE_POLL_S=${PAUSE_POLL_S} -- must be a positive integer"; exit 2 ;; esac
+  case "$PAUSE_SETTLE_S" in ''|*[!0-9]*) echo "[sup:${ARM}] REFUSED: PAUSE_SETTLE_S=${PAUSE_SETTLE_S} -- must be a non-negative integer"; exit 2 ;; esac
+  if [ "$PAUSE_AT" -ge "$STEPS" ]; then
+    echo "[sup:${ARM}] REFUSED: PAUSE_AT_STEP=${PAUSE_AT} is not below the gated --steps ${STEPS}"; exit 2
+  fi
+  if [ -f "$PAUSE_LATCH" ]; then
+    log "PAUSED.json present (${PAUSE_LATCH}): the one-shot pause at step ${PAUSE_AT} is already spent -- this start RESUMES, it does not pause again."
+  else
+    PAUSE_ARMED=1
+    log "PAUSE armed: will stop the trainer once ckpt_full_${PAUSE_AT}.pt AND the step-${PAUSE_AT} eval row exist (one-shot, exit 7)."
+  fi
+fi
 
 # ---- G5: a zero-gradient FAIL is final (like G4) -- never launch, never re-gate -------------- #
 if [ -f "$ZG_FAIL_MARKER" ]; then
@@ -471,6 +501,107 @@ sys.stdout.write(str(max(steps) if steps else -1))
 PYEOF
 }
 
+# ---- the pause (only reached when PAUSE_ARMED=1) ---------------------------------------------------------------------------- #
+pause_ready() {   # prints READY, or WAIT:<why>; READY only when BOTH the full checkpoint and the eval row exist and are quiet
+  "$PYTHON" - "$OUT_DIR" "$PAUSE_AT" "$PAUSE_SETTLE_S" "$GATE_ARGV_FILE" <<'PYEOF' 200>&-
+import json, os, sys, time
+out, n, settle, argv_file = sys.argv[1], int(sys.argv[2]), float(sys.argv[3]), sys.argv[4]
+def quiet(p):
+    return time.time() - os.path.getmtime(p) >= settle
+full = os.path.join(out, "ckpt_full_%d.pt" % n)
+ck = os.path.join(out, "ckpt.pt")
+for p in (full, ck):
+    if not os.path.isfile(p):
+        sys.stdout.write("WAIT:no " + os.path.basename(p)); raise SystemExit(0)
+want_dump = False
+try:
+    a = json.load(open(argv_file, encoding="utf-8"))
+    a = a["argv"] if isinstance(a, dict) else a
+    want_dump = "--eval-window-dump" in a
+except Exception:
+    pass
+have_eval = have_dump = False
+try:
+    with open(os.path.join(out, "metrics.jsonl"), "r", encoding="utf-8") as fh:
+        for line in fh:
+            try:
+                r = json.loads(line)
+            except Exception:
+                continue
+            if not isinstance(r, dict) or r.get("step") != n:
+                continue
+            if "eval_window_dump" in r:
+                have_dump = True
+            elif any(isinstance(k, str) and k.startswith("eval_") for k in r):
+                have_eval = True          # a normal eval row, or an `eval_error` row (the eval ran and failed: it is not retried)
+except Exception:
+    pass
+if not have_eval:
+    sys.stdout.write("WAIT:no step-%d eval row" % n); raise SystemExit(0)
+if want_dump and not have_dump:
+    sys.stdout.write("WAIT:no step-%d window-dump row" % n); raise SystemExit(0)
+if not (quiet(full) and quiet(ck)):
+    sys.stdout.write("WAIT:checkpoint still being written"); raise SystemExit(0)
+sys.stdout.write("READY")
+PYEOF
+}
+
+descendants() {   # $1 = pid -> its descendants, one per line (dataloader workers); empty when pgrep is absent
+  command -v pgrep >/dev/null 2>&1 || return 0
+  local c
+  for c in $(pgrep -P "$1" 2>/dev/null 200>&-); do echo "$c"; descendants "$c"; done
+}
+
+do_pause() {
+  local kids="" k t0 now alive
+  kids="$(descendants "$TRAIN_PID" | tr '\n' ' ')"
+  log "PAUSE: step ${PAUSE_AT} checkpoint + eval row present -- stopping trainer pid ${TRAIN_PID} (workers: ${kids:-none seen}); GPU process first."
+  kill -TERM "$TRAIN_PID" 2>/dev/null
+  t0=$(date +%s)
+  while kill -0 "$TRAIN_PID" 2>/dev/null; do
+    now=$(date +%s)
+    if [ $((now - t0)) -gt 120 ]; then log "PAUSE: trainer ignored SIGTERM for 120 s -- SIGKILL"; kill -KILL "$TRAIN_PID" 2>/dev/null; break; fi
+    sleep 1 200>&-
+  done
+  wait "$TRAIN_PID" 2>/dev/null
+  # the workers: TERM, then wait until none is alive (KILL after 60 s); only then is the GPU free
+  for k in $kids; do kill -TERM "$k" 2>/dev/null; done
+  t0=$(date +%s)
+  while :; do
+    alive=""; for k in $kids; do if kill -0 "$k" 2>/dev/null; then alive="$alive $k"; fi; done
+    [ -n "$alive" ] || break
+    now=$(date +%s)
+    if [ $((now - t0)) -gt 60 ]; then log "PAUSE: workers${alive} still alive after 60 s -- SIGKILL"; for k in $alive; do kill -KILL "$k" 2>/dev/null; done; t0=$now; fi
+    sleep 1 200>&-
+  done
+  "$PYTHON" - "$PAUSE_LATCH" "$OUT_DIR" "$PAUSE_AT" "$ARM" "$TRAIN_PID" <<'PYEOF' 200>&-
+import hashlib, json, os, sys, time
+latch, out, n, arm, pid = sys.argv[1:6]
+ck = os.path.join(out, "ckpt_full_%s.pt" % n)
+h = hashlib.sha256()
+with open(ck, "rb") as fh:
+    for blk in iter(lambda: fh.read(1 << 24), b""):
+        h.update(blk)
+tmp = latch + ".tmp"
+with open(tmp, "w", encoding="utf-8") as fh:
+    json.dump({"paused": True, "arm": arm, "paused_at_step": int(n), "ckpt": ck, "ckpt_sha256": h.hexdigest(),
+               "ckpt_bytes": os.path.getsize(ck), "trainer_pid": int(pid),
+               "paused_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+               "note": ("One-shot latch written by sup_refcv7.sh. Its presence means the pause is spent: the next supervisor "
+                        "start on this manifest RESUMES from ckpt.pt. No done-marker was written.")}, fh, indent=2)
+os.replace(tmp, latch)
+PYEOF
+  log "PAUSED at step ${PAUSE_AT}: ${PAUSE_LATCH} written. NO done-marker. exit 7. Resume = start this supervisor again on the same manifest."
+  echo "ZZPAUSED-${ARM}-${PAUSE_AT}ZZ" | tee -a "$SUPLOG" > /dev/null 200>&-
+  exit 7
+}
+
+pause_check() {   # armed only; a cheap stat first, python only once the full checkpoint exists
+  [ -f "${OUT_DIR}/ckpt_full_${PAUSE_AT}.pt" ] || return 0
+  [ "$(pause_ready)" = "READY" ] || return 0
+  do_pause
+}
+
 # ---- G5: a complete run whose done-marker carries no zerograd record is gated, never relaunched --- #
 if [ "$FINALIZE_ONLY" = "1" ]; then
   fs="$(final_step_from_metrics)"
@@ -534,7 +665,16 @@ while [ "$launch" -lt "$MAX_RELAUNCH" ]; do
       [ "$rc" -le 1 ] || n_err=U
     fi
     echo "ZZ${ARM}-${cur}-${STEPS}-${n_err}-${launch}ZZ" | tee -a "$SUPLOG" > /dev/null 200>&-
-    sleep "$POLL_S" 200>&-   # ⛔ rule 1: the sleep gets it too
+    if [ "$PAUSE_ARMED" = 1 ]; then
+      # armed: look for the pause every PAUSE_POLL_S inside the POLL_S window (an unarmed run takes the plain sleep below)
+      waited=0
+      while [ "$waited" -lt "$POLL_S" ] && kill -0 "$TRAIN_PID" 2>/dev/null; do
+        pause_check
+        sleep "$PAUSE_POLL_S" 200>&-; waited=$((waited + PAUSE_POLL_S))
+      done
+    else
+      sleep "$POLL_S" 200>&-   # ⛔ rule 1: the sleep gets it too
+    fi
   done
 
   wait "$TRAIN_PID"

@@ -130,6 +130,14 @@ unset HF_TOKEN HUGGING_FACE_HUB_TOKEN HUGGINGFACE_HUB_TOKEN
 MAX_RELAUNCH=4
 POLL_S=300
 EOF
+  # PAUSE-MANIFEST-BEGIN -- OPT-IN one-shot pause (early D1, PI 2026-11-11): only when $R/gate3/PAUSE_AT_STEP (or R9_PAUSE_AT_STEP) is set, never for a D1 arm
+  PAUSE_AT="${R9_PAUSE_AT_STEP:-$(cat $R/gate3/PAUSE_AT_STEP 2>/dev/null)}"
+  case "$PAUSE_AT" in
+    "") ;;
+    *[!0-9]*|0*) ev "$A-BADPAUSE" "PAUSE_AT_STEP '$PAUSE_AT' is not a positive integer (not launched)"; rm -f $R/runs.d/$ARM.env; flock -u 9; exec 9>&-; continue ;;
+    *) case "$A" in *_d1) ;; *) echo "PAUSE_AT_STEP=$PAUSE_AT" >> $R/runs.d/$ARM.env ;; esac ;;
+  esac
+  # PAUSE-MANIFEST-END
   # the zero-gradient block = the controls env + the ALLOW derived from THIS arm's argv (r9gate3_zg_env.sh; it replaces the Thor-only r9e2_zg_auto.sh, whose derived
   # line was only a pass/fail check while a literal ZEROGRAD_ALLOW=() reached the manifest).  A refusal REFUSES the arm: nothing is launched.
   if ZGB="$(PY=$PY bash $KIT/r9gate3_zg_env.sh "$R9_PROFILE" "$ARGV" $R/gate3/zerograd_controls.env "$T" 2> $R/gate3/$A/zg_env.err)"; then
@@ -140,6 +148,7 @@ EOF
   RC=$?
   flock -u 9; exec 9>&-     # release the GPU lock: the next arm's gate takes it
   if [ -s "$OUTD/summary.json" ] && grep -q '"done"[[:space:]]*:[[:space:]]*true' "$OUTD/summary.json" && grep -q '"zerograd_gate"' "$OUTD/summary.json" && [ ! -e "$OUTD/ZEROGRAD_FAIL.json" ]; then ev "$A-DONE" "rc $RC; $OUTD/summary.json done + zerograd record"; TRAINED="$TRAINED $A"
+  elif [ "$RC" = 7 ] && [ -e "$OUTD/PAUSED.json" ] && [ ! -e "$OUTD/ZEROGRAD_FAIL.json" ]; then ev "$A-PAUSED" "rc 7; one-shot pause latch $OUTD/PAUSED.json (not done, not failed; the GPU lock is released; resume = the supervisor on the same manifest $R/runs.d/$ARM.env)"
   elif [ -e "$OUTD/ZEROGRAD_FAIL.json" ]; then ev "$A-ZEROGRAD-FAIL" "rc $RC; $OUTD/ZEROGRAD_FAIL.json"
   elif [ "$RC" = 5 ] || grep -q "ZZGATEREFUSED-$ARM" "$OUTD/sup_$ARM.log" 2>/dev/null; then ev "$A-REFUSED" "supervisor refused (rc $RC): $OUTD/sup_$ARM.log"
   else ev "$A-FAILED" "rc $RC: no done-marker at $OUTD (read $OUTD/sup_$ARM.log, $R/sup_$ARM.out)"; fi
