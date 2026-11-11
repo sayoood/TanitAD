@@ -1,4 +1,4 @@
-# Why OBD-NULL_s0 fails NULL parity: float drift from the first steps, not a changed training path (2026-11-11 ~09:35)
+# Why OBD-NULL_s0 fails NULL parity: float drift from the first steps, not a changed training path (2026-11-11 ~09:20)
 
 **Question.** The card (`PREREG_V8F_OBD.md:15`) expected OBD-NULL_s0 (DAG-OACC s0's argv, only `--out` changed) to reproduce DAG-OACC s0's checkpoint bit for bit, because box-2 training at a fixed seed had read as deterministic. The chain's tensor check (`C:/Users/Admin/obd_state/NULL_PARITY.json`, 07:50) found **252 of 276 tensors differ**. That triggers the card's named fallback (`PREREG_V8F_OBD.md:54`). This note says why.
 
