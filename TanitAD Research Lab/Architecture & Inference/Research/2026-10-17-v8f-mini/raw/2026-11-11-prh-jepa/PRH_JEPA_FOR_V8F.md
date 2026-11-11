@@ -105,3 +105,21 @@
 * Any driving claim: every lever above must earn its place in T1 with the four families (STRATEGIC reported PAUSED).
 * Treating DINOv3 as "the world's representation": by the paper's own definition it is a bad-view JEPA.
 * Treating the paper's numbers as transferable. Its alignment numbers are cross-modal retrieval on captions; none is a statement about control.
+
+## 6. Results so far (2026-11-11, MEASURED; representation probes, no tier, the four families do not apply)
+* **PRH-SEED v1** (`RESULT_PRH_SEED.json`): **unusable**.
+  * Its deliberate regression D-MIX did not separate (+0.0023, CI [−0.0044, +0.0092]).
+  * The mean of all 256 canonical correlations has a floor of about 0.63–0.65 for unrelated affine maps of the same features.
+  * CCA also measures alignment up to any linear map, not up to the rotation the theorem is about.
+* **PRH-SEED v2** (`PREREG_PRH_SEED_V2.md`; metric chosen on controls only, CC32, `CALIB_PRH_SEED_V2.json` sha256 `4a3ca969…`; `RESULT_PRH_SEED_V2.json`): **O2 PLATONIC-OTHER**, all controls pass.
+  * P1, trained seeds against random-init: +0.0169 [.0155, .0186] (0.9938 vs 0.9769).
+  * P2b, SLOW minus PCA: −0.0464 [−.0505, −.0438] at s0, −0.0458 [−.0498, −.0432] at s1. The trained adapters sit nearer DINOv3's high-variance directions than the slow (temporal good-view) subspace.
+  * Caveat: CC32's range is narrow. Two random maps read 0.978, and D-MIX2 separated by only 0.00064.
+* **PRH-TAC** (`PREREAD_PRH_TAC.md`, `RESULT_PRH_TAC.json`): **NO-TAC-LEAN**, all controls pass.
+  * Q1 s0: +0.0079 [−0.0208, +0.0368], not separated.
+  * Q1 s1: +0.0324 [+0.0107, +0.0518], separated.
+  * d_TAC is 25, over 8,781 frames.
+  * Caveat on the instrument: TAC needed a rank reduction after its first run failed C-SELF at 0.834. The one-hot blocks make the ridge outputs linearly dependent; the reduction leaves the span unchanged, and the first run's Q1 pattern was the same.
+  * Caveat on power: the ridge readout's out-of-sample R² is negative from every source, the raw features included (−1.12). TAC is a weakly estimated subspace, so this read has little power.
+* **Reading.** On this evidence, training does not move the v8F adapter toward the paper's good-view subspace. It keeps DINOv3's high-variance directions, consistently across seeds, and no task-shaping is shown. If the slow subspace is wanted, it has to be **built**; it does not emerge.
+* **Next, committed by both TAC outcomes:** the L2 card (W2). It tests a closed-form SLOW adapter for the world-model path against a PCA-initialised adapter and M2b's adapter. It needs a box-2 ladder slot, which is the PI's call.
