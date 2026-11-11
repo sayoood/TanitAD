@@ -12,7 +12,7 @@ STATE="${WMPOOL_STATE:?WMPOOL_STATE}"; PY="${WMPOOL_PY:-C:/Users/Admin/venvs/tan
 PKG="${WMPOOL_PKG:-$WMPOOL_HOME_DIR}"; PULLS="${WMPOOL_PULLS:-C:/Users/Admin/t2v8f_pulls}"
 B2_ROOT="${B2_ROOT:-D:/tanitad/wmpool}"; WMPOOL_COMMIT="${WMPOOL_COMMIT:-}"
 B2_WIN_ROOT="${WMPOOL_B2_WIN_ROOT:-D:\\tanitad}"       # what @ROOT@ means in the job templates (the dry run points it at a fake box folder)
-NEED_GB_RUN=5; NEED_GB_SHIP=1; NEED_GB_CELLS=10                          # DISK REQUIREMENT: constants, not measured (box 2's D: read 11 GB free recently; a run writes one checkpoint + gate output, ESTIMATED <= 1.5 GB); same values as wmpool_check.py
+NEED_GB_RUN=1; NEED_GB_SHIP=1; NEED_GB_CELLS=6                           # DISK REQUIREMENT, same basis as wmpool_check.py: a run writes 47 MB (MEASURED, EGOWM banks), so 1 GB; cells = 2 x 2.36 GB + 1 = 5.72, asked as 6 (the first values 5 / 10 were stated constants)
 GPU_IDLE_MIB="${WMPOOL_GPU_IDLE_MIB:-3500}"            # the GPU counts as idle below this used memory (MiB) with no python.exe process; 3,500 because the desktop apps on box 2 hold about 2,700 MiB with no job running
 NOISE='post-quantum|store now|upgraded|pq.html'
 say() { echo "[$(date '+%F %T')] ${WMPOOL_STAGE:-stage}: $*"; }

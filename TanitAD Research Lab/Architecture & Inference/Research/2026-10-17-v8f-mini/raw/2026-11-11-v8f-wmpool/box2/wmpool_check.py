@@ -36,9 +36,10 @@ V9_MD5 = "83e30bd3791f0767707eade5f4671759"
 DATA = {"train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1", "excluded_sha256": "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9", "n_clips": 4512, "n_excluded": 60}
 #: the full length of every run is the argv's own --steps (19,164 = 4 x 4791, the ladder's length); the pilot appends --steps 200.
 RUN_STEPS, PILOT_STEPS, LIMIT_H = 19164, 200, 72.0
-#: DISK REQUIREMENT (a stated constant, nothing measured): box 2's D: read 11 GB free recently. One run writes ckpt_last.pt (model + AdamW state, ESTIMATED <= 1.5 GB for a sub-300M model) plus gate outputs (< 0.1 GB);
-#: five checkpoints stay on box 2 after banking. A run starts only with NEED_GB_RUN free; the tree ship needs NEED_GB_SHIP. Below it the chain stops with exit 6 (stage rc 13).
-NEED_GB_RUN, NEED_GB_SHIP = 5, 1
+#: DISK REQUIREMENT. MEASURED 2026-11-11 (Master Mind, box 2): one EGOWM run's ckpt_last.pt is 46,851,930 B, a whole bank folder 47.3 MB, D:\tanitad\runs\v8f_egowm 226 MB for five runs.
+#: So a run asks 1 GB (about 20 x what it writes); the first value here, 5 GB, was a stated constant from an ESTIMATED <= 1.5 GB checkpoint and would have stopped the chain on box 2's
+#: ~9.7 GB at WMPOOL's turn (ESTIMATED: 10.36 GB at 07:30 less OBD's and STOPBAL's banks). A run starts only with NEED_GB_RUN free; the tree ship needs NEED_GB_SHIP. Below it the chain stops with exit 6 (stage rc 13).
+NEED_GB_RUN, NEED_GB_SHIP = 1, 1
 DECL_D = r"D:\tanitad"
 HOME_DECL, REPO_DECL, M2B_DECL = DECL_D + r"\wmpool", DECL_D + r"\wmpool\repo", DECL_D + r"\runs\v8f_mini_full"
 ZC_DECL = DECL_D + r"\zcells"                  # the CELL cache (zcells.py), one dir per seed: M2b_s{k}\{train,eval}; today's token-mean cache D:\tanitad\zcache is only read by control 3
@@ -47,7 +48,7 @@ CELLCODE_DECL = HOME_DECL + r"\cellcode"             # zcells.py, zcache.py, cli
 CELLS_DIR_DECL = HOME_DECL + r"\cells"                # CELLS.json, ZCELLS_CHECK3.json, logs
 CELLCODE_SHA256 = {"zcells.py": "6df6560f1cad9bdce1cfa808c82e37aff901c94ad45b7b0b440a79828340725a", "zcache.py": "f96c71b0b14ef26909e5691afeaf95206c73e62bf33702b43c81ad9482c55c30", "clips8.json": "f4a034b7a51d52d2609912a575af6637f3da44ee699f2e2970c7f4d3a67421f3"}   # the cell builder (theory/wmpool/zcells.py), the ladder zcache module it imports and the 8-clip list: the cells job refuses other bytes
 CHECK3_STORED_TOL = 5e-3                             # package constant (ESTIMATED; the card states no tolerance): stored fp16 cells vs the cached token mean, max abs per element; the measured value is recorded in CELLS.json
-CELL_CACHE_GB_PER_SEED, CELL_NEED_EXTRA_GB, CELL_SEEDS = 2.36, 5, (0, 1)   # ESTIMATED 2.36 GB per seed (FEASIBILITY_WMPOOL.md); the chain refuses below cache + 5 GB free
+CELL_CACHE_GB_PER_SEED, CELL_NEED_EXTRA_GB, CELL_SEEDS = 2.36, 1, (0, 1)   # 2.36 GB per seed (FEASIBILITY_WMPOOL.md), consistent with the MEASURED token-mean cache (D:\tanitad\zcache\M2b_s0\train 478,276,158 B fp32 -> x10 cells / 2 for fp16 = 2.39 GB); the chain refuses below cache + CELL_NEED_EXTRA_GB free (1 GB: the runs' own need, above)
 CELL_COUNTS = {"train": 4572, "eval": 141}            # clips per seed and split (ladder ZCACHE.json / HANDOFF_ZCACHE.md: 4572 / 141)
 PILOT_OUT_DECL = HOME_DECL + r"\pilot_out"
 TRAINER_REL, MODEL_REL, DATA_REL, WINDOWS_REL = "stack/scripts/v8f_mini_train.py", "stack/tanitad/models/v8f_mini.py", "stack/tanitad/data/v8f_mini_data.py", "stack/tanitad/data/v8f_wm_windows.py"
@@ -736,7 +737,7 @@ def cells_dir():
 
 
 def cells_need_gb():
-    """cache of every seed + 5 GB (constants, ESTIMATED): the chain refuses below this before it builds anything"""
+    """cache of every seed + CELL_NEED_EXTRA_GB: the chain refuses below this before it builds anything"""
     return CELL_CACHE_GB_PER_SEED * len(CELL_SEEDS) + CELL_NEED_EXTRA_GB
 
 
@@ -745,7 +746,7 @@ def cells_disk_problems():
     if fake() and dry() and os.environ.get("WMPOOL_FAKE_FREE_GB"):
         free = float(os.environ["WMPOOL_FAKE_FREE_GB"]) * 1e9
     need = cells_need_gb() * 1e9
-    return [f"cells: D: free {free / 1e9:.2f} GB < cache + 5 GB = {need / 1e9:.2f} GB (disk-low)"] if free < need else []
+    return [f"cells: D: free {free / 1e9:.2f} GB < cache + {CELL_NEED_EXTRA_GB} GB = {need / 1e9:.2f} GB (disk-low)"] if free < need else []
 
 
 def cells_check3_problems(res):

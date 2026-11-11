@@ -137,18 +137,18 @@ echo "== 4 disk gates (dev-box reads and the box-side cells check)"
 newbox disk 0; control '{"sps": 1.0}'; echo 3 > "$B/free_gb.txt"
 bash "$PKG/wmpool_chain.sh" > "$T/d1.out" 2>&1; rc=$?
 ok "3 GB free: ship passes (1 GB), the cells stage stops with the disk-low code (rc 6) before it builds anything" '[ $rc -eq 6 ] && stoptxt | grep -q "disk-low" && [ ! -e "$B/D/tanitad/zcells" ]'
-newbox disk9 0; echo 9 > "$B/free_gb.txt"
+newbox disk9 0; echo 5 > "$B/free_gb.txt"
 bash "$PKG/wmpool_chain.sh" > "$T/d1b.out" 2>&1; rc=$?
-ok "9 GB free (< cache + 5 GB, asked as 10): the cells stage stops with rc 6, no cache dir" '[ $rc -eq 6 ] && stoptxt | grep -q "disk-low" && [ ! -e "$B/D/tanitad/zcells" ]'
+ok "5 GB free (< cache + 1 GB, asked as 6): the cells stage stops with rc 6, no cache dir" '[ $rc -eq 6 ] && stoptxt | grep -q "disk-low" && [ ! -e "$B/D/tanitad/zcells" ]'
 newbox disk0 0; echo 0 > "$B/free_gb.txt"
 bash "$PKG/wmpool_chain.sh" > "$T/d2.out" 2>&1; rc=$?
 ok "0 GB free: the ship stage stops with rc 6" '[ $rc -eq 6 ] && [ ! -e "$B/D/tanitad/wmpool/ship/wmpool_tree.tar" ]'
 newbox disk1 0; echo "" > "$B/free_gb.txt"
 bash "$PKG/wmpool_chain.sh" > "$T/d3.out" 2>&1; rc=$?
 ok "an unreadable free-space probe is a refusal, not a pass (rc 11)" '[ $rc -eq 11 ]'
-newbox diskbox 0; control '{"sps": 1.0}'; export WMPOOL_FAKE_FREE_GB=9.5
+newbox diskbox 0; control '{"sps": 1.0}'; export WMPOOL_FAKE_FREE_GB=5.5
 bash "$PKG/wmpool_chain.sh" > "$T/d4.out" 2>&1; rc=$?
-ok "the box-side check (9.5 GB < cache + 5 GB) fails the cells job with disk-low (rc 6) and nothing is built" '[ $rc -eq 6 ] && stoptxt | grep -q "disk-low" && [ ! -e "$B/D/tanitad/zcells" ]'
+ok "the box-side check (5.5 GB < cache + 1 GB) fails the cells job with disk-low (rc 6) and nothing is built" '[ $rc -eq 6 ] && stoptxt | grep -q "disk-low" && [ ! -e "$B/D/tanitad/zcells" ]'
 ok "the pilot never started after the refused cells stage" '[ ! -e "$B/D/tanitad/wmpool/runs/PILOT_P-ATT_s0" ]'
 
 echo "== 5 projected total above 72 h"

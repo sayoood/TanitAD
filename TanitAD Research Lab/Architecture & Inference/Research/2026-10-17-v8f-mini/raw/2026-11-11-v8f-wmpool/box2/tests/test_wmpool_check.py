@@ -323,12 +323,13 @@ def main(tmp):
     check("check3: a non-dict result is refused", CK.cells_check3_problems(None) != [])
     check("check3: wrongseed None (one seed only) is tolerated", CK.cells_check3_problems(dict(good3, wrongseed_fails_identity=None)) == [])
     need = CK.cells_need_gb()
-    check("cells need cache + 5 GB: 2 x 2.36 + 5 = 9.72 GB and the dev-box stage asks 10", abs(need - 9.72) < 1e-9 and re.search(r"NEED_GB_CELLS=10", open(os.path.join(PKG, "stages", "wmpool_common.sh")).read()) is not None)
+    check("cells need cache + 1 GB: 2 x 2.36 + 1 = 5.72 GB and the dev-box stage asks 6", abs(need - 5.72) < 1e-9 and re.search(r"NEED_GB_CELLS=6\b", open(os.path.join(PKG, "stages", "wmpool_common.sh")).read()) is not None)
+    check("a run asks 1 GB in both files", CK.NEED_GB_RUN == 1 and re.search(r"NEED_GB_RUN=1\b", open(os.path.join(PKG, "stages", "wmpool_common.sh")).read()) is not None)
     os.environ["WMPOOL_DRY"] = "1"
-    os.environ["WMPOOL_FAKE_FREE_GB"] = "9.5"
-    check("cells disk: 9.5 GB free (< cache + 5 GB) is refused", len(CK.cells_disk_problems()) == 1)
-    os.environ["WMPOOL_FAKE_FREE_GB"] = "9.8"
-    check("cells disk: 9.8 GB free passes", CK.cells_disk_problems() == [])
+    os.environ["WMPOOL_FAKE_FREE_GB"] = "5.5"
+    check("cells disk: 5.5 GB free (< cache + 1 GB) is refused", len(CK.cells_disk_problems()) == 1)
+    os.environ["WMPOOL_FAKE_FREE_GB"] = "5.8"
+    check("cells disk: 5.8 GB free passes", CK.cells_disk_problems() == [])
     del os.environ["WMPOOL_DRY"]
     del os.environ["WMPOOL_FAKE_FREE_GB"]
     os.environ["WMPOOL_TEST_CELL_COUNTS"] = "train=3,eval=2"
