@@ -23,6 +23,32 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import r9_e1_eval as E                                   # noqa: E402
 import test_r9_e1_eval as TE                             # noqa: E402  (its pack fixtures, reused unchanged)
 
+_SHIM = Path(__file__).resolve().parents[1] / "ops" / "r9e1_read" / "shim_scipy"
+
+
+def _real_scipy() -> bool:
+    try:
+        import scipy.ndimage                             # noqa: F401
+    except ModuleNotFoundError:
+        return False
+    return not getattr(sys.modules.get("scipy.ndimage"), "IS_SHIM", False)
+
+
+@pytest.fixture(autouse=True)
+def _scipy_or_the_reads_own_shim(monkeypatch):
+    """Thor's training venv has no scipy, so the read runs these producers on ``stack/ops/r9e1_read/shim_scipy`` (R9E1_FORCE_SCIPY_SHIM),
+    which test_r9_e1_floor::test_scipy_shim_equals_scipy_binary_dilation pins to scipy bit for bit. Real scipy where it exists, else that
+    shim -- per test, and purged afterwards so no later test file imports the shim as if it were scipy. (11-11: without this the 8
+    producer tests failed outside the pinned list on Thor and stopped the e2 gate.)"""
+    if _real_scipy():
+        yield
+        return
+    assert (_SHIM / "scipy" / "ndimage" / "__init__.py").is_file(), _SHIM
+    monkeypatch.syspath_prepend(str(_SHIM))
+    yield
+    for k in [k for k in sys.modules if k == "scipy" or k.startswith("scipy.")]:
+        del sys.modules[k]
+
 H_, W_ = 1000, 600
 C0 = 270
 BLOCKS = {  # name -> (row0, row1, col0, col1, gt class, lift-valid)
