@@ -1,0 +1,6 @@
+# Master Mind notes on the beside package (B1, B2, B3)
+
+## 2026-11-11 ~18:12: B1 / B2 review
+* Re-run by the Master Mind: `tests/test_decod_wmact.py` 10 passed (5.2 s, CPU); `CONTROLS_B1B2.json` reads `all_pass` true, tier T0 (MEASURED).
+* **Decision, B2 cells the window cannot hold.** On arms with level strides (3, 5), the WMACT cell L3 / k3 needs more frames than the 16-frame training window carries, so it does not exist there (MEASURED in the agent's smoke rows). B2 stays as `BESIDE_RULES_SLOWWM.md` wrote it: the WMACT statistics unchanged on the same windows, and a cell that cannot exist is listed with n = 0 and its reason, never filled. Reading L3 / k3 on longer windows would be a different protocol and is not done. B2 has no bar, so this changes no outcome.
+* **B1 real rows wait for the train stream.** The 141 WMACT train clips are streamed read-only from box 2 (`theory/wmact/HANDOFF_WMACT_TRAIN.md`), and their basis coordinates need the trained SLOW / PCA-B bases, which exist only after the SLOWWM chain's basis step. So `decod_build_train.py` runs with the SLOWWM read (2026-11-12), not before. Until then B1 runs only as `--smoke` (an episode-disjoint half split of eval-141), labelled as such.

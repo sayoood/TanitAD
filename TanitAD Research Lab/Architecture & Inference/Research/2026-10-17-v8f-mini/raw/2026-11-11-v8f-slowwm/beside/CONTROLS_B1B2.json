@@ -1,0 +1,75 @@
+{
+ "tier": "T0",
+ "b1_i": {
+  "arms": {
+   "R35H_s0": {
+    "i_permuted_speed": {"r2": -0.19128297422698948, "bar": 0.02, "ok": true, "alpha": 1000.0},
+    "i_permuted_yaw": {"r2": -0.10801193370888718, "bar": 0.02, "ok": true, "alpha": 1000.0},
+    "red_arm_score_on_train": {"r2": 0.27908960409792516, "bar": 0.02, "ok": false, "alpha": 1000.0}
+   },
+   "planted_SLOW_s0": {
+    "i_permuted_speed": {"r2": -0.0232428413104524, "bar": 0.02, "ok": true, "alpha": 1000.0},
+    "i_permuted_yaw": {"r2": -0.025759367771965858, "bar": 0.02, "ok": true, "alpha": 1000.0},
+    "red_arm_score_on_train": {"r2": 0.03187394780898967, "bar": 0.02, "ok": false, "alpha": 1000.0}
+   }
+  },
+  "split": "episode-disjoint half split of the eval-141 windows (machinery check)",
+  "wall_s": 1.8,
+  "pass": true
+ },
+ "all_pass": true,
+ "b1_ii": {
+  "arms": {
+   "R35H_s0": {
+    "ii_planted": {"r2": 0.9910496516723519, "planted": 0.9927504124904621, "abs_diff": 0.001700760818110214, "tol": 0.02, "ok": true, "alpha": 0.31622776601683794},
+    "red_arm_misaligned": {"r2": -0.654305313705664, "planted": 0.9927504124904621, "abs_diff": 1.6470557261961263, "tol": 0.02, "ok": false, "alpha": 31.622776601683793}
+   },
+   "planted_SLOW_s0": {
+    "ii_planted": {"r2": 0.9889369396065851, "planted": 0.9902441280573518, "abs_diff": 0.0013071884507667164, "tol": 0.02, "ok": true, "alpha": 0.31622776601683794},
+    "red_arm_misaligned": {"r2": -0.04634286236515339, "planted": 0.9902441280573518, "abs_diff": 1.0365869904225051, "tol": 0.02, "ok": false, "alpha": 1000.0}
+   }
+  },
+  "wall_s": 1.8,
+  "pass": true
+ },
+ "b1_iii": {
+  "windows": 64,
+  "window_z1_bit_equal_64": true,
+  "rolled_z1_bit_equal_64": true,
+  "every_window": {"Zw": true, "rolled_z1": true, "y_speed": true, "y_yaw": true, "m_yaw": true},
+  "max_abs_diff_Zw": 0.0,
+  "red_arms": {"perturbed_flagged": true, "step_k_plus_1_differs": true, "basis_model_via_lp_lib_route_raises": true},
+  "wall_s": 4.0,
+  "pass": true
+ },
+ "b2": {
+  "a_new_collection_vs_banked_latents": {
+   "windows": 64,
+   "bit_equal": true,
+   "max_abs_diff": 0.0,
+   "red_arms": {"other_model_differs": true, "perturbation_flagged": true},
+   "wall_s": 5.4,
+   "pass": true
+  },
+  "b_stats_port_vs_banked_result": {
+   "rows_compared": 141,
+   "max_abs_diff_rows": 8.063226107635213e-08,
+   "max_abs_diff_sens": 2.9802322387695312e-08,
+   "tolerance": 1e-06,
+   "controls_known_values": {"identity_sens_max_abs": 0.0, "identity_actionuse_max_abs": 0.0, "zeroed_embed_L1_sens_max_abs": 0.0},
+   "controls_known_ok": true,
+   "red_arm_other_latents_max_abs_diff_rows": 16.99059627576477,
+   "wall_s": 33.1,
+   "pass": true
+  },
+  "c_basis_collection_planted_arm": {
+   "z1_vs_independent_float64_max_abs": 5.245208740234375e-06,
+   "tolerance": 0.0001,
+   "red_arm_other_basis_max_abs": 8.431478500366211,
+   "control4_basis_max_abs_diff": 0.0,
+   "wall_s": 3.6,
+   "pass": true
+  },
+  "pass": true
+ }
+}

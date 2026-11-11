@@ -44,8 +44,19 @@ def install():
     return m
 
 
+def attach_topk():
+    """READ_NOTE_COMMIT.md section 2: the eval-only forward_topk / topk_codes of 8e9499e0 onto the STOPBAL V8FMini (topk_shim.py; no tree file edited)."""
+    import topk_shim
+    import tanitad.models.v8f_mini as vm
+    assert os.path.abspath(vm.__file__).replace("\\", "/").startswith(TREE), vm.__file__
+    rec = topk_shim.attach(vm)
+    print("TOPK-SHIM", json.dumps(rec))
+    return rec
+
+
 def main():
     tk = install()
+    shim = attach_topk()
     sys.path.insert(0, os.path.join(THEORY, "stopdec"))
     sys.path.insert(0, os.path.join(THEORY, "speedsrc"))
     if "--selftest" in sys.argv:
@@ -53,6 +64,8 @@ def main():
         assert SS.TK is tk and SS.TK.TREE == TREE and SS.TK.T1 == T1
         import tanitad
         assert os.path.abspath(tanitad.__file__).replace("\\", "/").startswith(TREE), tanitad.__file__
+        import tanitad.models.v8f_mini as vm
+        assert hasattr(vm.V8FMini, "forward_topk") and shim.get("attached") is not None
         print("SELFTEST ok: tree", TREE, "t1", T1, "tanitad", tanitad.__file__)
         return
     split = "--split-json" in sys.argv
