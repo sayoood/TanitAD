@@ -88,14 +88,93 @@ ok("gate refuses a basis sha not in BASIS.json's fit record", rb_problems(readba
 ok("PCA-B arm: a slow read-back is refused", rb_problems(readback("slow"), tag="PCA-B_s0") != [])
 ok("PCA-B arm: its own read-back is accepted", rb_problems(readback("pca", "b" * 64), tag="PCA-B_s0", man={"basis_sha256": "b" * 64}) == [])
 
-# ---- check3 / fit records
-c3 = {"pass": True, "identity": {k: {"pass": True, "wrong_kind_fails_identity": True} for k in CK.KINDS}, "clips": list(range(8))}
-ok("check3 good", CK.check3_problems(c3) == [])
-for name, fn in {"pass false": lambda r: r.update({"pass": False}), "smoke": lambda r: r.update({"SMOKE": True}), "wrong kind passes": lambda r: r["identity"]["slow"].update(wrong_kind_fails_identity=False),
-                 "7 clips": lambda r: r.update(clips=list(range(7)))}.items():
-    r = copy.deepcopy(c3)
-    fn(r)
-    ok(f"check3 refuses: {name}", CK.check3_problems(r) != [])
+# ---- check3 (AMENDMENT 2): one slow_basis.py check3 record per split, combined; the cov identity from the shipped basis files
+import numpy as np  # noqa: E402
+
+ID_OK = {k: {"max_abs_diff": 1e-7, "pass": True, "wrong_kind_basis_max_abs_diff": 0.5, "wrong_kind_fails_identity": True} for k in CK.KINDS}
+EV_CLIPS, TR_CLIPS = [f"e{i}" for i in range(6)], [f"t{i}" for i in range(2)]
+
+
+def split_rec(clips, **kw):
+    r = {"tol_identity": 1e-4, "tol_cov": 1e-3, "split": "x", "clips": list(clips), "identity": copy.deepcopy(ID_OK), "SMOKE": False, "slow_vs_pca": {"pass": True, "slow_top_mu": 0.9}, "shuffled_time_basis": {"pass": False, "must_fail": True},
+         "cov_u_fit_frames": {"slow_pass": False, "pca_pass": True}, "pass_cov_slow_card_tolerance": False, "pass": True}
+    r.update(kw)
+    return r
+
+
+def synth_basis(d, k, ridge=1e-3, seed=0, slow_scale=1.0, pca_scale=1.0):
+    """a tiny fit: SLOW's V with V^T (C + ridge I) V = I exactly, PCA-B's P with P^T C P = I exactly (both scaled for the red arms); written as basis_*.npz / fit_stats.npz with the shipped keys"""
+    rng = np.random.default_rng(seed)
+    A = rng.normal(size=(d, d))
+    C = A @ A.T / d + 0.1 * np.eye(d)
+    w, U = np.linalg.eigh(C + ridge * np.eye(d))
+    V = (U / np.sqrt(w))[:, -k:] * slow_scale
+    w2, U2 = np.linalg.eigh(C)
+    P = (U2 / np.sqrt(w2))[:, -k:] * pca_scale
+    dd = tempfile.mkdtemp(prefix="basis_", dir=tmp)
+    for kind, M in (("slow", V), ("pca", P)):
+        np.savez(os.path.join(dd, f"basis_{kind}.npz"), kind=np.array(kind), mean=np.zeros(d, np.float32), proj=M.astype(np.float64), spectrum=np.zeros(k), meta_json=np.array(json.dumps({"ridge": ridge})), basis_sha256=np.array("x"))
+    np.savez(os.path.join(dd, "fit_stats.npz"), C=C, S=C, S_xclip=C, V_xclip=V, mu_xclip=np.zeros(k))
+    return dd
+
+
+tmp = tempfile.mkdtemp(prefix="slowwm_unit_", dir=os.environ.get("SLOWWM_TEST_TMP", "F:/TanitAD-scratch/slowwm_amend2_build"))
+cv = CK.cov_identity(synth_basis(12, 5))
+ok("cov identity: the exact normalisation passes (SLOW V^T (C + ridge I) V = I, PCA-B cov(u) = I)", cv["slow_identity_pass"] and cv["pca_pass"] and cv["slow_identity_max_dev"] < 1e-9 and cv["pca_max_dev"] < 1e-9)
+ok("cov identity: the per-direction deviation of SLOW's cov(u) from I is reported and is NOT zero", len(cv["slow_cov_u_dev_from_I_per_direction"]) == 5 and cv["slow_cov_u_dev_from_I_diag_max"] > 0)
+ok("cov identity: the two routes (V^T B V and cov(u) vs I - ridge V^T V) agree", abs(cv["slow_identity_vbv_max_dev"] - cv["slow_identity_via_cov_max_dev"]) < 1e-9)
+cv_bad = CK.cov_identity(synth_basis(12, 5, slow_scale=1.0 + 1e-3))          # a scale error of 0.1 % -> deviation ~2e-3 on the diagonal
+ok("RED: SLOW's cov off by ~2e-3 is refused by the identity", cv_bad["slow_identity_pass"] is False and 1.5e-3 < cv_bad["slow_identity_max_dev"] < 3e-3)
+ok("RED: PCA-B off by ~2e-3 fails its cov check", CK.cov_identity(synth_basis(12, 5, pca_scale=1.0 + 1e-3))["pca_pass"] is False)
+ok("SLOW's cov(u) = I within 1e-3 is NOT required: the plain deviation from I does not enter the pass", cv["slow_cov_u_dev_from_I_diag_max"] > 0 and cv["slow_identity_pass"])
+
+
+def combined(ev=None, tr=None, cov=None):
+    return CK.build_check3(ev or split_rec(EV_CLIPS), tr or split_rec(TR_CLIPS), cov or copy.deepcopy(cv))
+
+
+c3 = combined()
+ok("8-clip combine: 6 eval + 2 train distinct clips, pass derived true, no refusal", c3["pass"] is True and len(set(c3["clips"])) == 8 and CK.check3_problems(c3) == [])
+ok("8-clip combine keeps both per-split records and a combined identity on both kinds", set(c3["splits"]) == {"eval", "train"} and all(c3["identity"][k]["pass"] and c3["identity"][k]["wrong_kind_fails_identity"] for k in CK.KINDS))
+c6 = combined(tr=split_rec([]))
+ok("RED: 6 clips (eval only, train empty) is refused", c6["pass"] is False and CK.check3_problems(c6) != [])
+ok("RED: 7 distinct clips is refused", CK.check3_problems(combined(tr=split_rec(TR_CLIPS[:1]))) != [])
+ok("RED: 8 clip names but a duplicate (7 distinct) is refused", CK.check3_problems(combined(tr=split_rec(["e0", "t0"]))) != [])
+r = copy.deepcopy(c3)
+r["clips"] = r["clips"][:6]
+ok("RED: a record whose clip list is 6 long is refused even if the splits are full", CK.check3_problems(r) != [])
+r = copy.deepcopy(c3)
+del r["splits"]["train"]
+ok("RED: a record with no train split is refused", CK.check3_problems(r) != [])
+ok("RED: a flat (pre-amendment, single-split) record is refused", CK.check3_problems({"pass": True, "identity": copy.deepcopy(ID_OK), "clips": list(range(8)), "split": "eval"}) != [])
+for kind in CK.KINDS:
+    for sp_ in ("eval", "train"):
+        ev_, tr_ = split_rec(EV_CLIPS), split_rec(TR_CLIPS)
+        (ev_ if sp_ == "eval" else tr_)["identity"][kind]["wrong_kind_fails_identity"] = False
+        rr = combined(ev_, tr_)
+        ok(f"RED: the wrong-kind basis passing the identity for {kind} on {sp_} is refused", rr["pass"] is False and CK.check3_problems(rr) != [])
+        ev_, tr_ = split_rec(EV_CLIPS), split_rec(TR_CLIPS)
+        (ev_ if sp_ == "eval" else tr_)["identity"][kind].update({"pass": False})
+        ok(f"RED: the identity failing for {kind} on {sp_} is refused", CK.check3_problems(combined(ev_, tr_)) != [])
+ok("RED: SLOW cov off by 2e-3 refused in the combined record", CK.check3_problems(combined(cov=cv_bad)) != [] and combined(cov=cv_bad)["pass"] is False)
+r = copy.deepcopy(c3)
+r["cov_identity"]["slow_identity_max_dev"], r["cov_identity"]["slow_identity_pass"] = 2e-3, False
+ok("RED: overall pass TRUE while SLOW's cov identity fails is refused (the silent pass of 20:43)", r["pass"] is True and any("overall pass is true" in x for x in CK.check3_problems(r)))
+r = copy.deepcopy(c3)
+r["cov_identity"]["pca_max_dev"], r["cov_identity"]["pca_pass"] = 2e-3, False
+ok("RED: overall pass TRUE while PCA-B's cov fails is refused", any("overall pass is true" in x for x in CK.check3_problems(r)))
+r = copy.deepcopy(c3)
+r["cov_identity"]["slow_identity_max_dev"] = 2e-3
+ok("RED: a cov flag true but its number over 1e-3 is refused (the number decides)", CK.check3_problems(r) != [])
+r = copy.deepcopy(c3)
+del r["cov_identity"]
+ok("RED: a record with no cov block is refused", CK.check3_problems(r) != [])
+r = copy.deepcopy(c3)
+r["cov_identity"]["slow_cov_u_dev_from_I_per_direction"] = []
+ok("a missing per-direction beside number is refused", CK.check3_problems(r) != [])
+ok("RED: eval and train records that disagree on the SLOW-vs-PCA comparison are refused", combined(tr=split_rec(TR_CLIPS, slow_vs_pca={"pass": True, "slow_top_mu": 0.1}))["pass"] is False)
+ok("RED: SMOKE refused", CK.check3_problems(combined(ev=split_rec(EV_CLIPS, SMOKE=True))) != [])
+ok("RED: a shuffled-time basis that passes is refused", CK.check3_problems(combined(ev=split_rec(EV_CLIPS, shuffled_time_basis={"pass": True}), tr=split_rec(TR_CLIPS, shuffled_time_basis={"pass": True}))) != [])
 ok("check3 refuses an unreadable record", CK.check3_problems(None) != [])
 fit = {"meta": {"n_windows_ok": 40358, "smoke": False, "card_sha256": CK.CARD_SHA256}, "basis_sha256": {"slow": "a" * 64, "pca": "b" * 64}}
 ok("fit good", CK.fit_problems(fit) == [])
@@ -105,7 +184,6 @@ for name, fn in {"windows": lambda r: r["meta"].update(n_windows_ok=40000), "smo
     ok(f"fit refuses: {name}", CK.fit_problems(r) != [])
 
 # ---- permit (72 h rule)
-tmp = tempfile.mkdtemp(prefix="slowwm_unit_", dir=os.environ.get("SLOWWM_TEST_TMP", "F:/TanitAD-scratch/slowwm_box2_build"))
 C40 = "a" * 40
 
 
@@ -146,6 +224,10 @@ args = {"basis-json": bp, "fit-json": fitp, "check3-json": c3p, "commit": C40}
 basis_rec()
 ok("verify-basis passes a consistent record", CK.cmd_verify_basis(args) == 11 or True)       # the fit record above has no `basis_sha256` equal to BASIS.json unless built so: see next line
 ok("verify-basis passes a consistent record (same sha256 in fit and basis)", CK.cmd_verify_basis(args) == 0)
+json.dump(combined(cov=cv_bad), open(c3p, "w"))
+basis_rec()
+ok("verify-basis refuses a pulled CHECK3 whose SLOW cov identity fails", CK.cmd_verify_basis(args) == 11)
+json.dump(c3, open(c3p, "w"))
 basis_rec(commit="b" * 40)
 ok("verify-basis refuses another commit", CK.cmd_verify_basis(args) == 11)
 basis_rec(counts={"slow/train": 1})

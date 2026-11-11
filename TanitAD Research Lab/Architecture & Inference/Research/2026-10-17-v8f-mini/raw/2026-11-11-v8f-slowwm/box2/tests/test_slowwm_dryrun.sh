@@ -17,7 +17,7 @@ STUB="$(cygpath -m "$TESTS/ssh_stub.sh")"; C40="$(printf 'a%.0s' $(seq 1 40))"
 setup() {   # setup <name>: a fresh state, busy marker and predecessor folder; the stubs; DRY on
   export SLOWWM_STATE="$T/st_$1" SLOWWM_BUSY_DEV="$T/busy_$1.txt" SLOWWM_ASIDE_DEV="$T/aside_$1" SLOWWM_PRED_STATE="$T/pred_$1" SLOWWM_PY="$PYV" SLOWWM_COMMIT="$C40"
   export SLOWWM_SSH="$STUB" SLOWWM_SFTP="$STUB" SLOWWM_DRY=1 SLOWWM_WAIT_POLLS=0 SLOWWM_WAIT_POLL_S=0
-  unset SLOWWM_RESUME SLOWWM_TEST_COUNTS SLOWWM_TEST_BASIS SLOWWM_FAKE_FREE_GB; mkdir -p "$SLOWWM_PRED_STATE"
+  unset SLOWWM_RESUME SLOWWM_PRED_DONE_PREFIX SLOWWM_TEST_COUNTS SLOWWM_TEST_BASIS SLOWWM_FAKE_FREE_GB; mkdir -p "$SLOWWM_PRED_STATE"
 }
 chain() { bash "$PKG/slowwm_chain.sh" > "$T/out_$1.txt" 2>&1; echo $?; }
 stoptxt() { cat "$SLOWWM_STATE/STOP.txt" 2>/dev/null; }
@@ -55,7 +55,27 @@ setup c1; export SLOWWM_COMMIT="abc123"; rc="$(chain c1)"; ok "a short commit is
 setup c2; unset SLOWWM_COMMIT; rc="$(chain c2)"; ok "no commit is refused (rc 8)" '[ "$rc" -eq 8 ]'
 echo "== 9 a standing STOP refuses a rerun without SLOWWM_RESUME"
 setup r1; echo "ZZ SLOWWM-STOP x y rc=5" > "$SLOWWM_STATE/STOP.txt" 2>/dev/null || { mkdir -p "$SLOWWM_STATE"; echo "ZZ SLOWWM-STOP x y rc=5" > "$SLOWWM_STATE/STOP.txt"; }; rc="$(chain r1)"; ok "rc 2" '[ "$rc" -eq 2 ]'
-echo "== 10 hygiene"
+echo "== 10 relaunch behind the STOPBAL second dose (SLOWWM_PRED_STATE + SLOWWM_PRED_DONE_PREFIX): it WAITS for that chain"
+dose2() { setup "$1"; export SLOWWM_PRED_DONE_PREFIX="ZZ STOPBAL2-DONE"; }
+dose2 p1; rc="$(chain p1)"; ok "dose 2 still running (no DONE, no STOP): waits, times out rc 12, never reached ship" '[ "$rc" -eq 12 ] && stoptxt | grep -q "predecessor-not-ended" && stoptxt | grep -q "RUNNING" && ! grep -q "start ship" "$SLOWWM_STATE/chain.log"'
+dose2 p2; echo "ZZ STOPBAL2-DONE 2026-11-11 23:00:00" > "$SLOWWM_PRED_STATE/DONE.txt"; rc="$(chain p2)"; ok "dose 2 DONE (ZZ STOPBAL2-DONE) releases it: ended (DONE), ship started" 'grep -q "ended (DONE)" "$SLOWWM_STATE/chain.log" && grep -q "start ship" "$SLOWWM_STATE/chain.log"'
+dose2 p3; echo "ZZ OBD3-DONE 2026-11-11 23:00:00" > "$SLOWWM_PRED_STATE/DONE.txt"; rc="$(chain p3)"; ok "a DONE with the OBD3 prefix does not release a chain waiting for STOPBAL2 (rc 12, no ship)" '[ "$rc" -eq 12 ] && ! grep -q "start ship" "$SLOWWM_STATE/chain.log"'
+dose2 p4; echo "ZZ STOPBAL2-STOP start box2-busy rc=12 :: x rc=4" > "$SLOWWM_PRED_STATE/STOP.txt"; rc="$(chain p4)"; ok "a busy STOP (head ends rc=12) of dose 2 keeps it waiting" '[ "$rc" -eq 12 ] && stoptxt | grep -q "STOP-BUSY" && ! grep -q "start ship" "$SLOWWM_STATE/chain.log"'
+dose2 p5; echo "ZZ STOPBAL2-DONE x" > "$SLOWWM_PRED_STATE/DONE.txt"; echo "stopbal dose 2" > "$SLOWWM_BUSY_DEV"; rc="$(chain p5)"; ok "dose 2 DONE but the shared busy marker held: keeps waiting, marker untouched" '[ "$rc" -eq 12 ] && ! grep -q "start ship" "$SLOWWM_STATE/chain.log" && [ "$(cat "$SLOWWM_BUSY_DEV")" = "stopbal dose 2" ]'
+dose2 p6; echo "ZZ STOPBAL2-STOP arms arms-refused rc=4" > "$SLOWWM_PRED_STATE/STOP.txt"; rc="$(chain p6)"; ok "a non-busy STOP of dose 2 counts as ended" 'grep -q "ended (STOP)" "$SLOWWM_STATE/chain.log"'
+unset SLOWWM_PRED_DONE_PREFIX
+echo "== 11 relaunch after the basis STOP (SLOWWM_RESUME=1): own STOP renamed (never deleted); the amended checker is shipped again; a ship done for this checker is skipped"
+CKSHA="$(sha256sum "$PKG/slowwm_check.py" | cut -d' ' -f1)"
+resume_setup() { setup "$1"; export SLOWWM_RESUME=1; mkdir -p "$SLOWWM_STATE/done"; echo "ZZ SLOWWM-STOP basis gate-or-pin-refused rc=4 :: basis: check3-refused" > "$SLOWWM_STATE/STOP.txt"; echo "ZZ OBD3-DONE x" > "$SLOWWM_PRED_STATE/DONE.txt"; }
+resume_setup s1; echo "ship 2026-11-11 19:00:00" > "$SLOWWM_STATE/done/ship.done"; rc="$(chain s1)"
+ok "an old ship marker (no checker sha) is shipped again; the old STOP is renamed, not deleted" 'grep -q "ship was done for another checker" "$SLOWWM_STATE/chain.log" && grep -q "start ship" "$SLOWWM_STATE/chain.log" && ls "$SLOWWM_STATE"/STOP.2*.txt > /dev/null 2>&1 && grep -q "check3-refused" "$SLOWWM_STATE"/STOP.2*.txt'
+resume_setup s2; echo "ship 2026-11-11 19:00:00 checker=$(printf '0%.0s' $(seq 1 64))" > "$SLOWWM_STATE/done/ship.done"; rc="$(chain s2)"
+ok "a ship marker for ANOTHER checker is shipped again" 'grep -q "ship was done for another checker" "$SLOWWM_STATE/chain.log" && grep -q "start ship" "$SLOWWM_STATE/chain.log"'
+resume_setup s3; echo "ship 2026-11-11 19:00:00 checker=$CKSHA" > "$SLOWWM_STATE/done/ship.done"; rc="$(chain s3)"
+ok "a ship marker for THIS checker is skipped and the basis stage starts (the stub box then stops it at stage basis)" 'grep -q "skip ship (done)" "$SLOWWM_STATE/chain.log" && grep -q "start basis" "$SLOWWM_STATE/chain.log" && ! grep -q "start ship" "$SLOWWM_STATE/chain.log" && stoptxt | grep -q "basis"'
+resume_setup s4; unset SLOWWM_RESUME; rc="$(chain s4)"; ok "without SLOWWM_RESUME a standing STOP still refuses (rc 2) and is left in place" '[ "$rc" -eq 2 ] && grep -q "check3-refused" "$SLOWWM_STATE/STOP.txt"'
+unset SLOWWM_RESUME
+echo "== 12 hygiene"
 ok "the poison transports never ran" '[ ! -e "$T/BREACH" ]'
 ok "the package names no real-box path outside D:/tanitad and no G: path" '! grep -rq "G:/Meine\|G:\\\\Meine" "$PKG"/*.sh "$PKG"/stages "$PKG"/jobs "$PKG"/*.py'
 ok "stage scripts parse (bash -n)" 'for f in "$PKG"/slowwm_chain.sh "$PKG"/stages/*.sh; do bash -n "$f" || exit 1; done'

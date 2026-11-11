@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # slowwm_basis.sh: the BASIS stage (card control 3). ONE box-2 job (the generic stage job, `slowwm_check.py basis`): slow_basis.py fit (train, --expect-windows 40358, --exclude 540:600, --spool), cache (slow, pca) x (train, eval) into the ROOT D:\tanitad\zbasis
-# (cache appends <kind>\<split>), check3 on the 8 clips of clips8.json, then the counts (4572 train / 141 eval per kind, a BASIS_MANIFEST.json per directory) -> BASIS.json, FIT_RECORD.json, SPECTRA.json, CHECK3.json.
+# (cache appends <kind>\<split>), check3 once per split of clips8.json (eval 6 + train 2 clips, combined into one CHECK3.json with the cov identity; AMEND_SLOWWM_2), then the counts (4572 train / 141 eval per kind, a BASIS_MANIFEST.json per directory) -> BASIS.json, FIT_RECORD.json, SPECTRA.json, CHECK3.json.
 # Refusals: D: free < 6 GB BEFORE anything is built; a failed check3, fit or count stops the chain (rc 11). The pulled records are re-judged on the dev box (`verify-basis`).
 # CPU only (CUDA_VISIBLE_DEVICES=-1 is set by the job). Nothing is deleted: the basis caches are the input of every run.
 source "$(dirname "${BASH_SOURCE[0]}")/slowwm_common.sh"; SLOWWM_STAGE="basis"

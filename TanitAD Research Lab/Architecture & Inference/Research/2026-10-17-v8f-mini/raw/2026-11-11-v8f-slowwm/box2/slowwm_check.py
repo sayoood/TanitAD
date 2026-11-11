@@ -1,6 +1,6 @@
 """SLOWWM launch-gate checker (box 2 and dev box; stdlib, torch only in the weights-identity load). Pattern: theory/wmpool/box2/wmpool_check.py with the pool replaced by the basis lever.
 Card theory/slowwm/PREREG_V8F_SLOWWM.md (sha256 7c2775e3...94ca). Code of record: commit f7e790ab57e10a9004b04b206195a0ae5a5295b8.
-  basis --gid G    ONE box-2 job: slow_basis.py fit (train, --expect-windows 40358, --exclude 540:600, --spool), cache (slow, pca) x (train, eval), check3 on clips8.json, counts -> BASIS.json (basis caches are never deleted)
+  basis --gid G    ONE box-2 job: slow_basis.py fit (train, --expect-windows 40358, --exclude 540:600, --spool), cache (slow, pca) x (train, eval), check3 once per split of clips8.json (eval 6 + train 2 clips, combined into one record; AMEND_SLOWWM_2), counts -> BASIS.json (basis caches are never deleted)
   argv --tag T [--pilot] [--out-txt F] | stage --tag T --gid G [--pilot] | cleanup --tag T --gid G | verify-basis | verify-token | project | permit | render | preflight   (as WMPOOL's)
 Test hooks (dev box only, refused by the chain unless SLOWWM_DRY=1): SLOWWM_ROOT maps D:\\tanitad to a folder; SLOWWM_FAKE_INIT_SHA_FILE; SLOWWM_TEST_BASIS (a stand-in for slow_basis.py); SLOWWM_TEST_COUNTS; SLOWWM_FAKE_FREE_GB."""
 import hashlib
@@ -563,19 +563,122 @@ def basis_count_problems(root):
     return found, p
 
 
-def check3_problems(res):
-    if not isinstance(res, dict):
-        return ["CHECK3.json unreadable"]
-    p = [] if res.get("pass") is True else ["check3 pass is not true (identity, cov(u), SLOW-vs-PCA autocorrelation, or the shuffled-time basis did not fail as planted)"]
+#: AMENDMENT 2 (AMEND_SLOWWM_2.md): check 3 runs once per split of clips8.json (eval 6 clips, train 2 clips) and the stage combines the two records, so the identity covers 8 DISTINCT clips;
+#: SLOW's cov check is the identity its normalisation implies, V^T (C + ridge I) V = I (equivalently cov(u) = I - ridge V^T V) within 1e-3; PCA-B keeps cov(u) = I within 1e-3.
+CHECK3_SCHEMA, CHECK3_SPLITS, N_CLIPS, COV_TOL = "slowwm-check3-v2", ("eval", "train"), 8, 1e-3
+
+
+def num_ok(x, lim):
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and x == x and abs(x) != float("inf") and 0 <= x <= lim
+
+
+def cov_identity(basis_dir_path):
+    """From the SHIPPED basis_slow.npz / basis_pca.npz and fit_stats.npz (keys: proj, mean, meta_json['ridge']; C): SLOW's V^T (C + ridge I) V - I and cov(u) - (I - ridge V^T V) (the same quantity, two routes),
+    PCA-B's cov(u) - I, and SLOW's per-direction deviation of cov(u) from I (beside number). Needs numpy; the dev box never calls it (it reads the numbers in the record)."""
+    import numpy as np
+    with np.load(os.path.join(basis_dir_path, "basis_slow.npz"), allow_pickle=False) as z:
+        V, ridge = np.asarray(z["proj"], np.float64), float(json.loads(str(z["meta_json"]))["ridge"])
+    with np.load(os.path.join(basis_dir_path, "basis_pca.npz"), allow_pickle=False) as z:
+        P = np.asarray(z["proj"], np.float64)
+    with np.load(os.path.join(basis_dir_path, "fit_stats.npz")) as z:
+        C = np.asarray(z["C"], np.float64)
+    k, I = V.shape[1], np.eye(V.shape[1])
+    cs, cp = V.T @ C @ V, P.T @ C @ P
+    vbv = np.abs(V.T @ (C + ridge * np.eye(C.shape[0])) @ V - I).max()
+    via_cov = np.abs(cs - (I - ridge * (V.T @ V))).max()
+    dev = np.abs(np.diag(cs) - 1.0)
+    return {"tol": COV_TOL, "ridge": ridge, "k": int(k), "slow_identity_max_dev": float(max(vbv, via_cov)), "slow_identity_vbv_max_dev": float(vbv), "slow_identity_via_cov_max_dev": float(via_cov),
+            "slow_identity_pass": bool(max(vbv, via_cov) <= COV_TOL), "pca_max_dev": float(np.abs(cp - I).max()), "pca_pass": bool(np.abs(cp - I).max() <= COV_TOL),
+            "slow_cov_u_dev_from_I_per_direction": [float(x) for x in dev], "slow_cov_u_dev_from_I_diag_max": float(dev.max()), "slow_cov_u_dev_from_I_offdiag_max": float(np.abs(cs - np.diag(np.diag(cs))).max()),
+            "note": "beside number: SLOW's cov(u) is I - ridge V^T V by the card's normalisation (AMEND_SLOWWM_2 B); it is reported, not pass-or-fail"}
+
+
+def _same_part(ev, tr, key):
+    return json.dumps(ev.get(key), sort_keys=True) == json.dumps(tr.get(key), sort_keys=True)
+
+
+def _body_problems(res):
+    """every refusal of a combined CHECK3 record except the consistency of its own overall `pass`"""
+    p = []
+    if res.get("schema") != CHECK3_SCHEMA:
+        p.append(f"check3 record schema {res.get('schema')!r} is not {CHECK3_SCHEMA!r} (one record per split, combined)")
     if res.get("SMOKE"):
         p.append("check3 is a SMOKE record")
+    sp, clips, union = res.get("splits") or {}, res.get("clips") or [], []
+    for s in CHECK3_SPLITS:
+        r = sp.get(s)
+        if not isinstance(r, dict):
+            p.append(f"check3 has no record for split {s}")
+            continue
+        union += list(r.get("clips") or [])
+        if not r.get("clips"):
+            p.append(f"check3 split {s} ran on no clips")
+        if r.get("pass") is not True:
+            p.append(f"check3 split {s}: the per-split record's pass is not true")
+        if r.get("SMOKE"):
+            p.append(f"check3 split {s} is a SMOKE record")
+        for k in KINDS:
+            i = (r.get("identity") or {}).get(k) or {}
+            if i.get("pass") is not True or i.get("wrong_kind_fails_identity") is not True:
+                p.append(f"check3 identity {k} on split {s}: {i}")
+    if len(set(union)) < N_CLIPS or len(set(clips)) < N_CLIPS:
+        p.append(f"check3 ran on fewer than {N_CLIPS} clips ({len(set(union))} distinct in the splits, {len(set(clips))} distinct in the record)")
+    elif len(union) != len(set(union)) or sorted(union) != sorted(clips):
+        p.append("check3 clips: the splits overlap or do not add up to the record's clip list")
     for k in KINDS:
         i = (res.get("identity") or {}).get(k) or {}
         if i.get("pass") is not True or i.get("wrong_kind_fails_identity") is not True:
-            p.append(f"check3 identity {k}: {i}")
-    if len(res.get("clips") or []) < 8:
-        p.append("check3 ran on fewer than 8 clips")
+            p.append(f"check3 identity {k} (combined): {i}")
+    c = res.get("cov_identity")
+    if not isinstance(c, dict):
+        p.append("check3 has no cov_identity block (SLOW's V^T (C + ridge I) V = I and PCA-B's cov(u) = I)")
+    else:
+        if not num_ok(c.get("slow_identity_max_dev"), COV_TOL):
+            p.append(f"check3 SLOW cov identity V^T (C + ridge I) V = I: max deviation {c.get('slow_identity_max_dev')!r} > {COV_TOL}")
+        if not num_ok(c.get("pca_max_dev"), COV_TOL):
+            p.append(f"check3 PCA-B cov(u) = I: max deviation {c.get('pca_max_dev')!r} > {COV_TOL}")
+        if c.get("slow_identity_pass") is not True or c.get("pca_pass") is not True:
+            p.append(f"check3 cov flags: slow_identity_pass={c.get('slow_identity_pass')!r} pca_pass={c.get('pca_pass')!r}")
+        d = c.get("slow_cov_u_dev_from_I_per_direction")
+        if not (isinstance(d, list) and d and all(num_ok(x, 1e9) for x in d)):
+            p.append("check3 lacks SLOW's per-direction deviation of cov(u) from I (beside number)")
+    if not (isinstance(res.get("slow_vs_pca"), dict) and res["slow_vs_pca"].get("pass") is True):
+        p.append("check3 SLOW-vs-PCA autocorrelation comparison did not pass")
+    if not (isinstance(res.get("shuffled_time_basis"), dict) and res["shuffled_time_basis"].get("pass") is False):
+        p.append("check3 shuffled-time basis did not fail as planted")
     return p
+
+
+def check3_problems(res):
+    if not isinstance(res, dict):
+        return ["CHECK3.json unreadable"]
+    p = _body_problems(res)
+    if res.get("pass") is not True:
+        p.append("check3 pass is not true (identity on 8 clips, cov identities, SLOW-vs-PCA autocorrelation, or the shuffled-time basis did not fail as planted)")
+    elif p:
+        p.append("check3 overall pass is true while a check above fails: the record is refused")
+    return p
+
+
+def build_check3(ev, tr, cov):
+    """combine the two slow_basis.py check3 records (split eval, split train) and the cov identity block into the ONE CHECK3 record; its `pass` is derived here, from the same predicate the checker re-applies"""
+    sp = {"eval": ev, "train": tr}
+    clips = [c for s in CHECK3_SPLITS for c in (sp[s].get("clips") or [])]
+    res = {"schema": CHECK3_SCHEMA, "tol_identity": ev.get("tol_identity"), "tol_cov": COV_TOL, "SMOKE": bool(ev.get("SMOKE") or tr.get("SMOKE")), "clips": clips, "splits": {s: {k: v for k, v in sp[s].items()} for s in CHECK3_SPLITS},
+           "identity": {}, "cov_identity": cov, "slow_vs_pca": ev.get("slow_vs_pca"), "shuffled_time_basis": ev.get("shuffled_time_basis"), "cov_u_fit_frames_raw": ev.get("cov_u_fit_frames"),
+           "pass_cov_slow_card_tolerance_raw": ev.get("pass_cov_slow_card_tolerance")}
+    for k in KINDS:
+        ii = [(sp[s].get("identity") or {}).get(k) or {} for s in CHECK3_SPLITS]
+        res["identity"][k] = {"pass": all(i.get("pass") is True for i in ii), "wrong_kind_fails_identity": all(i.get("wrong_kind_fails_identity") is True for i in ii),
+                              "max_abs_diff": max((i.get("max_abs_diff", float("inf")) for i in ii), default=float("inf")), "wrong_kind_basis_max_abs_diff": min((i.get("wrong_kind_basis_max_abs_diff", 0.0) for i in ii), default=0.0)}
+    res["pass"] = True
+    body = _body_problems(res)
+    if not _same_part(ev, tr, "slow_vs_pca") or not _same_part(ev, tr, "shuffled_time_basis"):
+        body.append("the eval and train records disagree on the basis-level comparisons")
+    res["pass"] = not body
+    if body:
+        res["refusals"] = body[:20]
+    return res
 
 
 def fit_problems(rec):
@@ -630,15 +733,19 @@ def cmd_basis(gid):
         for split in ("train", "eval"):
             steps.append((f"cache-{k}-{split}", [sb, "cache", "--root", root, "--split", split, "--tracks", tracks, "--basis", os.path.join(fit, f"basis_{k}.npz"), "--out", zb, "--spool", spool, "--commit", commit()]))
     c3 = os.path.join(basis_dir(), "CHECK3.json")
-    steps.append(("check3", [sb, "check3", "--root", root, "--split", "eval", "--tracks", tracks, "--basis-dir", fit, "--cache-dir", zb, "--clips-file", os.path.join(cc, "clips8.json"), "--out-json", c3]))
+    c3s = {s_: os.path.join(basis_dir(), f"CHECK3.{s_}.json") for s_ in CHECK3_SPLITS}
+    for s_ in CHECK3_SPLITS:                    # AMENDMENT 2 A: one check3 per split of clips8.json (each against that split's cache), combined below
+        steps.append((f"check3-{s_}", [sb, "check3", "--root", root, "--split", s_, "--tracks", tracks, "--basis-dir", fit, "--cache-dir", zb, "--clips-file", os.path.join(cc, "clips8.json"), "--out-json", c3s[s_]]))
     for name, args in steps:
         rc = run_py(args, lg)
         if rc != 0:
             return basis_fail(gid, f"slow_basis.py {name} exited rc={rc} (log {lg})")
     try:
-        res, rec = json.load(open(c3, encoding="utf-8")), json.load(open(os.path.join(fit, "FIT_RECORD.json"), encoding="utf-8"))
-    except (OSError, ValueError):
-        return basis_fail(gid, "check3 / fit record not written")
+        parts, rec = {s_: json.load(open(c3s[s_], encoding="utf-8")) for s_ in CHECK3_SPLITS}, json.load(open(os.path.join(fit, "FIT_RECORD.json"), encoding="utf-8"))
+        res = build_check3(parts["eval"], parts["train"], cov_identity(fit))
+        write_text(c3, json.dumps(res, indent=1))
+    except (OSError, ValueError, KeyError, ImportError) as e:
+        return basis_fail(gid, f"check3 / fit record not written or not combinable ({type(e).__name__}: {str(e)[:120]})")
     bad = check3_problems(res) + fit_problems(rec)
     if bad:
         return basis_fail(gid, "check3-refused: " + " | ".join(bad)[:800])

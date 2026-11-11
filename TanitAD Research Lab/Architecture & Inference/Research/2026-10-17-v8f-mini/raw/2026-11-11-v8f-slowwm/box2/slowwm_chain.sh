@@ -12,7 +12,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; HERE="$(cygpath -m "$HERE"
 export SLOWWM_STATE="${SLOWWM_STATE:-C:/Users/Admin/slowwm_state}"; STATE="$SLOWWM_STATE"
 STAGES_DIR="${SLOWWM_STAGES:-$HERE/stages}"; PYV="${SLOWWM_PY:-C:/Users/Admin/venvs/tanitad/Scripts/python.exe}"
 BUSY_DEV="${SLOWWM_BUSY_DEV:-C:/Users/Admin/box2_ship/BOX2_BUSY.txt}"; ASIDE_DEV="${SLOWWM_ASIDE_DEV:-C:/Users/Admin/box2_ship/busy_aside}"     # the SAME busy marker the other chains claim: the chains exclude each other
-PRED_STATE_DEV="${SLOWWM_PRED_STATE:-C:/Users/Admin/obd_seed3_state}"                                                                      # where the OBD seed-3 chain writes DONE.txt / STOP.txt (read only here)
+PRED_STATE_DEV="${SLOWWM_PRED_STATE:-C:/Users/Admin/obd_seed3_state}"                                                                      # where the predecessor chain writes DONE.txt / STOP.txt (read only here)
+PRED_DONE_PREFIX="${SLOWWM_PRED_DONE_PREFIX:-ZZ OBD3-DONE}"                                                                                 # first bytes of the predecessor's DONE.txt (STOPBAL second dose: ZZ STOPBAL2-DONE)
 log() { echo "[$(date '+%F %T')] $*" | tee -a "$STATE/chain.log"; }
 mkdir -p "$STATE/done" "$ASIDE_DEV" || exit 2
 refuse_early() { echo "ZZ SLOWWM-STOP start $1 rc=$2" > "$STATE/STOP.txt"; echo "REFUSED: $1" >&2; exit "$2"; }
@@ -33,21 +34,22 @@ for f in "$HERE/../../slowwm/slow_basis.py" "$HERE/../../ladder/clips8.json"; do
 done
 RUN_ORDER="$("$PYV" -I -c "import sys; sys.path.insert(0, sys.argv[1]); import slowwm_check as C; print(' '.join(C.RUN_ORDER))" "$HERE")" || refuse_early "package-incomplete (the checker does not import)" 8
 # ---- wait for the predecessor (the OBD seed-3 chain) to end, and for nothing to hold box 2.
-#   ended = DONE.txt (first bytes ZZ OBD3-DONE), or a non-empty STOP.txt whose head (the text before " :: ") does NOT end in rc=12. A STOP with rc=12 (busy / GPU) means the predecessor never ran its stage: it may be resumed, so this chain keeps waiting.
+#   (the predecessor is SLOWWM_PRED_STATE + SLOWWM_PRED_DONE_PREFIX; defaults: the OBD seed-3 chain, ZZ OBD3-DONE; for the STOPBAL second dose: C:/Users/Admin/stopbal_dose2_state and "ZZ STOPBAL2-DONE")
+#   ended = DONE.txt (first bytes = the DONE prefix), or a non-empty STOP.txt whose head (the text before " :: ") does NOT end in rc=12. A STOP with rc=12 (busy / GPU) means the predecessor never ran its stage: it may be resumed, so this chain keeps waiting.
 pred_state() {   # prints DONE | STOP | STOP-BUSY | RUNNING
   local f="$PRED_STATE_DEV/STOP.txt" head1
   if [ -s "$f" ]; then
     head1="$(head -n 1 "$f" | sed 's/ :: .*//')"
     if printf '%s' "$head1" | grep -Eq ' rc=12 *$'; then echo STOP-BUSY; else echo STOP; fi; return
   fi
-  if [ -s "$PRED_STATE_DEV/DONE.txt" ] && head -c 40 "$PRED_STATE_DEV/DONE.txt" | grep -q '^ZZ OBD3-DONE'; then echo DONE; return; fi
+  if [ -s "$PRED_STATE_DEV/DONE.txt" ] && [ "$(head -c "${#PRED_DONE_PREFIX}" "$PRED_STATE_DEV/DONE.txt")" = "$PRED_DONE_PREFIX" ]; then echo DONE; return; fi
   echo RUNNING
 }
 n=0; while :; do
   ps_="$(pred_state)"
-  if { [ "$ps_" = DONE ] || [ "$ps_" = STOP ]; } && [ ! -e "$BUSY_DEV" ]; then log "the OBD seed-3 chain ended ($ps_)"; break; fi
-  [ "$n" -lt "${SLOWWM_WAIT_POLLS:-1152}" ] || refuse_early "predecessor-not-ended (no OBD3 DONE and no non-busy OBD3 STOP in $PRED_STATE_DEV, or $BUSY_DEV exists, after $n polls; last state $ps_)" 12
-  n=$((n+1)); log "waiting for the OBD seed-3 chain to end (poll $n, state $ps_)"; sleep "${SLOWWM_WAIT_POLL_S:-300}"
+  if { [ "$ps_" = DONE ] || [ "$ps_" = STOP ]; } && [ ! -e "$BUSY_DEV" ]; then log "the predecessor chain ended ($ps_)"; break; fi
+  [ "$n" -lt "${SLOWWM_WAIT_POLLS:-1152}" ] || refuse_early "predecessor-not-ended (no predecessor DONE and no non-busy predecessor STOP in $PRED_STATE_DEV, or $BUSY_DEV exists, after $n polls; last state $ps_)" 12
+  n=$((n+1)); log "waiting for the predecessor chain to end (poll $n, state $ps_)"; sleep "${SLOWWM_WAIT_POLL_S:-300}"
 done
 if ! ( set -o noclobber; echo "slowwm chain $$ $(date '+%F %T')" > "$BUSY_DEV" ) 2>/dev/null; then echo "REFUSED: $BUSY_DEV exists (box 2 is busy)" >&2; exit 12; fi
 OWN_MARK="$(cat "$BUSY_DEV")"
@@ -67,9 +69,12 @@ map_rc() {   # <stage> <rc>: a non-zero rc stops the chain, except an arm-specif
 }
 run_stage() {   # run_stage <name>: ship | basis | pilot
   local s="$1" rc
-  if [ -e "$STATE/done/$s.done" ]; then log "skip $s (done)"; return 0; fi
+  local ck; ck="$(sha256sum "$HERE/slowwm_check.py" | cut -d' ' -f1)"
+  # the ship stage puts the checker on box 2: a done marker written for another checker (or by an older chain, which wrote none) does not count, so an amended package is shipped again before the basis stage re-hashes it there. Nothing is deleted: the marker is rewritten.
+  if [ -e "$STATE/done/$s.done" ] && { [ "$s" != ship ] || grep -q "checker=$ck" "$STATE/done/$s.done"; }; then log "skip $s (done)"; return 0; fi
+  [ ! -e "$STATE/done/$s.done" ] || log "$s was done for another checker: shipping again"
   log "start $s"; dispatch "$s"; rc=$?
-  if [ "$rc" -eq 0 ]; then echo "$s $(date '+%F %T')" > "$STATE/done/$s.done"; log "done $s"; else map_rc "$s" "$rc"; fi
+  if [ "$rc" -eq 0 ]; then echo "$s $(date '+%F %T') checker=$ck" > "$STATE/done/$s.done"; log "done $s"; else map_rc "$s" "$rc"; fi
 }
 run_stage ship
 run_stage basis
