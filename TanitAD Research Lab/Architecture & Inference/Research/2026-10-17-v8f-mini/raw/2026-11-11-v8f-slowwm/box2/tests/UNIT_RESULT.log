@@ -1,0 +1,15 @@
+python -I tests/test_slowwm_check.py   (2026-11-11, dev box, Git bash, venv tanitad; cases: frozen argv pin, audit_line, builder guard, 16 gate mutations of levers.wm_basis_readback plus missing / wrong-kind / sha cases, check3 and fit records, permit 72 h, verify-basis)
+permit: projected 16.0 h <= 72 h
+permit: projected 72.0 h <= 72 h
+refused: projected 75.1 h > 72 h and no amendment file (the card sends this case to the PI)
+refused: PILOT.json is for commit bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb, not aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+refused: the amendment must contain 'pilot_sha256=...' and 'commit=aaaa...'
+permit: projected 75.1 h > 72 h, amendment binds this pilot and commit
+refused: the projection is not a number
+basis ok
+basis ok
+basis refused: BASIS.json is for commit 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+basis refused: counts {'slow/train': 1}, wanted {'slow/train': 4572, 'slow/eval': 141, 'pca/train': 4572, 'pca/eval': 141}
+basis refused: BASIS.json and FIT_RECORD.json carry different basis sha256; manifest pca/train does not carry the fitted pca basis sha256; manifest pca/eval does not carry the fitted pca basis sha256; slow and pca carry the same basis sha256
+basis refused: check3-json differs from the sha256 BASIS.json recorded
+UNIT ok=69 bad=0

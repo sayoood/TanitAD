@@ -27,7 +27,8 @@ Card: `PREREG_V8F_SLOWWM.md` (sha256 `7c2775e3…94ca`, frozen 13:02:01).
    * Writes `basis_slow.npz`, `basis_pca.npz`, `SPECTRA.json`, `FIT_RECORD.json`.
    * It streams float64 moments, so RAM is a few MB beyond one clip.
    * `--spool` keeps `nm` per clip as f32: 4,713 clips × T × 1024 × 4 B, ESTIMATED ~1.9 GB (from ~101 frames per clip). It saves a second feature read.
-2. `cache --root D:\tanitad\cache_full --split {train,eval} --tracks … --basis D:\tanitad\zbasis\fit\basis_{slow,pca}.npz --out D:\tanitad\zbasis\{slow,pca} --spool D:\tanitad\zbasis\spool --commit f7e790ab…`
+2. `cache --root D:\tanitad\cache_full --split {train,eval} --tracks … --basis D:\tanitad\zbasis\fit\basis_{slow,pca}.npz --out D:\tanitad\zbasis --spool D:\tanitad\zbasis\spool --commit f7e790ab…`
+   * `cache` appends `<kind>\<split>` itself, so `--out` is the root `D:\tanitad\zbasis`. Found by the chain builder; an earlier line here named `…\{slow,pca}`, which would double the kind directory.
    * Per clip it writes `zbasis` f32 [T,256], `ok`, `t_s`, `basis_sha`, plus `BASIS_MANIFEST.json` and `basis.npz`.
    * ESTIMATED 2 kinds × ~480 MB each, train plus eval (the token-mean cache is 478 MB per seed for the same clips, MEASURED) ≈ 1.0 GB.
 3. `check3` on the 8 clips of `theory/ladder/clips8.json`: control 3 on real frames. A failure stops the chain.
