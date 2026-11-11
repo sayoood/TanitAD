@@ -24,7 +24,9 @@ def has_layer(src: str) -> bool:
 
 
 def peel(src: str) -> str:
-    """undo the DIV edits (each `new` text must occur exactly once); a trainer without the layer is returned unchanged"""
+    """undo the DIV edits (each `new` text must occur exactly once); a trainer without the layer is returned unchanged.  The VDAC layer (refe/vdac_layer.py, PREREG_VDAC_P6) sits ON TOP of this one and is peeled first"""
+    import vdac_layer as VDAC
+    src = VDAC.peel(src)
     if not has_layer(src):
         return src
     for new, old in REVERSALS:

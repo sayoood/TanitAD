@@ -882,6 +882,9 @@ DVB_KINDS_SCORER = {
     "twin_speed_neutral": "built",
     # DIV (PREREG_DIV_P6 section 2): the data-split lever, default OFF (-1).  `built` = compared with the trainer's `split` block (scorer_dvb_rows), which split_training_index MEASURES on the index the run holds (every kept row re-hashed).
     "split_half": "built",
+    # VDAC (PREREG_VDAC_P6 section 7): the head's label exclusion, both default OFF, both `built` and observed iff --aux-drv-exclude-logs is named (scorer_dvb_rows): the data event's `aux_excl` block (the sha256 of the bytes the trainer READ,
+    # re-read through the train set's own lookup).  NOT `data`: that kind would make EVERY scorer profile list the flag in its data_flags (an older profile would turn RED); refe_vdac_p6 lists it, so its PASS token fingerprints the file.
+    "aux_drv_exclude_logs": "built", "aux_drv_exclude_sha256": "built",
     "navtest_logs": "consumed", "navtest_tokens": "consumed",       # SCORER1: check-only lists read by main(); refe_scorer1 binds their sha256 (scorer1_refusals) and asserts the data event's `navtest` block (data_expect)
     "out": "run", "eval_every": "run", "workers": "run",
     "dump_scores": "run",              # the per-proposal score .npz rl_val_eval.py reads; observational (bit-identical on/off, test_dump_scores.py)
@@ -914,12 +917,14 @@ SCORER_PAIR_DESTS = ("pair_w", "pair_dv", "pair_heads", "pair_nobalance_heads", 
 SCORER_TWIN_DESTS = ("twin_w", "twin_ade", "twin_topk", "twin_heads")          # S1Z: the L_twin levers, observed only when --twin-w > 0
 SPLIT_RULE_REGISTERED = "int(sha256(log_name utf-8).hexdigest(), 16) % 2"      # DIV (PREREG_DIV_P6 section 2): the gate's OWN statement of the split rule and of the floor, independent of the trainer's constants
 SPLIT_MIN_SETS_REGISTERED = 25000
+AUX_EXCL_DESTS = ("aux_drv_exclude_logs", "aux_drv_exclude_sha256")          # VDAC: observed only when --aux-drv-exclude-logs is named
 SCORER_AUX_DESTS = ("w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_shuffle_seed", "aux_drv_lr")          # the head's levers: observed only when --aux-drv is on
 # the preflight's gates (scorer_finetune.py `gates[...]`).  There is NO G6 -- the trainer numbers 1-5 and 7-11; test_launch_gate pins this table to the source.
 SCORER_GATES = {"G1": "trainable_is_exactly_the_scorer", "G2": "live", "G3": "copies_equal_model_at_step0", "G4": "identity_and_live",
                 "G5": "ckpt_roundtrip_planner_loader", "G7": "heldout_disjoint", "G8": "lane_labels_in_bank", "G9": "pdm_targets_in_bank",
                 "G10": "teacher_lane_in_bank", "G11": "epo_live_and_identity", "G12": "aux_drv_live_and_identity", "G13": "epo_con_live_and_identity",
-                "G14": "hn_live_and_identity", "G15": "ctx_cache_identity", "G16": "pair_live_balanced", "G18": "twin_live"}
+                "G14": "hn_live_and_identity", "G15": "ctx_cache_identity", "G16": "pair_live_balanced", "G18": "twin_live",
+                "G19": "vdac_head_disjoint_from_ego_command", "G20": "vdac_label_aligned_with_targets"}
 
 
 def judge_g12(g12, ns) -> list:
@@ -1422,6 +1427,8 @@ def scorer_required_gates(ns) -> list:
         req.append("G16")
     if getattr(ns, "twin_w", 0.0) and not getattr(ns, "pair_calibrate", False):         # S1Z: G18 iff --twin-w > 0 (scorer_finetune.py's own condition)
         req.append("G18")
+    if ns.aux_drv and getattr(ns, "aux_drv_exclude_logs", ""):        # VDAC (card section 7): G19 (head disjoint from ego / command) and G20 (label alignment) iff the exclusion lever is named
+        req += ["G19", "G20"]
     if getattr(ns, "hn_bank", ""):                                    # P6-HN-S: G14 iff --hn-bank, G15 iff --ctx-cache (scorer_finetune.py's own conditions)
         req.append("G14")
     if getattr(ns, "ctx_cache", ""):
@@ -1578,6 +1585,19 @@ def scorer_dvb_rows(ns, data: dict, profile=None) -> list:
                     add("twin_speed_neutral", True, blk.get("sn_band_filter"), "data event: twin.sn_band_filter (the speed band is built)")
                     add("twin_speed_neutral", True, blk.get("sn_balance"), "data event: twin.sn_balance (the F/S balancing is built; the NOSNBALANCE regression reads False)")
                     add("twin_speed_neutral", 20261107, blk.get("sn_seed"), "data event: twin.sn_seed (the registered balancing seed)")
+    excl_named = bool(getattr(ns, "aux_drv_exclude_logs", ""))          # VDAC: the `aux_excl` block exists iff --aux-drv-exclude-logs is named
+    if excl_named or "aux_excl" in data:
+        blk = data.get("aux_excl") if isinstance(data.get("aux_excl"), dict) else {}
+        add("aux_drv_exclude_logs", excl_named, "aux_excl" in data, "the data event carries an `aux_excl` block iff --aux-drv-exclude-logs is named")
+        if excl_named:
+            add("aux_drv_exclude_logs", _file_sha256(ns.aux_drv_exclude_logs) or "<the file --aux-drv-exclude-logs names is not readable>", blk.get("sha256"),
+                "data event: aux_excl.sha256 (the sha256 of the bytes the trainer READ) vs the sha256 of the file the argv names")
+            add("aux_drv_exclude_sha256", ns.aux_drv_exclude_sha256, blk.get("sha256"), "data event: aux_excl.sha256 vs the declared --aux-drv-exclude-sha256")
+            add("aux_drv_exclude_logs", 0, blk.get("reached_loss_rows"), "data event: aux_excl.reached_loss_rows (every training row of an excluded log re-read through the train set's own label lookup: none may carry a label; the NOFILTER regression reads > 0)")
+            add("aux_drv_exclude_logs", 0, blk.get("reached_loss_frames"), "data event: aux_excl.reached_loss_frames (labelled H48 frames that reached the loss)")
+            add("aux_drv_exclude_logs", True, isinstance(blk.get("excluded_labelled_frames"), int) and blk["excluded_labelled_frames"] > 0,
+                "data event: aux_excl.excluded_labelled_frames > 0 (the exclusion had labelled frames to remove)")
+            add("aux_drv_exclude_logs", True, blk.get("filter_equals_file") is True, "data event: aux_excl.filter_equals_file (the filter the train set holds is the file's logs, no more, no fewer)")
     split_named = getattr(ns, "split_half", -1) >= 0                    # DIV: the `split` block exists iff --split-half is 0 or 1
     if split_named or "split" in data:
         blk = data.get("split") if isinstance(data.get("split"), dict) else {}
@@ -1770,7 +1790,7 @@ def check_dvb_scorer(argv: list, pf, profile: dict, arm=None, rehearsal=False) -
         for r in rows:
             if not r["ok"]:
                 reasons.append(f"{r['flag']}: declared {r['declared']!r} != built {r['built']!r} ({r['how']})")
-        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS) and (bool(getattr(ns, "pair_w", 0.0)) or d not in SCORER_PAIR_DESTS) and (bool(getattr(ns, "twin_w", 0.0)) or d not in SCORER_TWIN_DESTS) and (bool(getattr(ns, "twin_speed_neutral", False)) or d != "twin_speed_neutral") and (getattr(ns, "split_half", -1) >= 0 or d != "split_half")}
+        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS) and (bool(getattr(ns, "pair_w", 0.0)) or d not in SCORER_PAIR_DESTS) and (bool(getattr(ns, "twin_w", 0.0)) or d not in SCORER_TWIN_DESTS) and (bool(getattr(ns, "twin_speed_neutral", False)) or d != "twin_speed_neutral") and (getattr(ns, "split_half", -1) >= 0 or d != "split_half") and (bool(getattr(ns, "aux_drv_exclude_logs", "")) or d not in AUX_EXCL_DESTS)}
         missing = sorted(expect - {r["dest"] for r in rows})
         det["built_without_observer"] = missing
         if missing:

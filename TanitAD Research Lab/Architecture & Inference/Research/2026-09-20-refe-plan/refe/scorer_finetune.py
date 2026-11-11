@@ -1046,20 +1046,68 @@ class IndexedSubset(Subset):
         return [self[i] for i in indices]
 
 
+VDAC_MUTATE_EGO_ENV = "REFE_AUX_MUTATE_EGO"                      # PREREG_VDAC_P6 card section 7 (G19): the head reads ego + command; the disjointness gradient probe must turn RED
+AUX_EXCL_MUTATE_ENV = "REFE_AUXEXCL_MUTATE_NOFILTER"          # PREREG_VDAC_P6 section 7: the deliberate regression -- the exclusion filter is REMOVED; the audit must see H48 labels reach the loss and the preflight must REFUSE
+
+
+def read_exclude_logs(path, declared_sha256):
+    """PREREG_VDAC_P6 section 7 (--aux-drv-exclude-logs): (sorted log names, sha256 of the BYTES read).  Refuses a file whose sha256 is not the declared one, an empty list and a repeated name."""
+    raw = open(path, "rb").read()
+    got = hashlib.sha256(raw).hexdigest()
+    if got != declared_sha256:
+        raise ValueError(f"{path}: sha256 {got} is not the declared {declared_sha256}")
+    names = [x.strip() for x in raw.decode("utf-8").splitlines() if x.strip()]
+    if not names or len(set(names)) != len(names):
+        raise ValueError(f"{path}: the list is empty or repeats a log ({len(names)} names, {len(set(names))} distinct)")
+    return sorted(names), got
+
+
+def aux_excl_audit(train_set, rows, idx, names, src_true):
+    """MEASURED on the lookup object the run holds, never echoed from the flag.  `names` = the file's logs; `train_set` = the AuxSubset the training DataLoader is built from (its label_at is the function
+    __getitem__ calls); `src_true` = the UNSHUFFLED store (is the frame labelled at all).  A row is `reached` when the training lookup returns valid for it."""
+    nm = frozenset(names)
+    pos = [k for k, i in enumerate(idx) if rows[i].get("log_name") in nm]
+    keys = {(rows[idx[k]].get("log_name", ""), rows[idx[k]].get("token", "")) for k in pos}
+    lab, val = src_true.labels(sorted(keys)) if keys else (None, torch.zeros(0, dtype=torch.bool))
+    reached = [k for k in pos if bool(train_set.label_at(k)[1])]
+    return {"logs": len(nm), "excluded_rows": len(pos), "excluded_frames": len(keys), "excluded_labelled_frames": int(val.sum()), "reached_loss_rows": len(reached),
+            "reached_loss_frames": len({(rows[idx[k]].get("log_name", ""), rows[idx[k]].get("token", "")) for k in reached}),
+            "filter_logs": len(getattr(train_set, "exclude", ())), "filter_equals_file": frozenset(getattr(train_set, "exclude", ())) == nm}
+
+
+def aux_excl_refusals(f):
+    """PREREG_VDAC_P6 section 7: no labelled H48 frame reaches the loss; the filter holds exactly the file's logs; and it had something to act on (an exclusion of nothing is not a test)"""
+    out = []
+    if f["reached_loss_rows"] != 0:
+        out.append(f"{f['reached_loss_rows']} training rows of the excluded (H48) logs still reach the head's loss with a label (the exclusion filter is missing or wrong)")
+    if not f["filter_equals_file"]:
+        out.append(f"the filter holds {f['filter_logs']} logs and they are not the file's {f['logs']}")
+    if f["excluded_labelled_frames"] <= 0:
+        out.append("0 labelled frames were excluded: the list names no log of this training index (a lever with nothing to act on)")
+    return out
+
+
 class AuxSubset(Subset):
     """The training Subset of an --aux-drv run: each sample also carries (label int8 [160, 128], valid bool) as its LAST TWO elements (after the row index when --epo is on).
     The lookup runs in the DataLoader WORKER (`AuxLabelSource` is picklable and keeps one shard per log), keyed by (log_name, token) ONLY -- never by `key(r)`, whose step and
     rank would split the goal twins and ranks of one frame across different labels (SPEC 3.1).  A key with no stored label reads zeros and valid False (exactly 0 loss)."""
 
-    def __init__(self, dataset, indices, src, with_rows):
+    def __init__(self, dataset, indices, src, with_rows, exclude=frozenset()):
         super().__init__(dataset, indices)
-        self.src, self.with_rows = src, bool(with_rows)
+        self.src, self.with_rows, self.exclude = src, bool(with_rows), frozenset(exclude)        # VDAC: `exclude` = logs whose labels read invalid (valid False = exactly 0 loss); empty = this class exactly
+
+    def label_at(self, idx):
+        """(label int8 [160, 128], valid bool) of the sample at `idx`: the lookup __getitem__ uses, without loading the images.  A log in `exclude` reads zeros and valid False."""
+        r = self.dataset.rows[int(self.indices[idx])]
+        if r.get("log_name", "") in self.exclude:
+            return torch.zeros(160, 128, dtype=torch.int8), torch.zeros((), dtype=torch.bool)
+        lab, valid = self.src.labels([(r.get("log_name", ""), r.get("token", ""))])
+        return lab[0], valid[0]
 
     def __getitem__(self, idx):
         i = int(self.indices[idx])
-        r = self.dataset.rows[i]
-        lab, valid = self.src.labels([(r.get("log_name", ""), r.get("token", ""))])
-        return tuple(self.dataset[i]) + ((i,) if self.with_rows else ()) + (lab[0], valid[0])
+        lab, valid = self.label_at(idx)
+        return tuple(self.dataset[i]) + ((i,) if self.with_rows else ()) + (lab, valid)
 
     def __getitems__(self, indices):                          # DataLoader's fetcher calls this and Subset's own version reaches past __getitem__
         return [self[i] for i in indices]
@@ -1070,7 +1118,7 @@ def make_train_set(ds, idx, epo):
     `ds.aux_src`) yields (label, valid) as its last two elements as well"""
     src = getattr(ds, "aux_src", None)
     if src is not None:
-        return AuxSubset(ds, idx, src, epo)
+        return AuxSubset(ds, idx, src, epo, getattr(ds, "aux_exclude", frozenset()))
     return IndexedSubset(ds, idx) if epo else Subset(ds, idx)
 
 
@@ -1118,6 +1166,23 @@ def aux_s1_refusals(a):
         bad.append("--aux-drv needs --aux-drv-lr > 0 NAMED: the head's learning rate is a pre-registered value, not scorer_finetune's --lr")
     if a.aux_drv_tap != "visual":
         bad.append("--aux-drv-tap scene is not built in scorer_finetune.py (this host captures visual_ctx only); the scene tap is S2's (train.py)")
+    return bad
+
+
+def aux_excl_cli_refusals(a):
+    """VDAC (--aux-drv-exclude-logs / --aux-drv-exclude-sha256): the pair is named together or not at all, needs the head, and the file must hash to the declared sha256 BEFORE anything starts"""
+    bad = []
+    if not a.aux_drv_exclude_logs and not a.aux_drv_exclude_sha256:
+        return bad
+    if not a.aux_drv:
+        bad.append("--aux-drv-exclude-logs / --aux-drv-exclude-sha256 are set but --aux-drv is not: the lever would silently do nothing")
+    if not (a.aux_drv_exclude_logs and a.aux_drv_exclude_sha256):
+        bad.append("--aux-drv-exclude-logs and --aux-drv-exclude-sha256 are named together (the declared sha256 is what the file must hash to)")
+        return bad
+    try:
+        read_exclude_logs(a.aux_drv_exclude_logs, a.aux_drv_exclude_sha256)
+    except (OSError, ValueError) as e_:
+        bad.append(f"--aux-drv-exclude-logs: {e_}")
     return bad
 
 
@@ -1627,6 +1692,9 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--twin-speed-neutral", action="store_true", help="S1ZSM (PREREG_S1ZSM_P6 section 1): the L_twin pairs are SPEED-NEUTRAL: a pair needs |v4_i - v4_j| / max(v0, 1) < 0.15 and the kept pairs are F/S balanced (seed 20261107).  DEFAULT OFF = S1Z exactly, so a launch argv must NAME it")
     ap.add_argument("--aux-drv-lr", type=float, default=None, help="the head's peak learning rate (its OWN AdamW; the scorer keeps --lr).  A pre-registered value, never tuned on "
                     "PDMS; None = no head optimiser, and naming it without --aux-drv is refused")
+    ap.add_argument("--aux-drv-exclude-logs", default="", help="VDAC (PREREG_VDAC_P6 section 7): a file of log names (one per line); every training row of a listed log gets valid = 0 on the head's label (exactly 0 loss), so the head never "
+                    "trains on it.  Needs --aux-drv and --aux-drv-exclude-sha256.  '' = OFF = this trainer exactly, so a VDAC launch argv must NAME it")
+    ap.add_argument("--aux-drv-exclude-sha256", default="", help="VDAC: the sha256 the --aux-drv-exclude-logs file must have (refused if it differs); '' = OFF")
     ap.add_argument("--split-half", type=int, default=-1, choices=(-1, 0, 1), help="DIV (PREREG_DIV_P6 section 2): train ONLY on the training sets whose LOG hashes to this half, h = int(sha256(log name), 16) % 2 (every set of a log follows its log); "
                     "the held-out monitor is unchanged.  A half below 25,000 sets is refused.  -1 = OFF = this trainer exactly, so a DV launch argv must NAME it")
     return ap
@@ -1638,8 +1706,8 @@ def main() -> int:
     bad_cli = epo_refusals(a, ap) + epo_con_refusals(a, ap)           # RL-S1: a command line that names EPO levers inconsistently never starts (SAFEOBJ: epo_con_refusals is epo_refusals' sibling)
     bad_cli = bad_cli + pair_refusals(a)                                 # SCORER1: --pair-* named inconsistently never starts
     bad_cli = bad_cli + twin_refusals(a)                                 # S1Z: --twin-* named inconsistently never starts
-    if bad_cli or AUX.aux_refusals(a) or aux_s1_refusals(a):
-        for msg in bad_cli + AUX.aux_refusals(a) + aux_s1_refusals(a):         # + the aux head's levers: named without --aux-drv, labels missing, shuffle with the feed on, no head LR ...
+    if bad_cli or AUX.aux_refusals(a) or aux_s1_refusals(a) or aux_excl_cli_refusals(a):
+        for msg in bad_cli + AUX.aux_refusals(a) + aux_s1_refusals(a) + aux_excl_cli_refusals(a):         # + the aux head's levers: named without --aux-drv, labels missing, shuffle with the feed on, no head LR ...
             print("REFUSED: " + msg)
         return 4
     bad_hn = hn_refusals(a, ap)                                         # P6-HN-S: --hn-bank / --ctx-cache levers named inconsistently never start
@@ -1745,6 +1813,25 @@ def main() -> int:
             for m_ in bad_split:
                 print("REFUSED: split: " + m_)
             return 4
+    aux_excl_info = h48x_idx = None
+    if a.aux_drv and a.aux_drv_exclude_logs:                 # VDAC (PREREG_VDAC_P6 section 7): the head never trains on the listed logs; the audit reads the SAME train-set object the DataLoader below is built from
+        excl_names, excl_sha = read_exclude_logs(a.aux_drv_exclude_logs, a.aux_drv_exclude_sha256)
+        ds.aux_exclude = frozenset() if os.environ.get(AUX_EXCL_MUTATE_ENV) == "1" else frozenset(excl_names)        # set AFTER ds_ho was copied: the held-out read is never excluded
+        aux_excl_info = {"sha256": excl_sha, **aux_excl_audit(make_train_set(ds, tr_idx, a.epo), ds.rows, tr_idx, excl_names, aux_src_eval)}
+        print("ZZAUXEXCL " + json.dumps(aux_excl_info), flush=True)
+        bad_excl = aux_excl_refusals(aux_excl_info)
+        if bad_excl:
+            for m_ in bad_excl:
+                print("REFUSED: aux-excl: " + m_)
+            return 4
+        _seen_h48 = set()
+        h48x_idx = []                                        # one row per frame of the excluded logs that this bank holds: the head's held-out forward (below) reads exactly these
+        for i_ in tr_idx:
+            r_ = ds.rows[i_]
+            k_ = (r_.get("log_name", ""), r_.get("token", ""))
+            if k_[0] in set(excl_names) and k_ not in _seen_h48:
+                _seen_h48.add(k_)
+                h48x_idx.append(i_)
     # ---------------- P6-HN-S (--hn-bank / --ctx-cache; default OFF = nothing below runs).  The bank and the cache are VERIFIED here, before the first step: a bank of another partition / label_version / fan
     # fingerprint / bytes, a bank with no hard negative, a cache of another trunk, or a scene the cache does not hold REFUSES (the join is strict; nothing is skipped or defaulted).
     hn_obj = cc_obj = trunk_fp = None
@@ -1865,6 +1952,8 @@ def main() -> int:
         if aux_src.shuffle_seed is not None:                 # the control's map must be a derangement of ALL the store's keys (SPEC 7)
             km = aux_src.key_map()
             info["aux_drv"].update({"shuffle_keys": len(km), "derangement_fixed_points": sum(1 for k_, v_ in km.items() if k_ == v_)})
+    if aux_excl_info is not None:                            # VDAC: the BUILT facts of the head's label exclusion (absent without --aux-drv-exclude-logs: every earlier data event is byte-identical)
+        info["aux_excl"] = aux_excl_info
     if hn_obj is not None:                                   # P6-HN-S: BUILT facts of the bank the run holds, for G-DVB (absent without --hn-bank: every pre-HN data event is byte-identical)
         info["hn"] = hn_obj.hn_block(HN_ARM)
     if cc_obj is not None:                                   # ... and of the cache (the trunk fingerprint is the CHECKPOINT's: CtxCache refused the load unless it equals the manifest's)
@@ -1892,6 +1981,8 @@ def main() -> int:
             if aux is not None:
                 # the head reads the SAME tensor the scoring decoder reads (visual_ctx).  REFE_AUX_MUTATE_TAP=1 is the deliberate regression for G12: the head reads a COPY.
                 actx = sctx.detach().clone() if os.environ.get("REFE_AUX_MUTATE_TAP") == "1" else sctx
+                if os.environ.get(VDAC_MUTATE_EGO_ENV) == "1":      # VDAC G19's deliberate regression: the model's ego token (ego + command) is routed INTO the head's context
+                    actx = actx + model.ego_enc(torch.cat([ego, model.cmd_embed(goal.to(ego.dtype))], -1)).unsqueeze(1).to(actx.dtype)
                 logit, sdf = aux.predict(actx)
                 cap["aux"] = (logit, sdf)
                 if cap.get("aux_buf") is not None:           # an --aux-drv evaluate() is collecting the held-out head outputs (run_evaluate)
@@ -2796,6 +2887,19 @@ def main() -> int:
                 aux_backward(dl.tail)                        # --aux-drv: the head's forward + backward are part of the measured step (and of gpu_mem_gb)
         torch.cuda.synchronize()
         sp = (time.time() - t0) / 3
+        if aux is not None and a.aux_drv_exclude_logs:       # VDAC (card section 7, launch blockers): G19 the head is disjoint from ego and command (autograd, on the real model); G20 the label is aligned with the rank-0 targets (>= 64 real frames, two mutants must fail)
+            import vdac_probes as VP
+
+            def _vdac_run(e_, g_):
+                b_ = list(batch)
+                b_[1], b_[2] = e_, g_
+                fwd(tuple(b_))
+                lg_, sd_ = cap["aux"]
+                with torch.autocast("cuda", dtype=torch.bfloat16):
+                    tr_, _sc = model(batch[0].to(dev), e_.to(dev), g_.to(dev), calib=batch[8] if batch[8].numel() else None)       # the control: the model's own trajectory DOES depend on ego and command
+                return lg_.float().sum() + sd_.float().sum(), tr_.float().sum()
+            gates["G19_vdac_head_disjoint_from_ego_command"] = VP.disjoint_probe(_vdac_run, batch[1], batch[2], mutate=[k_ for k_ in (VDAC_MUTATE_EGO_ENV,) if os.environ.get(k_) == "1"])
+            gates["G20_vdac_label_aligned_with_targets"] = VP.alignment_gate(ds.rows, tr_idx, aux_src_eval)
         ok = all(v["ok"] for v in gates.values())
         res = {"event": "preflight", "verdict": "PASS" if ok else "FAIL", "gates": gates,
                "s_per_microbatch": round(sp, 2), "est_hours_per_epoch": round(len(tr_idx) / a.batch * sp / 3600, 2),
@@ -2945,6 +3049,23 @@ def main() -> int:
     pA, pB = save_full("A", model), save_full("B", armB)
     if aux is not None:
         log({"event": "aux_saved", "path": save_aux(upd)})
+    if aux is not None and h48x_idx:                         # VDAC: the head's predictions on the frames it never trained on (the excluded logs in this bank), by the trainer's own fwd(), one row per frame
+        with torch.no_grad():
+            cap["aux_buf"] = []
+            try:
+                for hb in DataLoader(Subset(ds, h48x_idx), batch_size=16, shuffle=False, num_workers=2):
+                    fwd(hb)
+                buf_h = cap["aux_buf"]
+            finally:
+                cap["aux_buf"] = None
+        n_h = sum(int(x[0].shape[0]) for x in buf_h)
+        if n_h != len(h48x_idx):
+            raise RuntimeError(f"h48 forward: {n_h} head outputs for {len(h48x_idx)} frames")
+        rows_h = [ds.rows[i_] for i_ in h48x_idx]
+        np.savez(os.path.join(a.out, "head_pred_h48x.npz"), log=np.asarray([r_.get("log_name", "") for r_ in rows_h]), token=np.asarray([r_.get("token", "") for r_ in rows_h]),
+                 step=np.asarray([int(r_.get("step", 0)) for r_ in rows_h], np.int64), logit=torch.cat([x[0] for x in buf_h]).numpy().astype(np.float32),
+                 sdf_m=torch.cat([x[1] for x in buf_h]).numpy().astype(np.float32))
+        log({"event": "h48x_forward", "frames": n_h, "file": "head_pred_h48x.npz"})
     log({"event": "done", "updates": upd, "model_A": pA, "model_B": pB, "hours": (time.time() - t0) / 3600, **({"epo_con": dual.state_dict()} if dual.active else {}),
          **({"twin_share": {h_: {**d_, "share_with_pair": d_["sets_with_pair"] / max(d_["sets"], 1)} for h_, d_ in twin_run.items()}} if twin_run else {})})
     print("ZZSFT_DONE")

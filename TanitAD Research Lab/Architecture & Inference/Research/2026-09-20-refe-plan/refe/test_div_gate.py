@@ -367,7 +367,7 @@ TIP_FP = {"refe_p2": "627341286aea3506", "refe_p6": "80fa4d7ec757ad46", "refe_fi
           "refe_aux_s1c": "dcdf2dbd2a674f1c", "refe_s1zsm_p6": "86380fbb786daa75", "refe_rep_s1zsm_p6": "27fe236a2fd68ca4", "refe_dose_s1z_p6": "9085f9e5cf59c016"}      # MEASURED at the tip ee1ba225 (the 24 profiles before DIV)
 moved = [n for n, want in TIP_FP.items() if not fp(n).startswith(want)]
 assert not moved, f"existing profile fingerprints moved: {moved}"
-assert set(L.PROFILES) - set(TIP_FP) == {"refe_div_p6"} and len(L.PROFILES) == 25
+assert set(L.PROFILES) - set(TIP_FP) == {"refe_div_p6", "refe_vdac_p6"} and len(L.PROFILES) == 26          # + refe_vdac_p6 (PREREG_VDAC_P6)
 r = repr(sorted(PD.items()))
 assert fp("refe_div_p6") == fp("refe_div_p6") and "function" not in r and "0x" not in r and fp("refe_div_p6") != fp("refe_scorer1p6")
 base = L.PROFILES["refe_scorer1p6"]

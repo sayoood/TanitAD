@@ -887,6 +887,99 @@ PROFILES["refe_aux_s1c"] = {**PROFILES["refe_aux_s1"], "name": "refe_aux_s1c", "
                             "arm_recipe": AUXS1C_ARM_RECIPE, "must_name_flags": AUXS1C_MUST_NAME, "schedule_reach": True,
                             "required_flags": {**PROFILES["refe_aux_s1"]["required_flags"], "--max-updates": None}}
 
+# VDAC (PREREG_VDAC_P6, frozen 2026-11-11, sha256 5594c2ae...; A1 8f121bdf...; A2 c3d56358...; the H48 list = A3, sha256 below): the vision-built drivable-area heads on P6's trunk.  S1c's head recipe (frozen trunk, visual tap, depth 2, feed off, 10,000 updates x batch 8 x
+# accum 1) with --ckpt = P6's model_final.pt (sha256 968a469d...) and P6's own label layout (the SCORER1P6 argv, no lane flag), plus the head's label EXCLUSION of the 48 held-out logs of H48 (--aux-drv-exclude-logs / --aux-drv-exclude-sha256).  A NEW profile built as a
+# DEEP COPY of refe_aux_s1c: every existing profile and shared constant above is untouched (test_vdac_gate.py pins the older digests).  Arms: HA-s0 (seed 0), HA-s1 (seed 1), HA-SHUF (seed 0, --aux-drv-shuffle-seed 0 = the key map is a derangement of ALL store keys, 2,000 updates).
+# The argv of each arm is PINNED token for token (vdac_argv, built FROM scorer1p6_argv("C0"): the parent's data paths, the navtest guard, no lane flag).  ONE flag the S1c recipe did not need is NAMED: --epochs 2.  P6's training bank holds 60,000 sets, so 10,000 updates x 8 = 80,000 draws
+# is 1.33 epochs and the parser default (--epochs 1.0) would end the run at 7,500 updates (scorer_finetune: total = min(ceil(sets / batch x epochs / accum), max_updates)); the profile's `schedule_reach` G-DVB row re-derives it.
+VDAC_ROOT = "/workspace/data/refe_vdac"
+VDAC_PKG = "/workspace/refe-plan-vdac"
+VDAC_CARD_SHA256 = "5594c2ae777a53ed4a8a873ca374c12943eadc74385cb07671c2ac90a3292ae4"          # PREREG_VDAC_P6.md as frozen 2026-11-11 (the chain refuses a card with other bytes)
+VDAC_A1_SHA256 = "8f121bdf9d6f19acec8927f12c50d3f7be2832c70c7f1fe40140d5eb8cc4ed70"
+VDAC_A2_SHA256 = "c3d563586be6479ea11455f92d7a5295c9e1658e2d7ba1cc77b27e87e5c8b417"
+VDAC_H48_PATH = VDAC_ROOT + "/h48_logs.txt"          # shipped from the package (splits/h48_logs.txt); the chain copies it here and re-hashes it
+VDAC_H48_SHA256 = "2ae13935a3ead7f30b015f33b0bebc7a35e70eb2a4194161f8cbb66ac89b8da8"          # h48_logs.txt: 48 logs, LF, sorted (build_h48.py); written into amendment A3 before S1 trains
+VDAC_LABELS = "/workspace/data/aux_drivable/label_store"
+VDAC_ARMS = {"HA-s0": {"seed": 0, "updates": 10000, "eval_every": 5000, "shuffle": None, "class": "H1ha"},
+             "HA-s1": {"seed": 1, "updates": 10000, "eval_every": 5000, "shuffle": None, "class": "H1ha"},
+             "HA-SHUF": {"seed": 0, "updates": 2000, "eval_every": 1000, "shuffle": 0, "class": "H1shuf"}}
+VDAC_ARM_CLASS = {a: sp["class"] for a, sp in VDAC_ARMS.items()}
+VDAC_ARM_SEED = {a: sp["seed"] for a, sp in VDAC_ARMS.items()}
+VDAC_ARM_RECIPE = {c: {**AUXS1_RECIPE, "max_updates": next(sp["updates"] for sp in VDAC_ARMS.values() if sp["class"] == c), "batch": 8, "accum": 1,
+                       "eval_every": next(sp["eval_every"] for sp in VDAC_ARMS.values() if sp["class"] == c)} for c in ("H1ha", "H1shuf")}
+VDAC_EPOCHS = 2
+VDAC_FORBIDDEN = tuple(f for f in AUXS1_FORBIDDEN if f != "--aux-drv-shuffle-seed") + ("--lane-head", "--lane-weight", "--teacher-lane-train", "--teacher-lane-heldout", "--lane-labels-heldout", "--pair-w", "--pair-heads",
+                                                                                      "--pair-calibrate", "--twin-w", "--split-half", "--aux-drv-feed")
+VDAC_DATA = tuple(dict.fromkeys(SCORER1_DATA + ("--aux-drv-labels", "--aux-drv-exclude-logs")))
+VDAC_SUITE = AUXS1C_SUITE + [{"script": "test_vdac_gate.py", "token": "ZZTEST_PASS"}]
+VDAC_DROP_FLAGS = ("--max-updates", "--eval-every", "--seed", "--out")          # the parent's (C0) flags this arm replaces
+
+
+def vdac_argv(arm: str) -> list:
+    """The pod script's argv for a VDAC arm as it expands on the pod (`MODE=argv ARM=<arm> bash refe/vdac_pod.sh`; test_vdac_gate.py diffs the two copies): C0's argv (scorer1p6_argv) with its budget / seed / --out replaced by the arm's, then the head."""
+    if arm not in VDAC_ARMS:
+        raise KeyError(f"{arm!r} is not a VDAC arm (one of {sorted(VDAC_ARMS)})")
+    sp = VDAC_ARMS[arm]
+    out = VDAC_ROOT + "/" + arm.lower()
+    toks = [t for f, v in GT.flag_pairs(list(scorer1p6_argv("C0"))) if f not in VDAC_DROP_FLAGS for t in [f] + list(v)]
+    toks += ["--max-updates", str(sp["updates"]), "--batch", "8", "--accum", "1", "--epochs", str(VDAC_EPOCHS), "--eval-every", str(sp["eval_every"]), "--seed", str(sp["seed"]),
+             "--aux-drv", "--w-aux-drv", "0.1", "--aux-drv-lr", "0.0002", "--aux-drv-tap", "visual", "--aux-drv-depth", "2", "--aux-drv-labels", VDAC_LABELS,
+             "--aux-drv-exclude-logs", VDAC_H48_PATH, "--aux-drv-exclude-sha256", VDAC_H48_SHA256]
+    if sp["shuffle"] is not None:
+        toks += ["--aux-drv-shuffle-seed", str(sp["shuffle"])]
+    return toks + ["--dump-scores", out + "/scores", "--out", out]
+
+
+def vdac_arm_refusals(prof: dict, argv: list) -> list:
+    """PREREG_VDAC_P6 section 7: the argv IS the declared arm's pin (every flag once, no other flag); the checkpoint, the navtest lists and the H48 list are bound by sha256 of their BYTES; no data path names navtest."""
+    import gate_checks as C
+    name, out = prof["name"], []
+    arms = prof["vdac_arms"]
+    arm = prof.get("declared_arm")
+    if arm is None:
+        outs = GT.flag_values(argv, "--out") or []
+        arm = next((a for a in arms if outs == [VDAC_ROOT + "/" + a.lower()]), None)
+    if arm not in arms:
+        return [f"{name}: the arm is not named and --out is none of {[VDAC_ROOT + '/' + a.lower() for a in arms]}"]
+    out += pinned_argv_refusals({**prof, "pinned_argv": tuple(vdac_argv(arm))}, argv)
+    sp = arms[arm]
+    sd = GT.flag_values(argv, "--seed") or []
+    if sd != [str(sp["seed"])]:
+        out.append(f"{name} ({arm}) requires --seed {sp['seed']}; the argv has --seed {' '.join(sd)}")
+    if (sp["shuffle"] is None) != ("--aux-drv-shuffle-seed" not in argv):
+        why_ = "is the control arm's lever and is missing" if sp["shuffle"] is not None else "belongs to HA-SHUF only"
+        out.append(f"{name} ({arm}): --aux-drv-shuffle-seed {why_}")
+    pins = [("--ckpt", prof["ckpt_sha256"], "P6's model_final.pt"), ("--aux-drv-exclude-logs", VDAC_H48_SHA256, "the H48 list (amendment A3)")] + [(f, w, "the registered navtest list") for f, w in prof["navtest_sha256"].items()]
+    for f, want, what in pins:
+        v = GT.flag_values(argv, f) or []
+        if len(v) != 1:
+            out.append(f"{name} requires {f} named once ({what})")
+            continue
+        try:
+            got = sha256_of_file(v[0])
+        except OSError as e:
+            out.append(f"{name}: cannot bind {f} {v[0]} by sha256 ({type(e).__name__}): {what} would be unverified")
+            continue
+        if got != want:
+            out.append(f"{name}: {f} {v[0]} has sha256 {got[:16]}..., {what} is {want[:16]}...")
+    for f in prof.get("data_flags", ()):
+        if f in ("--navtest-logs", "--navtest-tokens"):
+            continue
+        for v in GT.flag_values(argv, f) or []:
+            if "navtest" in str(v).lower():
+                out.append(f"{name}: NAVTEST IS NEVER TRAINING DATA: {f} {v} names navtest")
+    ns, err = C.parse_scorer_argv(__import__("scorer_finetune").build_parser(), argv)
+    if not err and (ns.aux_drv_exclude_sha256 != VDAC_H48_SHA256 or ns.epochs != VDAC_EPOCHS):
+        out.append(f"{name} ({arm}): the argv resolves to --aux-drv-exclude-sha256 {ns.aux_drv_exclude_sha256[:16]}... / --epochs {ns.epochs}")
+    return out
+
+
+PROFILES["refe_vdac_p6"] = {**copy.deepcopy(PROFILES["refe_aux_s1c"]), "name": "refe_vdac_p6", "suite": VDAC_SUITE, "arm_class": VDAC_ARM_CLASS, "arm_seeds": VDAC_ARM_SEED, "arm_recipe": VDAC_ARM_RECIPE, "vdac_arms": copy.deepcopy(VDAC_ARMS),
+                            "forbidden_flags": VDAC_FORBIDDEN, "data_flags": VDAC_DATA, "root": VDAC_ROOT, "ckpt_sha256": SCORER1P6_CKPT_SHA256, "navtest_sha256": SCORER1_NAVTEST_SHA256,
+                            "data_expect": dict(PROFILES["refe_scorer1p6"]["data_expect"]), "data_expect_min": {}, "data_expect_updates": None,
+                            "required_flags": {**{k: v for k, v in PROFILES["refe_aux_s1c"]["required_flags"].items() if k not in ("--lane-head", "--teacher-lane-train", "--teacher-lane-heldout")},
+                                               "--aux-drv-exclude-logs": None, "--aux-drv-exclude-sha256": VDAC_H48_SHA256, "--epochs": str(VDAC_EPOCHS), "--ckpt": None, "--navtest-logs": None, "--navtest-tokens": None}}
+
 
 def parse_args_string(s: str) -> list:
     return GT.argv_from_string(s)
@@ -984,6 +1077,8 @@ def profile_refusals(prof: dict, argv: list) -> list:
         rs, extra = auxs1_refusals(prof, argv, T, parser)
         out += rs
         terms += extra
+    if prof.get("vdac_arms"):                                                  # PREREG_VDAC_P6: the argv is the arm's pin, the checkpoint / navtest lists / H48 list are bound by sha256
+        out += vdac_arm_refusals(prof, argv)
     if prof.get("hn_rules"):                                                # P6-HN-S: the screen's argv pin on top of the RL-S1 rules above
         rs, extra = hnscreen_refusals(prof, argv, T, parser)
         out += rs
@@ -1745,6 +1840,11 @@ def consume_scorer_preflight(path, argv, prof, arm=None, rehearsal=False) -> dic
     g12 = next((v for k, v in gates.items() if prefix[k] == "G12"), None)
     if g12 is not None:                                      # G12 (--aux-drv) is re-judged from its raw fields too: its own `ok` is a claim, the fields are the evidence
         reasons += C.judge_g12(g12, ns)
+    for gx_, judge_ in (("G19", "judge_g19"), ("G20", "judge_g20")):
+        gv_ = next((v for k, v in gates.items() if prefix[k] == gx_), None)
+        if gv_ is not None:                                  # VDAC launch blockers (card section 7): re-judged from the raw fields (refe/vdac_probes.py), never from the gate's own `ok`
+            import vdac_probes as VP
+            reasons += getattr(VP, judge_)(gv_)
     g16 = next((v for k, v in gates.items() if prefix[k] == "G16"), None)
     if g16 is not None:                                      # G16 (--pair-w): SCORER1, re-judged from its raw fields
         reasons += C.judge_g16(g16, ns)
@@ -1885,7 +1985,7 @@ def _profile_for(a, minting: bool) -> dict:
     arms = {"rls1": prof.get("arm_class", RLS1_ARM_CLASS), "auxs1": prof.get("arm_class", AUXS1_ARM_CLASS)}.get(prof.get("arm_rules"), {})
     if arm_name:
         if not prof.get("arm_rules"):
-            raise SystemExit(f"--arm-name is only meaningful for a profile with arm rules (refe_rls1, refe_rls1b, refe_rls1c, refe_rls1d, refe_rls1e, refe_aux_s1, refe_aux_s1c, refe_hnscreen), not {a.profile}")
+            raise SystemExit(f"--arm-name is only meaningful for a profile with arm rules (refe_rls1, refe_rls1b, refe_rls1c, refe_rls1d, refe_rls1e, refe_aux_s1, refe_aux_s1c, refe_vdac_p6, refe_hnscreen), not {a.profile}")
         if arm_name in prof.get("arms_need_pi", {}):
             raise SystemExit(f"REFUSED: {prof['arms_need_pi'][arm_name]}")
         if arm_name not in arms:
@@ -2089,8 +2189,8 @@ def main(argv=None) -> int:
         p.add_argument("--chain-id", help="the chain id the anchor must belong to; anchor-bound mode only")
         p.add_argument("--chain-start-ns", type=int, help="time.time_ns() the chain began at: an anchor minted before it is refused; anchor-bound mode only")
         if name in ("run", "refusals"):
-            p.add_argument("--arm-name", choices=sorted(set(RLS1_ARM_CLASS) | set(RLS1D_ARM_CLASS) | set(RLS1B_ARM_CLASS) | set(RLS1B_NEEDS_PI) | set(RLS1C_ARM_CLASS)) + sorted(AUXS1_ARM_CLASS) + sorted(AUXS1C_ARM_CLASS) + sorted(set(HNSCREEN_ARM_CLASS) | set(HNSCREEN_NEEDS_PI)) + sorted(set(RLS1E_ARM_CLASS) - set(RLS1D_ARM_CLASS)),
-                           help="refe_rls1: the arm this argv is for (C0 C1 R0 R1 R2); refe_rls1b: C1 R0b R1b (R2b needs a PI decision); refe_rls1c: R0c; refe_rls1d: R0d R1d R1o; refe_rls1e: R0e-id R0e-pick R1e-pick R1o; refe_aux_s1: N-s0..H2-s2; refe_aux_s1c: H1u10k-s0 | H1u2k-s0; refe_hnscreen: S0 S1 S2 (S3 S4 need rule E); "
+            p.add_argument("--arm-name", choices=sorted(set(RLS1_ARM_CLASS) | set(RLS1D_ARM_CLASS) | set(RLS1B_ARM_CLASS) | set(RLS1B_NEEDS_PI) | set(RLS1C_ARM_CLASS)) + sorted(AUXS1_ARM_CLASS) + sorted(AUXS1C_ARM_CLASS) + sorted(VDAC_ARM_CLASS) + sorted(set(HNSCREEN_ARM_CLASS) | set(HNSCREEN_NEEDS_PI)) + sorted(set(RLS1E_ARM_CLASS) - set(RLS1D_ARM_CLASS)),
+                           help="refe_rls1: the arm this argv is for (C0 C1 R0 R1 R2); refe_rls1b: C1 R0b R1b (R2b needs a PI decision); refe_rls1c: R0c; refe_rls1d: R0d R1d R1o; refe_rls1e: R0e-id R0e-pick R1e-pick R1o; refe_aux_s1: N-s0..H2-s2; refe_aux_s1c: H1u10k-s0 | H1u2k-s0; refe_vdac_p6: HA-s0 | HA-s1 | HA-SHUF; refe_hnscreen: S0 S1 S2 (S3 S4 need rule E); "
                                 "REQUIRED to mint, optional for `refusals` (undeclared = read off the argv)")
         if name == "run":
             p.add_argument("--out-dir", required=True)
