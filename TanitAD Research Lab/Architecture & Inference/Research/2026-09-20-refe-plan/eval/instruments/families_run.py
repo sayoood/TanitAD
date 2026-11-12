@@ -93,6 +93,9 @@ def run(rows, arm: str, label: str, repo: str, n_boot: int, per_window: bool = F
            "estimator": "log-cluster bootstrap (taniteval four_families, eid = log_name), B=%d" % n_boot,
            "instrument": "taniteval/adapters/navsim.py scenes_to_win + four_families_block (REUSED) + transp_score.lead_track (NEW)",
            "frames": {}, "strategic": STRATEGIC_PAUSED}
+    if per_window:    # fam_ci pairs by IDENTITY: array order of every per-window array below (default-off: default JSON is unchanged)
+        out["tokens"], out["logs"] = list(toks), list(logs)
+        out["per_window_schema"] = "taniteval.per_window/1: blocks carry `_per_window`; arrays are in `tokens` order (read_rows sorts by token)"
     lead = lead_block(rows)
     out["lead_states"] = {s: lead["state"].count(s) for s in sorted(set(lead["state"]))}
     for name, key, role in FRAMES:
@@ -115,7 +118,7 @@ def main() -> int:
     ap.add_argument("--label", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--n-boot", type=int, default=2000)
-    ap.add_argument("--per-window", action="store_true", help="attach per-window arrays (for a paired C1-C0 bootstrap)")
+    ap.add_argument("--per-window", action="store_true", help="DEFAULT OFF. attach per-window arrays for EVERY longitudinal/lateral/tactical metric under each frame block `_per_window`, plus top-level `tokens`/`logs` (array order); needed by fam_ci.py for a paired CI")
     ap.add_argument("--tanitad-repo", default=DEFAULT_REPO)
     a = ap.parse_args()
     sys.stdout.reconfigure(encoding="utf-8")

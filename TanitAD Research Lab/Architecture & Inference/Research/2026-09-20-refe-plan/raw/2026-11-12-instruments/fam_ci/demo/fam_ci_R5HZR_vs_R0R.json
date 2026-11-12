@@ -1,5 +1,5 @@
 {
- "estimator": "paired log-cluster bootstrap: clusters = logs, resample logs with replacement, statistic = mean over the drawn tokens of B-A; B=10000, seed 20260927, 95% percentile (tfn2_analyze.boot convention)",
+ "estimator": "paired log-cluster bootstrap: clusters = logs, resample logs with replacement, statistic = mean over the drawn tokens of B-A (ratio of sums for micro-mean/subset metrics: see module doc); B=10000, seed 20260927, 95% percentile (tfn2_analyze.boot convention)",
  "answers": "another draw of LOGS (not another training run, not another inference run)",
  "direction": "difference = B - A",
  "n_tokens": 469,
@@ -150,355 +150,1360 @@
       "separated_from_0": true
      },
      "speed_mae_mps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.6956,
-      "B_point_from_json": 0.7686,
-      "A_own_ci_from_json": [
-       0.554,
-       0.8487
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.6955991225487896,
+       "lo": 0.557370802712767,
+       "hi": 0.8545613406361838
+      },
+      "B": {
+       "point": 0.7685748342432575,
+       "lo": 0.611555485669661,
+       "hi": 0.9527853773693037
+      },
+      "diff_B_minus_A": {
+       "point": 0.07297571169446782,
+       "lo": 0.03748611980679372,
+       "hi": 0.1082589899026195
+      },
+      "separated_from_0": true
      },
      "speed_bias_mps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.3503,
-      "B_point_from_json": 0.4524,
-      "A_own_ci_from_json": [
-       0.1419,
-       0.5486
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.3503452862765807,
+       "lo": 0.14661823992254058,
+       "hi": 0.5490257922411769
+      },
+      "B": {
+       "point": 0.4523550902864636,
+       "lo": 0.21813239513363566,
+       "hi": 0.6791186266972747
+      },
+      "diff_B_minus_A": {
+       "point": 0.10200980400988291,
+       "lo": 0.06378461719978124,
+       "hi": 0.13656124882694473
+      },
+      "separated_from_0": true
      },
      "speed_rmse_mps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.0053,
-      "B_point_from_json": 1.1112,
-      "A_own_ci_from_json": [
-       0.8049,
-       1.1904
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "rms",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 1.005303363780594,
+       "lo": 0.8083088339088056,
+       "hi": 1.196225029471423
+      },
+      "B": {
+       "point": 1.1111975113122343,
+       "lo": 0.8772996607892226,
+       "hi": 1.3335923195654826
+      },
+      "diff_B_minus_A": {
+       "point": 0.10589414753164039,
+       "lo": 0.04485401813272404,
+       "hi": 0.15498215859199566
+      },
+      "separated_from_0": true
      },
      "target_speed_acc.within_0.5_mps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.5408,
-      "B_point_from_json": 0.5117,
-      "A_own_ci_from_json": [
-       0.4638,
-       0.6118
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.5407782515991472,
+       "lo": 0.46099295619503217,
+       "hi": 0.610452960606802
+      },
+      "B": {
+       "point": 0.511727078891258,
+       "lo": 0.4445126084294659,
+       "hi": 0.5696208182640145
+      },
+      "diff_B_minus_A": {
+       "point": -0.02905117270788915,
+       "lo": -0.04561732282106137,
+       "hi": -0.011627788421412063
+      },
+      "separated_from_0": true
      },
      "target_speed_acc.within_1.0_mps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.7692,
-      "B_point_from_json": 0.7436,
-      "A_own_ci_from_json": [
-       0.6991,
-       0.8328
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.7691897654584222,
+       "lo": 0.6948002974293606,
+       "hi": 0.8332271004567662
+      },
+      "B": {
+       "point": 0.7436034115138592,
+       "lo": 0.6566125894802366,
+       "hi": 0.8179460950497536
+      },
+      "diff_B_minus_A": {
+       "point": -0.02558635394456299,
+       "lo": -0.04195617242907798,
+       "hi": -0.010308395706821046
+      },
+      "separated_from_0": true
      },
      "target_speed_acc.within_2.0_mps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.9283,
-      "B_point_from_json": 0.9104,
-      "A_own_ci_from_json": [
-       0.8837,
-       0.9669
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.9283049040511727,
+       "lo": 0.8838475369606112,
+       "hi": 0.9670288502767599
+      },
+      "B": {
+       "point": 0.9104477611940298,
+       "lo": 0.8508136272492494,
+       "hi": 0.9629314556890936
+      },
+      "diff_B_minus_A": {
+       "point": -0.017857142857142905,
+       "lo": -0.03579335321749497,
+       "hi": 0.0
+      },
+      "separated_from_0": false
      },
      "along_mae_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.0338,
-      "B_point_from_json": 1.1552,
-      "A_own_ci_from_json": [
-       0.8236,
-       1.2529
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 1.0337942218475504,
+       "lo": 0.8271053172941558,
+       "hi": 1.2576731483109618
+      },
+      "B": {
+       "point": 1.155197712054639,
+       "lo": 0.9219088549979119,
+       "hi": 1.4151509779931075
+      },
+      "diff_B_minus_A": {
+       "point": 0.12140349020708863,
+       "lo": 0.06251885591875857,
+       "hi": 0.18311131907737369
+      },
+      "separated_from_0": true
      },
      "along_bias_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.4911,
-      "B_point_from_json": 0.6166,
-      "A_own_ci_from_json": [
-       0.1599,
-       0.804
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.4910974219790908,
+       "lo": 0.1648445432299429,
+       "hi": 0.8064312285111987
+      },
+      "B": {
+       "point": 0.616550504144575,
+       "lo": 0.24115176666362814,
+       "hi": 0.974301824266787
+      },
+      "diff_B_minus_A": {
+       "point": 0.12545308216548423,
+       "lo": 0.06044306732335591,
+       "hi": 0.18331149416885875
+      },
+      "separated_from_0": true
      },
      "along_final_bias_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.2478,
-      "B_point_from_json": 1.6021,
-      "A_own_ci_from_json": [
-       0.4893,
-       1.9602
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 1.2478058827457144,
+       "lo": 0.5034296821263731,
+       "hi": 1.959424818457359
+      },
+      "B": {
+       "point": 1.6020552346955483,
+       "lo": 0.7416769354996234,
+       "hi": 2.4126407723495884
+      },
+      "diff_B_minus_A": {
+       "point": 0.354249351949834,
+       "lo": 0.20861809128106681,
+       "hi": 0.4880098881952739
+      },
+      "separated_from_0": true
      },
      "accel_mae_mps2": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.4435,
-      "B_point_from_json": 0.4942,
-      "A_own_ci_from_json": [
-       0.3898,
-       0.502
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.44345827742235494,
+       "lo": 0.3899398004989028,
+       "hi": 0.5040061582249084
+      },
+      "B": {
+       "point": 0.4941715860783037,
+       "lo": 0.43245816768093764,
+       "hi": 0.5651967145066029
+      },
+      "diff_B_minus_A": {
+       "point": 0.05071330865594875,
+       "lo": 0.032488789616225235,
+       "hi": 0.0674421615245317
+      },
+      "separated_from_0": true
      },
      "ego_progress.progress_ratio_mean": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.0984,
-      "B_point_from_json": 1.1377,
-      "A_own_ci_from_json": [
-       1.048,
-       1.1485
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 465,
+      "n_tokens_defined_A": 465,
+      "n_tokens_defined_B": 465,
+      "n_logs": 13,
+      "A": {
+       "point": 1.0983535328809282,
+       "lo": 1.0478976093180143,
+       "hi": 1.1457319200557088
+      },
+      "B": {
+       "point": 1.1376950741328846,
+       "lo": 1.0772956026736697,
+       "hi": 1.1979041373088721
+      },
+      "diff_B_minus_A": {
+       "point": 0.039341541251956436,
+       "lo": 0.024576547254808474,
+       "hi": 0.05828240743050145
+      },
+      "separated_from_0": true,
+      "den_total_A": 465.0,
+      "den_total_B": 465.0
      },
      "ego_progress.progress_ratio_median": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.0902,
-      "B_point_from_json": 1.1021,
-      "A_own_ci_from_json": [
-       1.0422,
-       1.1158
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "median",
+      "n_tokens": 465,
+      "n_tokens_defined_A": 465,
+      "n_tokens_defined_B": 465,
+      "n_logs": 13,
+      "A": {
+       "point": 1.090204577411193,
+       "lo": 1.0422305644096443,
+       "hi": 1.1157829896764062
+      },
+      "B": {
+       "point": 1.1020630845633108,
+       "lo": 1.05046741066254,
+       "hi": 1.1376941933914622
+      },
+      "diff_B_minus_A": {
+       "point": 0.011858507152117781,
+       "lo": 0.003730466762914586,
+       "hi": 0.032738454486945345
+      },
+      "separated_from_0": true
      },
      "ego_progress.progress_error_mean": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.1867,
-      "B_point_from_json": 0.204,
-      "A_own_ci_from_json": [
-       0.15,
-       0.2274
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 465,
+      "n_tokens_defined_A": 465,
+      "n_tokens_defined_B": 465,
+      "n_logs": 13,
+      "A": {
+       "point": 0.18673531474499483,
+       "lo": 0.14965424025027046,
+       "hi": 0.22766982642004333
+      },
+      "B": {
+       "point": 0.20404290164605218,
+       "lo": 0.15988097420770864,
+       "hi": 0.25646358856946394
+      },
+      "diff_B_minus_A": {
+       "point": 0.017307586901057354,
+       "lo": 0.0049364182530216285,
+       "hi": 0.034685570570337707
+      },
+      "separated_from_0": true,
+      "den_total_A": 465.0,
+      "den_total_B": 465.0
      },
      "ego_progress.under_progress_rate": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.3097,
-      "B_point_from_json": 0.2925,
-      "A_own_ci_from_json": [
-       0.237,
-       0.4055
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 465,
+      "n_tokens_defined_A": 465,
+      "n_tokens_defined_B": 465,
+      "n_logs": 13,
+      "A": {
+       "point": 0.3096774193548387,
+       "lo": 0.23591478305315763,
+       "hi": 0.4058014276443867
+      },
+      "B": {
+       "point": 0.2924731182795699,
+       "lo": 0.22763942175938612,
+       "hi": 0.3822692635484032
+      },
+      "diff_B_minus_A": {
+       "point": -0.017204301075268824,
+       "lo": -0.029752312081857527,
+       "hi": -0.0019340496342095342
+      },
+      "separated_from_0": true,
+      "den_total_A": 465.0,
+      "den_total_B": 465.0
      },
      "ego_progress.gt_progress_mean_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 19.2132,
-      "B_point_from_json": 19.2132,
-      "A_own_ci_from_json": [
-       14.8878,
-       24.1485
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "HUMAN-ONLY",
+      "note": "a property of the logged human future, identical for every arm; never compared"
      },
      "ego_progress.t0_axis_gt_self_ratio": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.9794,
-      "B_point_from_json": 0.9794,
-      "A_own_ci_from_json": [
-       0.9706,
-       0.9876
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "HUMAN-ONLY",
+      "note": "a property of the logged human future, identical for every arm; never compared"
      }
     },
     "lateral": {
      "heading_mae_deg": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 2.5151,
-      "B_point_from_json": 2.6565,
-      "A_own_ci_from_json": [
-       1.9363,
-       3.1543
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 467,
+      "n_tokens_defined_A": 467,
+      "n_tokens_defined_B": 467,
+      "n_logs": 13,
+      "A": {
+       "point": 2.515087318209743,
+       "lo": 1.901458146138083,
+       "hi": 3.1393809774528747
+      },
+      "B": {
+       "point": 2.6565265394762334,
+       "lo": 2.0163965110866324,
+       "hi": 3.2875235212365075
+      },
+      "diff_B_minus_A": {
+       "point": 0.14143922126649056,
+       "lo": 0.09205819093100136,
+       "hi": 0.1843194387158498
+      },
+      "separated_from_0": true,
+      "den_total_A": 3510.0,
+      "den_total_B": 3515.0
      },
      "yaw_rate_mae_degps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 2.7497,
-      "B_point_from_json": 2.9,
-      "A_own_ci_from_json": [
-       2.1701,
-       3.3491
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 463,
+      "n_tokens_defined_A": 463,
+      "n_tokens_defined_B": 463,
+      "n_logs": 13,
+      "A": {
+       "point": 2.749726350218669,
+       "lo": 2.144237158933316,
+       "hi": 3.3519216414534276
+      },
+      "B": {
+       "point": 2.8999980767368454,
+       "lo": 2.2533218438047884,
+       "hi": 3.510342620496626
+      },
+      "diff_B_minus_A": {
+       "point": 0.15027172651817633,
+       "lo": 0.07890984379148296,
+       "hi": 0.2149014890712877
+      },
+      "separated_from_0": true,
+      "den_total_A": 3041.0,
+      "den_total_B": 3047.0
      },
      "curvature_mae_1pm": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.014923,
-      "B_point_from_json": 0.015305,
-      "A_own_ci_from_json": [
-       0.010596,
-       0.01961
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 463,
+      "n_tokens_defined_A": 463,
+      "n_tokens_defined_B": 463,
+      "n_logs": 13,
+      "A": {
+       "point": 0.014922769407477427,
+       "lo": 0.010518951220431014,
+       "hi": 0.019370386691915913
+      },
+      "B": {
+       "point": 0.01530536422799401,
+       "lo": 0.010769734334639463,
+       "hi": 0.019787867828006112
+      },
+      "diff_B_minus_A": {
+       "point": 0.00038259482051658175,
+       "lo": -4.455430567473833e-06,
+       "hi": 0.000681734885902555
+      },
+      "separated_from_0": false,
+      "den_total_A": 3041.0,
+      "den_total_B": 3047.0
      },
      "curvature_bias_1pm": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.002859,
-      "B_point_from_json": 0.002556,
-      "A_own_ci_from_json": [
-       0.000811,
-       0.005053
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 463,
+      "n_tokens_defined_A": 463,
+      "n_tokens_defined_B": 463,
+      "n_logs": 13,
+      "A": {
+       "point": 0.0028585671170228625,
+       "lo": 0.0008055368611346944,
+       "hi": 0.005048663004146735
+      },
+      "B": {
+       "point": 0.002555677767781572,
+       "lo": 0.0005491985201681874,
+       "hi": 0.004633201618920257
+      },
+      "diff_B_minus_A": {
+       "point": -0.0003028893492412906,
+       "lo": -0.0007177904135608553,
+       "hi": -2.212719026629864e-05
+      },
+      "separated_from_0": true,
+      "den_total_A": 3041.0,
+      "den_total_B": 3047.0
      },
      "cross_mae_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.2987,
-      "B_point_from_json": 0.3306,
-      "A_own_ci_from_json": [
-       0.223,
-       0.3822
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.29874910757358647,
+       "lo": 0.22370632180035593,
+       "hi": 0.3856187844162057
+      },
+      "B": {
+       "point": 0.33061590206338715,
+       "lo": 0.24778179700163183,
+       "hi": 0.4251255189226516
+      },
+      "diff_B_minus_A": {
+       "point": 0.031866794489800676,
+       "lo": 0.018262017504336262,
+       "hi": 0.045073765699627996
+      },
+      "separated_from_0": true
      },
      "cross_bias_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": -0.0643,
-      "B_point_from_json": -0.0633,
-      "A_own_ci_from_json": [
-       -0.1497,
-       0.0024
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": -0.06426503841550762,
+       "lo": -0.148265713459483,
+       "hi": 0.004200438069776165
+      },
+      "B": {
+       "point": -0.06331704411311134,
+       "lo": -0.15627639337279314,
+       "hi": 0.016120765346801968
+      },
+      "diff_B_minus_A": {
+       "point": 0.0009479943023962822,
+       "lo": -0.024024126836631642,
+       "hi": 0.020017739599491574
+      },
+      "separated_from_0": false
      },
      "cross_final_mae_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.7003,
-      "B_point_from_json": 0.7857,
-      "A_own_ci_from_json": [
-       0.4724,
-       0.9563
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.700253214001028,
+       "lo": 0.47171482014003474,
+       "hi": 0.9657904248823316
+      },
+      "B": {
+       "point": 0.7856983914028115,
+       "lo": 0.5316372794437585,
+       "hi": 1.072784946327687
+      },
+      "diff_B_minus_A": {
+       "point": 0.08544517740178348,
+       "lo": 0.033243853439638336,
+       "hi": 0.13298059517119845
+      },
+      "separated_from_0": true
+     },
+     "last_pose_heading_err_deg": {
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 4.17257154484142,
+       "lo": 2.8418724204604553,
+       "hi": 5.988728573983971
+      },
+      "B": {
+       "point": 4.390216411184103,
+       "lo": 3.01698392693693,
+       "hi": 6.130388342194085
+      },
+      "diff_B_minus_A": {
+       "point": 0.21764486634268376,
+       "lo": 0.03606738871275213,
+       "hi": 0.34250185041672954
+      },
+      "separated_from_0": true
      }
     },
     "tactical": {
      "lateral_decision.accuracy": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.9339,
-      "B_point_from_json": 0.9211,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.9339019189765458,
+       "lo": 0.8996536691843088,
+       "hi": 0.9593687899133724
+      },
+      "B": {
+       "point": 0.9211087420042644,
+       "lo": 0.8754203375609126,
+       "hi": 0.9534883720930233
+      },
+      "diff_B_minus_A": {
+       "point": -0.01279317697228144,
+       "lo": -0.03125,
+       "hi": -0.0022123893805310324
+      },
+      "separated_from_0": true
      },
      "lateral_decision.kappa": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.8825,
-      "B_point_from_json": 0.8608,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.8824789433693843,
+       "lo": 0.8157231373040602,
+       "hi": 0.9180205770086746
+      },
+      "B": {
+       "point": 0.8607593921011666,
+       "lo": 0.7698427536783946,
+       "hi": 0.9073233396933641
+      },
+      "diff_B_minus_A": {
+       "point": -0.021719551268217674,
+       "lo": -0.05495562862351438,
+       "hi": -0.004352961484571041
+      },
+      "separated_from_0": true
+     },
+     "lateral_decision.per_class.lane_keep.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 283,
+      "n_tokens_defined_A": 283,
+      "n_tokens_defined_B": 283,
+      "n_logs": 13,
+      "A": {
+       "point": 0.9081272084805654,
+       "lo": 0.8378320628320628,
+       "hi": 0.9533338192419826
+      },
+      "B": {
+       "point": 0.8904593639575972,
+       "lo": 0.8016520560778934,
+       "hi": 0.9479166666666666
+      },
+      "diff_B_minus_A": {
+       "point": -0.017667844522968212,
+       "lo": -0.0461538461538461,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "lateral_decision.per_class.lane_keep.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 264,
+      "n_tokens_defined_A": 262,
+      "n_tokens_defined_B": 258,
+      "n_logs": 13,
+      "A": {
+       "point": 0.9809160305343512,
+       "lo": 0.954954954954955,
+       "hi": 0.9943502824858758
+      },
+      "B": {
+       "point": 0.9767441860465116,
+       "lo": 0.9470578496299181,
+       "hi": 0.9918032786885246
+      },
+      "diff_B_minus_A": {
+       "point": -0.004171844487839582,
+       "lo": -0.015851258571425483,
+       "hi": -6.588123064508178e-05
+      },
+      "separated_from_0": true
+     },
+     "lateral_decision.per_class.turn_left.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 131,
+      "n_tokens_defined_A": 131,
+      "n_tokens_defined_B": 131,
+      "n_logs": 11,
+      "A": {
+       "point": 0.9770992366412213,
+       "lo": 0.926829268292683,
+       "hi": 1.0
+      },
+      "B": {
+       "point": 0.9618320610687023,
+       "lo": 0.9158822204706677,
+       "hi": 0.9819819819819819
+      },
+      "diff_B_minus_A": {
+       "point": -0.015267175572518998,
+       "lo": -0.027210884353741527,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "lateral_decision.per_class.turn_left.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 143,
+      "n_tokens_defined_A": 141,
+      "n_tokens_defined_B": 141,
+      "n_logs": 12,
+      "A": {
+       "point": 0.9078014184397163,
+       "lo": 0.8,
+       "hi": 0.9512195121951219
+      },
+      "B": {
+       "point": 0.8936170212765957,
+       "lo": 0.771078062248996,
+       "hi": 0.9421499546171117
+      },
+      "diff_B_minus_A": {
+       "point": -0.014184397163120588,
+       "lo": -0.032727340351193554,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "lateral_decision.per_class.turn_right.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 55,
+      "n_tokens_defined_A": 55,
+      "n_tokens_defined_B": 55,
+      "n_logs": 10,
+      "A": {
+       "point": 0.9636363636363636,
+       "lo": 0.9047619047619048,
+       "hi": 1.0
+      },
+      "B": {
+       "point": 0.9818181818181818,
+       "lo": 0.9130434782608695,
+       "hi": 1.0
+      },
+      "diff_B_minus_A": {
+       "point": 0.018181818181818188,
+       "lo": 0.0,
+       "hi": 0.03658536585365857
+      },
+      "separated_from_0": false
+     },
+     "lateral_decision.per_class.turn_right.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 70,
+      "n_tokens_defined_A": 66,
+      "n_tokens_defined_B": 70,
+      "n_logs": 10,
+      "A": {
+       "point": 0.803030303030303,
+       "lo": 0.6711187214611873,
+       "hi": 0.8888888888888888
+      },
+      "B": {
+       "point": 0.7714285714285715,
+       "lo": 0.5789473684210527,
+       "hi": 0.8846153846153846
+      },
+      "diff_B_minus_A": {
+       "point": -0.03160173160173152,
+       "lo": -0.12652705277300563,
+       "hi": 0.0048798798798799226
+      },
+      "separated_from_0": false
      },
      "longitudinal_decision.accuracy": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.6695,
-      "B_point_from_json": 0.6738,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.6695095948827292,
+       "lo": 0.5526770300799876,
+       "hi": 0.7678208670139289
+      },
+      "B": {
+       "point": 0.673773987206823,
+       "lo": 0.5604363535297388,
+       "hi": 0.7678590265220012
+      },
+      "diff_B_minus_A": {
+       "point": 0.004264392324093813,
+       "lo": -0.010336586737357894,
+       "hi": 0.018276881733261394
+      },
+      "separated_from_0": false
      },
      "longitudinal_decision.kappa": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.5096,
-      "B_point_from_json": 0.5157,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.5096094819851725,
+       "lo": 0.33817941626680925,
+       "hi": 0.6504821058583102
+      },
+      "B": {
+       "point": 0.5157116825268273,
+       "lo": 0.35029016130921853,
+       "hi": 0.649665414519168
+      },
+      "diff_B_minus_A": {
+       "point": 0.006102200541654779,
+       "lo": -0.014989796388350981,
+       "hi": 0.025883357184175726
+      },
+      "separated_from_0": false
+     },
+     "longitudinal_decision.per_class.brake_stop.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 158,
+      "n_tokens_defined_A": 158,
+      "n_tokens_defined_B": 158,
+      "n_logs": 12,
+      "A": {
+       "point": 0.6455696202531646,
+       "lo": 0.45045045045045046,
+       "hi": 0.7877137294735059
+      },
+      "B": {
+       "point": 0.6329113924050633,
+       "lo": 0.4434782608695652,
+       "hi": 0.7764239598278335
+      },
+      "diff_B_minus_A": {
+       "point": -0.012658227848101222,
+       "lo": -0.026178010471204164,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "longitudinal_decision.per_class.brake_stop.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 133,
+      "n_tokens_defined_A": 129,
+      "n_tokens_defined_B": 126,
+      "n_logs": 12,
+      "A": {
+       "point": 0.7906976744186046,
+       "lo": 0.5861913637775706,
+       "hi": 0.9185230352303523
+      },
+      "B": {
+       "point": 0.7936507936507936,
+       "lo": 0.5918135435992579,
+       "hi": 0.918186456400742
+      },
+      "diff_B_minus_A": {
+       "point": 0.0029531192321889943,
+       "lo": -0.015703011539948356,
+       "hi": 0.024934724245747854
+      },
+      "separated_from_0": false
+     },
+     "longitudinal_decision.per_class.steady.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 181,
+      "n_tokens_defined_A": 181,
+      "n_tokens_defined_B": 181,
+      "n_logs": 12,
+      "A": {
+       "point": 0.4972375690607735,
+       "lo": 0.34999316939890707,
+       "hi": 0.6580712365591397
+      },
+      "B": {
+       "point": 0.5138121546961326,
+       "lo": 0.35789045785194695,
+       "hi": 0.66875
+      },
+      "diff_B_minus_A": {
+       "point": 0.01657458563535913,
+       "lo": -0.02083333333333337,
+       "hi": 0.05022888414676114
+      },
+      "separated_from_0": false
+     },
+     "longitudinal_decision.per_class.steady.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 151,
+      "n_tokens_defined_A": 140,
+      "n_tokens_defined_B": 143,
+      "n_logs": 13,
+      "A": {
+       "point": 0.6428571428571429,
+       "lo": 0.5613990332975295,
+       "hi": 0.6954022988505747
+      },
+      "B": {
+       "point": 0.6503496503496503,
+       "lo": 0.5773096748612212,
+       "hi": 0.7
+      },
+      "diff_B_minus_A": {
+       "point": 0.007492507492507405,
+       "lo": -0.01658968815513626,
+       "hi": 0.03340528011087265
+      },
+      "separated_from_0": false
+     },
+     "longitudinal_decision.per_class.accelerate.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 130,
+      "n_tokens_defined_A": 130,
+      "n_tokens_defined_B": 130,
+      "n_logs": 11,
+      "A": {
+       "point": 0.9384615384615385,
+       "lo": 0.865979381443299,
+       "hi": 0.981484321745058
+      },
+      "B": {
+       "point": 0.9461538461538461,
+       "lo": 0.8867924528301887,
+       "hi": 0.9831932773109243
+      },
+      "diff_B_minus_A": {
+       "point": 0.007692307692307665,
+       "lo": 0.0,
+       "hi": 0.03191489361702127
+      },
+      "separated_from_0": false
+     },
+     "longitudinal_decision.per_class.accelerate.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 204,
+      "n_tokens_defined_A": 200,
+      "n_tokens_defined_B": 200,
+      "n_logs": 12,
+      "A": {
+       "point": 0.61,
+       "lo": 0.4687445367132867,
+       "hi": 0.7894736842105263
+      },
+      "B": {
+       "point": 0.615,
+       "lo": 0.4717948717948718,
+       "hi": 0.7951807228915663
+      },
+      "diff_B_minus_A": {
+       "point": 0.0050000000000000044,
+       "lo": -0.009889425738375271,
+       "hi": 0.024211377538456872
+      },
+      "separated_from_0": false
      },
      "maneuver_5way_collapsed.accuracy": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.7932,
-      "B_point_from_json": 0.7868,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.7931769722814499,
+       "lo": 0.6921446193813857,
+       "hi": 0.8637882194851849
+      },
+      "B": {
+       "point": 0.7867803837953091,
+       "lo": 0.6857131223825035,
+       "hi": 0.856237116807611
+      },
+      "diff_B_minus_A": {
+       "point": -0.006396588486140775,
+       "lo": -0.01636438152011922,
+       "hi": 0.0024213075060531856
+      },
+      "separated_from_0": false
      },
      "maneuver_5way_collapsed.kappa": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.7367,
-      "B_point_from_json": 0.7287,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.7366541244573083,
+       "lo": 0.6120034774842489,
+       "hi": 0.8198764257210593
+      },
+      "B": {
+       "point": 0.7286758920720137,
+       "lo": 0.6025554199965546,
+       "hi": 0.8105923079351824
+      },
+      "diff_B_minus_A": {
+       "point": -0.007978232385294604,
+       "lo": -0.021020246582384144,
+       "hi": 0.003349889015451533
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.lane_keep.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 83,
+      "n_tokens_defined_A": 83,
+      "n_tokens_defined_B": 83,
+      "n_logs": 9,
+      "A": {
+       "point": 0.40963855421686746,
+       "lo": 0.2641509433962264,
+       "hi": 0.5205479452054794
+      },
+      "B": {
+       "point": 0.40963855421686746,
+       "lo": 0.2753623188405797,
+       "hi": 0.5316455696202531
+      },
+      "diff_B_minus_A": {
+       "point": 0.0,
+       "lo": -0.02941176470588236,
+       "hi": 0.04918032786885246
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.lane_keep.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 57,
+      "n_tokens_defined_A": 53,
+      "n_tokens_defined_B": 55,
+      "n_logs": 8,
+      "A": {
+       "point": 0.6415094339622641,
+       "lo": 0.5185185185185185,
+       "hi": 0.7333333333333333
+      },
+      "B": {
+       "point": 0.6181818181818182,
+       "lo": 0.5,
+       "hi": 0.6909090909090909
+      },
+      "diff_B_minus_A": {
+       "point": -0.023327615780445954,
+       "lo": -0.07670509038595671,
+       "hi": 0.013227513227513255
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.turn_left.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 131,
+      "n_tokens_defined_A": 131,
+      "n_tokens_defined_B": 131,
+      "n_logs": 11,
+      "A": {
+       "point": 0.9770992366412213,
+       "lo": 0.926829268292683,
+       "hi": 1.0
+      },
+      "B": {
+       "point": 0.9618320610687023,
+       "lo": 0.9158822204706677,
+       "hi": 0.9819819819819819
+      },
+      "diff_B_minus_A": {
+       "point": -0.015267175572518998,
+       "lo": -0.027210884353741527,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.turn_left.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 143,
+      "n_tokens_defined_A": 141,
+      "n_tokens_defined_B": 141,
+      "n_logs": 12,
+      "A": {
+       "point": 0.9078014184397163,
+       "lo": 0.8,
+       "hi": 0.9512195121951219
+      },
+      "B": {
+       "point": 0.8936170212765957,
+       "lo": 0.771078062248996,
+       "hi": 0.9421499546171117
+      },
+      "diff_B_minus_A": {
+       "point": -0.014184397163120588,
+       "lo": -0.032727340351193554,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.turn_right.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 55,
+      "n_tokens_defined_A": 55,
+      "n_tokens_defined_B": 55,
+      "n_logs": 10,
+      "A": {
+       "point": 0.9636363636363636,
+       "lo": 0.9047619047619048,
+       "hi": 1.0
+      },
+      "B": {
+       "point": 0.9818181818181818,
+       "lo": 0.9130434782608695,
+       "hi": 1.0
+      },
+      "diff_B_minus_A": {
+       "point": 0.018181818181818188,
+       "lo": 0.0,
+       "hi": 0.03658536585365857
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.turn_right.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 70,
+      "n_tokens_defined_A": 66,
+      "n_tokens_defined_B": 70,
+      "n_logs": 10,
+      "A": {
+       "point": 0.803030303030303,
+       "lo": 0.6711187214611873,
+       "hi": 0.8888888888888888
+      },
+      "B": {
+       "point": 0.7714285714285715,
+       "lo": 0.5789473684210527,
+       "hi": 0.8846153846153846
+      },
+      "diff_B_minus_A": {
+       "point": -0.03160173160173152,
+       "lo": -0.12652705277300563,
+       "hi": 0.0048798798798799226
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.accelerate.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 73,
+      "n_tokens_defined_A": 73,
+      "n_tokens_defined_B": 73,
+      "n_logs": 10,
+      "A": {
+       "point": 0.958904109589041,
+       "lo": 0.88,
+       "hi": 1.0
+      },
+      "B": {
+       "point": 0.958904109589041,
+       "lo": 0.88,
+       "hi": 1.0
+      },
+      "diff_B_minus_A": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.accelerate.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 108,
+      "n_tokens_defined_A": 108,
+      "n_tokens_defined_B": 103,
+      "n_logs": 11,
+      "A": {
+       "point": 0.6481481481481481,
+       "lo": 0.4396551724137931,
+       "hi": 0.8441558441558441
+      },
+      "B": {
+       "point": 0.6796116504854369,
+       "lo": 0.48514851485148514,
+       "hi": 0.8556747469118602
+      },
+      "diff_B_minus_A": {
+       "point": 0.031463502337288785,
+       "lo": 0.0,
+       "hi": 0.07332901970620273
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.brake_stop.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 127,
+      "n_tokens_defined_A": 127,
+      "n_tokens_defined_B": 127,
+      "n_logs": 11,
+      "A": {
+       "point": 0.6850393700787402,
+       "lo": 0.42452115494568327,
+       "hi": 0.843244251714401
+      },
+      "B": {
+       "point": 0.6692913385826772,
+       "lo": 0.4074074074074074,
+       "hi": 0.823076923076923
+      },
+      "diff_B_minus_A": {
+       "point": -0.015748031496062964,
+       "lo": -0.039999999999999925,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.brake_stop.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 104,
+      "n_tokens_defined_A": 101,
+      "n_tokens_defined_B": 100,
+      "n_logs": 12,
+      "A": {
+       "point": 0.8613861386138614,
+       "lo": 0.6617590497737557,
+       "hi": 0.9552238805970149
+      },
+      "B": {
+       "point": 0.85,
+       "lo": 0.6530390417036379,
+       "hi": 0.9375
+      },
+      "diff_B_minus_A": {
+       "point": -0.011386138613861396,
+       "lo": -0.047280030310878386,
+       "hi": 0.01932736646631596
+      },
+      "separated_from_0": false
      },
      "goal_setting.goal_point_error_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 2.6805,
-      "B_point_from_json": 2.924,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 2.6805329315270576,
+       "lo": 2.105261390859241,
+       "hi": 3.3462861777779485
+      },
+      "B": {
+       "point": 2.923960260261832,
+       "lo": 2.272269480935527,
+       "hi": 3.680416747992102
+      },
+      "diff_B_minus_A": {
+       "point": 0.24342732873477457,
+       "lo": 0.0934833274850628,
+       "hi": 0.390428171090853
+      },
+      "separated_from_0": true
+     },
+     "goal_setting.goal_long_bias_m": {
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 1.2478058829442906,
+       "lo": 0.503429682442179,
+       "hi": 1.9594248186493646
+      },
+      "B": {
+       "point": 1.6020552348941246,
+       "lo": 0.7416769354048326,
+       "hi": 2.4126407735318374
+      },
+      "diff_B_minus_A": {
+       "point": 0.354249351949834,
+       "lo": 0.20861809128106681,
+       "hi": 0.48800988826922487
+      },
+      "separated_from_0": true
+     },
+     "goal_setting.goal_lat_bias_m": {
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": -0.14409045699176454,
+       "lo": -0.40556194810300417,
+       "hi": 0.01987898387530049
+      },
+      "B": {
+       "point": -0.12684737006862887,
+       "lo": -0.4034219908151206,
+       "hi": 0.06644580929945722
+      },
+      "diff_B_minus_A": {
+       "point": 0.01724308692313567,
+       "lo": -0.045333439055536516,
+       "hi": 0.07114595539519453
+      },
+      "separated_from_0": false
      },
      "goal_setting.goal_bearing_mae_deg": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 2.2326,
-      "B_point_from_json": 2.403,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 465,
+      "n_tokens_defined_A": 465,
+      "n_tokens_defined_B": 465,
+      "n_logs": 13,
+      "A": {
+       "point": 2.2325813431834876,
+       "lo": 1.6379989855839336,
+       "hi": 2.9752974138845234
+      },
+      "B": {
+       "point": 2.4030133045969126,
+       "lo": 1.771333276005406,
+       "hi": 3.1236300400565726
+      },
+      "diff_B_minus_A": {
+       "point": 0.1704319614134251,
+       "lo": 0.06391195979378093,
+       "hi": 0.25567813008213314
+      },
+      "separated_from_0": true,
+      "den_total_A": 465.0,
+      "den_total_B": 465.0
+     },
+     "goal_setting.goal_range_ratio": {
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 465,
+      "n_tokens_defined_A": 465,
+      "n_tokens_defined_B": 465,
+      "n_logs": 13,
+      "A": {
+       "point": 1.1018368118153756,
+       "lo": 1.0521792579912312,
+       "hi": 1.1495246577802032
+      },
+      "B": {
+       "point": 1.1422324332865477,
+       "lo": 1.0816120300076861,
+       "hi": 1.2029449662823875
+      },
+      "diff_B_minus_A": {
+       "point": 0.04039562147117204,
+       "lo": 0.025265353417214968,
+       "hi": 0.05962754457392939
+      },
+      "separated_from_0": true,
+      "den_total_A": 465.0,
+      "den_total_B": 465.0
      },
      "goal_setting.goal_bearing_bias_deg": {
       "status": "NO-PER-TOKEN-DATA",
       "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
       "A_point_from_json": -0.1473,
       "B_point_from_json": -0.116,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
-     },
-     "goal_setting.goal_range_ratio": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.1018,
-      "B_point_from_json": 1.1422,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
-     },
-     "goal_setting.goal_long_bias_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.2478,
-      "B_point_from_json": 1.6021,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
-     },
-     "goal_setting.goal_lat_bias_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": -0.1441,
-      "B_point_from_json": -0.1268,
       "A_own_ci_from_json": null,
       "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
      }
@@ -652,355 +1657,1362 @@
       "separated_from_0": true
      },
      "speed_mae_mps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.7538,
-      "B_point_from_json": 0.8764,
-      "A_own_ci_from_json": [
-       0.6232,
-       0.8973
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.7537694417956923,
+       "lo": 0.6243478123375272,
+       "hi": 0.903836613654937
+      },
+      "B": {
+       "point": 0.876363175152652,
+       "lo": 0.7318386307358042,
+       "hi": 1.0477824561730396
+      },
+      "diff_B_minus_A": {
+       "point": 0.12259373335695978,
+       "lo": 0.08488830483994374,
+       "hi": 0.15787038752716148
+      },
+      "separated_from_0": true
      },
      "speed_bias_mps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.355,
-      "B_point_from_json": 0.4527,
-      "A_own_ci_from_json": [
-       0.1344,
-       0.556
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.35501263294218066,
+       "lo": 0.14072270499027736,
+       "hi": 0.5665548591115425
+      },
+      "B": {
+       "point": 0.45274518766224003,
+       "lo": 0.1999279589014308,
+       "hi": 0.6962845903156788
+      },
+      "diff_B_minus_A": {
+       "point": 0.09773255472005937,
+       "lo": 0.05190548289550333,
+       "hi": 0.13774678129256532
+      },
+      "separated_from_0": true
      },
      "speed_rmse_mps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.0864,
-      "B_point_from_json": 1.2375,
-      "A_own_ci_from_json": [
-       0.8891,
-       1.2729
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "rms",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 1.0864364984372175,
+       "lo": 0.8925254223314948,
+       "hi": 1.2769688310327358
+      },
+      "B": {
+       "point": 1.2374959736228242,
+       "lo": 1.012200624538595,
+       "hi": 1.4588679691983595
+      },
+      "diff_B_minus_A": {
+       "point": 0.1510594751856067,
+       "lo": 0.09306593945887455,
+       "hi": 0.20014503176666795
+      },
+      "separated_from_0": true
      },
      "target_speed_acc.within_0.5_mps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.5088,
-      "B_point_from_json": 0.4475,
-      "A_own_ci_from_json": [
-       0.4518,
-       0.5606
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.5087953091684435,
+       "lo": 0.4494562728937729,
+       "hi": 0.5593526435834573
+      },
+      "B": {
+       "point": 0.4474946695095949,
+       "lo": 0.39843682882302406,
+       "hi": 0.49197949160724896
+      },
+      "diff_B_minus_A": {
+       "point": -0.06130063965884863,
+       "lo": -0.08976590155531709,
+       "hi": -0.038333076131687245
+      },
+      "separated_from_0": true
      },
      "target_speed_acc.within_1.0_mps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.7412,
-      "B_point_from_json": 0.6916,
-      "A_own_ci_from_json": [
-       0.6786,
-       0.8006
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.7412046908315565,
+       "lo": 0.6742989001058014,
+       "hi": 0.7998418976964157
+      },
+      "B": {
+       "point": 0.6916311300639659,
+       "lo": 0.6246186119290731,
+       "hi": 0.7497289659542388
+      },
+      "diff_B_minus_A": {
+       "point": -0.04957356076759056,
+       "lo": -0.061331866401578956,
+       "hi": -0.0357142857142857
+      },
+      "separated_from_0": true
      },
      "target_speed_acc.within_2.0_mps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.9107,
-      "B_point_from_json": 0.8825,
-      "A_own_ci_from_json": [
-       0.8661,
-       0.9504
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.9107142857142857,
+       "lo": 0.8656248275386313,
+       "hi": 0.9500012807377048
+      },
+      "B": {
+       "point": 0.8824626865671642,
+       "lo": 0.8234445662432656,
+       "hi": 0.9351393300238009
+      },
+      "diff_B_minus_A": {
+       "point": -0.028251599147121498,
+       "lo": -0.044309858762545666,
+       "hi": -0.012160231391134617
+      },
+      "separated_from_0": true
      },
      "along_mae_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.0963,
-      "B_point_from_json": 1.3175,
-      "A_own_ci_from_json": [
-       0.9149,
-       1.278
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 1.0962613074939007,
+       "lo": 0.9208931276138361,
+       "hi": 1.2836636855522292
+      },
+      "B": {
+       "point": 1.3175254281459332,
+       "lo": 1.1325505357879624,
+       "hi": 1.526595250971047
+      },
+      "diff_B_minus_A": {
+       "point": 0.2212641206520325,
+       "lo": 0.15658967553829042,
+       "hi": 0.2941374658931784
+      },
+      "separated_from_0": true
      },
      "along_bias_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.4174,
-      "B_point_from_json": 0.4972,
-      "A_own_ci_from_json": [
-       0.0639,
-       0.749
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.41741856571231317,
+       "lo": 0.0662259267530008,
+       "hi": 0.7506425013627103
+      },
+      "B": {
+       "point": 0.4971741362611876,
+       "lo": 0.07390539070036742,
+       "hi": 0.8929902017163744
+      },
+      "diff_B_minus_A": {
+       "point": 0.07975557054887444,
+       "lo": -0.009374899466778816,
+       "hi": 0.15823929991708446
+      },
+      "separated_from_0": false
      },
      "along_final_bias_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.2151,
-      "B_point_from_json": 1.5547,
-      "A_own_ci_from_json": [
-       0.4278,
-       1.9614
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 1.2151112258116574,
+       "lo": 0.45282961256025983,
+       "hi": 1.9668603080070275
+      },
+      "B": {
+       "point": 1.554660605469238,
+       "lo": 0.6412417501952008,
+       "hi": 2.425354351824668
+      },
+      "diff_B_minus_A": {
+       "point": 0.3395493796575806,
+       "lo": 0.1705521052267177,
+       "hi": 0.4939066437348157
+      },
+      "separated_from_0": true
      },
      "accel_mae_mps2": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.5621,
-      "B_point_from_json": 0.6666,
-      "A_own_ci_from_json": [
-       0.5125,
-       0.6121
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.5621492769132291,
+       "lo": 0.5131435075750141,
+       "hi": 0.6133664272789308
+      },
+      "B": {
+       "point": 0.6665873717842326,
+       "lo": 0.6106486191350392,
+       "hi": 0.7278566972392426
+      },
+      "diff_B_minus_A": {
+       "point": 0.10443809487100342,
+       "lo": 0.07930611551597726,
+       "hi": 0.12710982403943705
+      },
+      "separated_from_0": true
      },
      "ego_progress.progress_ratio_mean": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.0823,
-      "B_point_from_json": 1.1212,
-      "A_own_ci_from_json": [
-       1.0344,
-       1.1288
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 465,
+      "n_tokens_defined_A": 465,
+      "n_tokens_defined_B": 465,
+      "n_logs": 13,
+      "A": {
+       "point": 1.0822553455223305,
+       "lo": 1.031932003176373,
+       "hi": 1.127034728818173
+      },
+      "B": {
+       "point": 1.1212290201174429,
+       "lo": 1.057935896829817,
+       "hi": 1.1815857821141889
+      },
+      "diff_B_minus_A": {
+       "point": 0.03897367459511236,
+       "lo": 0.02252934622043694,
+       "hi": 0.0598658163621326
+      },
+      "separated_from_0": true,
+      "den_total_A": 465.0,
+      "den_total_B": 465.0
      },
      "ego_progress.progress_ratio_median": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.0848,
-      "B_point_from_json": 1.0956,
-      "A_own_ci_from_json": [
-       1.0295,
-       1.111
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "median",
+      "n_tokens": 465,
+      "n_tokens_defined_A": 465,
+      "n_tokens_defined_B": 465,
+      "n_logs": 13,
+      "A": {
+       "point": 1.0848150904631477,
+       "lo": 1.02693282962218,
+       "hi": 1.1110277659764116
+      },
+      "B": {
+       "point": 1.0955633624597292,
+       "lo": 1.0296286132235575,
+       "hi": 1.1371865041521292
+      },
+      "diff_B_minus_A": {
+       "point": 0.01074827199658146,
+       "lo": -0.006222485310098047,
+       "hi": 0.03161231640185399
+      },
+      "separated_from_0": false
      },
      "ego_progress.progress_error_mean": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.1895,
-      "B_point_from_json": 0.2145,
-      "A_own_ci_from_json": [
-       0.159,
-       0.2247
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 465,
+      "n_tokens_defined_A": 465,
+      "n_tokens_defined_B": 465,
+      "n_logs": 13,
+      "A": {
+       "point": 0.18953036783238664,
+       "lo": 0.15912755441966625,
+       "hi": 0.22543194433950536
+      },
+      "B": {
+       "point": 0.2144813549991167,
+       "lo": 0.17730269939263044,
+       "hi": 0.26205861929417035
+      },
+      "diff_B_minus_A": {
+       "point": 0.024950987166730054,
+       "lo": 0.012567420916751799,
+       "hi": 0.04327457565706573
+      },
+      "separated_from_0": true,
+      "den_total_A": 465.0,
+      "den_total_B": 465.0
      },
      "ego_progress.under_progress_rate": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.3333,
-      "B_point_from_json": 0.3118,
-      "A_own_ci_from_json": [
-       0.2526,
-       0.4386
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 465,
+      "n_tokens_defined_A": 465,
+      "n_tokens_defined_B": 465,
+      "n_logs": 13,
+      "A": {
+       "point": 0.3333333333333333,
+       "lo": 0.2507930402930403,
+       "hi": 0.4387768671298306
+      },
+      "B": {
+       "point": 0.3118279569892473,
+       "lo": 0.22755495140148535,
+       "hi": 0.4168564920273349
+      },
+      "diff_B_minus_A": {
+       "point": -0.021505376344086002,
+       "lo": -0.047945205479452024,
+       "hi": 0.002732995199710163
+      },
+      "separated_from_0": false,
+      "den_total_A": 465.0,
+      "den_total_B": 465.0
      },
      "ego_progress.gt_progress_mean_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 19.2132,
-      "B_point_from_json": 19.2132,
-      "A_own_ci_from_json": [
-       14.8878,
-       24.1485
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "HUMAN-ONLY",
+      "note": "a property of the logged human future, identical for every arm; never compared"
      },
      "ego_progress.t0_axis_gt_self_ratio": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.9794,
-      "B_point_from_json": 0.9794,
-      "A_own_ci_from_json": [
-       0.9706,
-       0.9876
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "HUMAN-ONLY",
+      "note": "a property of the logged human future, identical for every arm; never compared"
      }
     },
     "lateral": {
      "heading_mae_deg": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 3.0153,
-      "B_point_from_json": 3.0924,
-      "A_own_ci_from_json": [
-       2.2617,
-       3.8203
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 467,
+      "n_tokens_defined_A": 467,
+      "n_tokens_defined_B": 467,
+      "n_logs": 13,
+      "A": {
+       "point": 3.015260982595037,
+       "lo": 2.250392640980894,
+       "hi": 3.8080291649818996
+      },
+      "B": {
+       "point": 3.09238823781871,
+       "lo": 2.330224821329998,
+       "hi": 3.826482691443803
+      },
+      "diff_B_minus_A": {
+       "point": 0.07712725522367325,
+       "lo": -0.05889133721228278,
+       "hi": 0.16978112759804614
+      },
+      "separated_from_0": false,
+      "den_total_A": 3490.0,
+      "den_total_B": 3488.0
      },
      "yaw_rate_mae_degps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 2.8911,
-      "B_point_from_json": 3.1024,
-      "A_own_ci_from_json": [
-       2.2546,
-       3.5274
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 460,
+      "n_tokens_defined_A": 460,
+      "n_tokens_defined_B": 459,
+      "n_logs": 13,
+      "A": {
+       "point": 2.891129708366879,
+       "lo": 2.241095627711758,
+       "hi": 3.536878016498857
+      },
+      "B": {
+       "point": 3.1023750079597843,
+       "lo": 2.3735481195781833,
+       "hi": 3.7921457488921018
+      },
+      "diff_B_minus_A": {
+       "point": 0.21124529959290506,
+       "lo": 0.010542318637075792,
+       "hi": 0.3521777962573845
+      },
+      "separated_from_0": true,
+      "den_total_A": 3018.0,
+      "den_total_B": 3016.0
      },
      "curvature_mae_1pm": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.018264,
-      "B_point_from_json": 0.019551,
-      "A_own_ci_from_json": [
-       0.013193,
-       0.023813
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 460,
+      "n_tokens_defined_A": 460,
+      "n_tokens_defined_B": 459,
+      "n_logs": 13,
+      "A": {
+       "point": 0.018263908366489393,
+       "lo": 0.013228949376502402,
+       "hi": 0.023524246507214786
+      },
+      "B": {
+       "point": 0.019551478055894342,
+       "lo": 0.013041452219426465,
+       "hi": 0.02667066383442177
+      },
+      "diff_B_minus_A": {
+       "point": 0.0012875696894049486,
+       "lo": -0.001571914853688057,
+       "hi": 0.0038313215856746984
+      },
+      "separated_from_0": false,
+      "den_total_A": 3018.0,
+      "den_total_B": 3016.0
      },
      "curvature_bias_1pm": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.002795,
-      "B_point_from_json": 0.004254,
-      "A_own_ci_from_json": [
-       -0.00122,
-       0.006483
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 460,
+      "n_tokens_defined_A": 460,
+      "n_tokens_defined_B": 459,
+      "n_logs": 13,
+      "A": {
+       "point": 0.0027949750404858177,
+       "lo": -0.0012640535359553474,
+       "hi": 0.006289378057907871
+      },
+      "B": {
+       "point": 0.004254238666987478,
+       "lo": 0.0012437638399607832,
+       "hi": 0.00737454622218779
+      },
+      "diff_B_minus_A": {
+       "point": 0.0014592636265016602,
+       "lo": 0.0002088439978996346,
+       "hi": 0.003437225117455237
+      },
+      "separated_from_0": true,
+      "den_total_A": 3018.0,
+      "den_total_B": 3016.0
      },
      "cross_mae_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.3315,
-      "B_point_from_json": 0.3618,
-      "A_own_ci_from_json": [
-       0.2364,
-       0.4295
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.3314682795409995,
+       "lo": 0.23907919241069242,
+       "hi": 0.43470872967140495
+      },
+      "B": {
+       "point": 0.3618448438283715,
+       "lo": 0.2596451016440963,
+       "hi": 0.47076994675108735
+      },
+      "diff_B_minus_A": {
+       "point": 0.03037656428737201,
+       "lo": 0.011330753745449753,
+       "hi": 0.04518096334391623
+      },
+      "separated_from_0": true
      },
      "cross_bias_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": -0.1096,
-      "B_point_from_json": -0.1263,
-      "A_own_ci_from_json": [
-       -0.2037,
-       -0.0478
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": -0.10961355512012551,
+       "lo": -0.20172108991735518,
+       "hi": -0.04583434629120952
+      },
+      "B": {
+       "point": -0.12634102649081236,
+       "lo": -0.21054174529593053,
+       "hi": -0.06572695363578532
+      },
+      "diff_B_minus_A": {
+       "point": -0.01672747137068685,
+       "lo": -0.03890927530780945,
+       "hi": 0.009593082007514691
+      },
+      "separated_from_0": false
      },
      "cross_final_mae_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.773,
-      "B_point_from_json": 0.8481,
-      "A_own_ci_from_json": [
-       0.4914,
-       1.0746
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.7729780507941189,
+       "lo": 0.4964922342701737,
+       "hi": 1.0900283907658939
+      },
+      "B": {
+       "point": 0.8481256173494687,
+       "lo": 0.543113538518732,
+       "hi": 1.1875431998910828
+      },
+      "diff_B_minus_A": {
+       "point": 0.07514756655534982,
+       "lo": 0.007933553246806547,
+       "hi": 0.12656928719624633
+      },
+      "separated_from_0": true
+     },
+     "last_pose_heading_err_deg": {
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 4.963918104177253,
+       "lo": 3.718833670514942,
+       "hi": 6.580808615255216
+      },
+      "B": {
+       "point": 5.427251615007455,
+       "lo": 4.075143959778018,
+       "hi": 7.065960303029332
+      },
+      "diff_B_minus_A": {
+       "point": 0.4633335108302017,
+       "lo": 0.22002727253814464,
+       "hi": 0.6991896782346082
+      },
+      "separated_from_0": true
      }
     },
     "tactical": {
      "lateral_decision.accuracy": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.9041,
-      "B_point_from_json": 0.8998,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.9040511727078892,
+       "lo": 0.8609448160535117,
+       "hi": 0.9309098442993471
+      },
+      "B": {
+       "point": 0.8997867803837953,
+       "lo": 0.858468499018383,
+       "hi": 0.9293296071039185
+      },
+      "diff_B_minus_A": {
+       "point": -0.004264392324093813,
+       "lo": -0.017902813299232823,
+       "hi": 0.010471204188481686
+      },
+      "separated_from_0": false
      },
      "lateral_decision.kappa": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.8316,
-      "B_point_from_json": 0.8233,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.8315776873354082,
+       "lo": 0.7359348341892187,
+       "hi": 0.8746511483580095
+      },
+      "B": {
+       "point": 0.8233422558463833,
+       "lo": 0.7406073892370817,
+       "hi": 0.8601115529176544
+      },
+      "diff_B_minus_A": {
+       "point": -0.008235431489024836,
+       "lo": -0.029411030491758878,
+       "hi": 0.019665678655176887
+      },
+      "separated_from_0": false
+     },
+     "lateral_decision.per_class.lane_keep.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 283,
+      "n_tokens_defined_A": 283,
+      "n_tokens_defined_B": 283,
+      "n_logs": 13,
+      "A": {
+       "point": 0.8692579505300353,
+       "lo": 0.7945173473306875,
+       "hi": 0.9202011582339831
+      },
+      "B": {
+       "point": 0.8692579505300353,
+       "lo": 0.784944673668417,
+       "hi": 0.9247666830577581
+      },
+      "diff_B_minus_A": {
+       "point": 0.0,
+       "lo": -0.02051282051282055,
+       "hi": 0.015075376884422068
+      },
+      "separated_from_0": false
+     },
+     "lateral_decision.per_class.lane_keep.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 261,
+      "n_tokens_defined_A": 254,
+      "n_tokens_defined_B": 256,
+      "n_logs": 13,
+      "A": {
+       "point": 0.968503937007874,
+       "lo": 0.9323276411367402,
+       "hi": 0.9880478087649402
+      },
+      "B": {
+       "point": 0.9609375,
+       "lo": 0.9160809778456837,
+       "hi": 0.9849261321623131
+      },
+      "diff_B_minus_A": {
+       "point": -0.007566437007873961,
+       "lo": -0.023471221385158524,
+       "hi": 0.0003840358819128779
+      },
+      "separated_from_0": false
+     },
+     "lateral_decision.per_class.turn_left.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 131,
+      "n_tokens_defined_A": 131,
+      "n_tokens_defined_B": 131,
+      "n_logs": 11,
+      "A": {
+       "point": 0.9618320610687023,
+       "lo": 0.9342105263157895,
+       "hi": 0.9871794871794872
+      },
+      "B": {
+       "point": 0.9465648854961832,
+       "lo": 0.9210526315789473,
+       "hi": 0.971830985915493
+      },
+      "diff_B_minus_A": {
+       "point": -0.01526717557251911,
+       "lo": -0.027210884353741416,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "lateral_decision.per_class.turn_left.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 148,
+      "n_tokens_defined_A": 144,
+      "n_tokens_defined_B": 145,
+      "n_logs": 12,
+      "A": {
+       "point": 0.875,
+       "lo": 0.735279111644658,
+       "hi": 0.9447852760736196
+      },
+      "B": {
+       "point": 0.8551724137931035,
+       "lo": 0.7111111111111111,
+       "hi": 0.9175840336134453
+      },
+      "diff_B_minus_A": {
+       "point": -0.019827586206896508,
+       "lo": -0.061267441248453854,
+       "hi": 0.009758301498677612
+      },
+      "separated_from_0": false
+     },
+     "lateral_decision.per_class.turn_right.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 55,
+      "n_tokens_defined_A": 55,
+      "n_tokens_defined_B": 55,
+      "n_logs": 10,
+      "A": {
+       "point": 0.9454545454545454,
+       "lo": 0.8064516129032258,
+       "hi": 1.0
+      },
+      "B": {
+       "point": 0.9454545454545454,
+       "lo": 0.8064516129032258,
+       "hi": 1.0
+      },
+      "diff_B_minus_A": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "lateral_decision.per_class.turn_right.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 72,
+      "n_tokens_defined_A": 71,
+      "n_tokens_defined_B": 68,
+      "n_logs": 11,
+      "A": {
+       "point": 0.7323943661971831,
+       "lo": 0.5872929606625259,
+       "hi": 0.8440396759204098
+      },
+      "B": {
+       "point": 0.7647058823529411,
+       "lo": 0.6216216216216216,
+       "hi": 0.8469458616780045
+      },
+      "diff_B_minus_A": {
+       "point": 0.032311516155758,
+       "lo": -0.03222374657564025,
+       "hi": 0.0916583726170192
+      },
+      "separated_from_0": false
      },
      "longitudinal_decision.accuracy": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.6695,
-      "B_point_from_json": 0.6631,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.6695095948827292,
+       "lo": 0.5535619300911855,
+       "hi": 0.7671584637417913
+      },
+      "B": {
+       "point": 0.6631130063965884,
+       "lo": 0.559366604016819,
+       "hi": 0.7534534127843986
+      },
+      "diff_B_minus_A": {
+       "point": -0.006396588486140775,
+       "lo": -0.03300993771753073,
+       "hi": 0.0175825556353195
+      },
+      "separated_from_0": false
      },
      "longitudinal_decision.kappa": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.5103,
-      "B_point_from_json": 0.5011,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.5103328887631519,
+       "lo": 0.34272929081622205,
+       "hi": 0.649927611309845
+      },
+      "B": {
+       "point": 0.5011108567735333,
+       "lo": 0.34840416481104586,
+       "hi": 0.6302501172278303
+      },
+      "diff_B_minus_A": {
+       "point": -0.009222031989618573,
+       "lo": -0.04752366796911424,
+       "hi": 0.024123954295924246
+      },
+      "separated_from_0": false
+     },
+     "longitudinal_decision.per_class.brake_stop.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 158,
+      "n_tokens_defined_A": 158,
+      "n_tokens_defined_B": 158,
+      "n_logs": 12,
+      "A": {
+       "point": 0.6329113924050633,
+       "lo": 0.43273229369720595,
+       "hi": 0.7789522118178882
+      },
+      "B": {
+       "point": 0.6012658227848101,
+       "lo": 0.40404040404040403,
+       "hi": 0.7468879668049793
+      },
+      "diff_B_minus_A": {
+       "point": -0.03164556962025322,
+       "lo": -0.0657930884904569,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "longitudinal_decision.per_class.brake_stop.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 127,
+      "n_tokens_defined_A": 123,
+      "n_tokens_defined_B": 113,
+      "n_logs": 12,
+      "A": {
+       "point": 0.8130081300813008,
+       "lo": 0.6075836347197107,
+       "hi": 0.9344262295081968
+      },
+      "B": {
+       "point": 0.8407079646017699,
+       "lo": 0.6444444444444445,
+       "hi": 0.9473684210526315
+      },
+      "diff_B_minus_A": {
+       "point": 0.02769983452046909,
+       "lo": -0.0029435187261451826,
+       "hi": 0.05363258499255048
+      },
+      "separated_from_0": false
+     },
+     "longitudinal_decision.per_class.steady.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 181,
+      "n_tokens_defined_A": 181,
+      "n_tokens_defined_B": 181,
+      "n_logs": 12,
+      "A": {
+       "point": 0.5027624309392266,
+       "lo": 0.35927998372187664,
+       "hi": 0.6587324929971988
+      },
+      "B": {
+       "point": 0.5082872928176796,
+       "lo": 0.39285714285714285,
+       "hi": 0.6271186440677966
+      },
+      "diff_B_minus_A": {
+       "point": 0.0055248618784530246,
+       "lo": -0.056075958420751484,
+       "hi": 0.06035135841170315
+      },
+      "separated_from_0": false
+     },
+     "longitudinal_decision.per_class.steady.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 158,
+      "n_tokens_defined_A": 139,
+      "n_tokens_defined_B": 143,
+      "n_logs": 13,
+      "A": {
+       "point": 0.6546762589928058,
+       "lo": 0.5818135435992579,
+       "hi": 0.7009816555488174
+      },
+      "B": {
+       "point": 0.6433566433566433,
+       "lo": 0.5783049629711506,
+       "hi": 0.7008547008547008
+      },
+      "diff_B_minus_A": {
+       "point": -0.011319615636162461,
+       "lo": -0.04278421143371189,
+       "hi": 0.026399838444515628
+      },
+      "separated_from_0": false
+     },
+     "longitudinal_decision.per_class.accelerate.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 130,
+      "n_tokens_defined_A": 130,
+      "n_tokens_defined_B": 130,
+      "n_logs": 11,
+      "A": {
+       "point": 0.9461538461538461,
+       "lo": 0.8701298701298701,
+       "hi": 0.9902912621359223
+      },
+      "B": {
+       "point": 0.9538461538461539,
+       "lo": 0.890240552130796,
+       "hi": 0.9919354838709677
+      },
+      "diff_B_minus_A": {
+       "point": 0.007692307692307776,
+       "lo": 0.0,
+       "hi": 0.03191489361702127
+      },
+      "separated_from_0": false
+     },
+     "longitudinal_decision.per_class.accelerate.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 218,
+      "n_tokens_defined_A": 207,
+      "n_tokens_defined_B": 213,
+      "n_logs": 12,
+      "A": {
+       "point": 0.5942028985507246,
+       "lo": 0.45809909364378637,
+       "hi": 0.7739735701571085
+      },
+      "B": {
+       "point": 0.5821596244131455,
+       "lo": 0.45237796123474516,
+       "hi": 0.7476635514018691
+      },
+      "diff_B_minus_A": {
+       "point": -0.012043274137579107,
+       "lo": -0.04980041553396868,
+       "hi": 0.00826497019476438
+      },
+      "separated_from_0": false
      },
      "maneuver_5way_collapsed.accuracy": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.7676,
-      "B_point_from_json": 0.7612,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.767590618336887,
+       "lo": 0.661211776091972,
+       "hi": 0.8429339919616657
+      },
+      "B": {
+       "point": 0.7611940298507462,
+       "lo": 0.6640569826977402,
+       "hi": 0.8304778840406455
+      },
+      "diff_B_minus_A": {
+       "point": -0.006396588486140775,
+       "lo": -0.018867924528301883,
+       "hi": 0.008797653958944274
+      },
+      "separated_from_0": false
      },
      "maneuver_5way_collapsed.kappa": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.7048,
-      "B_point_from_json": 0.6966,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.7047622897800776,
+       "lo": 0.5745245089960073,
+       "hi": 0.791452109337861
+      },
+      "B": {
+       "point": 0.6966189601598687,
+       "lo": 0.5766534093665389,
+       "hi": 0.7767549996235759
+      },
+      "diff_B_minus_A": {
+       "point": -0.008143329620208917,
+       "lo": -0.02434750586352077,
+       "hi": 0.010689985369344752
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.lane_keep.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 83,
+      "n_tokens_defined_A": 83,
+      "n_tokens_defined_B": 83,
+      "n_logs": 9,
+      "A": {
+       "point": 0.40963855421686746,
+       "lo": 0.2830188679245283,
+       "hi": 0.5087719298245614
+      },
+      "B": {
+       "point": 0.43373493975903615,
+       "lo": 0.3229166666666667,
+       "hi": 0.5543478260869565
+      },
+      "diff_B_minus_A": {
+       "point": 0.024096385542168697,
+       "lo": -0.01869158878504673,
+       "hi": 0.09999999999999998
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.lane_keep.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 64,
+      "n_tokens_defined_A": 53,
+      "n_tokens_defined_B": 59,
+      "n_logs": 11,
+      "A": {
+       "point": 0.6415094339622641,
+       "lo": 0.5849056603773585,
+       "hi": 0.7037037037037037,
+       "n_draws_undefined": 1
+      },
+      "B": {
+       "point": 0.6101694915254238,
+       "lo": 0.5,
+       "hi": 0.6909090909090909
+      },
+      "diff_B_minus_A": {
+       "point": -0.03133994243684035,
+       "lo": -0.13770944741532976,
+       "hi": 0.03048953120752115,
+       "n_draws_undefined": 1
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.turn_left.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 131,
+      "n_tokens_defined_A": 131,
+      "n_tokens_defined_B": 131,
+      "n_logs": 11,
+      "A": {
+       "point": 0.9618320610687023,
+       "lo": 0.9342105263157895,
+       "hi": 0.9871794871794872
+      },
+      "B": {
+       "point": 0.9465648854961832,
+       "lo": 0.9210526315789473,
+       "hi": 0.971830985915493
+      },
+      "diff_B_minus_A": {
+       "point": -0.01526717557251911,
+       "lo": -0.027210884353741416,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.turn_left.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 148,
+      "n_tokens_defined_A": 144,
+      "n_tokens_defined_B": 145,
+      "n_logs": 12,
+      "A": {
+       "point": 0.875,
+       "lo": 0.735279111644658,
+       "hi": 0.9447852760736196
+      },
+      "B": {
+       "point": 0.8551724137931035,
+       "lo": 0.7111111111111111,
+       "hi": 0.9175840336134453
+      },
+      "diff_B_minus_A": {
+       "point": -0.019827586206896508,
+       "lo": -0.061267441248453854,
+       "hi": 0.009758301498677612
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.turn_right.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 55,
+      "n_tokens_defined_A": 55,
+      "n_tokens_defined_B": 55,
+      "n_logs": 10,
+      "A": {
+       "point": 0.9454545454545454,
+       "lo": 0.8064516129032258,
+       "hi": 1.0
+      },
+      "B": {
+       "point": 0.9454545454545454,
+       "lo": 0.8064516129032258,
+       "hi": 1.0
+      },
+      "diff_B_minus_A": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.turn_right.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 72,
+      "n_tokens_defined_A": 71,
+      "n_tokens_defined_B": 68,
+      "n_logs": 11,
+      "A": {
+       "point": 0.7323943661971831,
+       "lo": 0.5872929606625259,
+       "hi": 0.8440396759204098
+      },
+      "B": {
+       "point": 0.7647058823529411,
+       "lo": 0.6216216216216216,
+       "hi": 0.8469458616780045
+      },
+      "diff_B_minus_A": {
+       "point": 0.032311516155758,
+       "lo": -0.03222374657564025,
+       "hi": 0.0916583726170192
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.accelerate.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 73,
+      "n_tokens_defined_A": 73,
+      "n_tokens_defined_B": 73,
+      "n_logs": 10,
+      "A": {
+       "point": 0.958904109589041,
+       "lo": 0.88,
+       "hi": 1.0
+      },
+      "B": {
+       "point": 0.958904109589041,
+       "lo": 0.88,
+       "hi": 1.0
+      },
+      "diff_B_minus_A": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.accelerate.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 112,
+      "n_tokens_defined_A": 109,
+      "n_tokens_defined_B": 108,
+      "n_logs": 11,
+      "A": {
+       "point": 0.6422018348623854,
+       "lo": 0.4358910891089109,
+       "hi": 0.8382352941176471
+      },
+      "B": {
+       "point": 0.6481481481481481,
+       "lo": 0.45454545454545453,
+       "hi": 0.8281361607142855
+      },
+      "diff_B_minus_A": {
+       "point": 0.005946313285762783,
+       "lo": -0.03176200375104261,
+       "hi": 0.04706477146884126
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.brake_stop.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 127,
+      "n_tokens_defined_A": 127,
+      "n_tokens_defined_B": 127,
+      "n_logs": 11,
+      "A": {
+       "point": 0.6141732283464567,
+       "lo": 0.36,
+       "hi": 0.7826149068322981
+      },
+      "B": {
+       "point": 0.5905511811023622,
+       "lo": 0.3333333333333333,
+       "hi": 0.7480916030534351
+      },
+      "diff_B_minus_A": {
+       "point": -0.023622047244094557,
+       "lo": -0.0655737704918033,
+       "hi": 0.020207173778602292
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.brake_stop.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 98,
+      "n_tokens_defined_A": 92,
+      "n_tokens_defined_B": 89,
+      "n_logs": 11,
+      "A": {
+       "point": 0.8478260869565217,
+       "lo": 0.6041666666666666,
+       "hi": 0.9594594594594594
+      },
+      "B": {
+       "point": 0.8426966292134831,
+       "lo": 0.5892594537815127,
+       "hi": 0.9538532110091743
+      },
+      "diff_B_minus_A": {
+       "point": -0.0051294577430386346,
+       "lo": -0.04773655679905684,
+       "hi": 0.0231492838735256
+      },
+      "separated_from_0": false
      },
      "goal_setting.goal_point_error_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 2.8276,
-      "B_point_from_json": 3.1671,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 2.8275854239118403,
+       "lo": 2.244399423709609,
+       "hi": 3.50030453169605
+      },
+      "B": {
+       "point": 3.167068113011527,
+       "lo": 2.51456159608206,
+       "hi": 3.9377614547788387
+      },
+      "diff_B_minus_A": {
+       "point": 0.3394826890996865,
+       "lo": 0.1847494483544659,
+       "hi": 0.4917967211937919
+      },
+      "separated_from_0": true
+     },
+     "goal_setting.goal_long_bias_m": {
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 1.2151112260896642,
+       "lo": 0.45282961273017763,
+       "hi": 1.9668603080115188
+      },
+      "B": {
+       "point": 1.5546606059656787,
+       "lo": 0.6412417494451251,
+       "hi": 2.4253543516084153
+      },
+      "diff_B_minus_A": {
+       "point": 0.3395493798760145,
+       "lo": 0.17055210473473909,
+       "hi": 0.493906643922341
+      },
+      "separated_from_0": true
+     },
+     "goal_setting.goal_lat_bias_m": {
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": -0.22341314852276176,
+       "lo": -0.5317608160178894,
+       "hi": -0.03533215876732599
+      },
+      "B": {
+       "point": -0.22500013882941655,
+       "lo": -0.5184990811691796,
+       "hi": -0.032336935406687965
+      },
+      "diff_B_minus_A": {
+       "point": -0.0015869903066547952,
+       "lo": -0.05600684407662781,
+       "hi": 0.062303012258982646
+      },
+      "separated_from_0": false
      },
      "goal_setting.goal_bearing_mae_deg": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 2.768,
-      "B_point_from_json": 2.8899,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 465,
+      "n_tokens_defined_A": 465,
+      "n_tokens_defined_B": 465,
+      "n_logs": 13,
+      "A": {
+       "point": 2.767996256758709,
+       "lo": 2.0088984683046323,
+       "hi": 3.617901787974074
+      },
+      "B": {
+       "point": 2.88988839099229,
+       "lo": 2.1005034594984764,
+       "hi": 3.669349861004192
+      },
+      "diff_B_minus_A": {
+       "point": 0.12189213423358103,
+       "lo": -0.15325117749866746,
+       "hi": 0.32537564990002527
+      },
+      "separated_from_0": false,
+      "den_total_A": 465.0,
+      "den_total_B": 465.0
+     },
+     "goal_setting.goal_range_ratio": {
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 465,
+      "n_tokens_defined_A": 465,
+      "n_tokens_defined_B": 465,
+      "n_logs": 13,
+      "A": {
+       "point": 1.0874844648808584,
+       "lo": 1.037700154302594,
+       "hi": 1.132660398953094
+      },
+      "B": {
+       "point": 1.1272397548336675,
+       "lo": 1.063571359809659,
+       "hi": 1.1882333964088716
+      },
+      "diff_B_minus_A": {
+       "point": 0.03975528995280908,
+       "lo": 0.022469417636853246,
+       "hi": 0.060819278499104595
+      },
+      "separated_from_0": true,
+      "den_total_A": 465.0,
+      "den_total_B": 465.0
      },
      "goal_setting.goal_bearing_bias_deg": {
       "status": "NO-PER-TOKEN-DATA",
       "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
       "A_point_from_json": -0.6077,
       "B_point_from_json": -0.6201,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
-     },
-     "goal_setting.goal_range_ratio": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.0875,
-      "B_point_from_json": 1.1272,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
-     },
-     "goal_setting.goal_long_bias_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.2151,
-      "B_point_from_json": 1.5547,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
-     },
-     "goal_setting.goal_lat_bias_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": -0.2234,
-      "B_point_from_json": -0.225,
       "A_own_ci_from_json": null,
       "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
      }
@@ -1154,355 +3166,1362 @@
       "separated_from_0": true
      },
      "speed_mae_mps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.7528,
-      "B_point_from_json": 0.8753,
-      "A_own_ci_from_json": [
-       0.6222,
-       0.8963
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.752824073434988,
+       "lo": 0.6233686827059925,
+       "hi": 0.9029773254768704
+      },
+      "B": {
+       "point": 0.8753355948496729,
+       "lo": 0.7307381462268554,
+       "hi": 1.0467607684713904
+      },
+      "diff_B_minus_A": {
+       "point": 0.12251152141468491,
+       "lo": 0.08479483545494722,
+       "hi": 0.1578001489331344
+      },
+      "separated_from_0": true
      },
      "speed_bias_mps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.3547,
-      "B_point_from_json": 0.4524,
-      "A_own_ci_from_json": [
-       0.1342,
-       0.5557
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.35473158260855053,
+       "lo": 0.14047816404684088,
+       "hi": 0.5663191632919031
+      },
+      "B": {
+       "point": 0.45244339197429256,
+       "lo": 0.1996798235745861,
+       "hi": 0.6959136855706133
+      },
+      "diff_B_minus_A": {
+       "point": 0.09771180936574203,
+       "lo": 0.051878317845193866,
+       "hi": 0.1377292581476062
+      },
+      "separated_from_0": true
      },
      "speed_rmse_mps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.0853,
-      "B_point_from_json": 1.236,
-      "A_own_ci_from_json": [
-       0.8879,
-       1.2717
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "rms",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 1.0853150985614077,
+       "lo": 0.891476115870283,
+       "hi": 1.2757326355744523
+      },
+      "B": {
+       "point": 1.2359941569965731,
+       "lo": 1.0106823641177867,
+       "hi": 1.457428090384065
+      },
+      "diff_B_minus_A": {
+       "point": 0.15067905843516538,
+       "lo": 0.09271142105087353,
+       "hi": 0.19984128884403382
+      },
+      "separated_from_0": true
      },
      "target_speed_acc.within_0.5_mps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.5091,
-      "B_point_from_json": 0.4475,
-      "A_own_ci_from_json": [
-       0.4517,
-       0.5606
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.5090618336886994,
+       "lo": 0.4494944332342113,
+       "hi": 0.5596706033511686
+      },
+      "B": {
+       "point": 0.4474946695095949,
+       "lo": 0.3977818107525386,
+       "hi": 0.4926096434085615
+      },
+      "diff_B_minus_A": {
+       "point": -0.06156716417910452,
+       "lo": -0.08872868950569356,
+       "hi": -0.03974461939762595
+      },
+      "separated_from_0": true
      },
      "target_speed_acc.within_1.0_mps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.7425,
-      "B_point_from_json": 0.6919,
-      "A_own_ci_from_json": [
-       0.68,
-       0.8017
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.7425373134328358,
+       "lo": 0.6758880864163138,
+       "hi": 0.8012947652406083
+      },
+      "B": {
+       "point": 0.6918976545842217,
+       "lo": 0.6243125508750509,
+       "hi": 0.7505634169693897
+      },
+      "diff_B_minus_A": {
+       "point": -0.0506396588486141,
+       "lo": -0.06310691486329867,
+       "hi": -0.03651200570878901
+      },
+      "separated_from_0": true
      },
      "target_speed_acc.within_2.0_mps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.9115,
-      "B_point_from_json": 0.8827,
-      "A_own_ci_from_json": [
-       0.8668,
-       0.9514
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.9115138592750534,
+       "lo": 0.8664763886269332,
+       "hi": 0.9508828273244783
+      },
+      "B": {
+       "point": 0.8827292110874201,
+       "lo": 0.8235005641521599,
+       "hi": 0.9354709917432318
+      },
+      "diff_B_minus_A": {
+       "point": -0.028784648187633266,
+       "lo": -0.04479427633696765,
+       "hi": -0.012731198358338804
+      },
+      "separated_from_0": true
      },
      "along_mae_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.0961,
-      "B_point_from_json": 1.3175,
-      "A_own_ci_from_json": [
-       0.9144,
-       1.278
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 1.0961158355789336,
+       "lo": 0.9205997720551028,
+       "hi": 1.283794745528405
+      },
+      "B": {
+       "point": 1.3175037401412595,
+       "lo": 1.1324547604772126,
+       "hi": 1.5266303052230241
+      },
+      "diff_B_minus_A": {
+       "point": 0.22138790456232593,
+       "lo": 0.15673863471868407,
+       "hi": 0.2942279364616792
+      },
+      "separated_from_0": true
      },
      "along_bias_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.4176,
-      "B_point_from_json": 0.4974,
-      "A_own_ci_from_json": [
-       0.064,
-       0.7493
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.4176009500990989,
+       "lo": 0.06635135235732842,
+       "hi": 0.7509734757685884
+      },
+      "B": {
+       "point": 0.49743401267126935,
+       "lo": 0.07393597409960549,
+       "hi": 0.893416876157954
+      },
+      "diff_B_minus_A": {
+       "point": 0.07983306257217043,
+       "lo": -0.009314955304042366,
+       "hi": 0.1583251025927259
+      },
+      "separated_from_0": false
      },
      "along_final_bias_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.2151,
-      "B_point_from_json": 1.5547,
-      "A_own_ci_from_json": [
-       0.4278,
-       1.9614
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 1.2151112258116574,
+       "lo": 0.45282961256025983,
+       "hi": 1.9668603080070275
+      },
+      "B": {
+       "point": 1.554660605469238,
+       "lo": 0.6412417501952008,
+       "hi": 2.425354351824668
+      },
+      "diff_B_minus_A": {
+       "point": 0.3395493796575806,
+       "lo": 0.1705521052267177,
+       "hi": 0.4939066437348157
+      },
+      "separated_from_0": true
      },
      "accel_mae_mps2": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.5584,
-      "B_point_from_json": 0.6614,
-      "A_own_ci_from_json": [
-       0.5092,
-       0.6085
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.5584212934443438,
+       "lo": 0.5093698748270653,
+       "hi": 0.609670699864984
+      },
+      "B": {
+       "point": 0.6614404320557997,
+       "lo": 0.6057269836773986,
+       "hi": 0.7224483589532582
+      },
+      "diff_B_minus_A": {
+       "point": 0.10301913861145595,
+       "lo": 0.0785790557644938,
+       "hi": 0.12545232527270692
+      },
+      "separated_from_0": true
      },
      "ego_progress.progress_ratio_mean": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.0823,
-      "B_point_from_json": 1.1212,
-      "A_own_ci_from_json": [
-       1.0344,
-       1.1288
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 465,
+      "n_tokens_defined_A": 465,
+      "n_tokens_defined_B": 465,
+      "n_logs": 13,
+      "A": {
+       "point": 1.0822553455223427,
+       "lo": 1.031932003176398,
+       "hi": 1.127034728818158
+      },
+      "B": {
+       "point": 1.1212290201174544,
+       "lo": 1.0579358968298311,
+       "hi": 1.181585782114206
+      },
+      "diff_B_minus_A": {
+       "point": 0.038973674595111696,
+       "lo": 0.022529346220397185,
+       "hi": 0.05986581636215574
+      },
+      "separated_from_0": true,
+      "den_total_A": 465.0,
+      "den_total_B": 465.0
      },
      "ego_progress.progress_ratio_median": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.0848,
-      "B_point_from_json": 1.0956,
-      "A_own_ci_from_json": [
-       1.0295,
-       1.111
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "median",
+      "n_tokens": 465,
+      "n_tokens_defined_A": 465,
+      "n_tokens_defined_B": 465,
+      "n_logs": 13,
+      "A": {
+       "point": 1.0848150904631477,
+       "lo": 1.02693282962218,
+       "hi": 1.1110277659764116
+      },
+      "B": {
+       "point": 1.0955633624597292,
+       "lo": 1.0296286132235575,
+       "hi": 1.1371865041521292
+      },
+      "diff_B_minus_A": {
+       "point": 0.01074827199658146,
+       "lo": -0.006222485310098047,
+       "hi": 0.03161231640185399
+      },
+      "separated_from_0": false
      },
      "ego_progress.progress_error_mean": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.1895,
-      "B_point_from_json": 0.2145,
-      "A_own_ci_from_json": [
-       0.159,
-       0.2247
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 465,
+      "n_tokens_defined_A": 465,
+      "n_tokens_defined_B": 465,
+      "n_logs": 13,
+      "A": {
+       "point": 0.18953036783236396,
+       "lo": 0.15912755441964244,
+       "hi": 0.22543194433948843
+      },
+      "B": {
+       "point": 0.21448135499910329,
+       "lo": 0.17730269939257776,
+       "hi": 0.2620586192941556
+      },
+      "diff_B_minus_A": {
+       "point": 0.024950987166739325,
+       "lo": 0.012567420916678024,
+       "hi": 0.043274575657040563
+      },
+      "separated_from_0": true,
+      "den_total_A": 465.0,
+      "den_total_B": 465.0
      },
      "ego_progress.under_progress_rate": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.3333,
-      "B_point_from_json": 0.3118,
-      "A_own_ci_from_json": [
-       0.2526,
-       0.4386
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 465,
+      "n_tokens_defined_A": 465,
+      "n_tokens_defined_B": 465,
+      "n_logs": 13,
+      "A": {
+       "point": 0.3333333333333333,
+       "lo": 0.2507930402930403,
+       "hi": 0.4387768671298306
+      },
+      "B": {
+       "point": 0.3118279569892473,
+       "lo": 0.22755495140148535,
+       "hi": 0.4168564920273349
+      },
+      "diff_B_minus_A": {
+       "point": -0.021505376344086002,
+       "lo": -0.047945205479452024,
+       "hi": 0.002732995199710163
+      },
+      "separated_from_0": false,
+      "den_total_A": 465.0,
+      "den_total_B": 465.0
      },
      "ego_progress.gt_progress_mean_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 19.2132,
-      "B_point_from_json": 19.2132,
-      "A_own_ci_from_json": [
-       14.8878,
-       24.1485
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "HUMAN-ONLY",
+      "note": "a property of the logged human future, identical for every arm; never compared"
      },
      "ego_progress.t0_axis_gt_self_ratio": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.9794,
-      "B_point_from_json": 0.9794,
-      "A_own_ci_from_json": [
-       0.9706,
-       0.9876
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "HUMAN-ONLY",
+      "note": "a property of the logged human future, identical for every arm; never compared"
      }
     },
     "lateral": {
      "heading_mae_deg": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 3.0112,
-      "B_point_from_json": 3.0844,
-      "A_own_ci_from_json": [
-       2.2575,
-       3.8146
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 467,
+      "n_tokens_defined_A": 467,
+      "n_tokens_defined_B": 467,
+      "n_logs": 13,
+      "A": {
+       "point": 3.0112392379999964,
+       "lo": 2.247115956296299,
+       "hi": 3.8017298794503613
+      },
+      "B": {
+       "point": 3.084395792485041,
+       "lo": 2.3240328906514955,
+       "hi": 3.8190323981168195
+      },
+      "diff_B_minus_A": {
+       "point": 0.07315655448504454,
+       "lo": -0.06846706203515096,
+       "hi": 0.16824383115693592
+      },
+      "separated_from_0": false,
+      "den_total_A": 3492.0,
+      "den_total_B": 3488.0
      },
      "yaw_rate_mae_degps": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 2.8874,
-      "B_point_from_json": 3.0945,
-      "A_own_ci_from_json": [
-       2.2509,
-       3.5246
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 460,
+      "n_tokens_defined_A": 460,
+      "n_tokens_defined_B": 459,
+      "n_logs": 13,
+      "A": {
+       "point": 2.8874116115917463,
+       "lo": 2.2368194744482683,
+       "hi": 3.5329564552732875
+      },
+      "B": {
+       "point": 3.0944930964780784,
+       "lo": 2.364749631838704,
+       "hi": 3.7871694405112257
+      },
+      "diff_B_minus_A": {
+       "point": 0.20708148488633205,
+       "lo": 0.006992977291795598,
+       "hi": 0.348324611557867
+      },
+      "separated_from_0": true,
+      "den_total_A": 3020.0,
+      "den_total_B": 3016.0
      },
      "curvature_mae_1pm": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.018222,
-      "B_point_from_json": 0.019533,
-      "A_own_ci_from_json": [
-       0.013154,
-       0.023726
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 460,
+      "n_tokens_defined_A": 460,
+      "n_tokens_defined_B": 459,
+      "n_logs": 13,
+      "A": {
+       "point": 0.01822156498065243,
+       "lo": 0.013182373826314632,
+       "hi": 0.023474120894279516
+      },
+      "B": {
+       "point": 0.019533161956610638,
+       "lo": 0.013022758145605587,
+       "hi": 0.026640986347848027
+      },
+      "diff_B_minus_A": {
+       "point": 0.0013115969759582083,
+       "lo": -0.001526469062516209,
+       "hi": 0.003827499453324825
+      },
+      "separated_from_0": false,
+      "den_total_A": 3020.0,
+      "den_total_B": 3016.0
      },
      "curvature_bias_1pm": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.002819,
-      "B_point_from_json": 0.004336,
-      "A_own_ci_from_json": [
-       -0.001173,
-       0.006508
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 460,
+      "n_tokens_defined_A": 460,
+      "n_tokens_defined_B": 459,
+      "n_logs": 13,
+      "A": {
+       "point": 0.002818507288529812,
+       "lo": -0.0011980427207406302,
+       "hi": 0.006307007604089352
+      },
+      "B": {
+       "point": 0.004335676442912968,
+       "lo": 0.0012637404026099182,
+       "hi": 0.007546118111701724
+      },
+      "diff_B_minus_A": {
+       "point": 0.0015171691543831556,
+       "lo": 0.00022816968714419196,
+       "hi": 0.003462372409240665
+      },
+      "separated_from_0": true,
+      "den_total_A": 3020.0,
+      "den_total_B": 3016.0
      },
      "cross_mae_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.3313,
-      "B_point_from_json": 0.3616,
-      "A_own_ci_from_json": [
-       0.2361,
-       0.4293
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.33127406115598007,
+       "lo": 0.23891904183766596,
+       "hi": 0.43453578348258537
+      },
+      "B": {
+       "point": 0.36163086209819517,
+       "lo": 0.25939088345753425,
+       "hi": 0.47052262239887443
+      },
+      "diff_B_minus_A": {
+       "point": 0.0303568009422151,
+       "lo": 0.011299253028431308,
+       "hi": 0.04518612465240528
+      },
+      "separated_from_0": true
      },
      "cross_bias_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": -0.1095,
-      "B_point_from_json": -0.1262,
-      "A_own_ci_from_json": [
-       -0.2036,
-       -0.0476
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": -0.10948977896919859,
+       "lo": -0.2017193205002169,
+       "hi": -0.04559044862926067
+      },
+      "B": {
+       "point": -0.1261910378723455,
+       "lo": -0.21056748362068134,
+       "hi": -0.06549197382957599
+      },
+      "diff_B_minus_A": {
+       "point": -0.016701258903146915,
+       "lo": -0.03889603411013858,
+       "hi": 0.009637137346508604
+      },
+      "separated_from_0": false
      },
      "cross_final_mae_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.773,
-      "B_point_from_json": 0.8481,
-      "A_own_ci_from_json": [
-       0.4914,
-       1.0746
-      ],
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.7729780507673111,
+       "lo": 0.4964922342431397,
+       "hi": 1.0900283907301958
+      },
+      "B": {
+       "point": 0.8481256173445043,
+       "lo": 0.5431135385070529,
+       "hi": 1.1875431998909085
+      },
+      "diff_B_minus_A": {
+       "point": 0.07514756657719324,
+       "lo": 0.007933553335108043,
+       "hi": 0.12656928719923302
+      },
+      "separated_from_0": true
+     },
+     "last_pose_heading_err_deg": {
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 4.963918104177253,
+       "lo": 3.7188336705149423,
+       "hi": 6.580808615255216
+      },
+      "B": {
+       "point": 5.427251615007455,
+       "lo": 4.075143959778016,
+       "hi": 7.065960303029334
+      },
+      "diff_B_minus_A": {
+       "point": 0.4633335108302017,
+       "lo": 0.22002727253814375,
+       "hi": 0.6991896782346074
+      },
+      "separated_from_0": true
      }
     },
     "tactical": {
      "lateral_decision.accuracy": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.9062,
-      "B_point_from_json": 0.9062,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.906183368869936,
+       "lo": 0.8624615675606067,
+       "hi": 0.9356329234279919
+      },
+      "B": {
+       "point": 0.906183368869936,
+       "lo": 0.8644448349452075,
+       "hi": 0.9331984799917278
+      },
+      "diff_B_minus_A": {
+       "point": 0.0,
+       "lo": -0.010288065843621408,
+       "hi": 0.010707212506088502
+      },
+      "separated_from_0": false
      },
      "lateral_decision.kappa": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.835,
-      "B_point_from_json": 0.8339,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.8350202267312642,
+       "lo": 0.7402778279531147,
+       "hi": 0.8797629176425625
+      },
+      "B": {
+       "point": 0.833910146000676,
+       "lo": 0.7479893016904814,
+       "hi": 0.8708334974398025
+      },
+      "diff_B_minus_A": {
+       "point": -0.0011100807305881588,
+       "lo": -0.017684354288175358,
+       "hi": 0.01894175619008795
+      },
+      "separated_from_0": false
+     },
+     "lateral_decision.per_class.lane_keep.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 283,
+      "n_tokens_defined_A": 283,
+      "n_tokens_defined_B": 283,
+      "n_logs": 13,
+      "A": {
+       "point": 0.872791519434629,
+       "lo": 0.7950302795031056,
+       "hi": 0.9272738664843928
+      },
+      "B": {
+       "point": 0.8798586572438163,
+       "lo": 0.8023244760809974,
+       "hi": 0.9298258985879332
+      },
+      "diff_B_minus_A": {
+       "point": 0.007067137809187329,
+       "lo": -0.006945049361207872,
+       "hi": 0.0182648401826484
+      },
+      "separated_from_0": false
+     },
+     "lateral_decision.per_class.lane_keep.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 262,
+      "n_tokens_defined_A": 255,
+      "n_tokens_defined_B": 259,
+      "n_logs": 13,
+      "A": {
+       "point": 0.9686274509803922,
+       "lo": 0.9323671497584541,
+       "hi": 0.9881305637982196
+      },
+      "B": {
+       "point": 0.9613899613899614,
+       "lo": 0.9180306851618327,
+       "hi": 0.9849642810267564
+      },
+      "diff_B_minus_A": {
+       "point": -0.007237489590430801,
+       "lo": -0.021845062696589236,
+       "hi": 0.0004011192381604407
+      },
+      "separated_from_0": false
+     },
+     "lateral_decision.per_class.turn_left.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 131,
+      "n_tokens_defined_A": 131,
+      "n_tokens_defined_B": 131,
+      "n_logs": 11,
+      "A": {
+       "point": 0.9618320610687023,
+       "lo": 0.9342105263157895,
+       "hi": 0.9871794871794872
+      },
+      "B": {
+       "point": 0.9465648854961832,
+       "lo": 0.9210526315789473,
+       "hi": 0.971830985915493
+      },
+      "diff_B_minus_A": {
+       "point": -0.01526717557251911,
+       "lo": -0.027210884353741416,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "lateral_decision.per_class.turn_left.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 146,
+      "n_tokens_defined_A": 144,
+      "n_tokens_defined_B": 143,
+      "n_logs": 12,
+      "A": {
+       "point": 0.875,
+       "lo": 0.735279111644658,
+       "hi": 0.9447852760736196
+      },
+      "B": {
+       "point": 0.8671328671328671,
+       "lo": 0.7159061004784689,
+       "hi": 0.9333333333333333
+      },
+      "diff_B_minus_A": {
+       "point": -0.00786713286713292,
+       "lo": -0.05163967679504412,
+       "hi": 0.014465547251198911
+      },
+      "separated_from_0": false
+     },
+     "lateral_decision.per_class.turn_right.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 55,
+      "n_tokens_defined_A": 55,
+      "n_tokens_defined_B": 55,
+      "n_logs": 10,
+      "A": {
+       "point": 0.9454545454545454,
+       "lo": 0.8064516129032258,
+       "hi": 1.0
+      },
+      "B": {
+       "point": 0.9454545454545454,
+       "lo": 0.8064516129032258,
+       "hi": 1.0
+      },
+      "diff_B_minus_A": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "lateral_decision.per_class.turn_right.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 71,
+      "n_tokens_defined_A": 70,
+      "n_tokens_defined_B": 67,
+      "n_logs": 11,
+      "A": {
+       "point": 0.7428571428571429,
+       "lo": 0.6046511627906976,
+       "hi": 0.8604651162790697
+      },
+      "B": {
+       "point": 0.7761194029850746,
+       "lo": 0.6530612244897959,
+       "hi": 0.851063829787234
+      },
+      "diff_B_minus_A": {
+       "point": 0.033262260127931764,
+       "lo": -0.037439018785352864,
+       "hi": 0.0894426521303815
+      },
+      "separated_from_0": false
      },
      "longitudinal_decision.accuracy": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.6695,
-      "B_point_from_json": 0.6631,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.6695095948827292,
+       "lo": 0.5535619300911855,
+       "hi": 0.7671584637417913
+      },
+      "B": {
+       "point": 0.6631130063965884,
+       "lo": 0.5582325878857897,
+       "hi": 0.7551038001407459
+      },
+      "diff_B_minus_A": {
+       "point": -0.006396588486140775,
+       "lo": -0.034120958856252194,
+       "hi": 0.018090204369274096
+      },
+      "separated_from_0": false
      },
      "longitudinal_decision.kappa": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.5103,
-      "B_point_from_json": 0.5009,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.5103328887631519,
+       "lo": 0.34272929081622205,
+       "hi": 0.649927611309845
+      },
+      "B": {
+       "point": 0.5008621851003637,
+       "lo": 0.3463522994839989,
+       "hi": 0.6316240573602955
+      },
+      "diff_B_minus_A": {
+       "point": -0.009470703662788127,
+       "lo": -0.049005804500382416,
+       "hi": 0.024528497812838515
+      },
+      "separated_from_0": false
+     },
+     "longitudinal_decision.per_class.brake_stop.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 158,
+      "n_tokens_defined_A": 158,
+      "n_tokens_defined_B": 158,
+      "n_logs": 12,
+      "A": {
+       "point": 0.6329113924050633,
+       "lo": 0.43273229369720595,
+       "hi": 0.7789522118178882
+      },
+      "B": {
+       "point": 0.5949367088607594,
+       "lo": 0.4019544997486174,
+       "hi": 0.7361111111111112
+      },
+      "diff_B_minus_A": {
+       "point": -0.03797468354430389,
+       "lo": -0.06896551724137923,
+       "hi": -0.013513513513513542
+      },
+      "separated_from_0": true
+     },
+     "longitudinal_decision.per_class.brake_stop.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 126,
+      "n_tokens_defined_A": 123,
+      "n_tokens_defined_B": 112,
+      "n_logs": 12,
+      "A": {
+       "point": 0.8130081300813008,
+       "lo": 0.6075836347197107,
+       "hi": 0.9344262295081968
+      },
+      "B": {
+       "point": 0.8392857142857143,
+       "lo": 0.6428571428571429,
+       "hi": 0.946969696969697
+      },
+      "diff_B_minus_A": {
+       "point": 0.026277584204413507,
+       "lo": -0.005733437435244656,
+       "hi": 0.05274123426041235
+      },
+      "separated_from_0": false
+     },
+     "longitudinal_decision.per_class.steady.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 181,
+      "n_tokens_defined_A": 181,
+      "n_tokens_defined_B": 181,
+      "n_logs": 12,
+      "A": {
+       "point": 0.5027624309392266,
+       "lo": 0.35927998372187664,
+       "hi": 0.6587324929971988
+      },
+      "B": {
+       "point": 0.5138121546961326,
+       "lo": 0.3953488372093023,
+       "hi": 0.6343330934161678
+      },
+      "diff_B_minus_A": {
+       "point": 0.011049723756906049,
+       "lo": -0.051023307050092816,
+       "hi": 0.06716574689577318
+      },
+      "separated_from_0": false
+     },
+     "longitudinal_decision.per_class.steady.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 159,
+      "n_tokens_defined_A": 139,
+      "n_tokens_defined_B": 145,
+      "n_logs": 13,
+      "A": {
+       "point": 0.6546762589928058,
+       "lo": 0.5818135435992579,
+       "hi": 0.7009816555488174
+      },
+      "B": {
+       "point": 0.6413793103448275,
+       "lo": 0.5760869565217391,
+       "hi": 0.6974838772718389
+      },
+      "diff_B_minus_A": {
+       "point": -0.013296948647978257,
+       "lo": -0.04551940155854064,
+       "hi": 0.023720868730474947
+      },
+      "separated_from_0": false
+     },
+     "longitudinal_decision.per_class.accelerate.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 130,
+      "n_tokens_defined_A": 130,
+      "n_tokens_defined_B": 130,
+      "n_logs": 11,
+      "A": {
+       "point": 0.9461538461538461,
+       "lo": 0.8701298701298701,
+       "hi": 0.9902912621359223
+      },
+      "B": {
+       "point": 0.9538461538461539,
+       "lo": 0.890240552130796,
+       "hi": 0.9919354838709677
+      },
+      "diff_B_minus_A": {
+       "point": 0.007692307692307776,
+       "lo": 0.0,
+       "hi": 0.03191489361702127
+      },
+      "separated_from_0": false
+     },
+     "longitudinal_decision.per_class.accelerate.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 218,
+      "n_tokens_defined_A": 207,
+      "n_tokens_defined_B": 212,
+      "n_logs": 12,
+      "A": {
+       "point": 0.5942028985507246,
+       "lo": 0.45809909364378637,
+       "hi": 0.7739735701571085
+      },
+      "B": {
+       "point": 0.5849056603773585,
+       "lo": 0.4534865665174057,
+       "hi": 0.7541081770884459
+      },
+      "diff_B_minus_A": {
+       "point": -0.00929723817336614,
+       "lo": -0.04701014435899806,
+       "hi": 0.012903344910219609
+      },
+      "separated_from_0": false
      },
      "maneuver_5way_collapsed.accuracy": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.7697,
-      "B_point_from_json": 0.7655,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.7697228144989339,
+       "lo": 0.6641010498687664,
+       "hi": 0.844097995545657
+      },
+      "B": {
+       "point": 0.7654584221748401,
+       "lo": 0.6658652391041162,
+       "hi": 0.8356164383561644
+      },
+      "diff_B_minus_A": {
+       "point": -0.004264392324093813,
+       "lo": -0.018933236706223433,
+       "hi": 0.01310912644752049
+      },
+      "separated_from_0": false
      },
      "maneuver_5way_collapsed.kappa": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 0.7073,
-      "B_point_from_json": 0.7021,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 0.7073492026808412,
+       "lo": 0.5783030160255236,
+       "hi": 0.7930245478128428
+      },
+      "B": {
+       "point": 0.7020777750828683,
+       "lo": 0.5783875700536716,
+       "hi": 0.7836913216053107
+      },
+      "diff_B_minus_A": {
+       "point": -0.005271427597972944,
+       "lo": -0.02380194747107644,
+       "hi": 0.01612850423665327
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.lane_keep.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 83,
+      "n_tokens_defined_A": 83,
+      "n_tokens_defined_B": 83,
+      "n_logs": 9,
+      "A": {
+       "point": 0.40963855421686746,
+       "lo": 0.2830188679245283,
+       "hi": 0.5087719298245614
+      },
+      "B": {
+       "point": 0.4457831325301205,
+       "lo": 0.3269230769230769,
+       "hi": 0.5714285714285714
+      },
+      "diff_B_minus_A": {
+       "point": 0.03614457831325302,
+       "lo": -0.011111111111111127,
+       "hi": 0.11475409836065575
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.lane_keep.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 65,
+      "n_tokens_defined_A": 53,
+      "n_tokens_defined_B": 61,
+      "n_logs": 11,
+      "A": {
+       "point": 0.6415094339622641,
+       "lo": 0.5849056603773585,
+       "hi": 0.7037037037037037,
+       "n_draws_undefined": 1
+      },
+      "B": {
+       "point": 0.6065573770491803,
+       "lo": 0.5,
+       "hi": 0.6790181691125087
+      },
+      "diff_B_minus_A": {
+       "point": -0.034952056913083784,
+       "lo": -0.14240518423497148,
+       "hi": 0.026345083487940624,
+       "n_draws_undefined": 1
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.turn_left.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 131,
+      "n_tokens_defined_A": 131,
+      "n_tokens_defined_B": 131,
+      "n_logs": 11,
+      "A": {
+       "point": 0.9618320610687023,
+       "lo": 0.9342105263157895,
+       "hi": 0.9871794871794872
+      },
+      "B": {
+       "point": 0.9465648854961832,
+       "lo": 0.9210526315789473,
+       "hi": 0.971830985915493
+      },
+      "diff_B_minus_A": {
+       "point": -0.01526717557251911,
+       "lo": -0.027210884353741416,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.turn_left.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 146,
+      "n_tokens_defined_A": 144,
+      "n_tokens_defined_B": 143,
+      "n_logs": 12,
+      "A": {
+       "point": 0.875,
+       "lo": 0.735279111644658,
+       "hi": 0.9447852760736196
+      },
+      "B": {
+       "point": 0.8671328671328671,
+       "lo": 0.7159061004784689,
+       "hi": 0.9333333333333333
+      },
+      "diff_B_minus_A": {
+       "point": -0.00786713286713292,
+       "lo": -0.05163967679504412,
+       "hi": 0.014465547251198911
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.turn_right.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 55,
+      "n_tokens_defined_A": 55,
+      "n_tokens_defined_B": 55,
+      "n_logs": 10,
+      "A": {
+       "point": 0.9454545454545454,
+       "lo": 0.8064516129032258,
+       "hi": 1.0
+      },
+      "B": {
+       "point": 0.9454545454545454,
+       "lo": 0.8064516129032258,
+       "hi": 1.0
+      },
+      "diff_B_minus_A": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.turn_right.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 71,
+      "n_tokens_defined_A": 70,
+      "n_tokens_defined_B": 67,
+      "n_logs": 11,
+      "A": {
+       "point": 0.7428571428571429,
+       "lo": 0.6046511627906976,
+       "hi": 0.8604651162790697
+      },
+      "B": {
+       "point": 0.7761194029850746,
+       "lo": 0.6530612244897959,
+       "hi": 0.851063829787234
+      },
+      "diff_B_minus_A": {
+       "point": 0.033262260127931764,
+       "lo": -0.037439018785352864,
+       "hi": 0.0894426521303815
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.accelerate.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 73,
+      "n_tokens_defined_A": 73,
+      "n_tokens_defined_B": 73,
+      "n_logs": 10,
+      "A": {
+       "point": 0.958904109589041,
+       "lo": 0.88,
+       "hi": 1.0
+      },
+      "B": {
+       "point": 0.958904109589041,
+       "lo": 0.88,
+       "hi": 1.0
+      },
+      "diff_B_minus_A": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.accelerate.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 112,
+      "n_tokens_defined_A": 109,
+      "n_tokens_defined_B": 108,
+      "n_logs": 11,
+      "A": {
+       "point": 0.6422018348623854,
+       "lo": 0.4358910891089109,
+       "hi": 0.8382352941176471
+      },
+      "B": {
+       "point": 0.6481481481481481,
+       "lo": 0.45,
+       "hi": 0.8351648351648352
+      },
+      "diff_B_minus_A": {
+       "point": 0.005946313285762783,
+       "lo": -0.029284301920498117,
+       "hi": 0.04018797944139134
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.brake_stop.recall": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 127,
+      "n_tokens_defined_A": 127,
+      "n_tokens_defined_B": 127,
+      "n_logs": 11,
+      "A": {
+       "point": 0.6220472440944882,
+       "lo": 0.3615277777777778,
+       "hi": 0.7906976744186046
+      },
+      "B": {
+       "point": 0.5984251968503937,
+       "lo": 0.35555555555555557,
+       "hi": 0.7469897236002834
+      },
+      "diff_B_minus_A": {
+       "point": -0.023622047244094446,
+       "lo": -0.05522324471710975,
+       "hi": 0.0136986301369863
+      },
+      "separated_from_0": false
+     },
+     "maneuver_5way_collapsed.per_class.brake_stop.precision": {
+      "status": "OK",
+      "kind": "class",
+      "n_tokens": 98,
+      "n_tokens_defined_A": 93,
+      "n_tokens_defined_B": 90,
+      "n_logs": 11,
+      "A": {
+       "point": 0.8494623655913979,
+       "lo": 0.6078431372549019,
+       "hi": 0.96
+      },
+      "B": {
+       "point": 0.8444444444444444,
+       "lo": 0.5999253731343284,
+       "hi": 0.9545527859237536
+      },
+      "diff_B_minus_A": {
+       "point": -0.00501792114695343,
+       "lo": -0.04848701298701307,
+       "hi": 0.025974643618904874
+      },
+      "separated_from_0": false
      },
      "goal_setting.goal_point_error_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 2.8276,
-      "B_point_from_json": 3.1671,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 2.827585423906582,
+       "lo": 2.2443994236955542,
+       "hi": 3.500304531694559
+      },
+      "B": {
+       "point": 3.167068113011156,
+       "lo": 2.5145615960816183,
+       "hi": 3.9377614547784883
+      },
+      "diff_B_minus_A": {
+       "point": 0.33948268910457413,
+       "lo": 0.18474944836043966,
+       "hi": 0.49179672119429113
+      },
+      "separated_from_0": true
+     },
+     "goal_setting.goal_long_bias_m": {
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": 1.2151112260896642,
+       "lo": 0.45282961273017763,
+       "hi": 1.9668603080115188
+      },
+      "B": {
+       "point": 1.5546606059656787,
+       "lo": 0.6412417494451251,
+       "hi": 2.4253543516084153
+      },
+      "diff_B_minus_A": {
+       "point": 0.3395493798760145,
+       "lo": 0.17055210473473909,
+       "hi": 0.493906643922341
+      },
+      "separated_from_0": true
+     },
+     "goal_setting.goal_lat_bias_m": {
+      "status": "OK",
+      "kind": "mean",
+      "n_tokens": 469,
+      "n_tokens_defined_A": 469,
+      "n_tokens_defined_B": 469,
+      "n_logs": 13,
+      "A": {
+       "point": -0.22341314856086358,
+       "lo": -0.5317608160291672,
+       "hi": -0.035332158805879296
+      },
+      "B": {
+       "point": -0.22500013883022327,
+       "lo": -0.5184990811673527,
+       "hi": -0.03233693540812666
+      },
+      "diff_B_minus_A": {
+       "point": -0.0015869902693596838,
+       "lo": -0.05600684397386749,
+       "hi": 0.062303012246063764
+      },
+      "separated_from_0": false
      },
      "goal_setting.goal_bearing_mae_deg": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 2.768,
-      "B_point_from_json": 2.8899,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 465,
+      "n_tokens_defined_A": 465,
+      "n_tokens_defined_B": 465,
+      "n_logs": 13,
+      "A": {
+       "point": 2.7679962573625234,
+       "lo": 2.0088984706569857,
+       "hi": 3.6179017892875995
+      },
+      "B": {
+       "point": 2.8898883908173647,
+       "lo": 2.1005034592196323,
+       "hi": 3.669349860683878
+      },
+      "diff_B_minus_A": {
+       "point": 0.12189213345484129,
+       "lo": -0.15325117746468023,
+       "hi": 0.32537564923006096
+      },
+      "separated_from_0": false,
+      "den_total_A": 465.0,
+      "den_total_B": 465.0
+     },
+     "goal_setting.goal_range_ratio": {
+      "status": "OK",
+      "kind": "ratio",
+      "n_tokens": 465,
+      "n_tokens_defined_A": 465,
+      "n_tokens_defined_B": 465,
+      "n_logs": 13,
+      "A": {
+       "point": 1.08748446488097,
+       "lo": 1.0377001543025928,
+       "hi": 1.132660398953105
+      },
+      "B": {
+       "point": 1.127239754833667,
+       "lo": 1.0635713598096441,
+       "hi": 1.188233396408877
+      },
+      "diff_B_minus_A": {
+       "point": 0.03975528995269695,
+       "lo": 0.0224694176362648,
+       "hi": 0.06081927849908604
+      },
+      "separated_from_0": true,
+      "den_total_A": 465.0,
+      "den_total_B": 465.0
      },
      "goal_setting.goal_bearing_bias_deg": {
       "status": "NO-PER-TOKEN-DATA",
       "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
       "A_point_from_json": -0.6077,
       "B_point_from_json": -0.6201,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
-     },
-     "goal_setting.goal_range_ratio": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.0875,
-      "B_point_from_json": 1.1272,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
-     },
-     "goal_setting.goal_long_bias_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": 1.2151,
-      "B_point_from_json": 1.5547,
-      "A_own_ci_from_json": null,
-      "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
-     },
-     "goal_setting.goal_lat_bias_m": {
-      "status": "NO-PER-TOKEN-DATA",
-      "reason": "families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it",
-      "A_point_from_json": -0.2234,
-      "B_point_from_json": -0.225,
       "A_own_ci_from_json": null,
       "note": "descriptive only: unpaired JSON-level values; no paired difference claimed"
      }
@@ -1515,8 +4534,8 @@
   }
  },
  "inputs": {
-  "a": "E:/Projects/TanitAD-artifacts/scorer_gym_20261107/teacher_fidelity/n2/reroll/run/fam/fam_R0_R.json",
-  "b": "E:/Projects/TanitAD-artifacts/scorer_gym_20261107/teacher_fidelity/n2/reroll/run/fam/fam_R5HZ_R.json",
-  "tokens": "E:/Projects/TanitAD-artifacts/scorer_gym_20261107/teacher_fidelity/n2/reroll/run/tokens.txt"
+  "a": "reg/fam_R0_R_per_window.json",
+  "b": "reg/fam_R5HZ_R_per_window.json",
+  "tokens": null
  }
 }
