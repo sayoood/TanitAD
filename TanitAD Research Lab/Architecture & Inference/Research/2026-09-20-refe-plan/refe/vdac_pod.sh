@@ -41,10 +41,12 @@ cd "$HERE"
 mkdir -p $OUT
 export OMP_NUM_THREADS=4 PYTHONUNBUFFERED=1
 rc=2
+# CUBLAS_WORKSPACE_CONFIG at PROCESS START for every --preflight run, never the trainer (PREREG_AUX_DRIVABLE_S1.md A6, as s1aux_pod.sh:417-419): G12 runs its identity arms under
+# STRICT determinism and the pod's torch 2.7.1 raises its cuBLAS check unless the variable exists before CUDA starts.  MEASURED 2026-11-12: S1a HA-s0 preflight REFUSED without it.
 case "${MODE:-}" in
-  preflight) "$PY" scorer_finetune.py $ARGS --preflight > $OUT/preflight.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $OUT/preflight.log ;;
-  mutate) env REFE_AUXEXCL_MUTATE_NOFILTER=1 "$PY" scorer_finetune.py $ARGS --preflight --out $OUT/mutate_exclude > $OUT/mutate_exclude.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $OUT/mutate_exclude.log ;;
-  mutate_ego) env REFE_AUX_MUTATE_EGO=1 "$PY" scorer_finetune.py $ARGS --preflight --out $OUT/mutate_ego > $OUT/mutate_ego.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $OUT/mutate_ego.log ;;
+  preflight) env CUBLAS_WORKSPACE_CONFIG=:4096:8 "$PY" scorer_finetune.py $ARGS --preflight > $OUT/preflight.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $OUT/preflight.log ;;
+  mutate) env CUBLAS_WORKSPACE_CONFIG=:4096:8 REFE_AUXEXCL_MUTATE_NOFILTER=1 "$PY" scorer_finetune.py $ARGS --preflight --out $OUT/mutate_exclude > $OUT/mutate_exclude.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $OUT/mutate_exclude.log ;;
+  mutate_ego) env CUBLAS_WORKSPACE_CONFIG=:4096:8 REFE_AUX_MUTATE_EGO=1 "$PY" scorer_finetune.py $ARGS --preflight --out $OUT/mutate_ego > $OUT/mutate_ego.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $OUT/mutate_ego.log ;;
   run) "$PY" scorer_finetune.py $ARGS > $OUT/sft.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $OUT/sft.log ;;      # the script's own exit status IS the trainer's
 esac
 exit $rc

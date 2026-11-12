@@ -564,6 +564,17 @@ for old, new in (("--epochs 2", "--epochs 1"), ("--w-aux-drv 0.1 ", ""), ("--aux
         assert diffs >= 1, "MUTATION %r of vdac_pod.sh must move an arm's argv off launch_gate.vdac_argv" % old
 # the mutant mode is wired to the env the trainer reads, on the REAL argv, and refuses to train when the audit passes it
 assert "REFE_AUXEXCL_MUTATE_NOFILTER=1" in SCRIPTS["vdac_pod.sh"] and SF.AUX_EXCL_MUTATE_ENV in SCRIPTS["vdac_pod.sh"] and "--preflight --out $OUT/mutate_exclude" in SCRIPTS["vdac_pod.sh"]
+# A6 (PREREG_AUX_DRIVABLE_S1, as test_s1aux_chain PREFLIGHT_NO_CUBLAS_ENV): every --preflight run carries CUBLAS_WORKSPACE_CONFIG at process start, the trainer does not.
+# MEASURED 2026-11-12: the S1a HA-s0 preflight REFUSED on the pod (torch 2.7.1 strict-mode cuBLAS raise in g12_probe) because vdac_pod.sh lacked it.
+CUBLAS_LINES = ('  preflight) env CUBLAS_WORKSPACE_CONFIG=:4096:8 "$PY" scorer_finetune.py $ARGS --preflight >',
+                '  mutate) env CUBLAS_WORKSPACE_CONFIG=:4096:8 REFE_AUXEXCL_MUTATE_NOFILTER=1 "$PY" scorer_finetune.py $ARGS --preflight',
+                '  mutate_ego) env CUBLAS_WORKSPACE_CONFIG=:4096:8 REFE_AUX_MUTATE_EGO=1 "$PY" scorer_finetune.py $ARGS --preflight')
+def cublas_ok(text):
+    return all(l in text for l in CUBLAS_LINES) and '  run) "$PY" scorer_finetune.py $ARGS >' in text
+assert cublas_ok(SCRIPTS["vdac_pod.sh"]), "PREFLIGHT_NO_CUBLAS_ENV"
+for _old in CUBLAS_LINES:                                   # deliberate regression: dropping the variable from ANY preflight mode must turn the guard RED
+    assert not cublas_ok(SCRIPTS["vdac_pod.sh"].replace(_old, _old.replace("CUBLAS_WORKSPACE_CONFIG=:4096:8 ", "", 1))), "MUTATION not seen: " + _old
+assert not cublas_ok(SCRIPTS["vdac_pod.sh"].replace('  run) "$PY"', '  run) env CUBLAS_WORKSPACE_CONFIG=:4096:8 "$PY"')), "the trainer must run WITHOUT the variable, as the N arms did"
 # ---- the chain
 ch = SCRIPTS["vdac_chain.sh"]
 for tok in ("ZZVDAC_START", "ZZVDAC_PRECHECK_OK", "ZZVDAC_INPUTS_OK", "ZZVDAC_EGR_OK", "ZZVDAC_PREFLIGHT_OK", "ZZVDAC_GATE_OK", "ZZVDAC_TRAIN_START", "ZZVDAC_TRAIN_DONE", "ZZVDAC_EXPORT_OK", "ZZVDAC_ARM_DONE", "ZZVDAC_CHAIN_DONE", "ZZVDAC_CHAIN_FAIL",
