@@ -1,0 +1,180 @@
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/stage2_sft.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/stage2_sft.py
+@@ -36,7 +36,9 @@
+ 
+ import numpy as np
+ 
+-PKG = Path("E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan")
++# P7-READ-ROUTE (2026-11-12): PKG = THIS file's package (a tip export on F: runs its OWN code), $TANITAD_REFE_PKG overrides. It was the E: tree's hard-coded path,
++# which silently ran whatever stale code sat on E:. DATA paths (D below, the nuplan splits, the navsim archive root) still point where the data is.
++PKG = Path(os.environ.get("TANITAD_REFE_PKG") or Path(__file__).resolve().parent.parent)
+ sys.path.insert(0, str(PKG / "eval"))
+ import eval_checkpoint as EC  # noqa: E402
+ import harness_pins as HP  # noqa: E402
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/stage3_full.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/stage3_full.py
+@@ -73,13 +73,14 @@
+ 
+ 
+ EXPORT = _navsim_root() + "/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
+-# stage2_sft.py writes under ITS OWN hard-coded package root (the E: mirror of this package, byte-identical to it)
+-S2_RAW = Path("E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-sft-stage2")
++# stage2_sft.py writes under ITS OWN package root (P7-READ-ROUTE: derived from its __file__, $TANITAD_REFE_PKG overrides); stage 3 reads the same place
++PKG = Path(os.environ.get("TANITAD_REFE_PKG") or PKG)
++S2_RAW = PKG / "raw" / "2026-10-05-sft-stage2"
+ BANK = PKG / "raw" / "p2_r2_instrument" / "baseline"          # the in-repo copy of every baseline table
+ OUT_ROOT = PKG / "raw" / "p2_readout"
+ PY_T = "C:/Users/Admin/venvs/tanitad/Scripts/python.exe"
+ STAGE2_SFT = HERE / "stage2_sft.py"
+-STAGE2_SFT_MD5 = "3764778748d6ecc02c6569baffa4f758"             # stage2_sft.py as of P7-READ-YAW (2026-11-12: --ego-yaw-table + the refusal of a yaw checkpoint without it; default seam command unchanged; was 74c37dd2d7dba9b03106cde5372ac0e1) <- the P6 layout fix (2026-11-06: path roots only, EXPORT via the root resolver; was 3a30ab4c5a122664c534f378144cb4a5) <- P6-READ-GAPS (2026-10-22: the banked harness + --dump-proposals; was 831a8d76bb5b8be2016288b02cd29ee5, R1's instrument, whose estimator and scoring calls are unchanged)
++STAGE2_SFT_MD5 = "3147254ba8128c5dde1b33dbd6cb2b81"             # stage2_sft.py as of P7-READ-ROUTE (2026-11-12: PKG from __file__; was 3764778748d6ecc02c6569baffa4f758 at P7-READ-YAW, 74c37dd2d7dba9b03106cde5372ac0e1 before) <- P7-READ-YAW (2026-11-12: --ego-yaw-table + the refusal of a yaw checkpoint without it; default seam command unchanged; was 74c37dd2d7dba9b03106cde5372ac0e1) <- the P6 layout fix (2026-11-06: path roots only, EXPORT via the root resolver; was 3a30ab4c5a122664c534f378144cb4a5) <- P6-READ-GAPS (2026-10-22: the banked harness + --dump-proposals; was 831a8d76bb5b8be2016288b02cd29ee5, R1's instrument, whose estimator and scoring calls are unchanged)
+ FAMILIES6_CANDIDATES = (
+     os.environ.get("REFE_FAMILIES6", ""),
+     str(HERE / "harness" / "ev6e" / "families6.py"),       # G3: the banked, sha256-pinned copy (eval/harness_pins.py) the SFT-4 / C2 results used, FIRST: stage 2 runs this one, so does stage 3
+@@ -106,12 +107,12 @@
+     "u400": {
+         "label": "SFT-4 arm B u400 (rule navsim_v1_lane)", "pdms_x100": 88.2469,
+         "csv": [DATA / "score/refe_stage2_sft4_B_u400_navtest_full/refe_stage2_sft4_B_u400_navtest_full.csv", BANK / "u400_navtest_full.csv"],
+-        "csv_md5": "b17c4fbac26d064f17ce790dca4d9d08",
++        "csv_md5": ("b17c4fbac26d064f17ce790dca4d9d08", "4ade3a8b849b15e9bd59d0b39f40543e"),     # CRLF (E: working copy) / LF (git): P7-READ-ROUTE, MEASURED 2026-11-12 (the LF text converted to CRLF hashes to the first)
+         "seam": [DATA / "seams/stage2_sft4_B_u400_navtest_full.npz", BANK / "u400_navtest_full_seam.npz"],
+         "seam_md5": "b009e941620b6cbbbe63e1dd8a94a506",
+         "report": [DATA / "seams/stage2_sft4_B_u400_navtest_full.report.json", BANK / "u400_navtest_full_seam.report.json"],
+         "families": [S2_RAW / "sft4_B_u400_navtest_full/sft4_B_u400_navtest_full_families.json", BANK / "u400_navtest_full_families.json"],
+-        "families_md5": "ed816ea98dd0e3fd2df2178fb3366714",
++        "families_md5": ("ed816ea98dd0e3fd2df2178fb3366714", "0ea39583d0c85b6000984307ef127c29"),     # CRLF (the E: working copy) and LF (git): P7-READ-ROUTE, MEASURED 2026-11-12; before it only the E: copy satisfied the pin, so a tip export on F: could not resolve u400's families
+     },
+     # C2 of PREREG_P6 (P2, rule navsim_v1, goal fix pdm_route, A7 ON). MEASURED 2026-10-22 (P6-READ-GAPS G1) on the files behind eval/RESULT_P2.md: CSV md5 =
+     # raw/p2_readout/p2_full/arm/MD5SUMS.txt and r2_result.json's arm.csv_md5; the CSV is CRLF on disk and LF in git, so both forms are accepted.
+@@ -126,15 +127,28 @@
+         "families": [S2_RAW / "p2_full/p2_full_families.json", S2_PKG / "p2_full/p2_full_families.json"],
+         "families_md5": ("d80a2599f637710566408c49f786619d", "2bedac304a3be6801afc03b8d81b4c10"),
+     },
++    # C1 of SPEC_P7 section 5 = P6 (`refe_p6final`, Sayood/tanitad-refe-p6-..., rule navsim_v1, A7 ON, nav_mode command). P7-READ-ROUTE (2026-11-12) B2: MEASURED 2026-11-12 (md5sum of the files that produced the P6 read of
++    # 2026-11-09) csv 2b8f7701... (CRLF on disk; the LF form 9b1a6c38... is what git stores, both accepted), seam 4733c3f8..., families b9dcbf62... (F:/TanitAD_p6read_work/stage3_p6_full/p6_full_families.json, a
++    # SINGLE copy outside the repo until the banked copies below are landed); PDMS 91.19647788 = F:/TanitAD_p6read_work/stage3_p6_full/level_ci.json = mean of the csv `score` column.
++    "p6": {
++        "label": "C1 of SPEC_P7 = P6 (refe_p6final, rule navsim_v1, A7 ON, command mode)", "pdms_x100": 91.1965,
++        "csv": [DATA / "score/refe_p6final/refe_p6final.csv", BANK / "p6_navtest_full.csv"],
++        "csv_md5": ("2b8f7701ab35ac90380a272a8e48e39b", "9b1a6c38f95319849fa526b5f6ae0f35"),
++        "seam": [DATA / "seams/refe_p6final.npz", BANK / "p6_navtest_full_seam.npz"],
++        "seam_md5": "4733c3f843aba0cc9313d19b2c6426b3",
++        "report": [DATA / "seams/refe_p6final.report.json", BANK / "p6_navtest_full_seam.report.json"],
++        "families": [Path("F:/TanitAD_p6read_work/stage3_p6_full/p6_full_families.json"), BANK / "p6_navtest_full_families.json"],
++        "families_md5": "b9dcbf62dd2ddf93bda26c89970c0797",
++    },
+     "deployed": {
+         "label": "deployed route-fix system (rule navsim_v1)", "pdms_x100": 84.4561,
+         "csv": [DATA / "score/refe_navtest_final_routefix/refe_navtest_final_routefix.csv", BANK / "deployed_navtest_full.csv"],
+-        "csv_md5": "2101bc7f2084195b2536e5ee09c6be32",
++        "csv_md5": ("2101bc7f2084195b2536e5ee09c6be32", "dbcda5b64c21ca170b6f8ef32dcd2168"),     # CRLF / LF, as u400
+         "seam": [DATA / "seams/refe_navtest_final_routefix.npz", BANK / "deployed_navtest_full_seam.npz"],
+         "seam_md5": "1ddc2c63b538bf49fcc71c6047260696",
+         "report": [DATA / "seams/refe_navtest_final_routefix.report.json", BANK / "deployed_navtest_full_seam.report.json"],
+         "families": [S2_RAW / "sft4_B_u400_navtest_full/deployed_families.json", BANK / "deployed_navtest_full_families.json"],
+-        "families_md5": "4b4d776cca3838edd607d3b59ffba5d7",
++        "families_md5": ("4b4d776cca3838edd607d3b59ffba5d7", "2e26a6c3206001f7d07a39122a5ecf0e"),     # CRLF / LF, as u400 above
+     },
+ }
+ 
+@@ -675,7 +689,7 @@
+                                              "failed_as_required": not tg["ok"]}
+     wrong = {"csv_md5": d["csv_md5"], "pinned": BASELINES["u400"]["csv_md5"]}
+     regress["deployed_table_passed_as_u400"] = {"what": "the deployed CSV where the u400 pin is checked", "check_result": wrong,
+-                                                "required_to_fail": True, "failed_as_required": wrong["csv_md5"] != wrong["pinned"]}
++                                                "required_to_fail": True, "failed_as_required": wrong["csv_md5"] not in _md5_set(wrong["pinned"])}      # (a pin may be a tuple of the CRLF and LF forms; `!=` against a tuple is vacuously True)
+     regress["_note"] = "a failed check here is a PASS of the instrument: the check can fail"
+ 
+     # --- the full pipeline, twice (exercises argparse, gates, families, JSON): u400 vs u400 and deployed vs u400
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/harness/score_e.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/harness/score_e.py
+@@ -4,8 +4,9 @@
+ import os
+ import sys
+ 
+-PKG = "E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan"
+ HERE = os.path.dirname(os.path.abspath(__file__))
++# P7-READ-ROUTE (2026-11-12): PKG = the package this file sits in (<PKG>/eval/harness/score_e.py), $TANITAD_REFE_PKG overrides; was a hard-coded E: path
++PKG = (os.environ.get("TANITAD_REFE_PKG") or os.path.dirname(os.path.dirname(HERE))).replace("\\", "/")
+ spec = importlib.util.spec_from_file_location("score_navtest_refe", f"{PKG}/eval/score_navtest_refe.py")
+ m = importlib.util.module_from_spec(spec)
+ spec.loader.exec_module(m)
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/harness/HARNESS_PINS.json
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/harness/HARNESS_PINS.json
+@@ -10,10 +10,15 @@
+    "origin": "scratchpad_byte_identical"
+   },
+   "score_e.py": {
+-   "sha256_lf": "0b5d7bd24a3f4f50c5fdf823595e73ec92e5d017504adc89f8db80ef21cec754",
+-   "bytes": 1404,
++   "sha256_lf": "264d1135078b6736d1d93613347c8f6ec6bf26ae7a0ace3612bff4753c5b97bb",
++   "bytes": 1557,
+    "scratchpad_sha256": "770a744fc456fa113e6fda5665e41fd93531f964f54df77148fc72a44b232147",
+    "origin": "scratchpad_byte_identical",
++   "p7_read_route_2026_11_12": {
++    "was_sha256_lf": "0b5d7bd24a3f4f50c5fdf823595e73ec92e5d017504adc89f8db80ef21cec754",
++    "was_bytes": 1404,
++    "change": "PKG derived from __file__ ($TANITAD_REFE_PKG overrides) instead of the hard-coded E: path; nothing computed changes (the same files load when run from the E: tree)"
++   },
+    "layout_fix_2026_11_06": {
+     "was_sha256_lf": "770a744fc456fa113e6fda5665e41fd93531f964f54df77148fc72a44b232147",
+     "was_bytes": 771,
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/refe_navtest_seam.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/refe_navtest_seam.py
+@@ -75,6 +75,14 @@
+     return out
+ 
+ 
++def pick20_equals_seam(pick20, seam_poses) -> bool:
++    """P7-READ-ROUTE B3 control: to_navsim(pick20[i]) cast to float32 equals seam row i BIT FOR BIT (the seam row is float32(to_navsim(executed plan)); pick20 is that same plan)."""
++    pick20, seam_poses = np.asarray(pick20), np.asarray(seam_poses)
++    if pick20.ndim != 3 or pick20.shape[1:] != (20, 3) or len(pick20) != len(seam_poses):
++        return False
++    return all(np.array_equal(to_navsim(pick20[i]).astype(np.float32), seam_poses[i]) for i in range(len(pick20)))
++
++
+ def set_driving_command(planner, tok: str, rec: dict) -> bool:
+     """Hand the planner NAVSIM's OWN `driving_command` for this token. Returns True when it set one.
+ 
+@@ -226,7 +234,7 @@
+     rows_tok, rows_fp, rows_pose, misses = [], [], [], []
+     ctrl_err, n_ctrl, interp_err = [], 0, []
+     prop_diag: list = []
+-    dump_props, dump_logits, dump_pick = [], [], []
++    dump_props, dump_logits, dump_pick, dump_pick20 = [], [], [], []
+     n_prop = 0
+     n_cmd_set = 0
+     t0 = time.time()
+@@ -256,7 +264,8 @@
+                                                                          int(ego.time_point.time_us)) or []),
+                                    "goal_diag": planner.goal_diag, "pick": int(k)}
+             # the EXECUTED plan -- with SPEC Amendment 7's last-pose heading repair when it is on (planner.executed)
+-            poses = to_navsim(planner.executed(traj, k).float().cpu().numpy())
++            ex20 = planner.executed(traj, k).float().cpu().numpy()          # the executed 20-pose plan, REFe frame, post-A7 (P7-READ-ROUTE B3: also dumped as `pick20`)
++            poses = to_navsim(ex20)
+             if not np.isfinite(poses).all():
+                 misses.append((tok, "non-finite poses"))
+                 continue
+@@ -287,6 +296,7 @@
+                                             for j in range(traj.shape[0])]).astype(np.float32))
+                 dump_logits.append(_score.float().cpu().numpy().astype(np.float32))
+                 dump_pick.append(int(k))
++                dump_pick20.append(ex20.astype(np.float32))
+             # the frame/time control: the log's own future through the SAME grid, in REFe's frame
+             px, py, pyaw = ego.rear_axle.x, ego.rear_axle.y, ego.rear_axle.heading
+             c, s = math.cos(-pyaw), math.sin(-pyaw)
+@@ -350,10 +360,13 @@
+     if a.dump_proposals:
+         # rows are appended at the same point as the seam's rows, so they align with rows_tok
+         assert len(dump_pick) == len(rows_tok), (len(dump_pick), len(rows_tok))
++        # P7-READ-ROUTE B3: pick20 [N, 20, 3] = the executed plan at REFe's 0.2 s grid; its control is the seam itself, bit for bit (the dump FAILS LOUD rather than ship a pick20 that is not the seam's plan)
++        pick20 = np.stack(dump_pick20) if dump_pick20 else np.zeros((0, 20, 3), np.float32)
++        assert pick20_equals_seam(pick20, np.stack(rows_pose) if rows_pose else np.zeros((0, NAVSIM_N, 3), np.float32)), "pick20 != the seam's poses: to_navsim(pick20) must equal seam.poses bit for bit"
+         os.makedirs(os.path.dirname(os.path.abspath(a.dump_proposals)), exist_ok=True)
+         np.savez(a.dump_proposals, token=np.array(rows_tok), fingerprint=np.array(rows_fp),
+                  proposals=np.stack(dump_props), logits=np.stack(dump_logits),
+-                 pick=np.array(dump_pick, dtype=np.int64), select=np.array(a.select), rule=np.array(planner.rule),
++                 pick=np.array(dump_pick, dtype=np.int64), pick20=pick20, select=np.array(a.select), rule=np.array(planner.rule),
+                  repair_last_heading=np.array(planner.repair_last_heading),
+                  ckpt=np.array(str(a.ckpt)), sampling=np.array([NAVSIM_N, NAVSIM_DT]))
+         rep["proposal_dump"] = os.path.abspath(a.dump_proposals)

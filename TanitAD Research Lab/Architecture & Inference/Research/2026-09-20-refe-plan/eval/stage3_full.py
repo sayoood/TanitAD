@@ -73,13 +73,14 @@ def _navsim_root() -> str:
 
 
 EXPORT = _navsim_root() + "/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
-# stage2_sft.py writes under ITS OWN hard-coded package root (the E: mirror of this package, byte-identical to it)
-S2_RAW = Path("E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-sft-stage2")
+# stage2_sft.py writes under ITS OWN package root (P7-READ-ROUTE: derived from its __file__, $TANITAD_REFE_PKG overrides); stage 3 reads the same place
+PKG = Path(os.environ.get("TANITAD_REFE_PKG") or PKG)
+S2_RAW = PKG / "raw" / "2026-10-05-sft-stage2"
 BANK = PKG / "raw" / "p2_r2_instrument" / "baseline"          # the in-repo copy of every baseline table
 OUT_ROOT = PKG / "raw" / "p2_readout"
 PY_T = "C:/Users/Admin/venvs/tanitad/Scripts/python.exe"
 STAGE2_SFT = HERE / "stage2_sft.py"
-STAGE2_SFT_MD5 = "3764778748d6ecc02c6569baffa4f758"             # stage2_sft.py as of P7-READ-YAW (2026-11-12: --ego-yaw-table + the refusal of a yaw checkpoint without it; default seam command unchanged; was 74c37dd2d7dba9b03106cde5372ac0e1) <- the P6 layout fix (2026-11-06: path roots only, EXPORT via the root resolver; was 3a30ab4c5a122664c534f378144cb4a5) <- P6-READ-GAPS (2026-10-22: the banked harness + --dump-proposals; was 831a8d76bb5b8be2016288b02cd29ee5, R1's instrument, whose estimator and scoring calls are unchanged)
+STAGE2_SFT_MD5 = "3147254ba8128c5dde1b33dbd6cb2b81"             # stage2_sft.py as of P7-READ-ROUTE (2026-11-12: PKG from __file__; was 3764778748d6ecc02c6569baffa4f758 at P7-READ-YAW, 74c37dd2d7dba9b03106cde5372ac0e1 before) <- P7-READ-YAW (2026-11-12: --ego-yaw-table + the refusal of a yaw checkpoint without it; default seam command unchanged; was 74c37dd2d7dba9b03106cde5372ac0e1) <- the P6 layout fix (2026-11-06: path roots only, EXPORT via the root resolver; was 3a30ab4c5a122664c534f378144cb4a5) <- P6-READ-GAPS (2026-10-22: the banked harness + --dump-proposals; was 831a8d76bb5b8be2016288b02cd29ee5, R1's instrument, whose estimator and scoring calls are unchanged)
 FAMILIES6_CANDIDATES = (
     os.environ.get("REFE_FAMILIES6", ""),
     str(HERE / "harness" / "ev6e" / "families6.py"),       # G3: the banked, sha256-pinned copy (eval/harness_pins.py) the SFT-4 / C2 results used, FIRST: stage 2 runs this one, so does stage 3
@@ -106,12 +107,12 @@ BASELINES = {
     "u400": {
         "label": "SFT-4 arm B u400 (rule navsim_v1_lane)", "pdms_x100": 88.2469,
         "csv": [DATA / "score/refe_stage2_sft4_B_u400_navtest_full/refe_stage2_sft4_B_u400_navtest_full.csv", BANK / "u400_navtest_full.csv"],
-        "csv_md5": "b17c4fbac26d064f17ce790dca4d9d08",
+        "csv_md5": ("b17c4fbac26d064f17ce790dca4d9d08", "4ade3a8b849b15e9bd59d0b39f40543e"),     # CRLF (E: working copy) / LF (git): P7-READ-ROUTE, MEASURED 2026-11-12 (the LF text converted to CRLF hashes to the first)
         "seam": [DATA / "seams/stage2_sft4_B_u400_navtest_full.npz", BANK / "u400_navtest_full_seam.npz"],
         "seam_md5": "b009e941620b6cbbbe63e1dd8a94a506",
         "report": [DATA / "seams/stage2_sft4_B_u400_navtest_full.report.json", BANK / "u400_navtest_full_seam.report.json"],
         "families": [S2_RAW / "sft4_B_u400_navtest_full/sft4_B_u400_navtest_full_families.json", BANK / "u400_navtest_full_families.json"],
-        "families_md5": "ed816ea98dd0e3fd2df2178fb3366714",
+        "families_md5": ("ed816ea98dd0e3fd2df2178fb3366714", "0ea39583d0c85b6000984307ef127c29"),     # CRLF (the E: working copy) and LF (git): P7-READ-ROUTE, MEASURED 2026-11-12; before it only the E: copy satisfied the pin, so a tip export on F: could not resolve u400's families
     },
     # C2 of PREREG_P6 (P2, rule navsim_v1, goal fix pdm_route, A7 ON). MEASURED 2026-10-22 (P6-READ-GAPS G1) on the files behind eval/RESULT_P2.md: CSV md5 =
     # raw/p2_readout/p2_full/arm/MD5SUMS.txt and r2_result.json's arm.csv_md5; the CSV is CRLF on disk and LF in git, so both forms are accepted.
@@ -126,15 +127,28 @@ BASELINES = {
         "families": [S2_RAW / "p2_full/p2_full_families.json", S2_PKG / "p2_full/p2_full_families.json"],
         "families_md5": ("d80a2599f637710566408c49f786619d", "2bedac304a3be6801afc03b8d81b4c10"),
     },
+    # C1 of SPEC_P7 section 5 = P6 (`refe_p6final`, Sayood/tanitad-refe-p6-..., rule navsim_v1, A7 ON, nav_mode command). P7-READ-ROUTE (2026-11-12) B2: MEASURED 2026-11-12 (md5sum of the files that produced the P6 read of
+    # 2026-11-09) csv 2b8f7701... (CRLF on disk; the LF form 9b1a6c38... is what git stores, both accepted), seam 4733c3f8..., families b9dcbf62... (F:/TanitAD_p6read_work/stage3_p6_full/p6_full_families.json, a
+    # SINGLE copy outside the repo until the banked copies below are landed); PDMS 91.19647788 = F:/TanitAD_p6read_work/stage3_p6_full/level_ci.json = mean of the csv `score` column.
+    "p6": {
+        "label": "C1 of SPEC_P7 = P6 (refe_p6final, rule navsim_v1, A7 ON, command mode)", "pdms_x100": 91.1965,
+        "csv": [DATA / "score/refe_p6final/refe_p6final.csv", BANK / "p6_navtest_full.csv"],
+        "csv_md5": ("2b8f7701ab35ac90380a272a8e48e39b", "9b1a6c38f95319849fa526b5f6ae0f35"),
+        "seam": [DATA / "seams/refe_p6final.npz", BANK / "p6_navtest_full_seam.npz"],
+        "seam_md5": "4733c3f843aba0cc9313d19b2c6426b3",
+        "report": [DATA / "seams/refe_p6final.report.json", BANK / "p6_navtest_full_seam.report.json"],
+        "families": [Path("F:/TanitAD_p6read_work/stage3_p6_full/p6_full_families.json"), BANK / "p6_navtest_full_families.json"],
+        "families_md5": "b9dcbf62dd2ddf93bda26c89970c0797",
+    },
     "deployed": {
         "label": "deployed route-fix system (rule navsim_v1)", "pdms_x100": 84.4561,
         "csv": [DATA / "score/refe_navtest_final_routefix/refe_navtest_final_routefix.csv", BANK / "deployed_navtest_full.csv"],
-        "csv_md5": "2101bc7f2084195b2536e5ee09c6be32",
+        "csv_md5": ("2101bc7f2084195b2536e5ee09c6be32", "dbcda5b64c21ca170b6f8ef32dcd2168"),     # CRLF / LF, as u400
         "seam": [DATA / "seams/refe_navtest_final_routefix.npz", BANK / "deployed_navtest_full_seam.npz"],
         "seam_md5": "1ddc2c63b538bf49fcc71c6047260696",
         "report": [DATA / "seams/refe_navtest_final_routefix.report.json", BANK / "deployed_navtest_full_seam.report.json"],
         "families": [S2_RAW / "sft4_B_u400_navtest_full/deployed_families.json", BANK / "deployed_navtest_full_families.json"],
-        "families_md5": "4b4d776cca3838edd607d3b59ffba5d7",
+        "families_md5": ("4b4d776cca3838edd607d3b59ffba5d7", "2e26a6c3206001f7d07a39122a5ecf0e"),     # CRLF / LF, as u400 above
     },
 }
 
@@ -675,7 +689,7 @@ def selfcheck(a) -> int:
                                              "failed_as_required": not tg["ok"]}
     wrong = {"csv_md5": d["csv_md5"], "pinned": BASELINES["u400"]["csv_md5"]}
     regress["deployed_table_passed_as_u400"] = {"what": "the deployed CSV where the u400 pin is checked", "check_result": wrong,
-                                                "required_to_fail": True, "failed_as_required": wrong["csv_md5"] != wrong["pinned"]}
+                                                "required_to_fail": True, "failed_as_required": wrong["csv_md5"] not in _md5_set(wrong["pinned"])}      # (a pin may be a tuple of the CRLF and LF forms; `!=` against a tuple is vacuously True)
     regress["_note"] = "a failed check here is a PASS of the instrument: the check can fail"
 
     # --- the full pipeline, twice (exercises argparse, gates, families, JSON): u400 vs u400 and deployed vs u400

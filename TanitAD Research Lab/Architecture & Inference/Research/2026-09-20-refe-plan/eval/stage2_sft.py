@@ -36,7 +36,9 @@ from pathlib import Path
 
 import numpy as np
 
-PKG = Path("E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan")
+# P7-READ-ROUTE (2026-11-12): PKG = THIS file's package (a tip export on F: runs its OWN code), $TANITAD_REFE_PKG overrides. It was the E: tree's hard-coded path,
+# which silently ran whatever stale code sat on E:. DATA paths (D below, the nuplan splits, the navsim archive root) still point where the data is.
+PKG = Path(os.environ.get("TANITAD_REFE_PKG") or Path(__file__).resolve().parent.parent)
 sys.path.insert(0, str(PKG / "eval"))
 import eval_checkpoint as EC  # noqa: E402
 import harness_pins as HP  # noqa: E402

@@ -4,8 +4,9 @@ import importlib.util
 import os
 import sys
 
-PKG = "E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan"
 HERE = os.path.dirname(os.path.abspath(__file__))
+# P7-READ-ROUTE (2026-11-12): PKG = the package this file sits in (<PKG>/eval/harness/score_e.py), $TANITAD_REFE_PKG overrides; was a hard-coded E: path
+PKG = (os.environ.get("TANITAD_REFE_PKG") or os.path.dirname(os.path.dirname(HERE))).replace("\\", "/")
 spec = importlib.util.spec_from_file_location("score_navtest_refe", f"{PKG}/eval/score_navtest_refe.py")
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)

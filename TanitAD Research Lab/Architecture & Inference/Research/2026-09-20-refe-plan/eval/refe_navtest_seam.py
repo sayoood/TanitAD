@@ -75,6 +75,14 @@ def to_navsim(poses20: np.ndarray, dt: float = SRC_DT) -> np.ndarray:
     return out
 
 
+def pick20_equals_seam(pick20, seam_poses) -> bool:
+    """P7-READ-ROUTE B3 control: to_navsim(pick20[i]) cast to float32 equals seam row i BIT FOR BIT (the seam row is float32(to_navsim(executed plan)); pick20 is that same plan)."""
+    pick20, seam_poses = np.asarray(pick20), np.asarray(seam_poses)
+    if pick20.ndim != 3 or pick20.shape[1:] != (20, 3) or len(pick20) != len(seam_poses):
+        return False
+    return all(np.array_equal(to_navsim(pick20[i]).astype(np.float32), seam_poses[i]) for i in range(len(pick20)))
+
+
 def set_driving_command(planner, tok: str, rec: dict) -> bool:
     """Hand the planner NAVSIM's OWN `driving_command` for this token. Returns True when it set one.
 
@@ -226,7 +234,7 @@ def main() -> int:
     rows_tok, rows_fp, rows_pose, misses = [], [], [], []
     ctrl_err, n_ctrl, interp_err = [], 0, []
     prop_diag: list = []
-    dump_props, dump_logits, dump_pick = [], [], []
+    dump_props, dump_logits, dump_pick, dump_pick20 = [], [], [], []
     n_prop = 0
     n_cmd_set = 0
     t0 = time.time()
@@ -256,7 +264,8 @@ def main() -> int:
                                                                          int(ego.time_point.time_us)) or []),
                                    "goal_diag": planner.goal_diag, "pick": int(k)}
             # the EXECUTED plan -- with SPEC Amendment 7's last-pose heading repair when it is on (planner.executed)
-            poses = to_navsim(planner.executed(traj, k).float().cpu().numpy())
+            ex20 = planner.executed(traj, k).float().cpu().numpy()          # the executed 20-pose plan, REFe frame, post-A7 (P7-READ-ROUTE B3: also dumped as `pick20`)
+            poses = to_navsim(ex20)
             if not np.isfinite(poses).all():
                 misses.append((tok, "non-finite poses"))
                 continue
@@ -287,6 +296,7 @@ def main() -> int:
                                             for j in range(traj.shape[0])]).astype(np.float32))
                 dump_logits.append(_score.float().cpu().numpy().astype(np.float32))
                 dump_pick.append(int(k))
+                dump_pick20.append(ex20.astype(np.float32))
             # the frame/time control: the log's own future through the SAME grid, in REFe's frame
             px, py, pyaw = ego.rear_axle.x, ego.rear_axle.y, ego.rear_axle.heading
             c, s = math.cos(-pyaw), math.sin(-pyaw)
@@ -350,10 +360,13 @@ def main() -> int:
     if a.dump_proposals:
         # rows are appended at the same point as the seam's rows, so they align with rows_tok
         assert len(dump_pick) == len(rows_tok), (len(dump_pick), len(rows_tok))
+        # P7-READ-ROUTE B3: pick20 [N, 20, 3] = the executed plan at REFe's 0.2 s grid; its control is the seam itself, bit for bit (the dump FAILS LOUD rather than ship a pick20 that is not the seam's plan)
+        pick20 = np.stack(dump_pick20) if dump_pick20 else np.zeros((0, 20, 3), np.float32)
+        assert pick20_equals_seam(pick20, np.stack(rows_pose) if rows_pose else np.zeros((0, NAVSIM_N, 3), np.float32)), "pick20 != the seam's poses: to_navsim(pick20) must equal seam.poses bit for bit"
         os.makedirs(os.path.dirname(os.path.abspath(a.dump_proposals)), exist_ok=True)
         np.savez(a.dump_proposals, token=np.array(rows_tok), fingerprint=np.array(rows_fp),
                  proposals=np.stack(dump_props), logits=np.stack(dump_logits),
-                 pick=np.array(dump_pick, dtype=np.int64), select=np.array(a.select), rule=np.array(planner.rule),
+                 pick=np.array(dump_pick, dtype=np.int64), pick20=pick20, select=np.array(a.select), rule=np.array(planner.rule),
                  repair_last_heading=np.array(planner.repair_last_heading),
                  ckpt=np.array(str(a.ckpt)), sampling=np.array([NAVSIM_N, NAVSIM_DT]))
         rep["proposal_dump"] = os.path.abspath(a.dump_proposals)
