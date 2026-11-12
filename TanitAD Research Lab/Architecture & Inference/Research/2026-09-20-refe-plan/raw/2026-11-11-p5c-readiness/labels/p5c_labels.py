@@ -21,11 +21,11 @@ os.environ.setdefault("REFE_SIM_HZ", "10")
 os.environ.setdefault("NUPLAN_MAPS_ROOT", "E:/Projects/TanitAD/data/nuplan-maps/nuplan-maps-v1.0")
 import numpy as np
 
-PKG = "E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan"
+PKG = os.environ.get("P5C_PKG", "E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan")   # pod: the refe-plan tree
 for p in (PKG + "/eval", PKG + "/refe", PKG + "/code"):
     sys.path.insert(0, p)
-BANKDIR = "C:/Users/Admin/p5c_scratch/bank"
-DBROOT = "E:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits"
+BANKDIR = os.environ.get("P5C_BANKDIR", "C:/Users/Admin/p5c_scratch/bank")   # dev-box copy deleted 2026-11-12 (re-pull from the pod source to re-run here); pod: /workspace/data/refe_navtrain/train_grow_cmd_3c_p7
+DBROOT = os.environ.get("P5C_DBROOT", "E:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits")   # pod: /workspace/data/navtrain_dbs
 
 
 def traj_sha(traj):
@@ -134,6 +134,7 @@ def main():
                         if not ctl["knot_exact"] or not np.isfinite(tc20).all() or tc20.shape != (20, 3):
                             raise ValueError("control/finite/shape check failed")
                         base["tc20s"] = [[float(v) for v in p] for p in tc20]
+                        base["knot_maxdev"] = float(ctl.get("knot_maxdev", 0.0)); base["knot_checks"] = int(ctl["knot_checks"])   # TB-2 audit (C2' <= 1e-9 is enforced above)
                         cnt["ok"] += 1
                     except Exception as e:  # noqa
                         base["error"] = f"{type(e).__name__}: {str(e)[:160]}"

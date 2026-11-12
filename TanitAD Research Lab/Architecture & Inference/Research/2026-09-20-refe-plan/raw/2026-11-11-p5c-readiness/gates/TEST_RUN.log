@@ -1,0 +1,118 @@
+  ok   subset has 4393 rows
+  ok   every subset row has a dev-box record
+  ok   every subset record is ok (no error)
+== helpers
+  ok   traj_sha == traj_label_table.traj_sha256 on every subset row
+  ok   traj_sha == the labeller's own traj_sha256 on every subset record
+  ok   learn() == P5 learnability() per row (40 rows)
+== real gates on the subset (rank policy from the repair json)
+     TB-0 PASS n=4393 value=0.0
+     TB-1 PASS n=1018 value=1018/1018
+     TB-2 PASS n=4393 value=None
+     TB-3 PASS n=4393 value=4393/4393
+     TB-4 PASS n=4393 value=4393/4393
+     TB-5 PASS n=4393 value=4393/4393
+     TB-6 FAIL n=4393 value={'rank0': [1.7055962760194257, 2.017617040690712], 'rank1': [1.6445854779102438, 1.7454185548442578]}
+     TB-7 PASS n=4393 value={'0': 2713, '1': 1680}
+  ok   TB-1 input present
+  ok   REAL TB-0 PASS
+  ok   REAL TB-1 PASS
+  ok   REAL TB-2 PASS
+  ok   REAL TB-3 PASS
+  ok   REAL TB-4 PASS
+  ok   REAL TB-5 PASS
+  ok   REAL TB-7 PASS
+     REAL TB-6 (MEASURED on the subset): {'rank0': (1.7055962760194257, 2.017617040690712, False), 'rank1': (1.6445854779102438, 1.7454185548442578, True)}
+  ok   REAL TB-6 rank-1 PASS (acc 1.64x, hr 1.75x)
+  ok   REAL TB-6 rank-0 FAILS the committed 2x bar on heading rate (2.018x, acc 1.71x): the measured result, flagged STOP; the bar is not moved
+  ok   REAL final line is ZZTB_FAIL TB-6 TB-6-rank0-STOP
+  ok   REAL TB-4 value is n/n
+  ok   REAL TB-0 compares > 0 rows at max diff exactly 0.0
+     rank policy: STOP {'r0': {'n': 300, 'n_logs': 190, 'point_pp': 3.0, 'lo_pp': 1.0380622837370241, 'hi_pp': 5.357142857142857, 'raw_fail': 11, 'tc_fail': 2, 'estimator': 'paired log-cluster bootstrap, ratio, 10000 draws, seed 20260927, 95% percentile'}, 'r1': {'n': 300, 'n_logs': 184, 'point_pp': 4.666666666666667, 'lo_pp': 2.3728813559322033, 'hi_pp': 7.29191468253968, 'raw_fail': 16, 'tc_fail': 2, 'estimator': 'paired log-cluster bootstrap, ratio, 10000 draws, seed 20260927, 95% percentile'}} {'RK0_stop_rule_r0_hi_lt_0': False, 'RK1_n_ge_200_and_logs_ge_5': True, 'RK2_r1_lo_gt_0': True, 'RK3_r0_point_gt_0': True, 'RK4_TB6_passes_on_rank1': True, 'RK5_TB2_TB3_pass_on_every_rank1_row': True, 'RK6_guards': 'not required: the repair json carries sim8 only (no DDC / comfort / lk10 / executed-vs-intended)'}
+  ok   rank policy decided (not UNDECIDED)
+  ok   real: 4.3 rules alone say all, but TB-6 rank-0 FAIL makes the final decision STOP
+  ok   r0, r1 recomputed with seed 20260927 on per-row records
+== arms: TB-0
+  ok   ARM one label perturbed by 1e-6: TB-0 FAIL
+  ok   ARM one label perturbed by 1e-6: ZZTB_FAIL lists TB-0
+  ok   ARM one label perturbed by 1e-6: TB-5 still PASS (specific)
+  ok   ARM one table row fell back while the control has it: TB-0 FAIL
+  ok   ARM one table row fell back while the control has it: ZZTB_FAIL lists TB-0
+  ok   TB-0 without --control is NOT_RUN and fails the final line
+== arms: TB-1
+  ok   ARM 1017/1018 bit-identical: TB-1 FAIL
+  ok   ARM 1017/1018 bit-identical: ZZTB_FAIL lists TB-1
+  ok   ARM max_abs_diff 1e-12: TB-1 FAIL
+  ok   ARM max_abs_diff 1e-12: ZZTB_FAIL lists TB-1
+  ok   ARM only 100 rows controlled: TB-1 FAIL
+  ok   ARM only 100 rows controlled: ZZTB_FAIL lists TB-1
+== arms: TB-2
+  ok   ARM a row whose knot control failed: TB-2 FAIL
+  ok   ARM a row whose knot control failed: ZZTB_FAIL lists TB-2
+  ok   ARM persisted knot_maxdev 1e-6: TB-2 FAIL
+  ok   ARM persisted knot_maxdev 1e-6: ZZTB_FAIL lists TB-2
+== arms: TB-3
+  ok   ARM identity label 1 ulp off traj: TB-3 FAIL
+  ok   ARM identity label 1 ulp off traj: ZZTB_FAIL lists TB-3
+  ok   identity table == traj passes TB-3 (explicit)
+== arms: TB-4
+  ok   ARM one key dropped: TB-4 FAIL
+  ok   ARM one key dropped: ZZTB_FAIL lists TB-4
+  ok   ARM one extra label key: TB-4 FAIL
+  ok   ARM one extra label key: ZZTB_FAIL lists TB-4
+  ok   ARM label computed from another traj (sha mismatch): TB-4 FAIL
+  ok   ARM label computed from another traj (sha mismatch): ZZTB_FAIL lists TB-4
+  ok   ARM raw fallback 1.37 % > 1.0 %: TB-4 FAIL
+  ok   ARM raw fallback 1.37 % > 1.0 %: ZZTB_FAIL lists TB-4
+  ok   fallback 0.91 % <= 1.0 % passes TB-4 and is counted
+  ok   ARM duplicate label record: TB-4 FAIL
+  ok   ARM duplicate label record: ZZTB_FAIL lists TB-4
+  ok   ARM bank expected larger than given (150603 vs subset): TB-4 FAIL
+  ok   ARM bank expected larger than given (150603 vs subset): ZZTB_FAIL lists TB-4
+  ok   fallback rows get label == traj bit for bit
+== arms: TB-5
+  ok   ARM yaw + 2 pi on one pose: TB-5 FAIL
+  ok   ARM yaw + 2 pi on one pose: ZZTB_FAIL lists TB-5
+  ok   ARM NaN in one label: TB-5 FAIL
+  ok   ARM NaN in one label: ZZTB_FAIL lists TB-5
+  ok   ARM sim_hz 20 on one row: TB-5 FAIL
+  ok   ARM sim_hz 20 on one row: ZZTB_FAIL lists TB-5
+== arms: TB-6
+  ok   CLEAN CONTROL (labels := traj): TB-6 PASS at ratio exactly 1.0 on both ranks
+  ok   CLEAN CONTROL: every gate but TB-1-n-independent ones PASS (TB-0..TB-7 all PASS)
+  ok   ARM rank-0 labels jerky (+-3 m sawtooth): TB-6 FAIL
+  ok   ARM rank-0 labels jerky (+-3 m sawtooth): ZZTB_FAIL lists TB-6
+  ok   rank-0 TB-6 FAIL is flagged STOP (P5-R)
+  ok   ARM rank-1 labels jerky: TB-6 FAIL
+  ok   ARM rank-1 labels jerky: ZZTB_FAIL lists TB-6
+  ok   rank-1-only TB-6 FAIL is NOT a STOP and the policy goes rank0
+== arms: TB-7
+  ok   ARM no rank-1 row labelled (n_differs not recordable): TB-7 FAIL
+  ok   ARM no rank-1 row labelled (n_differs not recordable): ZZTB_FAIL lists TB-7
+  ok   TB-7 n_differs > 0 on both ranks (real)
+== arms: rank-1 policy (section 4.3)
+  ok   policy base (clean control, real repair data): all
+  ok   UNDECIDED without per-row repair records
+  ok   RK0: label harmful on rank-0 (raw 0 %, Tc20s 20 %) => STOP
+  ok   RK2: rank-1 no effect (raw == Tc20s) => rank0
+  ok   RK1: rank-1 sample of 150 rows (< 200) => rank0
+  ok   RK1: rank-1 sample over 3 logs (< 5) => rank0
+  ok   RK3: rank-0 point <= 0 (raw 2 %, Tc20s 4 %) with rank-1 fine => rank0, not all
+  ok   bootstrap is deterministic (same seed, same CI)
+== table integration: merged jsonl -> traj_label_table build + verify (real module)
+  ok   merged files written
+  ok   build rc 0 (all)
+  ok   verify rc 0 (all)
+  ok   verify covers 4393/4393 (all)
+  ok   build rc 0 (rank0only)
+  ok   verify rc 0 (rank0only)
+  ok   verify covers 4393/4393 (rank0only)
+  ok   rank0only: differs_from_raw == rank-0 n_differs only
+  ok   merged jsonl is LF only
+  ok   merged_all differs_from_raw == TB-7 total
+== CLI end to end on the subset
+  ok   CLI on the REAL subset labels: rc 1, last line ZZTB_FAIL TB-6 TB-6-rank0-STOP
+  ok   CLI on the clean control (labels := traj, control := same): rc 0 and ZZTB_ALL_PASS
+  ok   CLI without --control: rc 1 and ZZTB_FAIL TB-0
+  ok   gates.json carries per-gate status, n, value and bar
+ZZTBGATES_PASS 94/94 []
