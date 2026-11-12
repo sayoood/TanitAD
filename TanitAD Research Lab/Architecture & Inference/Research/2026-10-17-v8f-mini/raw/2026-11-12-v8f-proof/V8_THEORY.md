@@ -1,0 +1,78 @@
+# v8 theory and proof programme: status, theorems, measured premises (2026-11-13, first edition)
+
+Evidence classes: MEASURED (ours, with path), PUBLISHED, ESTIMATED. Every eval number here is T0 or T1-kin on logged frames: a diagnostic, never driving performance. STRATEGIC family: PAUSED (PI item 25). Status source: `V8_STATUS_DIGEST.md` (built from the mirror tip, paper v3, GOALS_AND_CLAIMS, the registry and the banks). Machine checks: `fv/FV_SPEC_V1.md` and `fv/FV_SPEC_V2.md`, 36 conditions proved and 18 mutated twins refuted by Z3 5.4.1 (`fv/FV_RESULT_V1.json`, `fv/FV_RESULT_V2.json`).
+
+## 1. What v8F is today (MEASURED)
+* The built model is v8F-mini: frozen DINOv3-L features pooled to 4x10 tokens per frame, a shared adapter, three readers S / T / O that pass held outputs downward, a frozen kinematic prior, and an optional H-JEPA world-model auxiliary. 5.2 M to 7.2 M trainable parameters, 4,512 clips. A larger built flagship was not found.
+* Inference is one deterministic pass. There is no planner, no selector and no imagination. The world model is a training auxiliary; the trajectory reader does not read a rollout.
+* Adopted base DAG-OACC: 6 s ADE -1.26 / -1.19 m against the kinematic prior (T1-kin, two seeds).
+* The levels listen to each other: with the logged tactical code substituted, 6 s ADE falls from ~2.1 m to ~1.0 m (T0). Of the tactical headroom (-1.63 / -1.77 m, T1-kin first tick) the constraints carry 87 % / 89 %, speed first.
+* Stop handling is the largest single failure: T flags 10 % / 13 % of stop windows (bar 0.6). Class weighting moves along one ROC (hit 0.45-0.62 with false positives 0.12-0.145; AUROC change -0.006..+0.020). A probe on the non-vision inputs of T reads AUROC 0.8525, with vision 0.8615.
+* Non-ego content: agents within 30 m are decodable at the first world-model level only (R2 +0.33..+0.36, T0); lead gap at no level. No traffic-light, stop-line or lead-vehicle probe exists.
+* World model against "nothing changes": skill +0.0010 / -0.0010 at 0.2 s, -0.150 / -0.172 at 2 s.
+* Run-to-run noise: tactical replicate floor 0.287 m; most 2-6 s levers measure 0.02-0.06 m.
+
+## 2. Theorems, what each says about v8F, and the premise that must be measured
+Each statement is exact. "Checked" names the solver-verified conditions; "Reduction" names the step that is still a paper argument.
+
+**T1. Multi-level prediction beats composed one-step prediction exactly when the jump model is better than the composed bound.**
+One-step error <= eps and Lipschitz constant L give e_H <= eps*(L^H - 1)/(L - 1) (= eps*H for L = 1); a level that jumps k steps with error eps_k gives eps_k*(L^H - 1)/(L^k - 1). The bound is attained (a constant bias along an expanding direction), so in the worst case over all models with these constants the multi-level model dominates at every horizon **iff eps_k < eps*(L^k - 1)/(L - 1)**; for L = 1, **iff eps_k < k*eps**. Checked: VC-A1..A5. Reduction: induction on the step count.
+* v8F: the 2 s world-model skill is negative while the 0.2 s skill is zero. That is the signature of composition error. MEASURED in the linear class (WMCEIL part d, T0): the direct 2 s error is 0.416 [0.389, 0.449] / 0.433 of ten times the one-step error, and the composed error is above the direct error on every fold. The criterion holds with margin; the learned model does not use it (it composes ten steps).
+
+**T2. A decision before the trajectory: exact risk split, and when it cannot help.**
+For any plan c that is constant on (context, mode) groups: sum w*||y - c||^2 = within-mode scatter + sum w*||mu_mode - c||^2. Checked: VC-B1, VC-B2. Reduction: linearity of finite sums.
+* Corollary (non-dominance): under squared error and equal information, a selector that reads only the context cannot beat the conditional mean. A hierarchy therefore pays through three channels only: (a) supervised intermediate labels (the typed tactical code adds label bits per clip that a flat regressor never sees), (b) an acceptance region that is not convex, (c) inputs that enter at the upper level (nav).
+* Channel (b), checked as VC-B3 and VC-B4: with two modes at distance D, minority weight p, mode radius r and tolerance tol, if p*D > tol + r the averaged plan misses every outcome of both modes, while a decided plan hits its mode whenever r <= tol.
+* v8F: the code is worth ~1.1 m at 6 s when it is right (T0); the selection term is what is missing (top-1 57-59 %, top-3 90 %, constraints 87-89 % of the headroom). Premise to measure: a flat control at matched budget (`--o-interface cut` exists) against the full interface; T2 predicts the sign from "selection energy < between-mode energy". PUBLISHED caution (Nachum et al. 2019, abstract level): hierarchy gains in RL come mostly from exploration, which offline imitation does not have; so the flat control is not optional.
+
+**T3. Rules hold by construction, for every network, when they sit in a shield; a loss term cannot give that.**
+* Stop-line shield, checked as VC-C1 with mutations M-C1a, M-C1b refuted: with braking distance B obeying B(v) = v*dt + B(max(v - q, 0)), the invariant B(v) <= d is preserved for ANY proposed speed, the fallback is always feasible, and the distance to the line never goes below zero. VC-C2: the closed form of B obeys that recursion.
+* Masked selection over a candidate set (VC-C3, K = 1..6): the output is admissible whenever anything is, never worse than any admissible candidate, and unchanged when the free choice was admissible. Envelope clipping is the smallest change (VC-C5).
+* A penalty of weight lambda only bounds the violation by (J0 - Jinf)/lambda (VC-C4): the hinge terms in the v8F loss cannot guarantee anything.
+* The residual risk is perception: a shield on a predicted constraint violates the true rule at most as often as the constraint envelope misses. PUBLISHED: split-conformal calibration bounds that miss rate at alpha on exchangeable scenes (marginal, not per scene).
+* v8F: forcing the logged stop on 70 % of stop windows is worth -0.96 / -0.86 m (the value of a correct cue at that coverage); T covers 6 % / 12 %. The rule mechanism is not the gap; the cue is.
+
+**T4. Class weighting is a threshold move.**
+Under a pure prior change the trained posterior and the deployed posterior differ by a fixed odds factor, so "decide at 0.5 after weighting" equals "decide at tau = r/(1+r) before weighting", r = pib*(1-pi)/((1-pib)*pi). Checked: VC-E3 (M-E3 refuted).
+* v8F: this is what the two weighting doses measured (one ROC). It predicts that the hit and false-positive pair of any dose is reachable on the unweighted model by a threshold alone. The threshold card belongs to the box-2 session; this theorem is its reason.
+
+**T5. What the camera interface can carry (the limit on non-ego understanding).**
+Constants, MEASURED from source: f = 305.58 px/rad = 5.33 px/deg (`calib.py:1247`), camera height 1.31 m median (rig frame, 4,572 clips, `stopaux_extr_join4572.json`), 16 px patches pooled 4x4 to 64 px cells.
+* Ground range per pixel is D^2/(f*h + D) (VC-H4): 0.95 m at 20 m, 2.1 m at 30 m, 5.5 m at 50 m.
+* Every ground point beyond f*h/c lies in the one cell row at the horizon (VC-H6): beyond **6.3 m** for the 4x10 grid, 12.5 m for 8x20, 25 m for un-pooled patches. Mean pooling removes the position inside a cell.
+* A 0.4 m stop line spans f*h*w/(D*(D+w)) pixels (VC-H5): 1.5 px at 10 m, 0.39 px at 20 m, 0.18 px at 30 m.
+* A 0.3 x 0.9 m signal head at 30 m covers 3 x 9 px: 11 % of one patch and 0.68 % of one pooled cell. Mean pooling P patches divides the detection SNR^2 of a k-patch object by P/k (VC-H3): by 16 for a one-patch object.
+* A comfortable stop from 50 km/h needs the cue at about 62 m (2 m/s2 plus 1 s).
+* Consequence: at the range where a stop must be decided, the stop line is below one pixel and the signal head is a few pixels, before any learning. By the data-processing inequality no reader of these tokens, and no amount of additional clips at this interface, recovers it. This predicts three measured facts: lead gap decodable at no level, vision adding +0.009 AUROC to the stop cue, and the higher-resolution token grid adding nothing (the image under it is the same).
+* At native width (1,920 px for 120 deg, INHERITED, to verify) the same objects are 3 times larger: a centre crop at native resolution has the same token count and 9 times the pixels per object.
+
+**T6. A yardstick for the world model.**
+Skill over persistence equals the predictable fraction of the change (VC-H1). For a single AR(1) feature with lag correlation rho, its own past gives skill (1 - rho)/2 (VC-H2); a predictor that reads all features and the actions can exceed that value. So a pooled, slowly varying target has little to predict at 0.2 s, and a model that is negative at 2 s is below a closed-form linear predictor, which can never be negative in sample.
+* v8F, MEASURED (WMCEIL, T0, `wm/VERDICT_WMCEIL.md`): lag correlation 0.975 at 0.2 s and 0.883 at 2 s. The learned skill is below the cross-fitted ridge at 0.2 s (+0.001 against +0.022) and at 2 s (-0.15 / -0.17 against +0.12 / +0.13), equal at 0.4 s, and above it at 0.8 s (+0.13 against +0.075). Outcome WM-BELOW-LINEAR. Even the best predictor explains about 12 % of the 2 s change, so the target space limits imagination as well.
+
+**T7. Imagination is admissible only above twice the model gap.**
+If the imagined and true returns differ by at most G, an imagined gain above 2G is a real gain (VC-D1, M-D1 refuted), and choosing the candidate with the lower imagined cost costs at most 2G (VC-D2). G follows from T1.
+* v8F: with skill <= 0 the gap is at least the size of the change itself, so imagination-driven improvement is not yet admissible. The cheapest admissible use is a selector over the three tactical candidates (the logged manoeuvre is in the top 3 in 90 % of windows against 57-59 % for the top 1; oracle best-of-3 is worth -0.35..-0.39 m).
+
+**T8. Data selection.**
+Sampling in proportion to the per-sample gradient norm minimises the second moment of the importance-weighted gradient, and allocation in proportion to stratum weight times stratum deviation minimises a stratified variance (VC-E1, VC-E2; reduction: induction). The gain factor against uniform sampling is 1/(1 + CV^2) of the gradient norms.
+* v8F: selection re-weights information that the interface carries; by T5 it cannot add what the interface drops. Order: interface first, then selection. The unused pool is large (4,572 clips are in use; the public corpus holds far more), and ego-dynamics labels are admissible for choosing stop-rich clips.
+
+**T9. Weight space.**
+* The rank-one edit dl*k^T/(k.k) is the least change of a weight matrix that moves one key to a chosen value (VC-F1, VC-F2).
+* The mean of K members has error = mean member error - mean member scatter (VC-G1, VC-G2), so it is never worse than the member mean (VC-G3). A weight average equals that output average exactly for a head that is linear in its weights (VC-F3) and approximately when the members are linearly connected.
+* v8F: the replicate floor (0.287 m) is 5 to 14 times the lever effects being tested. Averaging K members divides the run-to-run variance by K. Tests running: SOUP (does a two-member weight average realise the ensemble gain) and TASKVEC (is a lever localised, is its dose linear in weight space).
+* "Weight-space programming" (Takehi, Teoh, Zhang, Khattab, blog post of 2 Nov 2026, PUBLISHED-SECONDARY, not peer reviewed): a model reads and edits raw weights from a stated goal without gradient descent. Their own limit: edits remove obstacles but do not add a missing ability. For v8F that fits T5: weight edits can average, interpolate and re-point what is there; they cannot create resolution.
+
+## 3. What is proved and what is not
+* Proved by the solver: 36 conditions, each with its statement frozen before the proof script and each group with mutated twins that the solver refuted.
+* Not machine-checked: the reduction steps (linearity of sums, induction, Cauchy-Schwarz for n terms, whitening) and the two probabilistic statements (conformal coverage, the minimax tightness example). A Lean 4 + Mathlib proof would remove the reductions from the trust base; its installer was blocked by the permission layer of this session and waits for the PI.
+* The theorems are implications. The premises are measurements, and three are open: the flat control (T2), the visibility predictions (T5), the soup ratio (T9). Two were measured on 13 Nov: the jump ratio (T1) and the linear yardstick (T6).
+
+## 4. Way forward, in the order the evidence gives
+1. **Interface (T5).** Un-pooled tokens and a native-resolution centre crop, tested first as frozen-feature probes with an ego-only control (lead gap, lead speed, signal state, stop-point range), then as a reader input. This is the only item that can change "understands the world beyond ego motion".
+2. **World-model yardstick (T6, T1).** If the learned model is below the linear ceiling, write the linear solution in as the base and train a residual; then test the jump criterion per level.
+3. **Rules as a shield (T3)** on the speed profile, with a conformal envelope on the stop constraint; measured as rule violations (zero by construction given the cue) and four-family cost.
+4. **Selector by imagined outcome (T7)** over the top-3 tactical candidates, once item 2 gives positive skill.
+5. **Variance (T9).** Soups or ensembles to bring the floor under the lever sizes; tail averaging inside a run as a training arm.
+6. **Data selection (T8)** from the unused corpus, after item 1.

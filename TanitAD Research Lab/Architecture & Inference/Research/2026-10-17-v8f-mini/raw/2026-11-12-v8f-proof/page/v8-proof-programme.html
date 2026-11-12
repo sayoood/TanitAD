@@ -1,0 +1,186 @@
+<title>v8 Proof Programme</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<style>
+:root { --bg:#f6f5f1; --panel:#ffffff; --fg:#1d2126; --mute:#5c6670; --line:#d9d6cd; --accent:#0b6e6e; --warn:#a4541a; --a:#b3261e; --b:#1f5fa8; --c:#6a4c93; --code:#eeece5 }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#14171a; --panel:#1c2024; --fg:#e6e3db; --mute:#9aa4ad; --line:#30363c; --accent:#5cc8c0; --warn:#e0a060; --a:#ff8a80; --b:#82b6f5; --c:#c3a6e8; --code:#23282d; color-scheme: dark } }
+:root[data-theme="dark"] { --bg:#14171a; --panel:#1c2024; --fg:#e6e3db; --mute:#9aa4ad; --line:#30363c; --accent:#5cc8c0; --warn:#e0a060; --a:#ff8a80; --b:#82b6f5; --c:#c3a6e8; --code:#23282d; color-scheme: dark }
+body { background:var(--bg); color:var(--fg); font:16px/1.55 "IBM Plex Sans", system-ui, sans-serif; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:28px 64px }
+main { max-width:860px; margin:0 auto; display:flex; flex-direction:column; gap:14px; min-width:0 }
+h1 { font:600 34px/1.15 "Source Serif 4", Georgia, serif; margin:0; text-wrap:balance }
+h2 { font:600 22px/1.25 "Source Serif 4", Georgia, serif; margin:26px 0 0; padding-top:18px; border-top:1px solid var(--line); text-wrap:balance }
+h3.thm { font-size:17px; font-weight:600; margin:18px 0 0; text-wrap:balance }
+.tag { font:500 12px "IBM Plex Mono", monospace; color:var(--bg); background:var(--accent); border-radius:4px; padding:2px 7px; margin-right:9px; vertical-align:2px }
+p, li { max-width:72ch; margin:0 }
+ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:6px }
+code { font:13.5px "IBM Plex Mono", ui-monospace, monospace; background:var(--code); border-radius:3px; padding:1px 4px; overflow-wrap:anywhere }
+.kicker { font:500 12px "IBM Plex Mono", monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--mute) }
+.lead { font-size:18px; color:var(--mute) }
+.panel { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px 18px; display:flex; flex-direction:column; gap:10px; min-width:0 }
+.stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px }
+.stat { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px 14px }
+.stat b { display:block; font:600 26px/1.1 "Source Serif 4", Georgia, serif; color:var(--accent) }
+.stat span { font-size:13.5px; color:var(--mute) }
+.ask { border-left:3px solid var(--warn) }
+.step { padding-left:2px }
+.fig { overflow-x:auto }
+svg { width:100%; min-width:560px; height:auto; display:block }
+.grid { stroke:var(--line); stroke-width:1 } .ref { stroke:var(--mute); stroke-width:1; stroke-dasharray:2 3 }
+.tick, .reft { font:11px "IBM Plex Mono", monospace; fill:var(--mute) } .lab { font:500 11.5px "IBM Plex Sans", sans-serif }
+.s { fill:none; stroke-width:2 } .s.a { stroke:var(--a) } .s.b { stroke:var(--b) } .s.c { stroke:var(--c) }
+.lab.a { fill:var(--a) } .lab.b { fill:var(--b) } .lab.c { fill:var(--c) }
+figcaption { font-size:13.5px; color:var(--mute); max-width:72ch }
+</style>
+<main>
+<div class="kicker">TanitAD · v8F · first edition, 13 Nov 2026</div>
+<h1>v8 proof programme: what is proved, what is measured, what comes next</h1>
+<p class="lead">Nine theorems tie the measured state of v8F to a way forward. The algebra behind each is checked by a solver; the premises are experiments; two were measured tonight and three are still open.</p>
+<div class="stats">
+<div class="stat"><b>36 / 36</b><span>verification conditions proved by Z3, statements frozen first</span></div>
+<div class="stat"><b>18 / 18</b><span>mutated twins refuted with a counterexample</span></div>
+<div class="stat"><b>6.3 m</b><span>beyond this range all ground falls in one row of the 4x10 token grid</span></div>
+<div class="stat"><b>0.18 px</b><span>height of a 0.4 m stop line at 30 m in the 256x640 input</span></div>
+</div>
+<div class="panel">
+<strong>The short version</strong>
+<ul>
+<li>v8F-mini is a three-reader hierarchy on frozen, heavily pooled vision tokens. It beats its kinematic prior by about 1.2 m at 6 s on its own motion, and its levels do listen to each other. It has no planner, no selector and no working predictive world model yet.</li>
+<li>The new finding of this pass is geometric: at the range where a stop has to be decided, the stop line is below one pixel and a signal head is a few pixels, and the 4x10 pooling puts every ground point beyond 6.3 m into one row. That is an information limit of the input interface, so more clips or more heads on the same tokens cannot fix it. It predicts three results the programme already measured.</li>
+<li>A hierarchy cannot beat a flat model through squared error alone. It pays through labelled intermediate decisions, through outcomes that must not be averaged, and through inputs that enter at the upper level. The measured gap is the selection term, not the interface between levels.</li>
+<li>Rules can be guaranteed by a shield for every possible network; a loss term cannot do that. What limits the stop rule today is the cue, not the mechanism.</li>
+<li>Imagination-driven improvement is admissible only when the imagined gain exceeds twice the model gap. With world-model skill at zero that is not yet the case. The yardstick test of this night shows a closed-form predictor already beating the learned one at 0.2 s and at 2 s, and the multi-level criterion holding at 0.42.</li>
+</ul>
+</div>
+<div class="panel ask">
+<strong>Two things only you can unblock</strong>
+<ul>
+<li>The Lean 4 proof assistant on the pod (official installer, about 6 to 8 GB). The permission layer refused the install; until then the induction and summation steps stay paper arguments.</li>
+<li>The Hugging Face token on the new pod, to stage the 456 GB corpus and the gated encoder weights there. The project file says never copy tokens; an earlier ruling of yours allowed it for pods. I have not done it.</li>
+</ul>
+</div>
+<h2>Results of this programme so far</h2>
+<p><strong>WMCEIL (H-V8F-PROOF-3), MEASURED, tier T0, a world-model diagnostic.</strong> Source <code>wm/VERDICT_WMCEIL.md</code>, eval-141, 1,976 windows, 141 episodes, 5 folds by episode, two seeds (s0 / s1). The control reproduced the banked world-model skill to 0.000000 at all four cells.</p>
+<ul>
+<li>Outcome by the frozen card: <strong>WM-BELOW-LINEAR</strong> and <strong>JUMP-DOMINATES</strong>.</li>
+<li>At 0.2 s the learned model reads skill +0.0010 / -0.0010; a closed-form ridge on (latent, actions) reads +0.0222 / +0.0215.</li>
+<li>At 0.4 s both read about +0.027. At 0.8 s the learned model is ahead: +0.132 / +0.135 against +0.075 / +0.075.</li>
+<li>At 2 s the learned model, which composes ten 0.2 s steps, reads -0.150 / -0.172; one direct linear jump reads +0.1225 / +0.1292. A predictor written in closed form, with no gradient step, is 0.27 to 0.30 better.</li>
+<li>Theorem T1, measured in the linear class: the direct 2 s error is 0.416 [0.389, 0.449] / 0.433 of ten times the one-step error, and the composed error is above the direct error on every fold. The multi-level criterion holds with margin.</li>
+<li>The latent changes slowly (lag correlation 0.975 at 0.2 s, 0.883 at 2 s) and the actions add little (ridge without actions: +0.0218 at 0.2 s, +0.089 at 2 s). Even the best predictor here explains about 12 % of the 2 s change: the target space, not only the predictor, limits imagination.</li>
+<li>What this does not show: any effect on driving. The world model is a training auxiliary today.</li>
+</ul>
+<p><strong>Still running:</strong> the stacked predictor and the jump curve (addendum 2), the weight-average and dose tests, the cached-token resolution probe.</p>
+<h2>The camera interface, drawn</h2>
+<figure class="panel" style="margin:0">
+<div class="fig"><svg viewBox="0 0 720 360" role="img" aria-label="Pixel size of a signal head, a car and a stop line against range, at the corpus scale and at native scale">
+<line x1="56" x2="570" y1="201.8" y2="201.8" class="ref"/><text x="576" y="205.8" class="reft">1 px</text>
+<line x1="56" x2="570" y1="111.5" y2="111.5" class="ref"/><text x="576" y="115.5" class="reft">16 px patch</text>
+<line x1="56" x2="570" y1="66.3" y2="66.3" class="ref"/><text x="576" y="70.3" class="reft">64 px pooled cell</text>
+<line x1="56.0" x2="56.0" y1="16" y2="316" class="grid"/><text x="56.0" y="332" class="tick" text-anchor="middle">5 m</text>
+<line x1="184.5" x2="184.5" y1="16" y2="316" class="grid"/><text x="184.5" y="332" class="tick" text-anchor="middle">10 m</text>
+<line x1="313.0" x2="313.0" y1="16" y2="316" class="grid"/><text x="313.0" y="332" class="tick" text-anchor="middle">20 m</text>
+<line x1="388.2" x2="388.2" y1="16" y2="316" class="grid"/><text x="388.2" y="332" class="tick" text-anchor="middle">30 m</text>
+<line x1="482.9" x2="482.9" y1="16" y2="316" class="grid"/><text x="482.9" y="332" class="tick" text-anchor="middle">50 m</text>
+<line x1="570.0" x2="570.0" y1="16" y2="316" class="grid"/><text x="570.0" y="332" class="tick" text-anchor="middle">80 m</text>
+<text x="50" y="280.8" class="tick" text-anchor="end">0.1</text>
+<text x="50" y="205.8" class="tick" text-anchor="end">1</text>
+<text x="50" y="130.8" class="tick" text-anchor="end">10</text>
+<text x="50" y="55.8" class="tick" text-anchor="end">100</text>
+<polyline points="56.0,71.3 64.6,72.8 73.1,74.3 81.7,75.8 90.3,77.3 98.8,78.8 107.4,80.3 116.0,81.8 124.5,83.3 133.1,84.8 141.7,86.3 150.2,87.8 158.8,89.3 167.4,90.8 175.9,92.3 184.5,93.8 193.1,95.3 201.6,96.8 210.2,98.3 218.8,99.9 227.3,101.4 235.9,102.9 244.5,104.4 253.0,105.9 261.6,107.4 270.2,108.9 278.7,110.4 287.3,111.9 295.9,113.4 304.4,114.9 313.0,116.4 321.6,117.9 330.1,119.4 338.7,120.9 347.3,122.4 355.8,123.9 364.4,125.4 373.0,126.9 381.5,128.4 390.1,130.0 398.7,131.5 407.2,133.0 415.8,134.5 424.4,136.0 432.9,137.5 441.5,139.0 450.1,140.5 458.6,142.0 467.2,143.5 475.8,145.0 484.3,146.5 492.9,148.0 501.5,149.5 510.0,151.0 518.6,152.5 527.2,154.0 535.7,155.5 544.3,157.0 552.9,158.6 561.4,160.1 570.0,161.6" class="s a"/>
+<polyline points="56.0,35.5 64.6,37.0 73.1,38.5 81.7,40.0 90.3,41.5 98.8,43.0 107.4,44.5 116.0,46.0 124.5,47.5 133.1,49.0 141.7,50.5 150.2,52.0 158.8,53.5 167.4,55.0 175.9,56.5 184.5,58.0 193.1,59.6 201.6,61.1 210.2,62.6 218.8,64.1 227.3,65.6 235.9,67.1 244.5,68.6 253.0,70.1 261.6,71.6 270.2,73.1 278.7,74.6 287.3,76.1 295.9,77.6 304.4,79.1 313.0,80.6 321.6,82.1 330.1,83.6 338.7,85.1 347.3,86.6 355.8,88.2 364.4,89.7 373.0,91.2 381.5,92.7 390.1,94.2 398.7,95.7 407.2,97.2 415.8,98.7 424.4,100.2 432.9,101.7 441.5,103.2 450.1,104.7 458.6,106.2 467.2,107.7 475.8,109.2 484.3,110.7 492.9,112.2 501.5,113.7 510.0,115.2 518.6,116.7 527.2,118.3 535.7,119.8 544.3,121.3 552.9,122.8 561.4,124.3 570.0,125.8" class="s a" stroke-dasharray="5 4"/>
+<text x="576" y="165.6" class="lab a">signal head height 0.9 m</text>
+<polyline points="56.0,48.7 64.6,50.2 73.1,51.7 81.7,53.2 90.3,54.7 98.8,56.2 107.4,57.7 116.0,59.2 124.5,60.7 133.1,62.2 141.7,63.7 150.2,65.2 158.8,66.7 167.4,68.2 175.9,69.7 184.5,71.3 193.1,72.8 201.6,74.3 210.2,75.8 218.8,77.3 227.3,78.8 235.9,80.3 244.5,81.8 253.0,83.3 261.6,84.8 270.2,86.3 278.7,87.8 287.3,89.3 295.9,90.8 304.4,92.3 313.0,93.8 321.6,95.3 330.1,96.8 338.7,98.3 347.3,99.9 355.8,101.4 364.4,102.9 373.0,104.4 381.5,105.9 390.1,107.4 398.7,108.9 407.2,110.4 415.8,111.9 424.4,113.4 432.9,114.9 441.5,116.4 450.1,117.9 458.6,119.4 467.2,120.9 475.8,122.4 484.3,123.9 492.9,125.4 501.5,126.9 510.0,128.4 518.6,130.0 527.2,131.5 535.7,133.0 544.3,134.5 552.9,136.0 561.4,137.5 570.0,139.0" class="s b"/>
+<polyline points="56.0,12.9 64.6,14.4 73.1,15.9 81.7,17.4 90.3,18.9 98.8,20.4 107.4,21.9 116.0,23.4 124.5,24.9 133.1,26.4 141.7,27.9 150.2,29.4 158.8,31.0 167.4,32.5 175.9,34.0 184.5,35.5 193.1,37.0 201.6,38.5 210.2,40.0 218.8,41.5 227.3,43.0 235.9,44.5 244.5,46.0 253.0,47.5 261.6,49.0 270.2,50.5 278.7,52.0 287.3,53.5 295.9,55.0 304.4,56.5 313.0,58.0 321.6,59.6 330.1,61.1 338.7,62.6 347.3,64.1 355.8,65.6 364.4,67.1 373.0,68.6 381.5,70.1 390.1,71.6 398.7,73.1 407.2,74.6 415.8,76.1 424.4,77.6 432.9,79.1 441.5,80.6 450.1,82.1 458.6,83.6 467.2,85.1 475.8,86.6 484.3,88.2 492.9,89.7 501.5,91.2 510.0,92.7 518.6,94.2 527.2,95.7 535.7,97.2 544.3,98.7 552.9,100.2 561.4,101.7 570.0,103.2" class="s b" stroke-dasharray="5 4"/>
+<text x="576" y="143.0" class="lab b">car width 1.8 m</text>
+<polyline points="56.0,143.8 64.6,146.7 73.1,149.6 81.7,152.5 90.3,155.4 98.8,158.4 107.4,161.3 116.0,164.2 124.5,167.1 133.1,170.1 141.7,173.0 150.2,175.9 158.8,178.9 167.4,181.8 175.9,184.8 184.5,187.7 193.1,190.7 201.6,193.6 210.2,196.6 218.8,199.6 227.3,202.5 235.9,205.5 244.5,208.5 253.0,211.4 261.6,214.4 270.2,217.4 278.7,220.3 287.3,223.3 295.9,226.3 304.4,229.3 313.0,232.2 321.6,235.2 330.1,238.2 338.7,241.2 347.3,244.2 355.8,247.2 364.4,250.2 373.0,253.1 381.5,256.1 390.1,259.1 398.7,262.1 407.2,265.1 415.8,268.1 424.4,271.1 432.9,274.1 441.5,277.1 450.1,280.1 458.6,283.1 467.2,286.1 475.8,289.1 484.3,292.1 492.9,295.1 501.5,298.1 510.0,301.1 518.6,304.1 527.2,307.1 535.7,310.1 544.3,313.1 552.9,316.0 561.4,316.0 570.0,316.0" class="s c"/>
+<polyline points="56.0,108.0 64.6,110.9 73.1,113.8 81.7,116.7 90.3,119.6 98.8,122.6 107.4,125.5 116.0,128.4 124.5,131.3 133.1,134.3 141.7,137.2 150.2,140.2 158.8,143.1 167.4,146.0 175.9,149.0 184.5,151.9 193.1,154.9 201.6,157.9 210.2,160.8 218.8,163.8 227.3,166.7 235.9,169.7 244.5,172.7 253.0,175.6 261.6,178.6 270.2,181.6 278.7,184.6 287.3,187.5 295.9,190.5 304.4,193.5 313.0,196.5 321.6,199.4 330.1,202.4 338.7,205.4 347.3,208.4 355.8,211.4 364.4,214.4 373.0,217.4 381.5,220.4 390.1,223.3 398.7,226.3 407.2,229.3 415.8,232.3 424.4,235.3 432.9,238.3 441.5,241.3 450.1,244.3 458.6,247.3 467.2,250.3 475.8,253.3 484.3,256.3 492.9,259.3 501.5,262.3 510.0,265.3 518.6,268.3 527.2,271.3 535.7,274.3 544.3,277.3 552.9,280.3 561.4,283.3 570.0,286.3" class="s c" stroke-dasharray="5 4"/>
+<text x="576" y="320.0" class="lab c">stop line 0.4 m on the ground</text>
+<text x="56" y="354" class="tick">range to the object</text><text x="12" y="26" class="tick">pixels</text></svg></div>
+<figcaption>Solid lines: the 256x640 cylindrical input used today (5.33 px per degree). Dashed lines: the same objects at native width (16 px per degree; the native width is inherited and still to be verified). Formulas are checked as VC-H4 to VC-H6; focal length and camera height are measured from source.</figcaption>
+</figure>
+<p>Evidence classes: MEASURED (ours, with path), PUBLISHED, ESTIMATED. Every eval number here is T0 or T1-kin on logged frames: a diagnostic, never driving performance. STRATEGIC family: PAUSED (PI item 25). Status source: <code>V8_STATUS_DIGEST.md</code> (built from the mirror tip, paper v3, GOALS_AND_CLAIMS, the registry and the banks). Machine checks: <code>fv/FV_SPEC_V1.md</code> and <code>fv/FV_SPEC_V2.md</code>, 36 conditions proved and 18 mutated twins refuted by Z3 5.4.1 (<code>fv/FV_RESULT_V1.json</code>, <code>fv/FV_RESULT_V2.json</code>).</p>
+<h2>1. What v8F is today (MEASURED)</h2>
+<ul>
+<li>The built model is v8F-mini: frozen DINOv3-L features pooled to 4x10 tokens per frame, a shared adapter, three readers S / T / O that pass held outputs downward, a frozen kinematic prior, and an optional H-JEPA world-model auxiliary. 5.2 M to 7.2 M trainable parameters, 4,512 clips. A larger built flagship was not found.</li>
+<li>Inference is one deterministic pass. There is no planner, no selector and no imagination. The world model is a training auxiliary; the trajectory reader does not read a rollout.</li>
+<li>Adopted base DAG-OACC: 6 s ADE -1.26 / -1.19 m against the kinematic prior (T1-kin, two seeds).</li>
+<li>The levels listen to each other: with the logged tactical code substituted, 6 s ADE falls from ~2.1 m to ~1.0 m (T0). Of the tactical headroom (-1.63 / -1.77 m, T1-kin first tick) the constraints carry 87 % / 89 %, speed first.</li>
+<li>Stop handling is the largest single failure: T flags 10 % / 13 % of stop windows (bar 0.6). Class weighting moves along one ROC (hit 0.45-0.62 with false positives 0.12-0.145; AUROC change -0.006..+0.020). A probe on the non-vision inputs of T reads AUROC 0.8525, with vision 0.8615.</li>
+<li>Non-ego content: agents within 30 m are decodable at the first world-model level only (R2 +0.33..+0.36, T0); lead gap at no level. No traffic-light, stop-line or lead-vehicle probe exists.</li>
+<li>World model against "nothing changes": skill +0.0010 / -0.0010 at 0.2 s, -0.150 / -0.172 at 2 s.</li>
+<li>Run-to-run noise: tactical replicate floor 0.287 m; most 2-6 s levers measure 0.02-0.06 m.</li>
+</ul>
+<h2>2. Theorems, what each says about v8F, and the premise that must be measured</h2>
+<p>Each statement is exact. "Checked" names the solver-verified conditions; "Reduction" names the step that is still a paper argument.</p>
+<h3 class="thm"><span class="tag">T1</span>Multi-level prediction beats composed one-step prediction exactly when the jump model is better than the composed bound.</h3>
+<p>One-step error &lt;= eps and Lipschitz constant L give e_H &lt;= eps*(L^H - 1)/(L - 1) (= eps*H for L = 1); a level that jumps k steps with error eps_k gives eps_k*(L^H - 1)/(L^k - 1). The bound is attained (a constant bias along an expanding direction), so in the worst case over all models with these constants the multi-level model dominates at every horizon **iff eps_k &lt; eps*(L^k - 1)/(L - 1)<strong>; for L = 1, </strong>iff eps_k &lt; k*eps**. Checked: VC-A1..A5. Reduction: induction on the step count.</p>
+<ul>
+<li>v8F: the 2 s world-model skill is negative while the 0.2 s skill is zero. That is the signature of composition error. MEASURED in the linear class (WMCEIL part d, T0): the direct 2 s error is 0.416 [0.389, 0.449] / 0.433 of ten times the one-step error, and the composed error is above the direct error on every fold. The criterion holds with margin; the learned model does not use it (it composes ten steps).</li>
+</ul>
+<h3 class="thm"><span class="tag">T2</span>A decision before the trajectory: exact risk split, and when it cannot help.</h3>
+<p>For any plan c that is constant on (context, mode) groups: sum w*||y - c||^2 = within-mode scatter + sum w*||mu_mode - c||^2. Checked: VC-B1, VC-B2. Reduction: linearity of finite sums.</p>
+<ul>
+<li>Corollary (non-dominance): under squared error and equal information, a selector that reads only the context cannot beat the conditional mean. A hierarchy therefore pays through three channels only: (a) supervised intermediate labels (the typed tactical code adds label bits per clip that a flat regressor never sees), (b) an acceptance region that is not convex, (c) inputs that enter at the upper level (nav).</li>
+<li>Channel (b), checked as VC-B3 and VC-B4: with two modes at distance D, minority weight p, mode radius r and tolerance tol, if p*D &gt; tol + r the averaged plan misses every outcome of both modes, while a decided plan hits its mode whenever r &lt;= tol.</li>
+<li>v8F: the code is worth ~1.1 m at 6 s when it is right (T0); the selection term is what is missing (top-1 57-59 %, top-3 90 %, constraints 87-89 % of the headroom). Premise to measure: a flat control at matched budget (<code>--o-interface cut</code> exists) against the full interface; T2 predicts the sign from "selection energy &lt; between-mode energy". PUBLISHED caution (Nachum et al. 2019, abstract level): hierarchy gains in RL come mostly from exploration, which offline imitation does not have; so the flat control is not optional.</li>
+</ul>
+<h3 class="thm"><span class="tag">T3</span>Rules hold by construction, for every network, when they sit in a shield; a loss term cannot give that.</h3>
+<ul>
+<li>Stop-line shield, checked as VC-C1 with mutations M-C1a, M-C1b refuted: with braking distance B obeying B(v) = v*dt + B(max(v - q, 0)), the invariant B(v) &lt;= d is preserved for ANY proposed speed, the fallback is always feasible, and the distance to the line never goes below zero. VC-C2: the closed form of B obeys that recursion.</li>
+<li>Masked selection over a candidate set (VC-C3, K = 1..6): the output is admissible whenever anything is, never worse than any admissible candidate, and unchanged when the free choice was admissible. Envelope clipping is the smallest change (VC-C5).</li>
+<li>A penalty of weight lambda only bounds the violation by (J0 - Jinf)/lambda (VC-C4): the hinge terms in the v8F loss cannot guarantee anything.</li>
+<li>The residual risk is perception: a shield on a predicted constraint violates the true rule at most as often as the constraint envelope misses. PUBLISHED: split-conformal calibration bounds that miss rate at alpha on exchangeable scenes (marginal, not per scene).</li>
+<li>v8F: forcing the logged stop on 70 % of stop windows is worth -0.96 / -0.86 m (the value of a correct cue at that coverage); T covers 6 % / 12 %. The rule mechanism is not the gap; the cue is.</li>
+</ul>
+<h3 class="thm"><span class="tag">T4</span>Class weighting is a threshold move.</h3>
+<p>Under a pure prior change the trained posterior and the deployed posterior differ by a fixed odds factor, so "decide at 0.5 after weighting" equals "decide at tau = r/(1+r) before weighting", r = pib*(1-pi)/((1-pib)*pi). Checked: VC-E3 (M-E3 refuted).</p>
+<ul>
+<li>v8F: this is what the two weighting doses measured (one ROC). It predicts that the hit and false-positive pair of any dose is reachable on the unweighted model by a threshold alone. The threshold card belongs to the box-2 session; this theorem is its reason.</li>
+</ul>
+<h3 class="thm"><span class="tag">T5</span>What the camera interface can carry (the limit on non-ego understanding).</h3>
+<p>Constants, MEASURED from source: f = 305.58 px/rad = 5.33 px/deg (<code>calib.py:1247</code>), camera height 1.31 m median (rig frame, 4,572 clips, <code>stopaux_extr_join4572.json</code>), 16 px patches pooled 4x4 to 64 px cells.</p>
+<ul>
+<li>Ground range per pixel is D^2/(f*h + D) (VC-H4): 0.95 m at 20 m, 2.1 m at 30 m, 5.5 m at 50 m.</li>
+<li>Every ground point beyond f*h/c lies in the one cell row at the horizon (VC-H6): beyond <strong>6.3 m</strong> for the 4x10 grid, 12.5 m for 8x20, 25 m for un-pooled patches. Mean pooling removes the position inside a cell.</li>
+<li>A 0.4 m stop line spans f*h*w/(D*(D+w)) pixels (VC-H5): 1.5 px at 10 m, 0.39 px at 20 m, 0.18 px at 30 m.</li>
+<li>A 0.3 x 0.9 m signal head at 30 m covers 3 x 9 px: 11 % of one patch and 0.68 % of one pooled cell. Mean pooling P patches divides the detection SNR^2 of a k-patch object by P/k (VC-H3): by 16 for a one-patch object.</li>
+<li>A comfortable stop from 50 km/h needs the cue at about 62 m (2 m/s2 plus 1 s).</li>
+<li>Consequence: at the range where a stop must be decided, the stop line is below one pixel and the signal head is a few pixels, before any learning. By the data-processing inequality no reader of these tokens, and no amount of additional clips at this interface, recovers it. This predicts three measured facts: lead gap decodable at no level, vision adding +0.009 AUROC to the stop cue, and the higher-resolution token grid adding nothing (the image under it is the same).</li>
+<li>At native width (1,920 px for 120 deg, INHERITED, to verify) the same objects are 3 times larger: a centre crop at native resolution has the same token count and 9 times the pixels per object.</li>
+</ul>
+<h3 class="thm"><span class="tag">T6</span>A yardstick for the world model.</h3>
+<p>Skill over persistence equals the predictable fraction of the change (VC-H1). For a single AR(1) feature with lag correlation rho, its own past gives skill (1 - rho)/2 (VC-H2); a predictor that reads all features and the actions can exceed that value. So a pooled, slowly varying target has little to predict at 0.2 s, and a model that is negative at 2 s is below a closed-form linear predictor, which can never be negative in sample.</p>
+<ul>
+<li>v8F, MEASURED (WMCEIL, T0, <code>wm/VERDICT_WMCEIL.md</code>): lag correlation 0.975 at 0.2 s and 0.883 at 2 s. The learned skill is below the cross-fitted ridge at 0.2 s (+0.001 against +0.022) and at 2 s (-0.15 / -0.17 against +0.12 / +0.13), equal at 0.4 s, and above it at 0.8 s (+0.13 against +0.075). Outcome WM-BELOW-LINEAR. Even the best predictor explains about 12 % of the 2 s change, so the target space limits imagination as well.</li>
+</ul>
+<h3 class="thm"><span class="tag">T7</span>Imagination is admissible only above twice the model gap.</h3>
+<p>If the imagined and true returns differ by at most G, an imagined gain above 2G is a real gain (VC-D1, M-D1 refuted), and choosing the candidate with the lower imagined cost costs at most 2G (VC-D2). G follows from T1.</p>
+<ul>
+<li>v8F: with skill &lt;= 0 the gap is at least the size of the change itself, so imagination-driven improvement is not yet admissible. The cheapest admissible use is a selector over the three tactical candidates (the logged manoeuvre is in the top 3 in 90 % of windows against 57-59 % for the top 1; oracle best-of-3 is worth -0.35..-0.39 m).</li>
+</ul>
+<h3 class="thm"><span class="tag">T8</span>Data selection.</h3>
+<p>Sampling in proportion to the per-sample gradient norm minimises the second moment of the importance-weighted gradient, and allocation in proportion to stratum weight times stratum deviation minimises a stratified variance (VC-E1, VC-E2; reduction: induction). The gain factor against uniform sampling is 1/(1 + CV^2) of the gradient norms.</p>
+<ul>
+<li>v8F: selection re-weights information that the interface carries; by T5 it cannot add what the interface drops. Order: interface first, then selection. The unused pool is large (4,572 clips are in use; the public corpus holds far more), and ego-dynamics labels are admissible for choosing stop-rich clips.</li>
+</ul>
+<h3 class="thm"><span class="tag">T9</span>Weight space.</h3>
+<ul>
+<li>The rank-one edit dl*k^T/(k.k) is the least change of a weight matrix that moves one key to a chosen value (VC-F1, VC-F2).</li>
+<li>The mean of K members has error = mean member error - mean member scatter (VC-G1, VC-G2), so it is never worse than the member mean (VC-G3). A weight average equals that output average exactly for a head that is linear in its weights (VC-F3) and approximately when the members are linearly connected.</li>
+<li>v8F: the replicate floor (0.287 m) is 5 to 14 times the lever effects being tested. Averaging K members divides the run-to-run variance by K. Tests running: SOUP (does a two-member weight average realise the ensemble gain) and TASKVEC (is a lever localised, is its dose linear in weight space).</li>
+<li>"Weight-space programming" (Takehi, Teoh, Zhang, Khattab, blog post of 2 Nov 2026, PUBLISHED-SECONDARY, not peer reviewed): a model reads and edits raw weights from a stated goal without gradient descent. Their own limit: edits remove obstacles but do not add a missing ability. For v8F that fits T5: weight edits can average, interpolate and re-point what is there; they cannot create resolution.</li>
+</ul>
+<h2>3. What is proved and what is not</h2>
+<ul>
+<li>Proved by the solver: 36 conditions, each with its statement frozen before the proof script and each group with mutated twins that the solver refuted.</li>
+<li>Not machine-checked: the reduction steps (linearity of sums, induction, Cauchy-Schwarz for n terms, whitening) and the two probabilistic statements (conformal coverage, the minimax tightness example). A Lean 4 + Mathlib proof would remove the reductions from the trust base; its installer was blocked by the permission layer of this session and waits for the PI.</li>
+<li>The theorems are implications. The premises are measurements, and three are open: the flat control (T2), the visibility predictions (T5), the soup ratio (T9). Two were measured on 13 Nov: the jump ratio (T1) and the linear yardstick (T6).</li>
+</ul>
+<h2>4. Way forward, in the order the evidence gives</h2>
+<p class="step">1. <strong>Interface (T5).</strong> Un-pooled tokens and a native-resolution centre crop, tested first as frozen-feature probes with an ego-only control (lead gap, lead speed, signal state, stop-point range), then as a reader input. This is the only item that can change "understands the world beyond ego motion".</p>
+<p class="step">2. <strong>World-model yardstick (T6, T1).</strong> If the learned model is below the linear ceiling, write the linear solution in as the base and train a residual; then test the jump criterion per level.</p>
+<p class="step">3. <strong>Rules as a shield (T3)</strong> on the speed profile, with a conformal envelope on the stop constraint; measured as rule violations (zero by construction given the cue) and four-family cost.</p>
+<p class="step">4. <strong>Selector by imagined outcome (T7)</strong> over the top-3 tactical candidates, once item 2 gives positive skill.</p>
+<p class="step">5. <strong>Variance (T9).</strong> Soups or ensembles to bring the floor under the lever sizes; tail averaging inside a run as a training arm.</p>
+<p class="step">6. <strong>Data selection (T8)</strong> from the unused corpus, after item 1.</p>
+</main>
