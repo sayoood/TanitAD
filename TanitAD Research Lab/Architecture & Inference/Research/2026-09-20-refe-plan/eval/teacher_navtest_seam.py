@@ -45,7 +45,25 @@ sys.path.insert(0, HERE)
 
 from refe_navtest_seam import FRAME_CONTROL_MAX_M, NAVSIM_DT, NAVSIM_N, to_navsim, wrap  # noqa: E402
 
-EXPORT = "E:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
+def resolve_archive_file(rel: str, env: dict | None = None, roots: list | None = None) -> str:
+    """The navsim archive moved E: -> F: on 2026-10-25. Returns $TANITAD_NAVSIM_ROOT/<rel> if that variable is set, else the FIRST
+    <root>/<rel> that EXISTS AS A FILE among E:/ F:/ D:/Archive/devbox-C/navsim. It never resolves by the root directory alone:
+    on 2026-11-12 a one-file copy on E: made E:/Archive/devbox-C/navsim "exist" and shadowed the real F: archive for the pinned
+    harness (run_v1.py:42-44 takes the first existing root DIRECTORY), so TF-N2 A1's score_T failed. If no root holds the file,
+    the first root's path is returned, so the open fails loudly and names it. Path roots only: the file's bytes are unchanged."""
+    env = os.environ if env is None else env
+    r = env.get("TANITAD_NAVSIM_ROOT")
+    if r:
+        return r.replace("\\", "/").rstrip("/") + "/" + rel
+    roots = roots if roots is not None else [f"{d}:/Archive/devbox-C/navsim" for d in "EFD"]
+    for root in roots:
+        p = f"{root}/{rel}"
+        if os.path.isfile(p):
+            return p
+    return f"{roots[0]}/{rel}"
+
+
+EXPORT = resolve_archive_file("exp/w3_navtest_v1/inputs/navtest_inputs.json.gz")
 TEST_DB = "E:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits/test"
 TRAINVAL_DB = "E:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits/trainval"
 # the 36 tokens in 4 logs whose nuPlan-DB future disagrees with OpenScene (student's full seam, 2026-10-04)
