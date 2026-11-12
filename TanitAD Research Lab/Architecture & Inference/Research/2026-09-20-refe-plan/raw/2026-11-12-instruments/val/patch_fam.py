@@ -1,0 +1,20 @@
+p='families_run.py'
+s=open(p,encoding='utf-8').read()
+s=s.replace('if "error" in r or "fam" not in r or r["token"] in seen:','if "error" in r or "shared" not in r or r["token"] in seen:')
+s=s.replace('K = len(rows[0]["fam"]["human8"])','K = len(rows[0]["shared"]["human8"])')
+s=s.replace('ld = r["fam"]["lead"]','ld = r["shared"]["lead"]')
+s=s.replace('"speeds": np.asarray([r["fam"]["v0"] for r in rows], np.float64)','"speeds": np.asarray([r["shared"]["v0"] for r in rows], np.float64)')
+s=s.replace('''def frame_poses(rows, key: str) -> np.ndarray:
+    return np.asarray([r["fam"][key] for r in rows], np.float64)''','''def frame_poses(rows, arm: str, key: str) -> np.ndarray:
+    return np.asarray([r["arms"][arm]["fam"][key] for r in rows], np.float64)''')
+s=s.replace('def run(rows, label: str, repo: str, n_boot: int, per_window: bool = False) -> dict:','def run(rows, arm: str, label: str, repo: str, n_boot: int, per_window: bool = False) -> dict:')
+s=s.replace('v0 = [r["fam"]["v0"] for r in rows]','v0 = [r["shared"]["v0"] for r in rows]')
+s=s.replace('human = frame_poses(rows, "human8")','human = np.asarray([r["shared"]["human8"] for r in rows], np.float64)')
+s=s.replace('out = {"_label": label,','out = {"_label": label, "arm": arm,')
+s=s.replace('ad.scenes_to_win(frame_poses(rows, key), human,','ad.scenes_to_win(frame_poses(rows, arm, key), human,')
+s=s.replace('''    ap.add_argument("--label", required=True)''','''    ap.add_argument("--arm", required=True, help="arm name in the rows' `arms` dict (e.g. C1, T, human)")
+    ap.add_argument("--label", required=True)''')
+s=s.replace('rows = read_rows(a.rows)\n','rows = [r for r in read_rows(a.rows) if a.arm in r["arms"]]\n')
+s=s.replace('out = run(rows, a.label,','out = run(rows, a.arm, a.label,')
+s=s.replace('python families_run.py --rows <rows.jsonl|glob ...> --label','python families_run.py --rows <rows.jsonl|glob ...> --arm <name> --label')
+open(p,'w',encoding='utf-8',newline='\n').write(s)
