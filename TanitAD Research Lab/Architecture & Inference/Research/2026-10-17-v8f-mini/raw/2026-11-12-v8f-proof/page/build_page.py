@@ -104,11 +104,12 @@ figcaption {{ font-size:13.5px; color:var(--mute); max-width:72ch }}
 <main>
 <div class="kicker">TanitAD · v8F · first edition, 13 Nov 2026</div>
 <h1>v8 proof programme: what is proved, what is measured, what comes next</h1>
-<p class="lead">Nine theorems tie the measured state of v8F to a way forward. The algebra behind each is checked by a solver; the premises are experiments; two were measured tonight and three are still open.</p>
+<p class="lead">Nine theorems tie the measured state of v8F to a way forward. The algebra behind each is checked by a solver; the premises are experiments; four were read this night (world-model yardstick, weight-space read, rule code, rule shield) and three are not read yet.</p>
 <div class="stats">
-<div class="stat"><b>36 / 36</b><span>verification conditions proved by Z3, statements frozen first</span></div>
-<div class="stat"><b>18 / 18</b><span>mutated twins refuted with a counterexample</span></div>
+<div class="stat"><b>38 / 38</b><span>verification conditions proved by Z3, statements frozen first</span></div>
+<div class="stat"><b>19 / 19</b><span>mutated twins refuted with a counterexample</span></div>
 <div class="stat"><b>6.3 m</b><span>beyond this range all ground falls in one row of the 4x10 token grid</span></div>
+<div class="stat"><b>-3.4 m</b><span>stop-window error at 2 to 6 s with the verified shield and a perfect stop cue (T1-kin, a ceiling)</span></div>
 <div class="stat"><b>0.18 px</b><span>height of a 0.4 m stop line at 30 m in the 256x640 input</span></div>
 </div>
 <div class="panel">
@@ -117,8 +118,8 @@ figcaption {{ font-size:13.5px; color:var(--mute); max-width:72ch }}
 <li>v8F-mini is a three-reader hierarchy on frozen, heavily pooled vision tokens. It beats its kinematic prior by about 1.2 m at 6 s on its own motion, and its levels do listen to each other. It has no planner, no selector and no working predictive world model yet.</li>
 <li>The new finding of this pass is geometric: at the range where a stop has to be decided, the stop line is below one pixel and a signal head is a few pixels, and the 4x10 pooling puts every ground point beyond 6.3 m into one row. That is an information limit of the input interface, so more clips or more heads on the same tokens cannot fix it. It predicts three results the programme already measured.</li>
 <li>A hierarchy cannot beat a flat model through squared error alone. It pays through labelled intermediate decisions, through outcomes that must not be averaged, and through inputs that enter at the upper level. The measured gap is the selection term, not the interface between levels.</li>
-<li>Rules can be guaranteed by a shield for every possible network; a loss term cannot do that. What limits the stop rule today is the cue, not the mechanism.</li>
-<li>Imagination-driven improvement is admissible only when the imagined gain exceeds twice the model gap. With world-model skill at zero that is not yet the case. The yardstick test of this night shows a closed-form predictor already beating the learned one at 0.2 s and at 2 s, and the multi-level criterion holding at 0.42.</li>
+<li>Rules can be guaranteed by a shield for every possible network; a loss term cannot do that. What limits the stop rule today is the cue, not the mechanism. Measured this night on real plans (T1-kin, a diagnostic): with a perfect stop cue the verified shield removes every overrun and lowers stop-window error by 3.5 / 3.4 m at the two seeds, at no measured cost; with the cue the model emits it gains nothing.</li>
+<li>Imagination-driven improvement is admissible only when the imagined gain exceeds twice the model gap. With world-model skill at zero that is not yet the case. Measured this night: a closed-form stacked predictor beats the learned world model at every horizon (at 2 s, skill -0.15 becomes +0.17), and the multi-level criterion holds at 0.42. Even so it explains at most 17 % of the latent change.</li>
 </ul>
 </div>
 <div class="panel ask">
