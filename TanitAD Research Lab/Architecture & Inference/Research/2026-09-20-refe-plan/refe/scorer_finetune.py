@@ -87,10 +87,11 @@ import rl_reward  # noqa: E402  (RL-S1: pure numpy; the reward the EPO term maxi
 import train as T  # noqa: E402
 from model import REFe, REFeConfig  # noqa: E402
 import aux_drivable_head as AUX  # noqa: E402  (the auxiliary drivable-area head; every flag it adds defaults OFF)
+import aux_hb as HB  # noqa: E402  (VDAC A5: arm HB's LoRA trunk copy, HC's cell / boundary-weight flags; every flag defaults OFF)
 
 SCORER = ("score_q_mlp", "score_dec", "score_head")
 V1_W = (5.0, 5.0, 2.0)
-AUX_MUTATE_ENVS = ("REFE_AUX_MUTATE_TAP", "REFE_AUX_MUTATE_DROP_LOSS", "REFE_AUX_MUTATE_DETACH_HEAD")      # --aux-drv deliberate regressions: each must turn G12 RED
+AUX_MUTATE_ENVS = ("REFE_AUX_MUTATE_TAP", "REFE_AUX_MUTATE_DROP_LOSS", "REFE_AUX_MUTATE_DETACH_HEAD") + HB.HB_MUTATE_ENVS      # --aux-drv deliberate regressions: each must turn G12 RED (the HB ones also G21 / G19)
 
 
 def agg_v1(p):
@@ -1190,13 +1191,14 @@ class AuxEvalAcc:
     """The counts behind AUX.head_metrics, ADDITIVE across chunks and logs (head_metrics returns ratios, which cannot be merged).  Same formulas: mask IoU / accuracy at the
     2 m grid over the cells of labelled frames, SDF MAE in metres; test_aux_s1_wiring pins `result()` equal to AUX.head_metrics on the concatenation."""
 
-    def __init__(self):
+    def __init__(self, cell: float = AUX.CELL_M):
+        self.cell = cell                                     # HC: the head's own grid (2.0 for HA / HB, 1.0 for HC)
         self.inter = self.union = self.agree = self.cells = self.frames = self.labelled = 0
         self.abs_sdf = 0.0
 
     @torch.no_grad()
     def add(self, logit, sdf, label, valid):
-        t = AUX.build_targets(label, valid)
+        t = AUX.build_targets(label, valid, self.cell)
         tm, pm, kn = t.mask_frac >= 0.5, logit > 0, t.known
         self.inter += int((tm & pm & kn).sum())
         self.union += int(((tm | pm) & kn).sum())
@@ -1695,6 +1697,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--aux-drv-exclude-logs", default="", help="VDAC (PREREG_VDAC_P6 section 7): a file of log names (one per line); every training row of a listed log gets valid = 0 on the head's label (exactly 0 loss), so the head never "
                     "trains on it.  Needs --aux-drv and --aux-drv-exclude-sha256.  '' = OFF = this trainer exactly, so a VDAC launch argv must NAME it")
     ap.add_argument("--aux-drv-exclude-sha256", default="", help="VDAC: the sha256 the --aux-drv-exclude-logs file must have (refused if it differs); '' = OFF")
+    HB.add_hb_args(ap)                                       # VDAC A5: --aux-drv-trunk-lora / --aux-drv-lora-lr (HB), --aux-drv-cell / --aux-drv-bw / --aux-drv-bw-band-m (HC); every default = OFF
     ap.add_argument("--split-half", type=int, default=-1, choices=(-1, 0, 1), help="DIV (PREREG_DIV_P6 section 2): train ONLY on the training sets whose LOG hashes to this half, h = int(sha256(log name), 16) % 2 (every set of a log follows its log); "
                     "the held-out monitor is unchanged.  A half below 25,000 sets is refused.  -1 = OFF = this trainer exactly, so a DV launch argv must NAME it")
     return ap
@@ -1706,8 +1709,8 @@ def main() -> int:
     bad_cli = epo_refusals(a, ap) + epo_con_refusals(a, ap)           # RL-S1: a command line that names EPO levers inconsistently never starts (SAFEOBJ: epo_con_refusals is epo_refusals' sibling)
     bad_cli = bad_cli + pair_refusals(a)                                 # SCORER1: --pair-* named inconsistently never starts
     bad_cli = bad_cli + twin_refusals(a)                                 # S1Z: --twin-* named inconsistently never starts
-    if bad_cli or AUX.aux_refusals(a) or aux_s1_refusals(a) or aux_excl_cli_refusals(a):
-        for msg in bad_cli + AUX.aux_refusals(a) + aux_s1_refusals(a) + aux_excl_cli_refusals(a):         # + the aux head's levers: named without --aux-drv, labels missing, shuffle with the feed on, no head LR ...
+    if bad_cli or AUX.aux_refusals(a) or aux_s1_refusals(a) or aux_excl_cli_refusals(a) or HB.hb_refusals(a):
+        for msg in bad_cli + AUX.aux_refusals(a) + aux_s1_refusals(a) + aux_excl_cli_refusals(a) + HB.hb_refusals(a):         # + the aux head's levers: named without --aux-drv, labels missing, shuffle with the feed on, no head LR ...
             print("REFUSED: " + msg)
         return 4
     bad_hn = hn_refusals(a, ap)                                         # P6-HN-S: --hn-bank / --ctx-cache levers named inconsistently never start
@@ -1762,13 +1765,16 @@ def main() -> int:
     # ---------------- auxiliary drivable-area head (--aux-drv; default OFF = nothing below runs).  A SIBLING of the model, never a submodule: it is not in `model.state_dict()`, so
     # model_sft_*.pt still loads strictly in the planner (G-EVAL).  It draws from its own RNG stream (AUX.build_head forks the global one), so building it consumes
     # nothing the data order or the scorer's init depends on.
-    aux = aux_src = aux_src_eval = optH = None
+    aux = aux_src = aux_src_eval = optH = hb = optL = None
     if a.aux_drv:
-        aux = AUX.AuxDrivable(AUX.AuxDrivableConfig(tap=a.aux_drv_tap, depth=a.aux_drv_depth, feed=a.aux_drv_feed, w_aux=a.w_aux_drv, seed=int(a.seed))).to(dev)
+        aux = AUX.AuxDrivable(AUX.AuxDrivableConfig(tap=a.aux_drv_tap, depth=a.aux_drv_depth, feed=a.aux_drv_feed, w_aux=a.w_aux_drv, cell=a.aux_drv_cell, bw=a.aux_drv_bw, bw_band_m=a.aux_drv_bw_band_m, seed=int(a.seed))).to(dev)
         aux_src = AUX.AuxLabelSource(a.aux_drv_labels, shuffle_seed=a.aux_drv_shuffle_seed, max_logs=64)
         aux_src_eval = AUX.AuxLabelSource(a.aux_drv_labels, max_logs=64)                    # the TRUE map, for the held-out perception read (never shuffled)
         optH = torch.optim.AdamW(list(aux.head.parameters()), lr=a.aux_drv_lr, weight_decay=0.01)
         aux.head.register_forward_pre_hook(lambda mod, args: cap.__setitem__("aux_ctx", args[0]))      # what the head ACTUALLY reads (G12 compares its storage)
+        if a.aux_drv_trunk_lora == "on":                       # VDAC A5 arm HB: a LoRA-adapted COPY of P6's trunk, a SIBLING of the model, feeding ONLY the head; its own AdamW at --aux-drv-lora-lr
+            hb = HB.HBTrunk(model).to(dev)
+            optL = HB.build_lora_optimizer(hb, a.aux_drv_lora_lr)
 
     # ---------------- data: train.py's own banks
     op = T.OnPolicyBank(a.onpolicy, cfg.n_proposals, cfg.horizon_steps, lane_labels=a.lane_labels_train or None,
@@ -1949,6 +1955,8 @@ def main() -> int:
         info["aux_drv"] = {**aux.built_facts(), "tap": aux.cfg.tap, "feed": "on" if aux.feed is not None else "off", "lr": optH.param_groups[0]["lr"],
                            "store_sha256": aux_src.manifest["store_sha256"], "frames": aux_src.manifest["counts"]["stored_keys"], "shuffle_seed": aux_src.shuffle_seed,
                            "head_params_in_optimiser": sum(p.numel() for g_ in optH.param_groups for p in g_["params"])}
+        if hb is not None:                                   # HB: the BUILT facts of the copy and of its optimiser (G-DVB aux_drv_trunk_lora / aux_drv_lora_lr read these; absent when OFF: every earlier data event is byte-identical)
+            info["aux_hb"] = {**hb.built_facts(model, SCORER), "lora_lr": optL.param_groups[0]["lr"], "lora_params_in_optimiser": sum(p.numel() for g_ in optL.param_groups for p in g_["params"])}
         if aux_src.shuffle_seed is not None:                 # the control's map must be a derangement of ALL the store's keys (SPEC 7)
             km = aux_src.key_map()
             info["aux_drv"].update({"shuffle_keys": len(km), "derangement_fixed_points": sum(1 for k_, v_ in km.items() if k_ == v_)})
@@ -1980,7 +1988,11 @@ def main() -> int:
             sctx = cap["sctx"]
             if aux is not None:
                 # the head reads the SAME tensor the scoring decoder reads (visual_ctx).  REFE_AUX_MUTATE_TAP=1 is the deliberate regression for G12: the head reads a COPY.
-                actx = sctx.detach().clone() if os.environ.get("REFE_AUX_MUTATE_TAP") == "1" else sctx
+                actx = sctx
+                if hb is not None:                                  # VDAC A5 arm HB: the head reads the COPY's ctx (assigned BEFORE the G19 / TAP mutation lines below, so each mutant lands on the copy's output)
+                    actx = HB.select_actx(hb, model, img, cal if cal.numel() else None, sctx, lambda: model.ego_enc(torch.cat([ego, model.cmd_embed(goal.to(ego.dtype))], -1)).sum(-1))
+                if os.environ.get("REFE_AUX_MUTATE_TAP") == "1":
+                    actx = actx.detach().clone()
                 if os.environ.get(VDAC_MUTATE_EGO_ENV) == "1":      # VDAC G19's deliberate regression: the model's ego token (ego + command) is routed INTO the head's context
                     actx = actx + model.ego_enc(torch.cat([ego, model.cmd_embed(goal.to(ego.dtype))], -1)).unsqueeze(1).to(actx.dtype)
                 logit, sdf = aux.predict(actx)
@@ -2342,8 +2354,8 @@ def main() -> int:
                 grp.setdefault(r.get("log_name", ""), []).append(j_)
             for lg_name, js in grp.items():
                 sel = torch.as_tensor(js)
-                per_log.setdefault(lg_name, AuxEvalAcc()).add(lg_all[s:s + 64][sel], sd_all[s:s + 64][sel], lab[sel], valid[sel])
-        tot = AuxEvalAcc()
+                per_log.setdefault(lg_name, AuxEvalAcc(aux.cfg.cell)).add(lg_all[s:s + 64][sel], sd_all[s:s + 64][sel], lab[sel], valid[sel])
+        tot = AuxEvalAcc(aux.cfg.cell)
         for v in per_log.values():
             tot.merge(v)
         log({"event": "aux_eval", "tag": tag, **tot.result(), "per_log": {k_: v.result() for k_, v in sorted(per_log.items())}})
@@ -2352,11 +2364,14 @@ def main() -> int:
     def aux_meta():
         """what a consumer needs to rebuild the head and to know which map it was trained on"""
         return {"config": {k_: getattr(aux.cfg, k_) for k_ in aux.cfg.__dataclass_fields__}, "store_sha256": aux_src.manifest["store_sha256"],
-                "frames": aux_src.manifest["counts"]["stored_keys"], "shuffle_seed": aux_src.shuffle_seed, "head_file": "aux_drv.pt"}
+                "frames": aux_src.manifest["counts"]["stored_keys"], "shuffle_seed": aux_src.shuffle_seed, "head_file": "aux_drv.pt",
+                **({"trunk_lora": {"on": True, "lora_lr": a.aux_drv_lora_lr, "n_lora": sum(p_.numel() for p_ in hb.lora_parameters()), "format": HB.FORMAT_V2}} if hb is not None else {})}
 
     def save_aux(upd_):
         """the head (and H2's feed projection) beside the scorer checkpoints: model_sft_*.pt stays exactly what the planner loads strictly"""
         p_ = os.path.join(a.out, "aux_drv.pt")
+        if hb is not None:                                    # HB: aux_drv/2 = head + the copy's LoRA tensors + BOTH optimiser states (a head-only file cannot restore the copy)
+            return HB.save_v2(p_, aux=aux, hb=hb, optH=optH, optL=optL, update=upd_, meta=aux_meta(), atomic_save=ckpt_io.atomic_save)
         ckpt_io.atomic_save({"format": "aux_drv/1", "head": aux.head.state_dict(), "feed": aux.feed.state_dict() if aux.feed is not None else None,
                              "opt": optH.state_dict(), "update": upd_, "meta": aux_meta()}, p_)
         return p_
@@ -2410,9 +2425,7 @@ def main() -> int:
             s0, sA, sB, tg = fwd(batch)
         finally:
             h_.remove()
-        g["scene_proj_calls"] = len(outs)
-        g["tap_is_visual_ctx"] = bool(len(outs) >= 2 and AUX.tap_is(cap["aux_ctx"], outs[1]))
-        g["tap_is_scene_ctx"] = bool(len(outs) >= 1 and AUX.tap_is(cap["aux_ctx"], outs[0]))
+        g.update(HB.tap_fields(outs, cap["aux_ctx"], hb is not None, AUX.tap_is))          # scene_proj_calls, tap_is_visual_ctx (HA: outs[1] = P6's visual_ctx; HB: outs[2] = the copy's ctx), tap_is_scene_ctx (+ hb fields)
         gs = torch.autograd.grad(sB.sum(), hp, retain_graph=True, allow_unused=True)
         g["score_to_head_grads_all_none"] = bool(all(x is None for x in gs))
         reads = {}
@@ -2427,6 +2440,9 @@ def main() -> int:
                 aux.w_aux = keep
             reads[mode] = group_grad_abs(aux.head)
         aux.head.zero_grad(set_to_none=True)
+        if hb is not None:
+            for p_ in hb.lora_parameters():
+                p_.grad = None
         g["per_group_declared"], g["per_group_w0"] = reads["declared"], reads["w0"]
         g["bce_near_ln2"] = bool(abs(g["bce_declared"] - math.log(2.0)) <= 0.15)
         cxy_d, sctx_d = batch[4].to(dev), cap["sctx"].detach()
@@ -2551,7 +2567,8 @@ def main() -> int:
             path_ok = bool(g["feed_zero_init"] and g["feed_step0_equal_base"] and g["feed_probe_reads_difference"] and g["feed_proj_grad_abs"] > 0.0)
         g["ok"] = bool(label_ok > 0 and live and control and g["tap_is_visual_ctx"] and not g["tap_is_scene_ctx"] and g["score_to_head_grads_all_none"] and g["bce_near_ln2"]
                        and path_ok and g["adam_head_params"] > 0 and g["adam_head_params_with_state"] == g["adam_head_params"] and not g["mutate"]
-                       and (g["head_retained_gb"] is None or g["head_retained_gb"] <= 1.0))
+                       and (g["head_retained_gb"] is None or g["head_retained_gb"] <= 1.0)
+                       and (hb is None or (g["scene_proj_calls"] == 3 and g.get("tap_is_p6_visual_ctx") is False)))
         return g
 
     # ---------------- PREFLIGHT (the launch gate)
@@ -2692,6 +2709,16 @@ def main() -> int:
                 kl_tol=(1e-2 if (a.lane_head and not native7) else 0.0), temp=dual.temp)
         if aux is not None:                                  # G12 (aux head): live + exact-zero control + identity + tap storage + Adam state
             gates["G12_aux_drv_live_and_identity"] = g12_probe(batch, aux_lv)
+        if hb is not None:                                   # G21 (VDAC A5, arm HB): the copy is isolated -- P6 untouched, the copy live, exact-zero control, no scorer path, step-0 identity, 2-update state hash
+            def _g21_state():
+                r_ = HB.two_update_probe(model=model, hb=hb, aux=aux, scorer_names=SCORER, img=batch[0].to(dev), calib=batch[8] if batch[8].numel() else None, lv=aux_lv, dev=dev,
+                                         autocast=lambda: torch.autocast("cuda", dtype=torch.bfloat16), lr_head=a.aux_drv_lr, lr_lora=a.aux_drv_lora_lr)
+                with torch.autocast("cuda", dtype=torch.bfloat16):
+                    r_.update(HB.step0_equal(model, hb, batch[0].to(dev), batch[8] if batch[8].numel() else None, cap["sctx"]))
+                return r_
+            gates["G21_vdac_hb_copy_isolation"] = {**HB.g21_fields(model=model, hb=hb, aux=aux, scorer_names=SCORER, fwd=fwd, aux_backward=aux_backward, batch=batch, lv=aux_lv, step_probe=_g21_state)}
+            import vdac_probes as VP21
+            gates["G21_vdac_hb_copy_isolation"]["ok"] = not VP21.judge_g21(gates["G21_vdac_hb_copy_isolation"])
         if pairer is not None and not a.pair_calibrate:      # G16 (SCORER1): L_pair is IN the loss (grad(w=1) - grad(w=0) != 0 on every arm-B module), its controls read EXACTLY 0.0, the F/S split is balanced, every head has pairs
             def _flat_loss_grad(w_):
                 armB.zero_grad(set_to_none=True)
@@ -2898,7 +2925,7 @@ def main() -> int:
                 with torch.autocast("cuda", dtype=torch.bfloat16):
                     tr_, _sc = model(batch[0].to(dev), e_.to(dev), g_.to(dev), calib=batch[8] if batch[8].numel() else None)       # the control: the model's own trajectory DOES depend on ego and command
                 return lg_.float().sum() + sd_.float().sum(), tr_.float().sum()
-            gates["G19_vdac_head_disjoint_from_ego_command"] = VP.disjoint_probe(_vdac_run, batch[1], batch[2], mutate=[k_ for k_ in (VDAC_MUTATE_EGO_ENV,) if os.environ.get(k_) == "1"])
+            gates["G19_vdac_head_disjoint_from_ego_command"] = VP.disjoint_probe(_vdac_run, batch[1], batch[2], mutate=[k_ for k_ in (VDAC_MUTATE_EGO_ENV, HB.ENV_EGO_TRUNK) if os.environ.get(k_) == "1"])
             gates["G20_vdac_label_aligned_with_targets"] = VP.alignment_gate(ds.rows, tr_idx, aux_src_eval)
         ok = all(v["ok"] for v in gates.values())
         res = {"event": "preflight", "verdict": "PASS" if ok else "FAIL", "gates": gates,
@@ -2996,6 +3023,8 @@ def main() -> int:
                     gr["lr"] = lr_at(upd) * lr_ratio
                 optH.step()
                 optH.zero_grad(set_to_none=True)
+            if optL is not None:                             # HB: the copy's LoRA group -- its own clip norm and AdamW; peak = --aux-drv-lora-lr, the scorer's warm-up + cosine shape
+                HB.lora_step(hb, optL, lr_at(upd) * (a.aux_drv_lora_lr / a.lr))
             if dual.active:                                  # SAFEOBJ: ONE projected dual step per optimiser update, after o.step() and before `upd += 1` (SPEC 1.4)
                 dual.step(con_acc if carve_acc is None else carve_acc)          # B8: the carve feed when --epo-con-feed carve, else the training micro-batches (as before)
                 for k_, v_ in con_acc.items():
@@ -3041,6 +3070,7 @@ def main() -> int:
                 torch.save({"A": {m: getattr(model, m).state_dict() for m in SCORER},
                             "B": {m: getattr(armB, m).state_dict() for m in SCORER}, "update": upd,
                             **({"AUX": aux.state_dict()} if aux is not None else {}),
+                            **({"HB": {"lora": hb.lora_state(), "opt_lora": optL.state_dict()}} if hb is not None else {}),
                             **({"EPO_CON": dual.state_dict()} if dual.active else {})},
                            os.path.join(a.out, "scorer_states_last.pt"))
             if upd >= total:

@@ -885,6 +885,9 @@ DVB_KINDS_SCORER = {
     # VDAC (PREREG_VDAC_P6 section 7): the head's label exclusion, both default OFF, both `built` and observed iff --aux-drv-exclude-logs is named (scorer_dvb_rows): the data event's `aux_excl` block (the sha256 of the bytes the trainer READ,
     # re-read through the train set's own lookup).  NOT `data`: that kind would make EVERY scorer profile list the flag in its data_flags (an older profile would turn RED); refe_vdac_p6 lists it, so its PASS token fingerprints the file.
     "aux_drv_exclude_logs": "built", "aux_drv_exclude_sha256": "built",
+    # VDAC A5 (PREREG_VDAC_P6_A5_DRAFT section 6): HB's trunk copy and its LoRA lr (`built`, observed iff --aux-drv-trunk-lora on, through the data event's `aux_hb` block = HBTrunk.built_facts + the LoRA optimiser's facts) and HC's cell /
+    # boundary weight (`built`, observed through the data event's `aux_drv` block: cell, nx, ny, n_params, bw, bw_band_m, bw_probe = the multiplier the BUILT loss applies, measured on a cell inside and one outside the band).
+    "aux_drv_trunk_lora": "built", "aux_drv_lora_lr": "built", "aux_drv_cell": "built", "aux_drv_bw": "built", "aux_drv_bw_band_m": "built",
     "navtest_logs": "consumed", "navtest_tokens": "consumed",       # SCORER1: check-only lists read by main(); refe_scorer1 binds their sha256 (scorer1_refusals) and asserts the data event's `navtest` block (data_expect)
     "out": "run", "eval_every": "run", "workers": "run",
     "dump_scores": "run",              # the per-proposal score .npz rl_val_eval.py reads; observational (bit-identical on/off, test_dump_scores.py)
@@ -917,6 +920,9 @@ SCORER_PAIR_DESTS = ("pair_w", "pair_dv", "pair_heads", "pair_nobalance_heads", 
 SCORER_TWIN_DESTS = ("twin_w", "twin_ade", "twin_topk", "twin_heads")          # S1Z: the L_twin levers, observed only when --twin-w > 0
 SPLIT_RULE_REGISTERED = "int(sha256(log_name utf-8).hexdigest(), 16) % 2"      # DIV (PREREG_DIV_P6 section 2): the gate's OWN statement of the split rule and of the floor, independent of the trainer's constants
 SPLIT_MIN_SETS_REGISTERED = 25000
+AUX_HB_DESTS = ("aux_drv_trunk_lora", "aux_drv_lora_lr")          # VDAC A5: observed only when --aux-drv-trunk-lora is on
+AUX_BW_DESTS = ("aux_drv_bw", "aux_drv_bw_band_m")          # VDAC A5 (HC): observed only when --aux-drv-bw > 0 (or the built block says it is on)
+AUX_HEAD_PARAMS_BY_CELL = {2.0: 2440450, 1.0: 3423490}          # the gate's OWN statement of the built head's parameter count per cell (2 m: S1c run.json; 1 m: 2,440,450 + (5,120 - 1,280) x 256 queries, measured by test_vdac_hb.py)
 AUX_EXCL_DESTS = ("aux_drv_exclude_logs", "aux_drv_exclude_sha256")          # VDAC: observed only when --aux-drv-exclude-logs is named
 SCORER_AUX_DESTS = ("w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_shuffle_seed", "aux_drv_lr")          # the head's levers: observed only when --aux-drv is on
 # the preflight's gates (scorer_finetune.py `gates[...]`).  There is NO G6 -- the trainer numbers 1-5 and 7-11; test_launch_gate pins this table to the source.
@@ -924,7 +930,7 @@ SCORER_GATES = {"G1": "trainable_is_exactly_the_scorer", "G2": "live", "G3": "co
                 "G5": "ckpt_roundtrip_planner_loader", "G7": "heldout_disjoint", "G8": "lane_labels_in_bank", "G9": "pdm_targets_in_bank",
                 "G10": "teacher_lane_in_bank", "G11": "epo_live_and_identity", "G12": "aux_drv_live_and_identity", "G13": "epo_con_live_and_identity",
                 "G14": "hn_live_and_identity", "G15": "ctx_cache_identity", "G16": "pair_live_balanced", "G18": "twin_live",
-                "G19": "vdac_head_disjoint_from_ego_command", "G20": "vdac_label_aligned_with_targets"}
+                "G19": "vdac_head_disjoint_from_ego_command", "G20": "vdac_label_aligned_with_targets", "G21": "vdac_hb_copy_isolation"}
 
 
 def judge_g12(g12, ns) -> list:
@@ -965,6 +971,12 @@ def judge_g12(g12, ns) -> list:
         r.append(f"G12: the initial aux BCE {b} is not within 0.15 of ln 2 (SPEC 7: a mis-scaled head or the wrong tap)")
     if g12.get("tap_is_visual_ctx") is not True or g12.get("tap_is_scene_ctx") is not False:
         r.append("G12: the head did not read the storage of visual_ctx (the declared tap)")
+    if getattr(ns, "aux_drv_trunk_lora", "off") == "on":          # VDAC A5 (HB): the declared tap is the COPY's ctx = scene_proj's THIRD output; P6's visual_ctx (the second) must NOT be what the head read
+        if g12.get("hb") is not True or g12.get("scene_proj_calls") != 3 or g12.get("tap_index") != 2 or g12.get("tap_is_p6_visual_ctx") is not False:
+            r.append(f"G12 (HB): the tap row did not read the copy's ctx (scene_proj_calls {g12.get('scene_proj_calls')!r} != 3, tap_index {g12.get('tap_index')!r} != 2, hb {g12.get('hb')!r}, "
+                     f"head read P6's visual_ctx {g12.get('tap_is_p6_visual_ctx')!r})")
+    elif g12.get("hb") is True:
+        r.append("G12 reports an HB tap but the argv does not name --aux-drv-trunk-lora on")
     if g12.get("score_to_head_grads_all_none") is not True:
         r.append("G12: an autograd path from the score to the head exists (the scorer could teach the head to game the score)")
     n_, k_ = g12.get("adam_head_params"), g12.get("adam_head_params_with_state")
@@ -1429,6 +1441,8 @@ def scorer_required_gates(ns) -> list:
         req.append("G18")
     if ns.aux_drv and getattr(ns, "aux_drv_exclude_logs", ""):        # VDAC (card section 7): G19 (head disjoint from ego / command) and G20 (label alignment) iff the exclusion lever is named
         req += ["G19", "G20"]
+    if ns.aux_drv and getattr(ns, "aux_drv_trunk_lora", "off") == "on":        # VDAC A5: G21 (the LoRA trunk copy is isolated) iff --aux-drv-trunk-lora on (scorer_finetune.py's own condition: `hb is not None`)
+        req.append("G21")
     if getattr(ns, "hn_bank", ""):                                    # P6-HN-S: G14 iff --hn-bank, G15 iff --ctx-cache (scorer_finetune.py's own conditions)
         req.append("G14")
     if getattr(ns, "ctx_cache", ""):
@@ -1545,7 +1559,8 @@ def scorer_dvb_rows(ns, data: dict, profile=None) -> list:
             add("aux_drv_shuffle_seed", AUX.PINNED_STORE_KEYS, b.get("shuffle_keys"), "data event: the shuffle map covers every key of the store")
         add("aux_drv_labels", AUX.PINNED_STORE_SHA256, b.get("store_sha256"), "data event: aux_drv.store_sha256 (the pinned label store)")
         add("aux_drv_labels", AUX.PINNED_STORE_KEYS, b.get("frames"), "data event: aux_drv.frames")
-        for k, want in (("cell", AUX.CELL_M), ("x0", AUX.X0), ("y0", AUX.Y0), ("nx", int(round((AUX.X1 - AUX.X0) / AUX.CELL_M))), ("ny", int(round((AUX.Y1 - AUX.Y0) / AUX.CELL_M)))):
+        cell_d = float(getattr(ns, "aux_drv_cell", AUX.CELL_M))          # VDAC A5 (HC): the DECLARED cell (default 2.0 = the S1 head); the aux_drv_cell rows below also bind it
+        for k, want in (("cell", cell_d), ("x0", AUX.X0), ("y0", AUX.Y0), ("nx", int(round((AUX.X1 - AUX.X0) / cell_d))), ("ny", int(round((AUX.Y1 - AUX.Y0) / cell_d)))):
             add("aux_drv", want, b.get(k), f"data event: aux_drv.{k} (the label raster's geometry)")
     pair_named = bool(getattr(ns, "pair_w", 0.0)) or (bool(getattr(ns, "pair_calibrate", False)) and bool(getattr(ns, "pair_heads", "")))      # SCORER1: the `pair` block exists iff a --pair-* lever is on
     if pair_named or "pair" in data:
@@ -1598,6 +1613,32 @@ def scorer_dvb_rows(ns, data: dict, profile=None) -> list:
             add("aux_drv_exclude_logs", True, isinstance(blk.get("excluded_labelled_frames"), int) and blk["excluded_labelled_frames"] > 0,
                 "data event: aux_excl.excluded_labelled_frames > 0 (the exclusion had labelled frames to remove)")
             add("aux_drv_exclude_logs", True, blk.get("filter_equals_file") is True, "data event: aux_excl.filter_equals_file (the filter the train set holds is the file's logs, no more, no fewer)")
+    if getattr(ns, "aux_drv", False):                                   # VDAC A5 (HC): the head's BUILT cell and boundary weight, read from the data event's `aux_drv` block (AuxDrivable.built_facts)
+        blk = data.get("aux_drv") if isinstance(data.get("aux_drv"), dict) else {}
+        cell = float(getattr(ns, "aux_drv_cell", 2.0))
+        if cell != AUX.CELL_M:                                          # HC: cell / nx / ny are already bound to the DECLARED cell by the geometry rows above (dest aux_drv); these two bind the built PARAMETER count (a 2 m head built under a declared 1 m cell has 2,440,450, not 3,423,490)
+            add("aux_drv_cell", AUX_HEAD_PARAMS_BY_CELL.get(cell, blk.get("n_params")), blk.get("n_params"), "data event: aux_drv.n_params vs the gate's own count for the declared cell (80 x 64 queries at 1.0: 3,423,490)")
+            add("aux_drv_cell", blk.get("n_params"), blk.get("head_params_in_optimiser"), "data event: aux_drv.head_params_in_optimiser (the head optimiser holds the built head)")
+        bwn = float(getattr(ns, "aux_drv_bw", 0.0))
+        if bwn > 0.0 or (isinstance(blk.get("bw"), (int, float)) and blk["bw"] > 0.0):
+            pr = blk.get("bw_probe") if isinstance(blk.get("bw_probe"), dict) else {}
+            add("aux_drv_bw", bwn, blk.get("bw"), "data event: aux_drv.bw (the boundary weight the built config holds)")
+            add("aux_drv_bw_band_m", float(getattr(ns, "aux_drv_bw_band_m", 3.0)), blk.get("bw_band_m"), "data event: aux_drv.bw_band_m (the band the built config holds)")
+            add("aux_drv_bw", 1.0 + bwn, pr.get("inside_over_outside"), "data event: aux_drv.bw_probe (the multiplier the BUILT loss applies, read through the loss on a cell inside the band over one outside: 1 + b)")
+    hb_named = getattr(ns, "aux_drv_trunk_lora", "off") == "on"          # VDAC A5 (HB): the `aux_hb` block exists iff --aux-drv-trunk-lora on
+    if hb_named or "aux_hb" in data:
+        blk = data.get("aux_hb") if isinstance(data.get("aux_hb"), dict) else {}
+        add("aux_drv_trunk_lora", hb_named, "aux_hb" in data, "the data event carries an `aux_hb` block iff --aux-drv-trunk-lora on")
+        if hb_named:
+            want_n = (profile or {}).get("hb_lora_params") or blk.get("lora_expected")
+            add("aux_drv_trunk_lora", True, blk.get("trunk_copy_built"), "data event: aux_hb.trunk_copy_built")
+            add("aux_drv_trunk_lora", want_n, blk.get("n_lora_trainable"), "data event: aux_hb.n_lora_trainable (the registered LoRA count; 3,145,728 for vitl16)")
+            add("aux_drv_trunk_lora", True, blk.get("trainable_all_lora"), "data event: aux_hb.trainable_all_lora (the copy's only trainable tensors are the LoRA A / B)")
+            add("aux_drv_trunk_lora", True, blk.get("copy_storage_disjoint"), "data event: aux_hb.copy_storage_disjoint (the copy is a deepcopy: no storage shared with P6's backbone; the SHARE regression reads False)")
+            add("aux_drv_trunk_lora", True, blk.get("copy_not_in_model_state_dict"), "data event: aux_hb.copy_not_in_model_state_dict (a sibling, not a submodule)")
+            add("aux_drv_trunk_lora", 0, blk.get("p6_params_requires_grad"), "data event: aux_hb.p6_params_requires_grad (P6 parameters outside the scorer that can receive a gradient)")
+            add("aux_drv_lora_lr", float(ns.aux_drv_lora_lr), blk.get("lora_lr"), "data event: aux_hb.lora_lr (the LoRA optimiser group's peak lr)")
+            add("aux_drv_lora_lr", blk.get("n_lora_trainable"), blk.get("lora_params_in_optimiser"), "data event: aux_hb.lora_params_in_optimiser (the LoRA optimiser holds exactly the copy's LoRA tensors)")
     split_named = getattr(ns, "split_half", -1) >= 0                    # DIV: the `split` block exists iff --split-half is 0 or 1
     if split_named or "split" in data:
         blk = data.get("split") if isinstance(data.get("split"), dict) else {}
@@ -1790,7 +1831,7 @@ def check_dvb_scorer(argv: list, pf, profile: dict, arm=None, rehearsal=False) -
         for r in rows:
             if not r["ok"]:
                 reasons.append(f"{r['flag']}: declared {r['declared']!r} != built {r['built']!r} ({r['how']})")
-        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS) and (bool(getattr(ns, "pair_w", 0.0)) or d not in SCORER_PAIR_DESTS) and (bool(getattr(ns, "twin_w", 0.0)) or d not in SCORER_TWIN_DESTS) and (bool(getattr(ns, "twin_speed_neutral", False)) or d != "twin_speed_neutral") and (getattr(ns, "split_half", -1) >= 0 or d != "split_half") and (bool(getattr(ns, "aux_drv_exclude_logs", "")) or d not in AUX_EXCL_DESTS)}
+        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS) and (bool(getattr(ns, "pair_w", 0.0)) or d not in SCORER_PAIR_DESTS) and (bool(getattr(ns, "twin_w", 0.0)) or d not in SCORER_TWIN_DESTS) and (bool(getattr(ns, "twin_speed_neutral", False)) or d != "twin_speed_neutral") and (getattr(ns, "split_half", -1) >= 0 or d != "split_half") and (bool(getattr(ns, "aux_drv_exclude_logs", "")) or d not in AUX_EXCL_DESTS) and (getattr(ns, "aux_drv_trunk_lora", "off") == "on" or d not in AUX_HB_DESTS) and (float(getattr(ns, "aux_drv_bw", 0.0)) > 0.0 or d not in AUX_BW_DESTS) and (float(getattr(ns, "aux_drv_cell", 2.0)) != 2.0 or d != "aux_drv_cell")}
         missing = sorted(expect - {r["dest"] for r in rows})
         det["built_without_observer"] = missing
         if missing:

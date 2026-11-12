@@ -172,3 +172,52 @@ def alignment_gate(rows, idx, src, *, n_max=256):
     ks = [(rows[i].get("log_name", ""), rows[i].get("token", "")) for i in idx]
     f["bank"] = {"sets": len(ks), "distinct_logs": len({k[0] for k in ks}), "distinct_frames": len(set(ks))}       # the head draws its frames from P6's bank: what that pool is (printed by the chain before training)
     return f
+
+
+# ====================================================== G21 (VDAC A5, arm HB) ======================================================
+VITL16_LORA_PARAMS = 3_145_728          # 24 blocks x {q, v} x 32 x (1,024 + 1,024): the gate's OWN statement of the built LoRA count (ARITHMETIC; model.py LoRALinear, BACKBONES["vitl16"])
+
+
+def judge_g21(f, *, expected_lora=None, w_aux=None) -> list:
+    """G21 (PREREG_VDAC_P6_A5_DRAFT section 6): the LoRA trunk copy is ISOLATED.  Re-judged from the RAW FIELDS of aux_hb.g21_fields (the gate's own `ok` is a claim).  [] = proved.
+      structure   copy built (a deepcopy: storage disjoint from P6's, not in model.state_dict(), not a model parameter); trainable tensors are exactly the LoRA A / B and their count equals the arithmetic
+                  (`expected_lora`, default: the fields' own `lora_expected`; the VDAC profile passes 3,145,728); every P6 parameter outside the scorer is requires_grad False
+      live        at the DECLARED weight every LoRA tensor holds a finite non-zero gradient (none None); P6's non-scorer parameters hold NO gradient
+      control     at weight 0.0 every LoRA gradient reads EXACTLY 0.0 (a tensor, not None: the probe is proved able to read zero)
+      no path     the scorer loss has no autograd path to the copy
+      step 0      the copy's ctx equals P6's visual_ctx bit for bit
+      state       two real updates leave sha256(model.state_dict()) unchanged; the copy's LoRA moved; every LoRA tensor holds Adam state
+    No regression switch may be set."""
+    if not isinstance(f, dict):
+        return ["G21 is not a dict"]
+    r = []
+    if f.get("mutate"):
+        r.append(f"G21 was produced under regression switch(es) {f['mutate']}: a regression arm can never count")
+    for k in ("trunk_copy_built", "copy_storage_disjoint", "copy_not_in_model_state_dict", "copy_not_a_model_param", "trainable_all_lora", "scorer_to_copy_grads_all_none",
+              "step0_ctx_equal", "p6_state_unchanged_2_updates", "lora_moved_in_2_updates"):
+        if f.get(k) is not True:
+            r.append(f"G21: {k} is {f.get(k)!r}, must be True")
+    exp = expected_lora if expected_lora is not None else f.get("lora_expected")
+    if not (isinstance(exp, int) and exp > 0):
+        r.append(f"G21: no expected LoRA count ({exp!r})")
+    elif f.get("n_lora_trainable") != exp or f.get("lora_expected") != exp:
+        r.append(f"G21: the copy holds {f.get('n_lora_trainable')} trainable parameters (arithmetic {f.get('lora_expected')}, required {exp})")
+    if f.get("p6_params_requires_grad") != 0:
+        r.append(f"G21: {f.get('p6_params_requires_grad')!r} P6 parameters outside the scorer are requires_grad True (must be 0)")
+    if f.get("p6_nonscorer_grad_not_none_declared") != 0:
+        r.append(f"G21: {f.get('p6_nonscorer_grad_not_none_declared')!r} P6 non-scorer parameters hold a gradient after the aux backward (must be 0)")
+    live, w0 = f.get("lora_grad_declared"), f.get("lora_grad_w0")
+    wa = f.get("w_aux") if w_aux is None else w_aux
+    if not isinstance(live, dict) or not isinstance(w0, dict):
+        r.append("G21: no LoRA gradient reads")
+        return r
+    if live.get("n", 0) <= 0 or live.get("none") != 0:
+        r.append(f"G21: {live.get('none')} of {live.get('n')} LoRA tensors have NO gradient at the declared weight: the head's loss does not reach the copy")
+    elif isinstance(wa, (int, float)) and wa > 0.0 and not (live.get("all_finite") and isinstance(live.get("min_abs"), (int, float)) and live["min_abs"] > 0.0):
+        r.append(f"G21: the LoRA gradient at the declared weight is not finite and non-zero on EVERY tensor (min |g| {live.get('min_abs')}, max {live.get('max_abs')})")
+    if w0.get("none") != 0 or w0.get("n") != live.get("n") or not (w0.get("min_abs") == 0.0 and w0.get("max_abs") == 0.0):
+        r.append(f"G21: the weight-0 control does not read EXACTLY 0.0 on every LoRA tensor (none {w0.get('none')}, max |g| {w0.get('max_abs')}): the probe is not proved able to read zero")
+    n_, k_ = f.get("adam_lora_params"), f.get("adam_lora_params_with_state")
+    if not (isinstance(n_, int) and n_ > 0 and k_ == n_):
+        r.append(f"G21: {k_} of {n_} LoRA tensors hold Adam state after a step")
+    return r

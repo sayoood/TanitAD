@@ -79,7 +79,7 @@ INHERITED via `DESIGN_VDAC_P6.md` section 7) = 251 s = 0.07 L40-h, + load and ba
 | shared, frozen, executed on the copy's tokens | - | P6's `pos3d_mlp` and `scene_proj` (their parameters stay `requires_grad False`; gradient flows through them to the copy; they are not updated) |
 | head | S1c head, 2,440,450 params, 2 m cells, `--aux-drv-tap visual`, depth 2, feed off | **identical** (same seed 0 init stream) |
 | head loss | BCE + 1.0 x Huber(beta 0.1) | identical (`--w-aux-drv` named, as HA) |
-| optimiser | head AdamW (`--aux-drv-lr` = S1c's registered value, UNVERIFIED here) | head AdamW unchanged **plus** a second param group (the copy's LoRA), AdamW, weight decay 0.01, **`--aux-drv-lora-lr` = 5e-5** (HYPOTHESIS: a quarter of `train.py`'s 2e-4 global default; P6's own LoRA-group lr is UNVERIFIED and must be read from P6's argv before freeze; same warm-up + cosine shape as the head), own grad-clip norm |
+| optimiser | head AdamW (`--aux-drv-lr` = S1c's registered value, UNVERIFIED here) | head AdamW unchanged **plus** a second param group (the copy's LoRA), AdamW, weight decay 0.01, **`--aux-drv-lora-lr` = 2e-4** (**MEASURED by BUILD4, replaces the draft's 5e-5 HYPOTHESIS; MM to confirm before freeze**: P6 was trained by `train.py`, which puts every trainable parameter of the model, the backbone LoRA included, in ONE AdamW group at `--lr` (`train.py:1462, 1469`, `params = [p for p in model.parameters() if p.requires_grad]`, `AdamW(params, lr=a.lr)`), and P6's recorded argv is `--lr 2e-4` (`p6_pod.sh:487`); there is no separate LoRA lr. Same warm-up + cosine shape as the head: the trainer scales the scorer's `lr_at(upd)` by `--aux-drv-lora-lr / --lr`), own grad-clip norm |
 | gradient into the copy | - | from `L_aux` only. The scorer arms read P6's ctx, not the copy's; `autograd.grad(scorer loss, copy LoRA)` is None (asserted) |
 | P6's trunk, decoders, 64 proposals, six scorer heads | frozen | frozen and **bit-identical** (proof below) |
 
@@ -176,8 +176,9 @@ Profile `refe_vdac_p6` gains arms HB-s0, HB-SHUF (and HC-s0, HC-SHUF), as new en
 |---|---|---|
 | `--aux-drv-trunk-lora on` (HB) | built facts: `trunk_copy_built`; `n_lora_trainable == 3,145,728`; copy is a `deepcopy` of the loaded `model.backbone` (storage differs); copy not in `model.state_dict()`; `p6_params_requires_grad == 0` | name the flag but build no copy; build the copy sharing P6's storage |
 | `--aux-drv-lora-lr` (HB) | named; equals the LoRA param group's peak lr | omit it (refused like `--aux-drv-lr`) |
+| `--aux-drv-lora-lr` value (HB) | **0.0002 = P6's own LoRA lr (BUILD4)**; G-DVB row `aux_hb.lora_lr` equals it and `aux_hb.lora_params_in_optimiser == n_lora_trainable` | a LoRA group at another lr; a LoRA tensor outside the optimiser |
 | `--aux-drv-cell 1.0` (HC) | head `nx, ny = 80, 64`; `n_params` equals the built count | declare 1.0, build 2.0 (the unreachable-flag class: today the cell never reaches the build) |
-| `--aux-drv-bw 3.0 --aux-drv-bw-band-m 3.0` (HC) | the multiplier actually applied in the built loss, read off a probe cell inside and a cell outside the band | name it, drop it from the loss |
+| `--aux-drv-bw 3.0 --aux-drv-bw-band-m 3.0` (HC; **BUILT by BUILD4**: multiplier = 1 + bw inside the band, so 4 inside / 1 outside; default `--aux-drv-bw 0.0` = the unweighted loss bit for bit) | the multiplier actually applied in the built loss, read off a probe cell inside and a cell outside the band | name it, drop it from the loss |
 | `--stage0-*` (the measuring mode) | refused in any launch argv | present in a launch argv |
 
 | gate | how it covers HB / HC |

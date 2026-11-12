@@ -29,6 +29,8 @@ def has_layer(src: str) -> bool:
 
 def peel(src: str) -> str:
     """undo the VDAC edits (each `new` text must occur exactly once); a trainer without the layer is returned unchanged"""
+    import vdac_a5_layer                               # VDAC A5 (BUILD4): the OUTERMOST layer, peeled first
+    src = vdac_a5_layer.peel(src)
     if not has_layer(src):
         return src
     for new, old in REVERSALS:

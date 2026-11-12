@@ -15,8 +15,10 @@ early() { say "PAUSE_STOPPED_EARLY $*"; exit 1; }
 [ -n "$CHAIN" ] && [ -n "$TR" ] && [ -n "$STAGEARG" ] || early "usage: vdac_pause_p7.sh <p7_pod.sh pid> <train.py pid> S1a|S1b"
 case "$STAGEARG" in
   S1a) ARMS="HA-s0 HA-SHUF" ;;
+  A5HB) ARMS="HB-s0 HB-SHUF" ;;          # VDAC A5 (DRAFT, not frozen): the LoRA trunk copy, then its label-shuffled control
+  A5HC) ARMS="HC-s0 HC-SHUF" ;;          # VDAC A5 (DRAFT): registered only on S0-WEAK
   S1b) ARMS="HA-s1"; [ -e "$OUT/S1B_GO" ] || early "S1b needs $OUT/S1B_GO (the Master Mind writes it after the S1a read: HA-s0 reached S1-GO with valid controls, PREREG_VDAC_P6_A2 section 4); P7 was not touched" ;;
-  *) early "unknown stage $STAGEARG (S1a | S1b)" ;;
+  *) early "unknown stage $STAGEARG (S1a | S1b | A5HB | A5HC)" ;;
 esac
 TF=$(grep -o "/root/\.[A-Za-z0-9_.]*" /workspace/data/refe_scorer1p6/after_arms.sh | head -1); [ -f "$TF" ] || early "no token file"
 tr '\0' ' ' < /proc/$CHAIN/cmdline | grep -q 'p7_pod.sh' || early "pid $CHAIN is not the launch script"
@@ -54,7 +56,8 @@ say "P7 stopped, GPU empty"
 # the stage's arms, one chain invocation each, in the order given; the first arm that does not finish stops the loop
 for A in $ARMS; do
   LA=$(echo "$A" | tr 'A-Z' 'a-z')
-  case "$A" in HA-SHUF) TMO=7200 ;; *) TMO=18000 ;; esac      # 10,000-update arms: 18,000 s = 5 h against ~3.7 h ESTIMATED (3.20 L40-h + preflight, mutant, gate, post-gate, export, egress); HA-SHUF: 7,200 s against ~1.1 h ESTIMATED
+  case "$A" in HA-SHUF|HC-SHUF) TMO=7200 ;; HB-SHUF) TMO=14400 ;; HB-s0) TMO=36000 ;; HC-s0) TMO=21600 ;; *) TMO=18000 ;; esac      # A5: HB-s0 36,000 s = 10 h against the card's UPPER bound 7.6 L40-h + 0.55 chain overhead (PREREG_VDAC_P6_A5_DRAFT section 5; the preflight speed probe replaces it before freeze); HC-s0 21,600 s against 4.3 + 0.5; HB-SHUF 0.2 x HB-s0
+  :      # 10,000-update arms: 18,000 s = 5 h against ~3.7 h ESTIMATED (3.20 L40-h + preflight, mutant, gate, post-gate, export, egress); HA-SHUF: 7,200 s against ~1.1 h ESTIMATED
   say "chain $A starting (timeout $TMO s)"
   VDAC_HF_TOKEN_FILE="$TF" timeout $TMO bash /workspace/refe-plan-vdac/refe/vdac_chain.sh "$A" >> $OUT/chain_$LA.out 2>&1 < /dev/null
   crc=$?

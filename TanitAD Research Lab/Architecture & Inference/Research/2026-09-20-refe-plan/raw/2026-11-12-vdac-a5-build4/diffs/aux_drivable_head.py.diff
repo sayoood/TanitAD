@@ -1,0 +1,66 @@
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/aux_drivable_head.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/aux_drivable_head.py
+@@ -85,6 +85,8 @@
+     cell: float = CELL_M
+     sdf_scale: float = SDF_SCALE_M
+     w_sdf: float = 1.0
++    bw: float = 0.0              # HC: boundary-band weight b: the Huber term of a cell with |block-mean SDF| < bw_band_m is multiplied by 1 + b (0.0 = the unweighted loss, bit for bit)
++    bw_band_m: float = 3.0       # HC: the band half-width in metres (read only when bw > 0)
+     seed: int = 0                # the head's OWN init stream (see `build_head`)
+ 
+     def __post_init__(self):
+@@ -101,6 +103,8 @@
+             raise ValueError(f"cell {self.cell} m must be an integer multiple of the {FINE_RES} m label cell and tile the {NX_F}x{NY_F} grid")
+         if self.w_aux < 0.0 or self.w_sdf < 0.0:
+             raise ValueError("loss weights must be >= 0")
++        if self.bw < 0.0 or self.bw_band_m <= 0.0:
++            raise ValueError("bw must be >= 0 and bw_band_m > 0")
+ 
+     @classmethod
+     def from_args(cls, a) -> "AuxDrivableConfig":
+@@ -215,11 +219,13 @@
+     return AuxTargets(frac, sdf, known)
+ 
+ 
+-def aux_loss(logit, sdf_pred, label_i8, valid=None, *, cell: float = CELL_M, sdf_scale: float = SDF_SCALE_M, w_sdf: float = 1.0):
+-    """-> (L_aux, bce, huber), each a scalar. `valid` [B] bool: a frame without a label contributes exactly 0 (loss AND gradient; NaN-safe)."""
++def aux_loss(logit, sdf_pred, label_i8, valid=None, *, cell: float = CELL_M, sdf_scale: float = SDF_SCALE_M, w_sdf: float = 1.0, bw: float = 0.0, bw_band_m: float = 3.0):
++    """-> (L_aux, bce, huber), each a scalar.  `bw` > 0 (HC): each cell's Huber term is multiplied by 1 + bw where |block-mean SDF| < bw_band_m (BCE unweighted); bw == 0.0 executes NOTHING extra (bit-identical). `valid` [B] bool: a frame without a label contributes exactly 0 (loss AND gradient; NaN-safe)."""
+     t = build_targets(label_i8, valid, cell, sdf_scale)
+     bce = F.binary_cross_entropy_with_logits(logit.float(), t.mask_frac, reduction="none")
+     hub = F.smooth_l1_loss(sdf_pred.float() / sdf_scale, t.sdf_m / sdf_scale, beta=0.1, reduction="none")
++    if bw != 0.0:
++        hub = hub * (1.0 + bw * (t.sdf_m.abs() < bw_band_m).to(hub.dtype))
+     kn = t.known
+     n_cells = kn.sum((1, 2)).clamp(min=1).float()
+     zero = torch.zeros_like(bce)
+@@ -321,7 +327,7 @@
+         return self.head(ctx)
+ 
+     def loss(self, logit, sdf_pred, label_i8, valid=None):
+-        return aux_loss(logit, sdf_pred, label_i8, valid, cell=self.cfg.cell, sdf_scale=self.cfg.sdf_scale, w_sdf=self.cfg.w_sdf)
++        return aux_loss(logit, sdf_pred, label_i8, valid, cell=self.cfg.cell, sdf_scale=self.cfg.sdf_scale, w_sdf=self.cfg.w_sdf, bw=self.cfg.bw, bw_band_m=self.cfg.bw_band_m)
+ 
+     def combine(self, l_task, l_aux):
+         """Total = l_task + w_aux * l_aux (SPEC 2.3). ALWAYS multiplied in, even at w_aux = 0, so a zero weight yields gradient tensors of
+@@ -349,7 +355,19 @@
+         return {"head_built": self.head is not None, "depth": len(self.head.blocks), "cell": self.head.cell, "x0": X0, "y0": Y0,
+                 "nx": self.head.nx, "ny": self.head.ny, "n_params": sum(p.numel() for p in self.head.parameters()),
+                 "feed_built": self.feed is not None, "scorer_in_width": 60 + (self.feed.proj.in_features if self.feed is not None else 0),
+-                "w_aux": self.w_aux, "ctx_dim": self.head.blocks[0].cross.kdim}
++                "w_aux": self.w_aux, "ctx_dim": self.head.blocks[0].cross.kdim, "bw": self.cfg.bw, "bw_band_m": self.cfg.bw_band_m, "bw_probe": self.bw_probe()}
++
++    def bw_probe(self) -> dict:
++        """HC (G-DVB `aux_drv_bw`): the multiplier the BUILT loss applies, read THROUGH `self.loss` (the function the trainer calls) on two synthetic labels: a cell INSIDE the band (SDF 0 m) and one OUTSIDE (SDF 6 m,
++        clamped), each with the same constant prediction error, so the ratio of the two Huber terms is the multiplier (1 + bw inside, 1 outside; 1.0 and 1.0 when HC is off)."""
++        out = {}
++        with torch.no_grad():
++            for name, v in (("inside", 0), ("outside", 100)):
++                lab = torch.full((1, NX_F, NY_F), v, dtype=torch.int8)
++                t = build_targets(lab, None, self.cfg.cell, self.cfg.sdf_scale)
++                _l, _b, hub = self.loss(torch.zeros_like(t.sdf_m), t.sdf_m + 0.6, lab, None)
++                out[name] = float(hub)
++        return {"inside_over_outside": round(out["inside"] / out["outside"], 4), "hub_inside": out["inside"], "hub_outside": out["outside"]}
+ 
+ 
+ def tap_is(ctx: torch.Tensor, expected: torch.Tensor) -> bool:

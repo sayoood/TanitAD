@@ -18,7 +18,11 @@ case "$ARMN" in
   HA-s0)   HAUPD=10000; SHUFSEED=none ;;
   HA-s1)   HAUPD=10000; SHUFSEED=none ;;
   HA-SHUF) HAUPD=2000;  SHUFSEED=0 ;;
-  *) echo "REFUSED: stage=start: unknown arm '$ARMN' (usage: vdac_chain.sh HA-s0 | HA-s1 | HA-SHUF)"; exit 2 ;;
+  HB-s0)   HAUPD=10000; SHUFSEED=none ;;          # VDAC A5 (DRAFT): the LoRA trunk copy; aux_drv.pt is aux_drv/2 (vdac_postgate.py judges the LoRA Adam state too)
+  HB-SHUF) HAUPD=2000;  SHUFSEED=0 ;;
+  HC-s0)   HAUPD=10000; SHUFSEED=none ;;          # 1 m cells + boundary weight
+  HC-SHUF) HAUPD=2000;  SHUFSEED=0 ;;
+  *) echo "REFUSED: stage=start: unknown arm '$ARMN' (usage: vdac_chain.sh HA-s0 | HA-s1 | HA-SHUF | HB-s0 | HB-SHUF | HC-s0 | HC-SHUF)"; exit 2 ;;
 esac
 PROFILE=refe_vdac_p6
 PCARD_NAME=PREREG_VDAC_P6.md;    PCARD_SHA=5594c2ae777a53ed4a8a873ca374c12943eadc74385cb07671c2ac90a3292ae4
@@ -151,7 +155,7 @@ export NUPLAN_DATA_ROOT="$DATA" REFE_NUPLAN_DB_ROOT="$DATA/navtrain_dbs" REFE_NA
 PY_C="${DRIVERL_EVAL_PYTHON:-}"
 [ -n "$PY_C" ] && [ -x "$PY_C" ] || refuse "teacher_env.sh did not set a runnable DRIVERL_EVAL_PYTHON"
 HPY=${HF_PY:-$PY_C}
-NEED="refe/scorer_finetune.py refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py refe/hf_egress.py refe/pdm_label_complete.py refe/scorer1p6_pod.sh refe/vdac_pod.sh refe/vdac_chain.sh refe/test_vdac_gate.py refe/vdac_layer.py refe/vdac_postgate.py refe/vdac_export_h48.py \
+NEED="refe/scorer_finetune.py refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py refe/hf_egress.py refe/pdm_label_complete.py refe/scorer1p6_pod.sh refe/vdac_pod.sh refe/vdac_chain.sh refe/test_vdac_gate.py refe/vdac_layer.py refe/vdac_postgate.py refe/vdac_export_h48.py refe/aux_hb.py refe/vdac_probes.py refe/test_vdac_hb.py \
       refe/div_layer.py refe/s1zsm_layer.py refe/s1z_layer.py refe/scorer1_layer.py refe/aux_drivable_head.py refe/aux_label_store.py refe/test_aux_drivable_head.py refe/test_aux_s1_wiring.py refe/test_s1c.py refe/test_rl_reward.py refe/test_rl_epo.py refe/test_launch_gate.py \
       refe/train.py refe/model.py refe/ckpt_io.py refe/planner.py splits/navtrain.yaml splits/h48_logs.txt SHIP_MANIFEST.json"
 for f in $NEED; do

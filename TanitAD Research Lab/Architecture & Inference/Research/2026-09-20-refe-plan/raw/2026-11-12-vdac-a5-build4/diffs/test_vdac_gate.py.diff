@@ -1,0 +1,24 @@
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_vdac_gate.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_vdac_gate.py
+@@ -463,7 +463,7 @@
+         pass
+     else:
+         raise AssertionError("an unknown arm %r was accepted" % bad)
+-assert L.VDAC_H48_SHA256 == PV["required_flags"]["--aux-drv-exclude-sha256"] and set(PV["vdac_arms"]) == set(ARMS) and PV["arm_class"] == {"HA-s0": "H1ha", "HA-s1": "H1ha", "HA-SHUF": "H1shuf"}
++assert L.VDAC_H48_SHA256 == PV["required_flags"]["--aux-drv-exclude-sha256"] and set(PV["vdac_arms"]) == set(ARMS) | {"HB-s0", "HB-SHUF", "HC-s0", "HC-SHUF"} and {k: v for k, v in PV["arm_class"].items() if k in ARMS} == {"HA-s0": "H1ha", "HA-s1": "H1ha", "HA-SHUF": "H1shuf"}
+ assert PV["data_expect"] == L.PROFILES["refe_scorer1p6"]["data_expect"] and PV["data_expect_updates"] is None and PV["schedule_reach"] is True
+ assert "--aux-drv-exclude-logs" in PV["data_flags"] and "--aux-drv-labels" in PV["data_flags"] and "--ckpt" in PV["data_flags"] and "--aux-drv-shuffle-seed" not in PV["forbidden_flags"]
+ assert PV["suite"][:-1] == L.AUXS1C_SUITE and PV["suite"][-1] == {"script": "test_vdac_gate.py", "token": "ZZTEST_PASS"}
+@@ -506,8 +506,11 @@
+ dp = DL.peel(TRAINER)
+ assert blob(dp) == DL.TIP_TRAINER_BLOB == "d665ed995d064f9e1cae956c3c48867cd348cd3d", "DIV's pin still peels (VDAC first, then DIV)"
+ assert ZSM.peel(TRAINER) == ZSM.peel(pre) and blob(ZSM.peel(TRAINER)) == ZSM.TIP_TRAINER_BLOB == "6a16d35c1818422ff514e97c4b292c32dde81795", "S1ZSM's pin still peels (VDAC, DIV, then S1ZSM)"
++import vdac_a5_layer as A5L          # VDAC A5 (BUILD4): the OUTERMOST layer; the VDAC reversals' `new` texts live in the A5-peeled trainer
++TRAINER_A5P = A5L.peel(TRAINER)
+ for k, (new, old) in enumerate(VL.REVERSALS):
+-    bad = TRAINER.replace(new, new.replace("e", "E", 1), 1)
++    bad = TRAINER_A5P.replace(new, new.replace("e", "E", 1), 1)
++    assert bad != TRAINER_A5P, "VDAC reversal %d: the text is not in the A5-peeled trainer" % k
+     try:
+         VL.peel(bad)
+     except AssertionError:
