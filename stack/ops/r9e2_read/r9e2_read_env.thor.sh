@@ -15,7 +15,10 @@ export R9E2_PF_CODE=/home/nvidia/r8ns/fanceil/code/pf/code        # [OK] holds r
 export PF_R8_CODE=/home/nvidia/r8ns/code/batt                     # [OK] holds r8_repoint.py (r8_repoint.py is blob-identical to the tip: ccd6c53c -- MEASURED 2026-11-09)
 export L1_PF_CODE="$R9E2_PF_CODE" L1_R8_CODE="$PF_R8_CODE"        # == R9E2_PF_CODE / PF_R8_CODE by the roll's own contract
 export R9E2_GATES=/home/nvidia/r8ns/perc8/out/T_nosync/refcv8_det_presence_gates_train.json   # [OK] 4.0K (optional pin; the roll checks its sha256)
-export R9E2_REMAP="$R/inputs/empty_remap.json"                    # [OK] an EMPTY {} json (2 bytes), created on Thor 2026-11-09
+export R9E2_REMAP="$R9E2_TREE/stack/ops/refcv8_eval_remap_a2_thor.json"   # [OK] FIXED 2026-11-12: the LANDED Thor remap (blob 720cca5a; the E1 dump chain's
+#   REFCV6_REMAP_OVERRIDES; == r8_repoint's own Thor default refcv8_eval_remap_devbox.json, 4 flags). It WAS an EMPTY {} json: the first real roll (10:27Z) then
+#   REFUSED in refcv7_loader on exactly these 4 flags (--agent-rig-extrinsics, --vis1-sidecar, --nav-compliance-tau-file, --clip-clock-sidecar: the run's
+#   argv names the refcv8 train4572/eval139 files, the kit's defaults are refcv6's). The dry run never loads the model, so nothing reached it.
 export PF_NF_HOLD="$R9E2_TREE/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-20-refcv8-nav-feed-fix"   # [OK] PREREG_NAV_FEED.md + code/overlay inside the frozen read tree (git export of the package)
 export R8_EVAL_KIT=/home/nvidia                                   # [OK] Thor's data/ IS the kit layout (refcv7_loader.py:276; fanceil run_fanroll_thor.sh uses the same pin): data/refcv6-b1-416x1024-eval139 + data/v8labels/labels/s2_labels_v8_eval.jsonl.gz probed present
 export R9E2_LIFT_VALID=/home/nvidia/r8ns/r9e1/read_v3/LIFT_VALID_M1.npz   # [OK] 19,662 B, the E1 floor's lift-valid sidecar (read-only reference; E1 dir untouched)
