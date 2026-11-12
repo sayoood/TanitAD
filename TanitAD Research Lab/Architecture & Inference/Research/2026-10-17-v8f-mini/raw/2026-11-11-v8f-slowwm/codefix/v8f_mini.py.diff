@@ -1,0 +1,31 @@
+diff --git a/stack/tanitad/models/v8f_mini.py b/stack/tanitad/models/v8f_mini.py
+index dd2ad6a..7b27ded 100644
+--- a/stack/tanitad/models/v8f_mini.py
++++ b/stack/tanitad/models/v8f_mini.py
+@@ -789,7 +789,7 @@ class WMAux(nn.Module):
+     def built_basis(self) -> dict:
+         """PREREG_V8F_SLOWWM, the G-DVB reader: what the BUILT module DOES, measured on a planted ``u``: the mean path and the live-token path must be refused and the basis path accepted for slow / pca, the reverse for adapter; ``in_dim`` is the width ``proj`` takes."""
+         d = int(self.proj[0].normalized_shape[0])
+-        u = torch.randn(1, 4, d, generator=torch.Generator().manual_seed(0))
++        u = torch.randn(1, 4, d, generator=torch.Generator().manual_seed(0)).to(self.proj[0].weight.device)   # SLOWWM code fix (AMEND_SLOWWM_3): drawn on the CPU (the same values on every device), then moved to the module's device: a CPU `u` met cuda weights in layer_norm
+ 
+         def refused(fn):
+             try:
+@@ -1450,7 +1450,7 @@ def assert_level_head_vision_only(model: V8FMini, batch: dict) -> dict:
+             if not torch.equal(v0, v1):
+                 raise AssertionError(f"v_hat moved by {float((v0 - v1).abs().max())} when only non-vision inputs changed: the level head reads a non-vision input")
+             moved = dict(batch)
+-            moved["feats"] = batch["feats"] + torch.randn(batch["feats"].shape, generator=torch.Generator().manual_seed(3)).to(batch["feats"].dtype) * 0.5
++            moved["feats"] = batch["feats"] + torch.randn(batch["feats"].shape, generator=torch.Generator().manual_seed(3)).to(device=batch["feats"].device, dtype=batch["feats"].dtype) * 0.5
+             v2, _ = model._level(moved, model._encode(moved), last)
+             if torch.equal(v0, v2):
+                 raise AssertionError("v_hat did not move when the vision features changed: the head does not read the frame")
+@@ -1515,7 +1515,7 @@ def _vision_only_run(model: V8FMini, batch: dict, call, allowed, what: str) -> d
+             if not torch.equal(v0, v1):
+                 raise AssertionError(f"the {what} moved by {float((v0 - v1).abs().max())} when only non-vision inputs changed: it reads a non-vision input")
+             moved = dict(batch)
+-            moved["feats"] = batch["feats"] + torch.randn(batch["feats"].shape, generator=torch.Generator().manual_seed(3)).to(batch["feats"].dtype) * 0.5
++            moved["feats"] = batch["feats"] + torch.randn(batch["feats"].shape, generator=torch.Generator().manual_seed(3)).to(device=batch["feats"].device, dtype=batch["feats"].dtype) * 0.5
+             v2 = call(moved, model._encode(moved), last)
+             if torch.equal(v0, v2):
+                 raise AssertionError(f"the {what} did not move when the vision features changed: it does not read the frame")
