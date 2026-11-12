@@ -10,7 +10,10 @@ export R9E2_OUT="$R/runs/E2_READ_$K2ARM"                          # output root 
 export R9E2_TREE="${R9E2_TREE:-$R/read_tree_cf653ca4bb47_lfix_e77c39d4}"       # [OK] FROZEN READ TREE (2026-11-11) = K2M1N20's launch_tree cf653ca4bb47 + EXACTLY e77c39d4's refcv7_loader.py + r9_e1_dump.py (the T1v-history loader fix; blob sha1 verified on Thor; provenance in <tree>.provenance) + FlyWheels packages, built by r9e2_make_read_tree.sh; dry run 72 commands rc 0. Was read_tree_6d0e629f37a2.  ⚠️ RE-RUN that script on the NEW launch tree after the e2 chain restarts at a later tip, then export R9E2_TREE=<new read tree> before sourcing
 export R9E2_SPLIT=/home/nvidia/r8ns/r9dump/DEV_HOLD_SPLIT.json   # [OK] 12K (the roll checks sha256 ca5af020...)
 export R9E2_S2=/home/nvidia/r8ns/perc8/inputs/s2_windows.json     # [OK] 28K
-export R9E2_LEAD_BLOCK="$R/inputs/b1_eval_lead_block_k4_dt0p5.npz"  # [OK] 1.7M
+export R9E2_LEAD_BLOCK="$R/inputs/b1_eval_lead_block_k4_dt0p5_psync.npz"  # [SHIPPED 2026-11-12] FIXED: the block on the runs' POSE-SYNC clock
+#   (build_lead_block_b1.py --k 4 --dt 0.5 --pose-sync-sidecar refcv8_pose_sync_sidecar.jsonl --pose-sync-sign 1.0 --pose-sync-raw-offset 2; sha256 in
+#   <block>.sha256 beside it). It WAS b1_eval_lead_block_k4_dt0p5.npz (pose clock): the first real E2 read (15:10Z) then REFUSED distance keeping on all
+#   70 DEV episodes (max |dump v0 - block speed| up to 0.060 m/s) because K0 / K2M1N20 read their ego state at the image instant (pose_sync, 0..35 ms later).
 export R9E2_PF_CODE=/home/nvidia/r8ns/fanceil/code/pf/code        # [OK] holds roll_seed_r8_pf.py (roll_seed_r8_pf.py is blob-identical to the tip: 05276aa0 -- MEASURED 2026-11-09)
 export PF_R8_CODE=/home/nvidia/r8ns/code/batt                     # [OK] holds r8_repoint.py (r8_repoint.py is blob-identical to the tip: ccd6c53c -- MEASURED 2026-11-09)
 export L1_PF_CODE="$R9E2_PF_CODE" L1_R8_CODE="$PF_R8_CODE"        # == R9E2_PF_CODE / PF_R8_CODE by the roll's own contract

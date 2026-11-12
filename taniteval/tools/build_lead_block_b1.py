@@ -33,6 +33,27 @@ RAW poses (no n_stack trim; refav1_loader.py docstring), so frame ``2t`` is cach
 step ``t``. This is NOT the post-trim provider index that the S2 label join and
 ``build_obstacle_join.py`` use (those are ``i − (n_stack − 1)``).
 
+⭐ THE POSE-SYNC CLOCK (``--pose-sync-sidecar``, 2026-11-12). A run trained with the
+pose-sync sidecar (``tanitad/data/pose_sync.py``, X10: refcv8 / refcv9) reads its ego state
+``delta`` LATER than the pose row -- at the NOW image's capture instant, 0..35 ms -- so the
+dump's ``v0`` and GT path are NOT ``poses[i, 3]`` at the pose clock. MEASURED on the first
+real refcv9 E2 read (Thor, 2026-11-12): the distance-keeping join's label-free speed proof
+REFUSED all 70 DEV episodes, max |dump v0 − block speed| 0.008–0.060 m/s per episode, while
+the eval cache and this block agreed to ≤ 2e-5 m/s and every whole-frame offset was worse
+(the frame map was right; the clock was not). With the sidecar, every row is rebuilt at the
+instant the dataset reads: ``t0 = t_pose + s·dt_grid`` with ``s`` the TRAINER's own row
+shift (``PoseSync.shift_for`` of that RAW row), and the ``speeds`` column becomes the
+dataset's own ``v0`` -- computed by calling ``pose_sync.window_shifted_tracks`` (the function
+``V3Dataset._pose_sync_apply`` calls), never a re-implementation. The join's 1e-3 m/s proof
+is therefore UNCHANGED and exact. The build refuses unless the dataset's ``v0`` IS the grid-row
+egomotion speed linearly re-sampled at fractional row ``i + s`` (the tripwire's 1e-3 m/s): an
+identity that a wrong row, sign or shift breaks. The egomotion speed AT the shifted instant is
+kept as ``speeds_egomotion``; its gap to ``v0`` is 10 Hz-vs-100 Hz interpolation error (MEASURED
+on the 139 eval clips: median 0.0012, max 0.163 m/s) -- reported in coverage, never gated. ``--pose-sync-sign`` and ``--pose-sync-raw-offset``
+have NO default: they are the run's ``config.json`` ``pose_sync.eval.sign`` and the eval
+cache's ``n_stack − 1`` (the dump manifest's ``provider_to_raw_frame_offset``). A clip the
+sidecar does not cover is built UNSHIFTED, as the trainer reads it, and counted.
+
 FOUR STATES, NEVER TWO (``lead_source``): LEAD / NO_LEAD / NOT_STRAIGHT / NO_LABEL.
 NO_LABEL (no ``obstacle.offline`` for the clip, or the window's horizon leaves the
 labelled span) is NEVER free flow. 2 of the 147 eval clips carry no
@@ -68,6 +89,9 @@ CONTAINER (``np.savez_compressed``; loads through ``eval_four_families.load_lead
       — ``lead_metrics.distance_keeping`` of the GT ego path (the D-LEAD-1 GT arm's
       value on this window; the known value the kinematic-contract control must match)
     straight_dep_m / straight_checked_m [R]   coverage_json uint8   meta_json uint8
+    ONLY with ``--pose-sync-sidecar``: t0_pose_s float64 [R] (the pose-clock instant; ``t0_s``
+      is then the SHIFTED instant)  pose_sync_shift_s float64 [R]  speeds_egomotion float64 [R]
+      (``speeds`` is then the dataset's pose-synced ``v0``)
 """
 from __future__ import annotations
 
@@ -128,6 +152,9 @@ OBS_NEED_COLS = ("timestamp_us", "track_id", "center_x", "center_y", "size_x",
                  "label_class")
 REQUIRED_KEYS = ("leads", "lead_lens", "speeds", "state", "eid",
                  "clip_id", "frame", "t0_s", "ts_rel_s")
+#: --pose-sync-sidecar: the dataset's pose-synced v0 against the grid-row egomotion speeds re-sampled
+#: at the same fractional row -- the speed tripwire's own tolerance (build_clip_rows)
+PSYNC_V0_TOL_MPS = 1e-3
 
 
 def _p(*a):
@@ -270,20 +297,91 @@ def lead_rel_speed(obs: dict, track, t0: float, ego: dict,
 
 
 # --------------------------------------------------------------------------- #
+# the pose-sync clock: the TRAINER's own re-sampling, called per row            #
+# --------------------------------------------------------------------------- #
+def _pose_sync_mod():
+    """``tanitad.data.pose_sync`` -- the module ``V3Dataset._pose_sync_apply`` uses (one
+    implementation, never a copy)."""
+    from tanitad.data import pose_sync as _ps
+    return _ps
+
+
+def pose_sync_track(ps, sid: int, poses_raw, raw_offset: int):
+    """The dataset's pose-synced ego speed for every RAW row of one clip.
+
+    For a window whose NOW is PROVIDER row ``now`` (RAW row ``i = now + raw_offset``),
+    ``V3Dataset._pose_sync_apply`` sets ``pose_last = window_shifted_tracks(ps, sid, now,
+    raw_offset, ep.poses)[0][now]`` on the PROVIDER-indexed track ``ep.poses =
+    poses_raw[raw_offset:]``, and ``v0 = pose_last[3]``. This calls that very function once
+    per row. Returns ``(v0 [n], shift_rows [n])`` as float64; a row with no provider row
+    (``i < raw_offset``: no window can sit there) or outside the sidecar's rows is NaN.
+    ``None`` when the sidecar does not hold the clip (the trainer reads it UNSHIFTED).
+    """
+    _ps = _pose_sync_mod()
+    if ps.lookup(int(sid)) is None:
+        return None
+    off = int(raw_offset)
+    pr = np.asarray(poses_raw, dtype=np.float32)
+    n = int(pr.shape[0])
+    prov = pr[off:]
+    v0 = np.full(n, np.nan)
+    sh = np.full(n, np.nan)
+    for i in range(off, n):
+        got = _ps.window_shifted_tracks(ps, int(sid), i - off, off, prov)
+        if got is None:
+            continue
+        P, _a, s = got
+        v0[i] = float(P[i - off, 3])
+        sh[i] = float(s)
+    return v0, sh
+
+
+def pose_sync_clip(ps, sid: int, poses_raw, t_grid_s, raw_offset: int):
+    """One clip's ``(t0_shift_s [n], v0_sync [n], info)`` for :func:`build_clip_rows` -- what ``main``
+    does per clip. Row ``i`` moves by ``s_i * dt_grid`` (``s_i`` the trainer's row shift, ``dt_grid``
+    the clip's own linspace spacing), i.e. to the instant the linear re-sample at fractional row
+    ``i + s_i`` represents. Rows without a shift stay put (their speed stays the egomotion one). An
+    uncovered clip: zero shift, all-NaN ``v0_sync`` (built UNSHIFTED, as the trainer reads it)."""
+    t = np.asarray(t_grid_s, dtype=np.float64).reshape(-1)
+    n = t.size
+    dt_grid = float((t[-1] - t[0]) / (n - 1))
+    got = pose_sync_track(ps, sid, poses_raw, raw_offset)
+    if got is None:
+        return np.zeros(n), np.full(n, np.nan), {"sid": int(sid), "covered": False}
+    v0s, sh_rows = got
+    shift_s = np.where(np.isfinite(sh_rows), sh_rows, 0.0) * dt_grid
+    return shift_s, v0s, {"sid": int(sid), "covered": True, "dt_grid_s": dt_grid,
+                          "dt_sidecar_s": float(ps.lookup(sid).dt_s)}
+
+
+# --------------------------------------------------------------------------- #
 # ONE clip -> per-frame rows + coverage (pure given arrays; unit-tested)        #
 # --------------------------------------------------------------------------- #
 def build_clip_rows(clip_id: str, ego: dict, t_grid_s, obs: dict | None, *,
                     k: int = K_DEFAULT, dt: float = DT_DEFAULT,
                     poses: np.ndarray | None = None,
-                    obs_reason: str | None = None) -> tuple[dict, dict]:
+                    obs_reason: str | None = None,
+                    t0_shift_s=None, v0_sync=None) -> tuple[dict, dict]:
     """Rows for every RAW frame of one clip.
 
     ``t_grid_s`` [n] clip time of each RAW frame; ``obs`` ``None`` when the clip has
     no ``obstacle.offline`` (``obs_reason`` says why — it lands in coverage).
-    ``poses`` (optional, [n, >=4]) is only used for the speed tripwire.
+    ``poses`` (optional, [n, >=4]) is only used for the speed tripwire; it must be
+    sampled at the instants the rows are built at (the SHIFTED ones under pose sync).
+    ``t0_shift_s`` + ``v0_sync`` (both or neither, [n]): the pose-sync clock (module doc) --
+    every row is built at ``t_grid_s + t0_shift_s`` and ``speeds`` is ``v0_sync`` where it
+    is finite (the egomotion speed elsewhere, so a window there fails the join's proof).
     """
-    t0s = np.asarray(t_grid_s, dtype=np.float64).reshape(-1)
-    n = t0s.size
+    if (t0_shift_s is None) != (v0_sync is None):
+        raise ValueError("t0_shift_s and v0_sync come together (the pose-sync clock) or not at all")
+    t0_pose = np.asarray(t_grid_s, dtype=np.float64).reshape(-1)
+    n = t0_pose.size
+    shift = None
+    if t0_shift_s is not None:
+        shift = np.asarray(t0_shift_s, dtype=np.float64).reshape(-1)
+        if shift.shape != (n,) or not np.isfinite(shift).all():
+            raise ValueError(f"{clip_id}: t0_shift_s must be {n} finite values")
+    t0s = t0_pose if shift is None else t0_pose + shift
     ts_rel = np.arange(1, int(k) + 1, dtype=np.float64) * float(dt)
     obs_in = None
     if obs is not None and np.asarray(obs["t"]).size:
@@ -300,6 +398,49 @@ def build_clip_rows(clip_id: str, ego: dict, t_grid_s, obs: dict | None, *,
             raise RuntimeError(f"{clip_id}: lead_block speeds (egomotion interp at t0) "
                                f"disagree with poses[:, 3] by {d:.4f} m/s — the time "
                                f"base is not the poses' time base")
+    psync = None
+    if shift is not None:
+        speeds_ego = speeds
+        v = np.asarray(v0_sync, dtype=np.float64).reshape(-1)
+        if v.shape != (n,):
+            raise ValueError(f"{clip_id}: v0_sync must have {n} rows")
+        have = np.isfinite(v)
+        # THE GATE (an identity, not a closeness): the dataset's v0 IS the 10 Hz speed track
+        # linearly re-sampled at fractional row u = i + s (pose_sync.sample_rows, extrapolating
+        # past the ends exactly as it does), so the grid-row egomotion speeds re-sampled at the
+        # SAME u must reproduce it to the speed tripwire's own 1e-3 m/s. A wrong row, sign or
+        # shift fails it. ⚠️ NOT "v0 == egomotion at t0 + s*dt": MEASURED 2026-11-12 on the 139
+        # covered eval clips (27,525 in-grid rows) that differs by 10 Hz-vs-100 Hz INTERPOLATION
+        # error alone (median 0.0012, p95 0.0078, max 0.163 m/s, identical to the pure
+        # interpolation error of the egomotion log), while the shifted instant still matches
+        # better than the pose instant (median 0.0037) and the opposite sign (0.0077). That error
+        # is a property of the 10 Hz track the model reads; it is reported, never gated.
+        dtg = float((t0_pose[-1] - t0_pose[0]) / (n - 1)) if n > 1 else 1.0
+        u = np.arange(n, dtype=np.float64) + shift / dtg
+        v_grid = np.interp(t0_pose, np.asarray(ego["t"], float), np.asarray(ego["v"], float))
+        i0 = np.floor(u).astype(np.int64).clip(0, max(n - 2, 0))
+        f = u - i0
+        lin = v_grid[i0] + f * (v_grid[np.minimum(i0 + 1, n - 1)] - v_grid[i0])
+        dv = np.abs(v[have] - lin[have])
+        dmax = float(dv.max()) if dv.size else 0.0
+        if dmax > PSYNC_V0_TOL_MPS:
+            raise RuntimeError(f"{clip_id}: the dataset's pose-synced v0 is not the 10 Hz speed track "
+                               f"re-sampled at row + shift (off by {dmax:.4f} m/s > {PSYNC_V0_TOL_MPS}) — "
+                               f"the shifted instant is not the one the dataset reads")
+        speeds = np.where(have, v, speeds_ego)
+        in_grid = have & (u >= 0.0) & (u <= n - 1)          # the egomotion lookup clamps beyond the grid
+        e_int = np.abs(v[in_grid] - speeds_ego[in_grid])
+        sh_ms = 1e3 * shift[have] if have.any() else np.zeros(0)
+        psync = {"n_rows_synced": int(have.sum()), "n_rows_unsynced": int(n - have.sum()),
+                 "n_rows_beyond_grid": int((have & ~in_grid).sum()),
+                 "shift_ms": (None if not sh_ms.size else
+                              {"min": round(float(sh_ms.min()), 4), "median": round(float(np.median(sh_ms)), 4),
+                               "max": round(float(sh_ms.max()), 4)}),
+                 "max_abs_v0_sync_minus_10hz_resample_mps": round(dmax, 6),
+                 "interp_10hz_vs_egomotion_mps": (None if not e_int.size else
+                                                  {"median": round(float(np.median(e_int)), 6),
+                                                   "p95": round(float(np.percentile(e_int, 95)), 6),
+                                                   "max": round(float(e_int.max()), 6)})}
     # -- the selected track + relative speed + headway time ------------------
     track_id = np.full(n, "", dtype=object)
     rel_v = np.full(n, np.nan)
@@ -340,6 +481,10 @@ def build_clip_rows(clip_id: str, ego: dict, t_grid_s, obs: dict | None, *,
         "straight_dep_m": np.asarray(blk["straight_dep_m"], float),
         "straight_checked_m": np.asarray(blk["straight_checked_m"], float),
     }
+    if shift is not None:
+        rows["t0_pose_s"] = t0_pose
+        rows["pose_sync_shift_s"] = shift
+        rows["speeds_egomotion"] = speeds_ego
     even = np.arange(n) % 2 == 0                      # the 0.2 s grid (frame 2t)
     counts = {s: int((state == s).sum())
               for s in (ls.LEAD, ls.NO_LEAD, ls.NOT_STRAIGHT, ls.NO_LABEL)}
@@ -364,6 +509,8 @@ def build_clip_rows(clip_id: str, ego: dict, t_grid_s, obs: dict | None, *,
                                               "mean_time_gap_min_s", "n_time_gap",
                                               "mean_min_ttc_s", "n_closing", "status")},
     }
+    if psync is not None:
+        cov["pose_sync"] = psync
     return rows, cov
 
 
@@ -614,11 +761,29 @@ def main(argv=None):
                          "poses (refuses the build on a failure)")
     ap.add_argument("--k", type=int, default=K_DEFAULT)
     ap.add_argument("--dt", type=float, default=DT_DEFAULT)
+    ap.add_argument("--pose-sync-sidecar", default=None,
+                    help="build every row on the run's POSE-SYNC clock (module doc): the sidecar "
+                         "the run's config.json pose_sync.eval names")
+    ap.add_argument("--pose-sync-sign", type=float, default=None,
+                    help="REQUIRED with --pose-sync-sidecar: the run's config.json pose_sync.eval.sign")
+    ap.add_argument("--pose-sync-raw-offset", type=int, default=None,
+                    help="REQUIRED with --pose-sync-sidecar: the eval cache's n_stack - 1 (the dump "
+                         "manifest's corpus.frames.provider_to_raw_frame_offset)")
     ap.add_argument("--out", required=True, help="output .npz FILE")
     ap.add_argument("--report", default=None, help="json report (default <out>.report.json)")
     a = ap.parse_args(argv)
     if os.path.isdir(a.out):
         sys.exit(f"--out must be a FILE, got a directory: {a.out}")
+    ps = None
+    if a.pose_sync_sidecar:
+        if a.pose_sync_sign is None or a.pose_sync_raw_offset is None:
+            sys.exit("--pose-sync-sidecar needs --pose-sync-sign AND --pose-sync-raw-offset (no defaults: "
+                     "they are the run's own values)")
+        if a.pose_sync_raw_offset < 0:
+            sys.exit("--pose-sync-raw-offset must be >= 0")
+        ps = _pose_sync_mod().read_pose_sync_sidecar(a.pose_sync_sidecar, sign=a.pose_sync_sign)
+    elif a.pose_sync_sign is not None or a.pose_sync_raw_offset is not None:
+        sys.exit("--pose-sync-sign / --pose-sync-raw-offset without --pose-sync-sidecar")
     import pandas as pd
 
     t_start = time.time()
@@ -646,6 +811,7 @@ def main(argv=None):
     rows_list, coverage = [], {}
     n_no_obs, n_no_ego, n_no_ts, n_xfail = 0, 0, 0, 0
     obs_sha = {}
+    ps_uncovered, ps_dt_gap = [], 0.0
     for j, cid in enumerate(clips):
         ego_b = _tar_member(ego_tf, ego_names, f"{cid}.parquet")
         ts_b = _tar_member(ts_tf, ts_names, f"{cid}.timestamps.parquet")
@@ -687,8 +853,23 @@ def main(argv=None):
         if obs is None:
             n_no_obs += 1
         skew = obs.pop("frame_skew_s", 0.0) if obs else None
+        shift_s = v0s = None
+        ps_clip = None
+        poses_rows = poses
+        if ps is not None:
+            from tanitad.data.v2_dataset import stable_episode_id
+            shift_s, v0s, ps_clip = pose_sync_clip(ps, int(stable_episode_id(cid)), poses, t_grid_s,
+                                                   a.pose_sync_raw_offset)
+            if not ps_clip["covered"]:
+                ps_uncovered.append(cid)
+            else:
+                ps_dt_gap = max(ps_dt_gap, abs(ps_clip["dt_sidecar_s"] - ps_clip["dt_grid_s"]))
+            poses_rows = episode_poses(ego_df, t_query + shift_s * unit)
         rows, cov = build_clip_rows(cid, ego, t_grid_s, obs, k=a.k, dt=a.dt,
-                                    poses=poses, obs_reason=why)
+                                    poses=poses_rows, obs_reason=why,
+                                    t0_shift_s=shift_s, v0_sync=v0s)
+        if ps_clip is not None:
+            cov.setdefault("pose_sync", {}).update(ps_clip)
         et = np.asarray(ego["t"], float)
         cov.update({
             "status": "OK",
@@ -751,8 +932,23 @@ def main(argv=None):
                                "labelled span — NEVER free flow"},
         "refusals": {"clips_no_ego": n_no_ego, "clips_no_timestamps": n_no_ts,
                      "clips_without_obstacle_offline": n_no_obs},
+        "pose_sync": None if ps is None else {
+            "sidecar": a.pose_sync_sidecar, "sha256": _sha256(a.pose_sync_sidecar),
+            "sign": float(a.pose_sync_sign), "raw_offset": int(a.pose_sync_raw_offset),
+            "n_clips_covered": int(len(rows_list) - len(ps_uncovered)),
+            "clips_uncovered_built_unshifted": ps_uncovered,
+            "max_abs_dt_sidecar_minus_dt_grid_s": ps_dt_gap,
+            "rule": ("row i is built at t_pose[i] + s_i * dt_grid, s_i = PoseSync.shift_for(sid, i) (the "
+                     "trainer's row shift); speeds = the dataset's v0 via pose_sync.window_shifted_tracks "
+                     "(V3Dataset._pose_sync_apply), which must equal the grid-row egomotion speeds re-sampled "
+                     f"at row i + s_i within {PSYNC_V0_TOL_MPS} m/s or the build refuses; speeds_egomotion = "
+                     "egomotion at the shifted instant (10 Hz-vs-100 Hz interpolation error, reported per clip)"),
+        },
         "wallclock_s": round(time.time() - t_start, 1),
     }
+    if ps is not None:
+        meta["time_base"] += ("; ⭐ POSE-SYNC: t0_s is the SHIFTED instant (t0_pose_s + pose_sync_shift_s) "
+                              "and speeds is the dataset's pose-synced v0 (meta.pose_sync)")
     summary = write_block(a.out, rows_list, coverage, meta, k=a.k, dt=a.dt)
     rep_path = a.report or (a.out + ".report.json")
     n_clips_lead = sum(1 for c in coverage.values() if c.get("counts", {}).get(ls.LEAD, 0))
@@ -771,6 +967,10 @@ def main(argv=None):
     _p(f"  clips with any LEAD frame: {n_clips_lead}  · without obstacle.offline: "
        f"{n_no_obs}  · v2ep cross-checked: "
        f"{sum(1 for c in coverage.values() if c.get('v2ep_crosscheck'))}")
+    if ps is not None:
+        _p(f"  pose-sync clock: {meta['pose_sync']['n_clips_covered']} clip(s) shifted · "
+           f"{len(ps_uncovered)} uncovered (built unshifted) · sign {a.pose_sync_sign} · raw offset "
+           f"{a.pose_sync_raw_offset}")
     _p(f"[report] {rep_path}")
     _p("LEAD_BLOCK_B1_DONE")
 
