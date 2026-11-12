@@ -61,3 +61,9 @@ and on `nf_prec_0_10` (0.531 vs 0.244). (c) and (d) do not depend on the map dec
 `logs/` holds the roll status, the 15:10Z distkeep abort marker (fixed by the pose-sync lead block, landed 2ab7f995),
 and the S6c resume log. `diag_fitthr/` holds the diagnostic script, its status, the fitted
 thresholds, the remap and the two fitted evals. `SHA256SUMS` covers every file.
+
+## ⚠️ CORRECTION (2026-11-12, R-E2-DT-1): the (d) rate rows above were read at the wrong waypoint clock
+
+`r9_e2_families.py` v1 read these 0.5 s dumps at a hard-coded 0.1 s: speed and yaw rate ×5, accel ×25. The corrected
+re-read is in `reread_dtfix/`. LON_accel_mae is **+0.0098 m/s²** [0.0041, 0.0158] (s0), not +0.2445, and the consistent
+regression is LATERAL (+5 to +8 %). The verdict is unchanged: NO-GO.

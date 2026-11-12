@@ -56,23 +56,40 @@ def gt_windows(e, n=NW):
     return out
 
 
-def write_dump(d, clips, noise, seed, order=None, drop_last_of=None, gt_shift=0.0, stationary_clip=None):
+def gt_v0(e, n=NW):
+    """The true speed at t0 of gt_windows(e) (its integrator's initial v)."""
+    return np.array([5.0 + 1.5 * e + 0.4 * i for i in range(n)])
+
+
+SPARSE = slice(4, None, 5)        # the real E2 dump shape: instants 0.5 / 1.0 / 1.5 / 2.0 s of the dense 0.1 s grid -> k 4, dt_s 0.5
+
+
+def write_dump(d, clips, noise, seed, order=None, drop_last_of=None, gt_shift=0.0, stationary_clip=None, sparse=False, dt_s="auto", v0="true", scale=1.0):
+    """refcv3_arm-form dump.  ``sparse`` keeps the 4 waypoints the real E2 dumps hold (dt 0.5); ``dt_s`` = the manifest's grid.dt_s ("auto" = the true spacing,
+    None = omitted); ``v0`` = "true" (the integrator's t0 speed), "ones", or None (no v0 key); ``scale`` multiplies the prediction (a speed bias)."""
     d.mkdir(parents=True, exist_ok=True)
     rng = np.random.default_rng(seed)
     eps = []
     for fi, c in enumerate(order or clips):
         e = int(c[-1]) + (0 if c.startswith("clipD") else 20)
         G = gt_windows(e)
+        V = gt_v0(e)
         if c == stationary_clip:
-            G = np.zeros_like(G)
-        P = G + rng.normal(0.0, noise, G.shape) if noise else G.copy()
+            G, V = np.zeros_like(G), np.zeros_like(V)
+        if sparse:
+            G = G[:, SPARSE]
+        P = G * scale + (rng.normal(0.0, noise, G.shape) if noise else 0.0)
         ws = np.arange(NW) + 7
         if drop_last_of == c:
-            G, P, ws = G[:-1], P[:-1], ws[:-1]
+            G, P, ws, V = G[:-1], P[:-1], ws[:-1], V[:-1]
+        extra = {} if v0 is None else {"v0": (V if v0 == "true" else np.ones(len(ws))).astype(np.float32)}
         np.savez_compressed(d / f"ep{fi:03d}.npz", g=(G + gt_shift).astype(np.float32), os=P.astype(np.float32), ws=ws, eid=np.array([fi]), clip_index=np.array([e]),
-                            v0=np.ones(len(ws), np.float32))
+                            **extra)
         eps.append({"file_index": fi, "episode_index": e, "clip_id": c, "episode_id": e, "n_windows": int(len(ws))})
-    (d / "manifest.json").write_text(json.dumps({"episodes": eps, "grid": {"n_windows": sum(x["n_windows"] for x in eps)}}), encoding="utf-8")
+    grid = {"n_windows": sum(x["n_windows"] for x in eps)}
+    if dt_s is not None:
+        grid["dt_s"] = (0.5 if sparse else 0.1) if dt_s == "auto" else dt_s
+    (d / "manifest.json").write_text(json.dumps({"episodes": eps, "grid": grid}), encoding="utf-8")
     return d
 
 
@@ -143,7 +160,8 @@ def test_RED_window_set_mismatch_is_refused_not_intersected(dumps, dev_split, tm
 
 
 def test_RED_gt_disagreement_is_refused(dumps, dev_split, tmp_path):
-    shifted = write_dump(tmp_path / "shift", DEV_CLIPS + HOLD_CLIPS, 0.6, 2, gt_shift=0.5)
+    # v0=None: a 0.5 m GT offset is not a trajectory, so the waypoint-clock guard would refuse it first; this test is about the PAIRING refusal
+    shifted = write_dump(tmp_path / "shift", DEV_CLIPS + HOLD_CLIPS, 0.6, 2, gt_shift=0.5, v0=None)
     with pytest.raises(SystemExit, match="label clocks"):
         F.build(dumps["good"], shifted, mode="families", dev_split=dev_split, n_boot=50)
 
@@ -236,7 +254,8 @@ def _t1_eval():
 def test_per_window_rows_reproduce_t1_eval_pooled_points(dumps):
     """The reader's per-window rows are the SAME geometry as t1_eval.analyze (not a re-derivation): the mean of each row over the windows = analyze's pooled point."""
     d = F.load_dump(dumps["bad"])
-    rows = F.window_rows(d["P"], d["G"])
+    assert d["dt_s"] == 0.1                                      # the dense fixture: t1_eval.analyze reads it at its own 0.1 s default (no wp_steps)
+    rows = F.window_rows(d["P"], d["G"], d["dt_s"])
     out = _t1_eval().analyze(sorted(str(p) for p in Path(dumps["bad"]).glob("ep*.npz")), tiers={"os": "T1"}, n_boot=50)
     m = out["arms"]["os"]["intervals"]["metrics"]
     pairs = {"ade_dense_m": "ade_m", "fde_last_m": "fde_m", "LON_speed_mae_mps": "LON_speed_mae_mps", "LON_along_mae_m": "LON_along_mae_m",
@@ -262,3 +281,77 @@ def test_RED_a_different_dev_window_set_gives_a_different_hash(dumps, dev_split,
     sub = tmp_path / "sub_split.json"                                                                    # one DEV clip fewer, both arms alike
     sub.write_text(json.dumps({"DEV": {"sha12": [sha12(c) for c in DEV_CLIPS[:-1]]}, "HOLD": {"sha12": [sha12(c) for c in HOLD_CLIPS]}}), encoding="utf-8")
     assert F.build(dumps["good"], dumps["bad"], mode="families", dev_split=sub, n_boot=50)["window_set_sha256"] != full
+
+
+# ---- THE WAYPOINT CLOCK (2026-11-12): v1 read the real 0.5 s / k 4 dumps at a hard-coded 0.1 s ----------------------------------------------------------------
+
+ALLC = DEV_CLIPS + HOLD_CLIPS
+
+
+def _refused(fn, *a, **kw):
+    with pytest.raises(SystemExit) as ei:
+        fn(*a, **kw)
+    return str(ei.value)
+
+
+def test_dt_is_read_from_the_manifest_checked_and_stamped(dumps, dev_split):
+    doc = fam(dumps, dev_split)
+    assert doc["schema"] == "r9e2-families-v2" and doc["dt_s"] == 0.1 and "grid.dt_s" in doc["dt_source"]
+    for side in ("a", "b"):
+        ck = doc["dt_check"][side]
+        assert ck["status"] == "PASS" and ck["n"] == len(ALLC) * NW and abs(ck["median_g0_over_v0_s"] - 0.1) < 0.005, ck
+
+
+def test_RED_dump_without_grid_dt_is_refused_not_assumed(dev_split, tmp_path):
+    a = write_dump(tmp_path / "a", ALLC, 0.02, 1, dt_s=None)
+    b = write_dump(tmp_path / "b", ALLC, 0.6, 2)
+    assert "publishes no grid.dt_s" in _refused(F.build, a, b, mode="families", dev_split=dev_split, n_boot=50)
+    assert F.main(["--mode", "families", "--a-dump", str(a), "--b-dump", str(b), "--dev-split", str(dev_split), "--out", str(tmp_path / "x.json")]) == 2
+    assert not (tmp_path / "x.json").exists()
+
+
+def test_RED_arms_on_different_waypoint_spacings_are_refused(dev_split, tmp_path):
+    a = write_dump(tmp_path / "dense", ALLC, 0.02, 1)
+    b = write_dump(tmp_path / "sparse", ALLC, 0.02, 1, sparse=True)
+    assert "different waypoint spacings" in _refused(F.build, a, b, mode="families", dev_split=dev_split, n_boot=50)
+
+
+def test_RED_manifest_dt_contradicting_the_gt_spacing_is_refused(dev_split, tmp_path):
+    """The production defect, both ways round: data on a 0.5 s grid read at 0.1 s, and data on a 0.1 s grid read at 0.5 s."""
+    s01 = write_dump(tmp_path / "s01", ALLC, 0.02, 1, sparse=True, dt_s=0.1)
+    d05 = write_dump(tmp_path / "d05", ALLC, 0.02, 1, dt_s=0.5)
+    for bad in (s01, d05):
+        msg = _refused(F.load_dump, bad)
+        assert "contradicts the GT's own spacing" in msg, msg
+    ok = F.load_dump(write_dump(tmp_path / "s05", ALLC, 0.02, 1, sparse=True))
+    assert ok["dt_s"] == 0.5 and ok["dt_check"]["status"] == "PASS" and abs(ok["dt_check"]["median_g0_over_v0_s"] - 0.5) < 0.025, ok["dt_check"]
+
+
+def test_guard_without_usable_v0_reads_not_checked_and_says_so(dev_split, tmp_path):
+    for kw, why in (({"v0": None}, "no v0"), ({"v0": "ones"}, "v0 > 2.0")):
+        d = F.load_dump(write_dump(tmp_path / str(kw["v0"]), ALLC, 0.02, 1, sparse=True, **kw))
+        assert d["dt_s"] == 0.5 and d["dt_check"]["status"] == "NOT-CHECKED" and why in d["dt_check"]["reason"], d["dt_check"]
+
+
+def test_sparse_real_shape_dump_reads_physical_units(dev_split, tmp_path):
+    """A prediction 10 % too fast on the real k 4 / 0.5 s shape reads LON_speed_mae ~= 0.1 x the true speed (m/s), not 5x it; positions are dt-free."""
+    a = write_dump(tmp_path / "a", ALLC, 0.0, 1, sparse=True, scale=1.1)
+    b = write_dump(tmp_path / "b", ALLC, 0.0, 1, sparse=True)
+    doc = F.build(a, b, mode="families", dev_split=dev_split, n_boot=50)
+    assert doc["dt_s"] == 0.5
+    true_speed = np.concatenate([gt_v0(int(c[-1])) for c in DEV_CLIPS]).mean()
+    sp = doc["rows"]["LONGITUDINAL"]["LON_speed_mae_mps"]["a_mean"]
+    assert abs(sp / (0.1 * true_speed) - 1.0) < 0.10, (sp, true_speed)
+    A = F.restrict_dev(F.load_dump(a), F.load_dev(dev_split))[0]
+    assert sp == pytest.approx(F.window_rows(A["P"], A["G"], 0.5)["LON_speed_mae_mps"].mean(), rel=1e-12)
+
+
+def test_rates_scale_with_dt_positions_do_not_and_dt_has_no_default(tmp_path):
+    d = F.load_dump(write_dump(tmp_path / "s", ALLC, 0.3, 1, sparse=True))
+    r1, r5 = F.window_rows(d["P"], d["G"], 0.1), F.window_rows(d["P"], d["G"], 0.5)
+    np.testing.assert_allclose(r1["LON_speed_mae_mps"], 5.0 * r5["LON_speed_mae_mps"], rtol=1e-5)
+    np.testing.assert_allclose(r1["LON_accel_mae_mps2"], 25.0 * r5["LON_accel_mae_mps2"], rtol=1e-4)
+    for k in ("ade_m", "fde_m", "LON_along_mae_m", "LAT_cross_mae_m", "LAT_cross_abs_final_m"):
+        np.testing.assert_array_equal(r1[k], r5[k])
+    with pytest.raises(TypeError):
+        F.window_rows(d["P"], d["G"])

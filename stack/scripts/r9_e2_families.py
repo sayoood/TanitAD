@@ -21,6 +21,16 @@ WHAT IT DOES (and refuses):
     (``n_dropped_nonfinite``).  A row with no finite window is OMITTED and listed in ``omitted`` (never faked); a family left with no rows reads NOT-COMPUTABLE in the judge.
   * STRATEGIC: ``{"status": "PAUSED", ...}`` (PI 2026-09-19, PI_DECISION_QUEUE ITEM 25) -- never a pass, never omitted.
 
+THE WAYPOINT CLOCK (fixed 2026-11-12, MM 4a3d05 -- the v1 reader got it wrong).  ``_seq_geometry(wp, dt)`` needs the spacing BETWEEN the supplied waypoints
+(``four_families._DT_CONTRACT``).  The battery dump publishes it: ``manifest.json`` ``grid.dt_s`` (the E2 dumps: ``grid`` 2s, k 4, ``dt_s`` 0.5, instants
+0.5-2.0 s), and the registered refcv8 reader takes it from there (``pair_read_r8.py``: ``dt = float(man["grid"]["dt_s"])``).  v1 hard-coded ``DT = 0.1`` and
+read the 0.5 s dumps at 0.1 s: speed and yaw rate x5, accel x25, the tangent-validity gate (``MIN_DS_MPS * dt``) 5x too low, ``LON_speed_within_0p5``
+an effective 0.1 m/s band, and the tactical labeller fed 5x speeds.  Its synthetic test fixture was a dense 0.1 s grid with no ``dt_s``, so it matched the
+constant and never the real dumps.  NOW: ``dt`` = the dump's ``grid.dt_s`` (no dump without it is read; both arms must agree), and a PLAUSIBILITY GUARD
+measures the GT's own spacing -- median ``|g[:, 0]| / v0`` over windows with ``v0 > 2 m/s`` must be within 15 % of ``dt`` (MEASURED on the E2 K2 seed-0
+dump: 0.5034 s over 2,184 moving windows for ``dt_s`` 0.5; the v1 reading would be off by a factor 5).  Fewer than 20 moving windows, or no ``v0`` in the
+dump: the guard reads NOT-CHECKED and says so in the output (never a silent pass).
+
 PRIMARY rows for the camera-blind (W4) read -- ONE per family, ``PRIMARY`` below.  They are the FIRST NR-headline row of each family in the refcv8 registered table
 (``pair_read_r8.METRICS``, the rows SHIP-R8 reads under AMENDMENT 3, ``_ship_r8_verdict_base.py:clause4/clause5``; REFCV9_DESIGN 5.2 W4 says "``ade_m`` and each family's
 primary row" without naming them).  The MM may re-name them at sealing: ``--primary FAMILY=row_id`` overrides, and the full row table is always written beside.
@@ -36,8 +46,10 @@ from pathlib import Path
 
 import numpy as np
 
-SCHEMA = "r9e2-families-v1"
-DT = 0.1
+SCHEMA = "r9e2-families-v2"           # v2: dt from the dump's grid.dt_s (v1 read 0.5 s dumps at a hard-coded 0.1 s)
+DT_CHECK_MIN_V0_MPS = 2.0              # windows slower than this carry no usable |g0| / v0 ratio
+DT_CHECK_REL_TOL = 0.15                # MEASURED real-data offset 0.7 % (0.5034 s vs 0.5); the v1 defect is a factor 5
+DT_CHECK_MIN_N = 20
 #: (family, row_id, lower_is_better) -- names and directions copied from the refcv8 registered table (pair_read_r8.METRICS) + the TACTICAL third row t1_eval's four_families carries.
 ROWS = (("ADE", "ade_m", True), ("ADE", "fde_m", True),
         ("LONGITUDINAL", "LON_speed_mae_mps", True), ("LONGITUDINAL", "LON_along_mae_m", True), ("LONGITUDINAL", "LON_along_abs_final_m", True),
@@ -86,14 +98,45 @@ def load_dev(path) -> set:
     return dev
 
 
+def grid_dt(man: dict, where) -> float:
+    """The waypoint spacing the dump publishes (``manifest.json`` ``grid.dt_s``).  REFUSES when absent: the spacing is not assumed (THE WAYPOINT CLOCK)."""
+    try:
+        dt = float((man.get("grid") or {})["dt_s"])
+    except (KeyError, TypeError, ValueError):
+        _fail(f"{where}: manifest.json publishes no grid.dt_s -- the spacing between the waypoints is unknown, and assuming one rescales every rate row "
+              f"(four_families._DT_CONTRACT); refusing")
+    if not (np.isfinite(dt) and dt > 0):
+        _fail(f"{where}: manifest.json grid.dt_s = {dt!r} is not a positive spacing")
+    return dt
+
+
+def dt_check(G: np.ndarray, v0, dt: float, where) -> dict:
+    """PLAUSIBILITY GUARD: the GT's own spacing (median ``|g[:, 0]| / v0`` over moving windows) must agree with the published ``dt`` within
+    ``DT_CHECK_REL_TOL``; REFUSES a contradiction, reads NOT-CHECKED (stated) when the dump carries no ``v0`` or too few moving windows."""
+    if v0 is None:
+        return {"status": "NOT-CHECKED", "reason": "the dump carries no v0", "n": 0}
+    v0 = np.asarray(v0, dtype=np.float64).reshape(-1)
+    m = np.isfinite(v0) & (v0 > DT_CHECK_MIN_V0_MPS)
+    n = int(m.sum())
+    if n < DT_CHECK_MIN_N:
+        return {"status": "NOT-CHECKED", "reason": f"{n} window(s) with v0 > {DT_CHECK_MIN_V0_MPS} m/s (< {DT_CHECK_MIN_N})", "n": n}
+    med = float(np.median(np.linalg.norm(G[m, 0], axis=-1) / v0[m]))
+    rel = abs(med / dt - 1.0)
+    if rel > DT_CHECK_REL_TOL:
+        _fail(f"{where}: grid.dt_s {dt} contradicts the GT's own spacing -- median |g[:, 0]| / v0 = {med:.4f} s over {n} moving windows "
+              f"({rel:.1%} off, tolerance {DT_CHECK_REL_TOL:.0%}); reading it would rescale every rate row")
+    return {"status": "PASS", "median_g0_over_v0_s": round(med, 6), "rel_offset": round(rel, 6), "n": n, "tol": DT_CHECK_REL_TOL}
+
+
 def load_dump(dump_dir, arm: str = "os") -> dict:
-    """{keys: [(clip_id, ws)], P [N,K,2], G [N,K,2]} from a refcv3_arm dump directory."""
+    """{keys: [(clip_id, ws)], P [N,K,2], G [N,K,2], dt_s, dt_check} from a refcv3_arm dump directory."""
     d = Path(dump_dir)
     try:
         man = json.loads((d / "manifest.json").read_text(encoding="utf-8"))
     except (OSError, ValueError) as e:
         _fail(f"{d}: no readable manifest.json ({e})")
-    keys, P, G = [], [], []
+    dt = grid_dt(man, d)
+    keys, P, G, V0 = [], [], [], []
     for e in man.get("episodes") or []:
         z = np.load(d / f"ep{int(e['file_index']):03d}.npz")
         for k in ("g", arm, "ws"):
@@ -105,9 +148,12 @@ def load_dump(dump_dir, arm: str = "os") -> dict:
         keys += [(str(e["clip_id"]), int(w)) for w in ws]
         P.append(np.asarray(z[arm], dtype=np.float64)[..., :2])
         G.append(np.asarray(z["g"], dtype=np.float64)[..., :2])
+        V0.append(np.asarray(z["v0"], dtype=np.float64).reshape(-1) if "v0" in z.files and np.asarray(z["v0"]).size == ws.size else None)
     if not keys:
         _fail(f"{d}: the dump holds no windows")
-    return {"keys": keys, "P": np.concatenate(P), "G": np.concatenate(G), "dir": str(d), "arm": arm}
+    Gc = np.concatenate(G)
+    v0 = None if any(v is None for v in V0) else np.concatenate(V0)
+    return {"keys": keys, "P": np.concatenate(P), "G": Gc, "dir": str(d), "arm": arm, "dt_s": dt, "dt_check": dt_check(Gc, v0, dt, d)}
 
 
 def restrict_dev(dump: dict, dev: set, non_dev: str = "drop") -> tuple[dict, dict]:
@@ -118,12 +164,16 @@ def restrict_dev(dump: dict, dev: set, non_dev: str = "drop") -> tuple[dict, dic
     if not keep:
         _fail(f"{dump['dir']}: no DEV window in the dump")
     ix = np.asarray(keep)
-    out = {"keys": [dump["keys"][i] for i in keep], "P": dump["P"][ix], "G": dump["G"][ix], "dir": dump["dir"], "arm": dump["arm"]}
+    out = {"keys": [dump["keys"][i] for i in keep], "P": dump["P"][ix], "G": dump["G"][ix], "dir": dump["dir"], "arm": dump["arm"], "dt_s": dump["dt_s"],
+           "dt_check": dump["dt_check"]}
     return out, {"n_total": len(dump["keys"]), "n_dev": len(keep), "n_non_dev_dropped": n_non}
 
 
-def window_rows(P: np.ndarray, G: np.ndarray, dt: float = DT) -> dict:
-    """{row_id: float64 [N]} per-window values (NaN = no value on that window).  Geometry = ``four_families._seq_geometry`` (not re-derived)."""
+def window_rows(P: np.ndarray, G: np.ndarray, dt: float) -> dict:
+    """{row_id: float64 [N]} per-window values (NaN = no value on that window).  Geometry = ``four_families._seq_geometry`` (not re-derived).
+    ``dt`` = the spacing between the waypoints (the dump's ``grid.dt_s``); deliberately NO default (THE WAYPOINT CLOCK)."""
+    if not (dt and np.isfinite(dt) and dt > 0):
+        _fail(f"window_rows: dt {dt!r} is not a positive waypoint spacing")
     import torch
     from taniteval import four_families as ff
     from tanitad.refs.refc_tactical import COLLAPSE_TABLE, factor_from_kinematics
@@ -204,11 +254,15 @@ def build(a_dir, b_dir, *, mode: str = "families", dev_split=None, dev=None, arm
         _fail("no DEV list: pass --dev-split (the E1 read's pin) -- an un-restricted read could score HOLD")
     A, ca = restrict_dev(load_dump(a_dir, arm_a), dev, non_dev)
     B, cb = restrict_dev(load_dump(b_dir, arm_b), dev, non_dev)
+    if A["dt_s"] != B["dt_s"]:
+        _fail(f"the arms publish different waypoint spacings: {A['dir']} grid.dt_s {A['dt_s']} vs {B['dir']} grid.dt_s {B['dt_s']}")
+    dt = A["dt_s"]
     pa, pb, eid, rep = align(A, B)
-    rows, omitted = paired_rows(window_rows(pa["P"], pa["G"]), window_rows(pb["P"], pb["G"]), eid, n_boot, seed)
+    rows, omitted = paired_rows(window_rows(pa["P"], pa["G"], dt), window_rows(pb["P"], pb["G"], dt), eid, n_boot, seed)
     meta = {"schema": SCHEMA, "mode": mode, "labels": f"{labels[0]} - {labels[1]}", "tier": TIER, "estimator": ESTIMATOR, "delta": "A - B (A = " + labels[0] + ")",
             "windows": "DEV (DEV_HOLD_SPLIT.json); HOLD is never read", "n_windows_paired": rep["n_common"], "window_set_sha256": rep["window_set_sha256"], "pairing": rep, "a": {**ca, "dir": A["dir"]},
             "b": {**cb, "dir": B["dir"]}, "omitted_rows": omitted, "n_boot": n_boot, "boot_seed": seed,
+            "dt_s": dt, "dt_source": "manifest.json grid.dt_s (both arms equal)", "dt_check": {"a": A["dt_check"], "b": B["dt_check"]},
             "caveat": "H-ESTIM-SEED-1: the paired interval answers another draw of EPISODES, not another training run and not another INFERENCE draw; one call = one inference seed."}
     if mode == "families":
         by = {f: {rid: r for rid, r in rows.items() if r["family"] == f} for f in FAMILIES}
