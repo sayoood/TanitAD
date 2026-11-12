@@ -1,0 +1,21 @@
+# MM review of the S1a read (2026-11-12)
+
+- **Re-checked:**
+  - 18 synthetic tests pass (re-run by the MM).
+  - The reader's sha256 prefix is `58aa3a77`. Its freeze record (15:24:05Z) and every card hash were written before any S1 metric was computed. The one crash fix is disclosed in `READER_FREEZE.md`.
+- **Verdict stands as computed: INCOMPLETE, and NOT S1-GO.**
+  - S1-P1 is 0.7802 [0.7587, 0.7974], below 0.80.
+  - S1-Q is 0.8332 [0.7951, 0.8691], below 0.90.
+  - C-SHUF 0.4468 and C-FLIP 0.7056 are both valid.
+  - ⇒ **S1b (HA-s1) is not run**, per PREREG_VDAC_P6_A2: it runs only on S1-GO. No `S1B_GO` was created.
+- **The two MISSING-INPUTs (MM probe of the pod, read only):**
+  - **S1-F:** the initial head's H48 predictions DO exist on the pod, at `/workspace/data/refe_vdac/ha-s0/scores/head_pred_step0.npz` (1,705 frames, logit and sdf 40×32). They are not in the HF export the reader used. S1-F can only matter for S1-GO, which both failed bars already exclude, so it does not change the outcome. It is noted for completeness.
+  - **In-sample IoU:** the trainer logs no IoU on training batches. Its `train` events carry only the BCE, Huber and ListNet losses.
+    - Its own `aux_eval` on the 1,705 held-out H48 frames reads IoU 0.212 at step 0, 0.799 at update 5,000 and 0.823 at update 10,000. That is pooled, unweighted and over the full 40×32 grid.
+    - It is NOT the card's S1-P1, which is city-reweighted over x in [0, 40). Two lessons follow: the head was still improving at 10,000 updates, and the held-out level sits near the bar.
+    - The in-sample IoU needs a forward of `ha-s0/aux_drv.pt` with P6's trunk on training frames, on a GPU. ⛔ Not on the pod while P7 trains.
+- **What the outcome table commits next, either way:**
+  - S1-FIT (in-sample ≥ 0.85) ⇒ **HB**, a LoRA-adapted copy of P6's trunk feeding the head only.
+  - S1-WEAK (in-sample < 0.85) ⇒ **HB and HC** (1 m cells, boundary-weighted Huber) as one registered pair under their own card.
+  - **HB is therefore the next lever in both branches.** The in-sample IoU only decides whether HC is registered with it.
+  - DESIGN_VDAC_P6 §7 costs HB at 4.4 L40-h per arm. That is new pod time and a new P7 pause, so it is the PI's decision.
