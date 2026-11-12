@@ -1,0 +1,63 @@
+[2026-11-12T15:52:17] guards PASS: {"card": "e51af7424dc2", "k": 44, "pins": 938}
+ZZN2 GUARDS PASS
+[2026-11-12T15:52:27] guards PASS: {"card": "e51af7424dc2", "k": 44, "pins": 938}
+[2026-11-12T15:52:29] banked rollouts: 12146 ok rows; population 12146; R0 subset 240; root F:\tanitad_scratch\tfn2_nt\run_a1
+[2026-11-12T15:52:29] start job 0 (free virt 27879 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_a1\w\pk\eval\run_p4.py --log F:\tanitad_scratch\tfn2_nt\run_a1\logs\p4_R0_s0.log --hz 10 --threads 2 --script tfn2_nt_roll.py -- --arm R0 --shard 0/2 --out-dir F:\tanitad_scratch\tfn2_nt\run_a1\rolls\R0 --tokens F:\tan
+[2026-11-12T15:52:49] start job 1 (free virt 24928 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_a1\w\pk\eval\run_p4.py --log F:\tanitad_scratch\tfn2_nt\run_a1\logs\p4_R0_s1.log --hz 10 --threads 2 --script tfn2_nt_roll.py -- --arm R0 --shard 1/2 --out-dir F:\tanitad_scratch\tfn2_nt\run_a1\rolls\R0 --tokens F:\tan
+[2026-11-12T15:55:40] job 0 rc 0
+[2026-11-12T15:56:10] job 1 rc 0
+[2026-11-12T15:56:25] STAGE roll_R0 DONE {"rcs": [0, 0], "ok_rows": 240, "error_rows": 0, "missing": 0, "wrong_knob_rows": 0, "seconds": 236, "ok": true}
+[2026-11-12T15:56:25] STAGE cthr_R0 DONE {"PASS": true, "want": "OMP_NUM_THREADS=2", "headers": {"p4_R0_s0.log": "# REFE_SIM_HZ=10 OMP_NUM_THREADS=2", "p4_R0_s1.log": "# REFE_SIM_HZ=10 OMP_NUM_THREADS=2"}}
+[2026-11-12T15:56:25] STAGE ctl_R0 DONE {"n": 240, "max_abs_m": 0.0, "max_abs_heading_rad": 0.0, "n_over_bar": 0}
+[2026-11-12T15:56:26] start job 0 (free virt 26460 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_a1\w\pk\eval\run_p4.py --log F:\tanitad_scratch\tfn2_nt\run_a1\logs\p4_RJ5_s0.log --hz 10 --threads 2 --script tfn2_nt_roll.py -- --arm RJ5 --shard 0/2 --out-dir F:\tanitad_scratch\tfn2_nt\run_a1\rolls\RJ5
+[2026-11-12T15:56:46] start job 1 (free virt 25082 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_a1\w\pk\eval\run_p4.py --log F:\tanitad_scratch\tfn2_nt\run_a1\logs\p4_RJ5_s1.log --hz 10 --threads 2 --script tfn2_nt_roll.py -- --arm RJ5 --shard 1/2 --out-dir F:\tanitad_scratch\tfn2_nt\run_a1\rolls\RJ5
+[2026-11-12T18:27:57] job 1 rc 0
+[2026-11-12T18:30:12] job 0 rc 0
+[2026-11-12T18:30:32] STAGE roll_RJ5 DONE {"rcs": [0, 0], "ok_rows": 12146, "error_rows": 0, "missing": 0, "wrong_knob_rows": 0, "seconds": 9247, "ok": true}
+[2026-11-12T18:30:32] start job 0 (free virt 26711 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_a1\n2\tfn2_nt_build.py derive --w F:\tanitad_scratch\tfn2_nt\run_a1\w --rolls F:\tanitad_scratch\tfn2_nt\run_a1\rolls\RJ5\rows_s*of*.jsonl --bank F:\tanitad_scratch\tfn2_nt\run_a1\inputs\rollouts\rows_s*of4.jsonl.xz --
+[2026-11-12T18:30:53] start job 1 (free virt 26748 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_a1\n2\tfn2_nt_build.py derive --w F:\tanitad_scratch\tfn2_nt\run_a1\w --rolls F:\tanitad_scratch\tfn2_nt\run_a1\rolls\RJ5\rows_s*of*.jsonl --bank F:\tanitad_scratch\tfn2_nt\run_a1\inputs\rollouts\rows_s*of4.jsonl.xz --
+[2026-11-12T19:22:45] job 1 rc 0
+[2026-11-12T19:24:00] job 0 rc 0
+[2026-11-12T19:24:33] STAGE build DONE {"derive_rcs": [0, 0], "merge_rc": 0, "controls": {"C-BUILD-COV": true, "C-BUILD-BANK-IS-SEAM": true, "C-BUILD-RJ5-COVERS": true}, "timing": {"n": 12146, "t_s_mean": 0.5160344146220979, "t_s_median": 0.488, "cpu_h_sum": 1.741042777777778, "note": "per-token derivation (2 x iterate20 + P5-R), excluding the scenario build"}}
+[2026-11-12T19:24:34] start job 0 (free virt 26745 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_a1\w\pk\eval\score_p4_a1.py --label refe_tfn2_t --seam F:\tanitad_scratch\tfn2_nt\run_a1\inputs/refe_p4_teacher_navtest.npz --tokens all --log-dir F:\tanitad_scratch\tfn2_nt\run_a1\logs --score-root F:\tanitad_scratch\
+[2026-11-12T19:37:24] job 0 rc 1
+[2026-11-12T19:37:39] score ['T'] attempt 1: pending ['T']
+[2026-11-12T19:37:39] start job 0 (free virt 26169 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_a1\w\pk\eval\score_p4_a1.py --label refe_tfn2_t --seam F:\tanitad_scratch\tfn2_nt\run_a1\inputs/refe_p4_teacher_navtest.npz --tokens all --log-dir F:\tanitad_scratch\tfn2_nt\run_a1\logs --score-root F:\tanitad_scratch\
+[2026-11-12T19:50:30] job 0 rc 1
+[2026-11-12T19:50:45] score ['T'] attempt 2: pending ['T']
+[2026-11-12T19:50:45] STAGE score_T FAIL {"pending": ["T"], "status": null, "csv_tokens": 0, "want": 12146}
+[2026-11-12T19:50:45] ZZN2_CHAIN STOP
+[2026-11-12T19:56:56] guards PASS: {"card": "e51af7424dc2", "k": 44, "pins": 938}
+ZZN2 GUARDS PASS
+[2026-11-12T19:57:17] guards PASS: {"card": "e51af7424dc2", "k": 44, "pins": 938}
+[2026-11-12T19:57:19] banked rollouts: 12146 ok rows; population 12146; R0 subset 240; root F:\tanitad_scratch\tfn2_nt\run_a1
+[2026-11-12T19:57:19] start job 0 (free virt 26171 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_a1\w\pk\eval\score_p4_a1.py --label refe_tfn2_t --seam F:\tanitad_scratch\tfn2_nt\run_a1\inputs/refe_p4_teacher_navtest.npz --tokens all --log-dir F:\tanitad_scratch\tfn2_nt\run_a1\logs --score-root F:\tanitad_scratch\
+[2026-11-12T20:30:55] job 0 rc 0
+[2026-11-12T20:31:10] score ['T'] attempt 1: pending []
+[2026-11-12T20:31:10] STAGE score_T DONE {"pending": [], "status": "PASS", "csv_tokens": 12146, "want": 12146}
+[2026-11-12T20:31:11] STAGE cidh DONE {"tokens_over_tol": 0, "token_set_mismatch": 0, "tokens_rescored": 12146}
+[2026-11-12T20:31:12] start job 0 (free virt 22709 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_a1\w\pk\eval\score_p4_a1.py --label refe_tfn2_idc --seam F:\tanitad_scratch\tfn2_nt\run_a1\build/out/refe_tfn2_n1c_sub200.npz --tokens F:\tanitad_scratch\tfn2_nt\run_a1\build/out/cidc_tokens.json --log-dir F:\tanitad_s
+[2026-11-12T20:33:47] job 0 rc 0
+[2026-11-12T20:34:02] score ['I'] attempt 1: pending []
+[2026-11-12T20:34:02] STAGE cidc DONE {"tokens_over_tol": 0, "token_set_mismatch": 0, "tokens_rescored": 200}
+[2026-11-12T20:34:05] start job 0 (free virt 21737 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_a1\w\pk\eval\score_p4_a1.py --label refe_tfn2_n2r --seam F:\tanitad_scratch\tfn2_nt\run_a1\build/out/refe_tfn2_n2r.npz --tokens all --log-dir F:\tanitad_scratch\tfn2_nt\run_a1\logs --score-root F:\tanitad_scratch\tfn2_
+[2026-11-12T20:34:26] start job 1 (free virt 24006 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_a1\w\pk\eval\score_p4_a1.py --label refe_tfn2_n2c --seam F:\tanitad_scratch\tfn2_nt\run_a1\build/out/refe_tfn2_n2c.npz --tokens all --log-dir F:\tanitad_scratch\tfn2_nt\run_a1\logs --score-root F:\tanitad_scratch\tfn2_
+[2026-11-12T21:33:33] job 0 rc 0
+[2026-11-12T21:33:33] job 1 rc 0
+[2026-11-12T21:33:48] score ['R', 'C'] attempt 1: pending []
+[2026-11-12T21:33:49] waiting: FreeVirtualMemory 9608 MB <= 10240 MB
+[2026-11-12T21:34:50] waiting: FreeVirtualMemory 6773 MB <= 10240 MB
+[2026-11-12T21:35:52] waiting: FreeVirtualMemory 4752 MB <= 10240 MB
+[2026-11-12T21:36:53] waiting: FreeVirtualMemory 7878 MB <= 10240 MB
+[2026-11-12T21:37:55] waiting: FreeVirtualMemory 8242 MB <= 10240 MB
+[2026-11-12T21:38:56] waiting: FreeVirtualMemory 6700 MB <= 10240 MB
+[2026-11-12T21:39:57] waiting: FreeVirtualMemory 2549 MB <= 10240 MB
+[2026-11-12T21:40:58] waiting: FreeVirtualMemory 4482 MB <= 10240 MB
+[2026-11-12T21:41:59] waiting: FreeVirtualMemory 6197 MB <= 10240 MB
+[2026-11-12T21:43:00] start job 0 (free virt 10428 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_a1\w\pk\eval\score_p4_a1.py --label refe_tfn2_n2w --seam F:\tanitad_scratch\tfn2_nt\run_a1\build/out/refe_tfn2_n2w.npz --tokens all --log-dir F:\tanitad_scratch\tfn2_nt\run_a1\logs --score-root F:\tanitad_scratch\tfn2_
+[2026-11-12T22:29:37] job 0 rc 0
+[2026-11-12T22:29:52] score ['W'] attempt 1: pending []
+[2026-11-12T22:29:52] STAGE score_N2 DONE {"pending": []}
+[2026-11-12T22:30:15] STAGE read DONE {"rc": 0, "log": "F:\\tanitad_scratch\\tfn2_nt\\run_a1\\out\\read.log"}
+[2026-11-12T22:30:15] start job 0 (free virt 20862 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_a1\w\pk\eval\instruments\transp_score.py --refe F:\tanitad_scratch\tfn2_nt\run_a1\w\pk\refe --split navtest --token-log F:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz --plans N2R=F:\tanitad_
+[2026-11-12T22:30:35] start job 1 (free virt 20334 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_a1\w\pk\eval\instruments\transp_score.py --refe F:\tanitad_scratch\tfn2_nt\run_a1\w\pk\refe --split navtest --token-log F:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz --plans N2R=F:\tanitad_
