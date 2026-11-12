@@ -16,7 +16,7 @@ NEW file (refcv9 E2-ROLL, 2026-11-04).  Existing files are NOT edited.  Three di
         ``configure_env()`` time), so the ``r8_repoint.py:42`` one-line edit is NOT needed for this entry point.
   (iv)  THOR GPU GATE (FIXED 2026-11-12) -- on Jetson Thor ``gpu_gate.gate`` is replaced, the moment the battery imports it, by ``thor_gate_factory``: the
         dev-box gate reads memory.used (Thor: "[N/A]") and free RAM through powershell.exe, so on Thor it can only WAIT (see the THOR_MARKER block).
-  (v)   ABLATE (2026-11-12) -- env ``R9E2_ABLATE`` = ``r9_map_chan_zero`` | ``r9_box_tok_zero`` rolls the checkpoint with ONE refcv9 planner-wire knockout.  It is
+  (v)   ABLATE (2026-11-12) -- env ``R9E2_ABLATE`` = ``r9_map_chan_zero`` | ``r9_box_tok_zero`` | ``r9_drv_critic_zero`` rolls the checkpoint with ONE refcv9 planner-wire knockout.  It is
         applied ONCE to the RAW model at the Stager's FIRST stage call (before the first forward) by ``refcv3_arm.apply_r9_wire_knockout`` -- the SAME function
         ``refcv3_arm.apply_ablations`` calls (one implementation; the tool is loaded by file path from ``<read tree>/taniteval/tools``, or ``R9E2_ARM_TOOL``).
         Unknown name / a model without the wire => REFUSED.  The record lands in the census (``r9e2_stage.ablation``, incl. ``INERT``).  The PARENT refuses when
@@ -102,9 +102,10 @@ def item_batch(item, n):
 
 # ---- ablation (R9E2_ABLATE) ----------------------------------------------------------------------------------------------------------- #
 ABLATE_ENV = "R9E2_ABLATE"
-#: the tag must carry the knockout's short token (r9_map_chan_zero -> "mapzero"/"map_chan_zero"; r9_box_tok_zero -> "boxzero"/"box_tok_zero") or the full name
+#: the tag must carry the knockout's short token (r9_map_chan_zero -> "mapzero"/"map_chan_zero"; r9_box_tok_zero -> "boxzero"/"box_tok_zero"; r9_drv_critic_zero -> "drvzero"/"drv_critic_zero") or the full name
 ABLATE_TAG_TOKENS = {"r9_map_chan_zero": ("r9_map_chan_zero", "map_chan_zero", "mapzero"),
-                     "r9_box_tok_zero": ("r9_box_tok_zero", "box_tok_zero", "boxzero")}
+                     "r9_box_tok_zero": ("r9_box_tok_zero", "box_tok_zero", "boxzero"),
+                     "r9_drv_critic_zero": ("r9_drv_critic_zero", "drv_critic_zero", "drvzero")}
 
 
 def load_arm_tool(path=None):

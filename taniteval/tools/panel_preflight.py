@@ -44,7 +44,7 @@ REPO = os.path.dirname(os.path.dirname(HERE))
 NEW_ENUM = ("gstr_zero", "gstr_shuffle", "e7_off", "e9_off", "h19_off",
             "ego_zero", "sel_refined", "frames_blind")
 #: refcv9 planner-wire knockouts: registered, but not PREREG_REFCV4B section-3 rows.
-R9_WIRE_ENUM = ("r9_map_chan_zero", "r9_box_tok_zero")
+R9_WIRE_ENUM = ("r9_map_chan_zero", "r9_box_tok_zero", "r9_drv_critic_zero")
 
 results = []
 

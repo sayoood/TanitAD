@@ -204,3 +204,68 @@ def test_each_ablation_leaves_the_other_wire_alone():
     _open_box(on)
     _ablate(on, cfg, MAP)                       # map off, box still open
     assert _moved(_ev(on, batch), _ev(off, batch), ignore=(COUNTER,)), "map ablation also killed W-BOX"
+
+
+# --------------------------------------------------------------------------- #
+# r9_drv_critic_zero (the refcv8 drivable critic's selection weight)           #
+# --------------------------------------------------------------------------- #
+DRV = "r9_drv_critic_zero"
+
+
+class _DrvStandIn(torch.nn.Module):
+    """Stand-in carrying a REAL DrivableCritic as `r8_drv` (the only thing the knockout reads)."""
+
+    def __init__(self, w=0.21958, with_critic=True):
+        super().__init__()
+        if with_critic:
+            from tanitad.refs import refcv8_conditioning as r8c
+            self.r8_drv = r8c.DrivableCritic()
+            with torch.no_grad():
+                self.r8_drv.w.fill_(w)
+
+
+def test_drv_registry_entry_and_enumeration():
+    spec = rc.ABLATIONS[DRV]
+    for key in ("prereg_arm", "mechanism", "seen_in_training", "tests", "applies_at", "requires"):
+        assert spec.get(key), DRV + " carries no " + key
+    assert spec["prereg_arm"] == "R9-DRV-OFF" and spec["applies_at"] == "model"
+    assert rc.R9_WIRE_KNOCKOUTS == (MAP, BOX, DRV)
+    with pytest.raises(SystemExit) as ei:
+        rc.main(["--ablate", DRV, "--action-units", "steer"])
+    assert "--out is required" in str(ei.value)
+
+
+def test_drv_refuses_on_a_model_without_r8_drv():
+    for m in (_DrvStandIn(with_critic=False), RG._rig(attach=False, ns=RG._ns(False, False), critic=False)[1]):    # the second is a REAL model built without the critic
+        with pytest.raises(SystemExit) as ei:
+            rc.apply_r9_wire_knockout(m, DRV)
+        assert "needs a build with" in str(ei.value) and "Refusing" in str(ei.value)
+
+
+def test_drv_zeroes_w_and_records_it():
+    m = _DrvStandIn(0.21958)
+    ev = rc.apply_r9_wire_knockout(m, DRV)
+    assert float(m.r8_drv.w) == 0.0 and ev["w_after"] == 0.0
+    assert abs(ev["w_before"] - 0.21958) < 1e-6 and "INERT" not in ev and "effect" in ev
+
+
+def test_drv_inert_when_w_is_already_zero():
+    m = _DrvStandIn(0.0)
+    ev = rc.apply_r9_wire_knockout(m, DRV)
+    assert "INERT" in ev and float(m.r8_drv.w) == 0.0
+
+
+def test_drv_analytic_identity_selection_is_the_no_critic_selection():
+    """w == 0 => dterm is exactly zeros for finite inputs => `blended + dterm` is bit-equal to `blended` and the argmax is unchanged."""
+    m = _DrvStandIn(0.21958)
+    g = torch.Generator().manual_seed(0)
+    feat = torch.rand(3, 7, m.r8_drv.n_feats, generator=g)
+    paths = torch.randn(3, 7, 12, 2, generator=g) * 10.0
+    blended = torch.randn(3, 7, generator=g)
+    _, dterm_on = m.r8_drv(feat, paths)
+    assert not torch.equal(blended + dterm_on, blended)          # the critic term is live before the knockout
+    rc.apply_r9_wire_knockout(m, DRV)
+    _, dterm = m.r8_drv(feat, paths)
+    assert torch.equal(dterm, torch.zeros_like(dterm)) and bool((dterm == 0).all())
+    assert torch.equal(blended + dterm, blended)
+    assert torch.equal((blended + dterm).argmax(1), blended.argmax(1))

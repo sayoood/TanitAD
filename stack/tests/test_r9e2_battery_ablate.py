@@ -208,4 +208,60 @@ def test_one_implementation_apply_ablations_calls_the_shared_function():
     arm = R9.load_arm_tool()
     src = inspect.getsource(arm.apply_ablations)
     assert "apply_r9_wire_knockout" in src
-    assert arm.R9_WIRE_KNOCKOUTS == (MAP, BOX) and set(arm.R9_WIRE_KNOCKOUTS) <= set(arm.ABLATIONS)
+    assert arm.R9_WIRE_KNOCKOUTS == (MAP, BOX, "r9_drv_critic_zero") and set(arm.R9_WIRE_KNOCKOUTS) <= set(arm.ABLATIONS)
+
+
+# --------------------------------------------------------------------------- #
+# r9_drv_critic_zero through the battery                                       #
+# --------------------------------------------------------------------------- #
+DRV = "r9_drv_critic_zero"
+
+
+class _DrvModel(torch.nn.Module):
+    def __init__(self, w=0.21958, with_critic=True):
+        super().__init__()
+        if with_critic:
+            from tanitad.refs import refcv8_conditioning as r8c
+            self.r8_drv = r8c.DrivableCritic()
+            with torch.no_grad():
+                self.r8_drv.w.fill_(w)
+
+
+def test_drv_knockout_applied_once_through_stage_and_lands_in_census():
+    m = _DrvModel()
+    st = _mk(DRV)
+    st.stage(m, _ctx(), torch.zeros(2, 3, 8, 8))
+    rec1 = st.ablation
+    _stage(st, m, 4)
+    assert st.ablation is rec1 and st.n_forwards == 5            # applied exactly once
+    assert float(m.r8_drv.w) == 0.0
+    c = json.loads(json.dumps(st.census()))
+    a = c["ablation"]
+    assert a["requested"] == DRV and a["applied"]["name"] == DRV
+    rec = a["applied"]["record"]
+    assert abs(rec["w_before"] - 0.21958) < 1e-6 and rec["w_after"] == 0.0 and "INERT" not in rec
+
+
+def test_drv_zero_w_is_recorded_INERT():
+    st = _mk(DRV)
+    _stage(st, _DrvModel(0.0), 1)
+    assert "INERT" in st.ablation["record"]
+
+
+def test_drv_model_without_critic_refuses_at_the_first_stage():
+    with pytest.raises(SystemExit) as ei:
+        _mk(DRV).stage(_DrvModel(with_critic=False), _ctx(), torch.zeros(2, 3, 8, 8))
+    assert "needs a build with" in str(ei.value) and "Refusing" in str(ei.value)
+    off = RG._rig(attach=False, ns=RG._ns(False, False), critic=False)[1]
+    with pytest.raises(SystemExit):
+        _mk(DRV).stage(off, _ctx(), torch.zeros(2, 3, 8, 8))
+
+
+def test_drv_env_name_accepted_and_tag_guard():
+    assert R9.ablate_from_env({R9.ABLATE_ENV: DRV}) == DRV
+    for tag in ("E2_K2abl_drvzero_pf", "E2_K2abl_drv_critic_zero_pf"):
+        R9.ablate_tag_ok(DRV, tag)
+    for tag in ("E2_K2_pf", "E2_K2abl_mapzero_pf", None, ""):
+        with pytest.raises(SystemExit) as ei:
+            R9.ablate_tag_ok(DRV, tag)
+        assert "baseline tag" in str(ei.value)

@@ -68,7 +68,7 @@ PREREG_SECTION_3_ARMS = {
 }
 #: refcv9 planner-wire knockouts (2026-11-12): registered in ABLATIONS but NOT §3 rows (zero-training diagnosis of arm K2).
 #: Pinned by taniteval/tests/test_refcv3_arm_r9_wire_ablations.py.
-R9_WIRE_ABLATION_ARMS = {"R9-MAP2-OFF", "R9-BOX-OFF"}
+R9_WIRE_ABLATION_ARMS = {"R9-MAP2-OFF", "R9-BOX-OFF", "R9-DRV-OFF"}
 
 
 # --------------------------------------------------------------------------- #

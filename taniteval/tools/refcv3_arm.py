@@ -556,6 +556,17 @@ ABLATIONS = {
         "applies_at": "model",
         "requires": "a build with --r9-plan-box-tokens (core.box_tok_r9 and the box_gate parameters exist); REFUSED otherwise",
     },
+    "r9_drv_critic_zero": {
+        "prereg_arm": "R9-DRV-OFF",
+        "mechanism": ("the refcv8 drivable critic's selection weight `model.r8_drv.w` set to exactly 0.0 in place. refc_v3.py adds "
+                      "`blended = blended + _dterm` with `_dterm = w * logsigmoid(logit)` to every candidate's score before the "
+                      "argmax, so w == 0 makes `_dterm` exactly zero for finite logits and the selection is bit-for-bit the "
+                      "no-critic selection (the critic MLP still runs; `r8_drv_logit` is read only by the training loss)"),
+        "seen_in_training": "w trained from its zero init by the selection losses",
+        "tests": "the drivable-critic term added to every candidate's selection score is used (a source of lateral jitter)",
+        "applies_at": "model",
+        "requires": "a build with --r8-critic-drivable (model.r8_drv exists); REFUSED otherwise",
+    },
 }
 #: The four §3 rows that ALREADY had a route before Rung A1, so the completeness
 #: test can assert a bijection with §3's twelve rather than only with the eight.
@@ -1576,7 +1587,7 @@ def _make_hook_no_e7(orig):
     return _hook_no_e7
 
 
-R9_WIRE_KNOCKOUTS = ("r9_map_chan_zero", "r9_box_tok_zero")
+R9_WIRE_KNOCKOUTS = ("r9_map_chan_zero", "r9_box_tok_zero", "r9_drv_critic_zero")
 
 
 def apply_r9_wire_knockout(model, n: str) -> dict:
@@ -1619,6 +1630,22 @@ def apply_r9_wire_knockout(model, n: str) -> dict:
             _p(f"  ⛔ ablation r9_box_tok_zero is INERT: {ev['INERT']}")
         ev["effect"] = (f"{len(gates)} box_gate(s) := 0.0, so gated_mix / the tactical mix return the agents-only "
                         f"attention bit-for-bit")
+    elif n == "r9_drv_critic_zero":
+        drv = getattr(model, "r8_drv", None)
+        if drv is None:
+            raise SystemExit(
+                "[refcv3_arm] ablation 'r9_drv_critic_zero' needs a build with the drivable critic "
+                "(--r8-critic-drivable): this model has no `r8_drv`, so there is no selection term to switch off. "
+                "Refusing rather than reporting an unchanged arm as a knockout.")
+        ev["w_before"] = float(drv.w.detach().reshape(-1)[0])
+        with torch.no_grad():
+            drv.w.zero_()
+        ev["w_after"] = 0.0
+        if ev["w_before"] == 0.0:
+            ev["INERT"] = ("r8_drv.w was ALREADY exactly 0.0 (the zero-init never opened), so the drivable critic "
+                           "contributed nothing to this checkpoint and the knockout cannot change the forward")
+            _p(f"  ⛔ ablation r9_drv_critic_zero is INERT: {ev['INERT']}")
+        ev["effect"] = ("r8_drv.w := 0.0, so `blended + _dterm` adds exactly zero and the argmax is the no-critic selection")
     else:
         raise SystemExit(f"[refcv3_arm] {n!r} is not an r9 wire knockout {R9_WIRE_KNOCKOUTS}")
     return ev
