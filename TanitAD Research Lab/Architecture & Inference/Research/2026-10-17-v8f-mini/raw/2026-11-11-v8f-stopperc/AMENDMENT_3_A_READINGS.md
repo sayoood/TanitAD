@@ -51,3 +51,10 @@
 * Head: two MLP(d, d, 1); per-token cell logits on the 40 NOW-frame tokens, presence on their mean. Loss 1:1. Label from the NOW row.
 * No offset (the rest point is the ego pose origin at z = 0). Cell = floor(px / 64), 4x10 only.
 * W = goal / stop_aux at step 0 from the G-LIVE probe. Checkpoint cfg written only when on. The probe refuses a batch with no in-view rest point.
+
+## 4. The NULL reuse test reads model tensors, not the file sha256 (added 2026-11-12, before any stage-1 run)
+* The card (§5) reuses BAL-NULL_s1 and BAL-NULL_rep if NULL_s0's checkpoint sha256 equals BAL-NULL_s0's.
+* The whole file cannot be equal by construction. `ckpt_last.pt` embeds `argv_sha`, and the argv holds `--out`. NULL_s0 cannot share BAL-NULL_s0's `--out`: the trainer would resume from BAL-NULL_s0's checkpoint in that folder.
+* **Reading:** the reuse test is **bit-identity of every model tensor**, compared against BAL-NULL_s0's banked checkpoint. That checkpoint is pinned by its file sha256 `5169ea9554bf74004f801b2d594358355363ba47fe07aa8cac052d1da9aa2fdf` (`C:/Users/Admin/t2v8f_pulls/stopbal_BAL-NULL_s0/BANK_MANIFEST.json`).
+* Both file sha256s are recorded beside the result (`stage1_A/box2/stopperc_check.py reuse`). EQUAL ⇒ reuse BAL-NULL_s1 / _rep. DIFFERS ⇒ the chain runs NULL_s1 and NULL_rep (+80 min ESTIMATED).
+* This keeps the card's intent (the same training run, bit for bit) and changes only the object compared.
