@@ -66,6 +66,9 @@ PREREG_SECTION_3_ARMS = {
     "g_str-SHUFFLE", "E7-OFF", "E9-OFF", "H19-OFF", "EGO-ZERO", "SEL-REFINED",
     "DELIBERATE REGRESSION",
 }
+#: refcv9 planner-wire knockouts (2026-11-12): registered in ABLATIONS but NOT §3 rows (zero-training diagnosis of arm K2).
+#: Pinned by taniteval/tests/test_refcv3_arm_r9_wire_ablations.py.
+R9_WIRE_ABLATION_ARMS = {"R9-MAP2-OFF", "R9-BOX-OFF"}
 
 
 # --------------------------------------------------------------------------- #
@@ -163,7 +166,7 @@ def live(tmp_path_factory):
 # (1) completeness — every pre-registered ablation has a route                 #
 # =========================================================================== #
 def test_the_registry_is_a_bijection_with_the_prereg_twelve():
-    covered = {s["prereg_arm"] for s in rc.ABLATIONS.values()}
+    covered = {s["prereg_arm"] for s in rc.ABLATIONS.values()} - R9_WIRE_ABLATION_ARMS
     covered |= set(rc.ABLATIONS_PREEXISTING)
     assert covered == PREREG_SECTION_3_ARMS, (
         f"missing a route for {sorted(PREREG_SECTION_3_ARMS - covered)}; "

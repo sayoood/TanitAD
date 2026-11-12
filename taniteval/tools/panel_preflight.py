@@ -43,6 +43,8 @@ REPO = os.path.dirname(os.path.dirname(HERE))
 #: none) had CLI flags already, so they are deliberately not in the enum.
 NEW_ENUM = ("gstr_zero", "gstr_shuffle", "e7_off", "e9_off", "h19_off",
             "ego_zero", "sel_refined", "frames_blind")
+#: refcv9 planner-wire knockouts: registered, but not PREREG_REFCV4B section-3 rows.
+R9_WIRE_ENUM = ("r9_map_chan_zero", "r9_box_tok_zero")
 
 results = []
 
@@ -123,7 +125,7 @@ def check_ablation_bijection():
         record("ablation bijection with the PREREG", None, "ABLATIONS not found")
         return
     missing = [a for a in NEW_ENUM if a not in keys]
-    extra = [k for k in keys if k not in NEW_ENUM]
+    extra = [k for k in keys if k not in NEW_ENUM and k not in R9_WIRE_ENUM]
     record("ablation bijection with the PREREG", not missing and not extra,
            "%d enum arms; missing=%s; unregistered=%s"
            % (len(keys), missing or "none", extra or "none"))

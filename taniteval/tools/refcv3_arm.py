@@ -530,6 +530,32 @@ ABLATIONS = {
         "applies_at": "call-site",
         "requires": "nothing",
     },
+    # ---- refcv9 planner-wire knockouts (NOT PREREG_REFCV4B §3 rows; a zero-training diagnosis of arm K2) ----
+    "r9_map_chan_zero": {
+        "prereg_arm": "R9-MAP2-OFF",
+        "mechanism": ("forward hook on `_perception.bev_pool.map_chan_proj` (the zero-init 1x1 of W-MAP-2, "
+                      "`--r9-plan-map-channels`) returning zeros of the output's shape, so refcv6_perception_branch.py:357 "
+                      "`out = out + self.map_chan_proj(map_chan)` adds exactly 0 and the planner BEV pool output is the "
+                      "map-channel-free value, as if the wire were not built (the channels are still computed and exported "
+                      "as `map_chan_1m`; no consumer reads them but this add)"),
+        "seen_in_training": "at init only (zero-init projection)",
+        "tests": "the detached 1 m map channels added to the planner's BEV are used (and are a source of lateral noise)",
+        "applies_at": "model",
+        "requires": "a build with --r9-plan-map-channels (bev_pool.map_chan_proj exists); REFUSED on any other build",
+    },
+    "r9_box_tok_zero": {
+        "prereg_arm": "R9-BOX-OFF",
+        "mechanism": ("every `box_gate` (each planner decoder layer with cross_agent, and each tactical-decoder layer) set to "
+                      "exactly 0.0 in place. The W-BOX mix is `a_only + g * (full - a_only)` (plan_wires_r9.gated_mix; "
+                      "refcv6_tactical.py:414), so g == 0 returns the agents-only attention bit-for-bit: the box tokens are "
+                      "still built and appended but contribute exactly nothing, which is the no-wire path (both branches are "
+                      "finite). Chosen over zeroing the tokens because a zeroed token still sits in the softmax key set and "
+                      "would dilute the attention; gate 0 removes it from the output exactly. Same device as `e9_off`"),
+        "seen_in_training": "at init only (zero-init gates)",
+        "tests": "the box tokens appended to the planner's and tactical decoder's agent set are used",
+        "applies_at": "model",
+        "requires": "a build with --r9-plan-box-tokens (core.box_tok_r9 and the box_gate parameters exist); REFUSED otherwise",
+    },
 }
 #: The four §3 rows that ALREADY had a route before Rung A1, so the completeness
 #: test can assert a bijection with §3's twelve rather than only with the eight.
@@ -1557,6 +1583,7 @@ def apply_ablations(model, cfg, names, *, steps: int, feed_ego: bool,
     ⛔ EVERY precondition is checked and REFUSED loudly. A flag that parses and
     changes nothing is worse than a missing one: it produces a table that reads
     like a knockout and is a copy of the FULL arm."""
+    import torch
     state = AblationState()
     state.names = list(names)
     per: dict = {}
@@ -1662,6 +1689,40 @@ def apply_ablations(model, cfg, names, *, steps: int, feed_ego: bool,
                             "at the core (which is how refc.py derives keep=0 "
                             "there); the model-free controls keep the MEASURED "
                             "v0 and must stay bit-identical across ablations")
+        elif n == "r9_map_chan_zero":
+            pool = getattr(getattr(model, "_perception", None), "bev_pool", None)
+            mcp = getattr(pool, "map_chan_proj", None)
+            if mcp is None:
+                raise SystemExit(
+                    "[refcv3_arm] ablation 'r9_map_chan_zero' needs a build with W-MAP-2 "
+                    "(--r9-plan-map-channels): this model has no `_perception.bev_pool.map_chan_proj`, so there is no "
+                    "wire to switch off. Refusing rather than reporting an unchanged arm as a knockout.")
+            ev["weight_abs_sum_before"] = float(sum(p.detach().abs().sum() for p in mcp.parameters()))
+            if ev["weight_abs_sum_before"] == 0.0:
+                ev["INERT"] = ("the projection is still exactly at its zero init, so the wire contributed nothing to "
+                               "this checkpoint and the knockout cannot change the forward")
+                _p(f"  ⛔ ablation r9_map_chan_zero is INERT: {ev['INERT']}")
+            mcp.register_forward_hook(lambda _m, _i, out: torch.zeros_like(out))
+            ev["effect"] = ("map_chan_proj output := 0 (refcv6_perception_branch.py:357 adds exactly zero to the pooled BEV)")
+        elif n == "r9_box_tok_zero":
+            core = getattr(model, "core", None)
+            gates = sorted((nm, p) for nm, p in model.named_parameters() if nm.rsplit(".", 1)[-1] == "box_gate")
+            if getattr(core, "box_tok_r9", None) is None or not gates:
+                raise SystemExit(
+                    "[refcv3_arm] ablation 'r9_box_tok_zero' needs a build with W-BOX (--r9-plan-box-tokens): this model "
+                    "has no `core.box_tok_r9` / `box_gate` parameter, so there is no wire to switch off. Refusing rather "
+                    "than reporting an unchanged arm as a knockout.")
+            ev["gates_before"] = {nm: float(p.detach().reshape(-1)[0]) for nm, p in gates}
+            with torch.no_grad():
+                for _nm, p in gates:
+                    p.zero_()
+            ev["gates_after"] = {nm: 0.0 for nm, _ in gates}
+            if all(v == 0.0 for v in ev["gates_before"].values()):
+                ev["INERT"] = ("every box_gate was ALREADY exactly 0.0 (the zero-init never opened), so W-BOX contributed "
+                               "nothing to this checkpoint and the knockout cannot change the forward")
+                _p(f"  ⛔ ablation r9_box_tok_zero is INERT: {ev['INERT']}")
+            ev["effect"] = (f"{len(gates)} box_gate(s) := 0.0, so gated_mix / the tactical mix return the agents-only "
+                            f"attention bit-for-bit")
         elif n == "frames_blind":
             state.frames_blind = True
             ev["effect"] = ("frames := their own scalar mean; ha / ha0 / "
