@@ -258,6 +258,11 @@ def data_paths():
     return {"v9_labels_train": g("--v9-train"), "lead_train": g("--lead-train"), "speed_train": g("--speed-train"), "join_train": g("--join-train"), "p10_prior": g("--p10"), "native_tracks": g("--tracks")}
 
 
+def bal_pin():
+    """the pinned BAL-NULL_s0 checkpoint sha256. TEST HOOK (dry run only): STOPPERC_TEST_BAL_SHA replaces it ONLY while STOPBAL_ROOT (the base's fake-box switch) is set; a real launch sets neither."""
+    return os.environ.get("STOPPERC_TEST_BAL_SHA") if B.fake() and os.environ.get("STOPPERC_TEST_BAL_SHA") else BAL_NULL_S0_CKPT_SHA256
+
+
 def cmd_reuse(a):
     """the card's NULL reuse rule on the dev box: NULL_s0's model tensors against BAL-NULL_s0's (the checkpoint embeds argv_sha, which holds --out, so a whole-file sha256 cannot match by construction; both are recorded).
     EQUAL -> BAL-NULL_s1 / BAL-NULL_rep are reused and the conditional arms stay blocked. DIFFERS -> set STOPPERC_NULL_REUSE_FAILED=1 for the conditional NULL_s1 / NULL_rep. Always writes --out."""
@@ -268,11 +273,11 @@ def cmd_reuse(a):
     res = {"schema": "stopperc-null-reuse-v1", "at": B.now(), "ckpt": ck, "bal_ckpt": bal, "bal_pinned_sha256": BAL_NULL_S0_CKPT_SHA256}
     if not (os.path.isfile(ck) and os.path.isfile(bal)):
         res.update(status="not-computed", null_reuse="UNKNOWN", reason="a checkpoint is missing")
-    elif B.sha_file(bal) != BAL_NULL_S0_CKPT_SHA256:
-        res.update(status="not-computed", null_reuse="UNKNOWN", reason=f"{bal} does not hash to the pinned BAL-NULL_s0 checkpoint {BAL_NULL_S0_CKPT_SHA256}")
+    elif B.sha_file(bal) != bal_pin():
+        res.update(status="not-computed", null_reuse="UNKNOWN", reason=f"{bal} does not hash to the pinned BAL-NULL_s0 checkpoint {bal_pin()}")
     else:
         eq_, det = B.tensor_parity(ck, bal)
-        res.update(status="computed", ckpt_sha256=B.sha_file(ck), file_sha_equal=B.sha_file(ck) == BAL_NULL_S0_CKPT_SHA256, tensor_equal=eq_, tensor_detail=det, null_reuse="EQUAL" if eq_ else "DIFFERS")
+        res.update(status="computed", ckpt_sha256=B.sha_file(ck), file_sha_equal=B.sha_file(ck) == bal_pin(), tensor_equal=eq_, tensor_detail=det, null_reuse="EQUAL" if eq_ else "DIFFERS")
     B.write_text(out, json.dumps(res, indent=1))
     print(f"NULL-REUSE {res['null_reuse']} ({res['status']})")
     return 0 if res["status"] == "computed" else 2

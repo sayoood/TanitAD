@@ -8,6 +8,7 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; HERE="$(cygpath -m "$HERE" 2>/dev/null || echo "$HERE")"
 COMMIT="3e264bbf3fa2f6f17bea448de09aa972faaf7725"
+[ "${STOPPERC_DRY:-0}" = 1 ] && [ -n "${STOPPERC_TEST_COMMIT:-}" ] && COMMIT="$STOPPERC_TEST_COMMIT"      # TEST HOOK (dry run only: stub transport + STOPPERC_DRY=1): a throw-away repo cannot carry the code-of-record sha; a real launch never sets STOPPERC_DRY
 TABLE_SHA="77b6e8dc63d07d90548d09182fd5b8073e81079e224e8ce672dda11d2c3ae361"; TABLE_DEV="${STOPPERC_TABLE_DEV:-C:/Users/Admin/stopaux_extr/stopaux_extr_join4572.json}"
 WSCRIPT_SHA="064baba6e7385ee1df475e9e3206eb5cf74360bf6b3c8d3637823ba27bd4de63"      # stack/scripts/stop_aux_w_from_smoke.py at the commit (MEASURED on the export)
 BASE_CHECK_SHA="70e260a697a6e3e23b33a37e6781e34ef4d482bd80b5e70d0e3964c19a8e5212"   # theory/stopbal/box2/stopbal_check.py, shipped unchanged beside stopperc_check.py
@@ -82,6 +83,7 @@ wsmoke_stage() {      # A_s0 selfcheck-only at W 1.0 on box 2; W = goal / stop_a
   [ "$(sha256sum "$STATE/wscript/stop_aux_w_from_smoke.py" | cut -d' ' -f1)" = "$WSCRIPT_SHA" ] || die 16 "the W script differs from the pinned one"
   local W; W="$("$PYV" -I "$STATE/wscript/stop_aux_w_from_smoke.py" --selfcheck "$R/selfcheck.json" --digits 4)" || die 20 "the W script refused the smoke selfcheck"
   W="$(echo "$W" | tr -d '\r\n ')"; echo "$W" | grep -Eq '^[0-9]+\.[0-9]{4}$' || die 20 "W '$W' is not a 4-decimal number"
+  "$PYV" -I -c "import sys; sys.exit(0 if float(sys.argv[1]) > 0.0 else 1)" "$W" || die 20 "W '$W' is not positive (the A argv would be refused at A_s0, after two NULL runs)"
   echo "$W" > "$STATE/W.txt"; log "W = $W (goal / stop_aux at step 0, probe_n_pos in $R/selfcheck.json)"
 }
 
