@@ -912,6 +912,13 @@ sym_x = [np.stack([np.linspace(2, 38, 20), rng.uniform(-1, 1, 20)], 1) for _ in 
 rj = VP.judge_g20(VP.alignment_probe(sym, sym_x, shifted))
 assert any("y-flipped" in r for r in rj), rj
 assert any("one-frame-shifted" in r for r in VP.judge_g20(VP.alignment_probe(labs, xys, labs))), "a shift mutant that reads the same label passes: refused"
+# A4 (PREREG_VDAC_P6_A4): the pod's MEASURED real-frame readings (S1a HA-s0 preflight 2026-11-12: real 1.0, y-flip 0.9572, shift 0.9582) must be judged
+# discriminative at the card's bar, and the old 0.95 bar must be the one that could not see the mutants.
+assert VP.BAR == 0.99, "PREREG_VDAC_P6_A4: G20 bar is the banked rate to two nines"
+_pod = {"n_frames": 256, "n_points": 5120, "bar": VP.BAR, "min_frames": 64, "frac_real": 1.0, "frac_yflip": 0.9572265625, "frac_shift1": 0.958203125}
+assert VP.judge_g20(_pod) == [], VP.judge_g20(_pod)
+assert any("MUTANT" in r for r in VP.judge_g20(dict(_pod, bar=0.95))) or any("below the card" in r for r in VP.judge_g20(dict(_pod, bar=0.95))), "0.95 must not pass"
+assert any("lie inside the label" in r for r in VP.judge_g20(dict(_pod, frac_real=0.985))), "a real fraction under the banked rate must be RED"
 assert any("bar" in r for r in VP.judge_g20({**g20, "bar": 0.5}))
 import aux_label_store as ALS  # noqa: E402
 assert ALS.target_probe(labs[0], xys[0]) == VP.points_inside(labs[0], xys[0]), "the store's own QC rule"
@@ -961,7 +968,7 @@ with tempfile.TemporaryDirectory(dir=tmp) as td:
         open(pth, "w", encoding="utf-8", newline="\n").write(json.dumps({"event": "preflight", "verdict": "PASS", "gates": {"G19_vdac_head_disjoint_from_ego_command": g19, "G20_vdac_label_aligned_with_targets": g20}}) + "\n")
         return pth
     good19 = {"inputs": {"ego": [8, 11], "command": [8, 3]}, "head_grad_ego": None, "head_grad_command": None, "control_grad_ego": 0.3, "control_grad_command": 0.1, "mutate": [], "ok": True}
-    good20 = {"n_frames": 200, "n_points": 4000, "bar": 0.95, "min_frames": 64, "frac_real": 0.9999, "frac_yflip": 0.7, "frac_shift1": 0.6, "ok": True, "bank": {"sets": 60000, "distinct_logs": 900, "distinct_frames": 30000}}
+    good20 = {"n_frames": 200, "n_points": 4000, "bar": VP.BAR, "min_frames": 64, "frac_real": 0.9999, "frac_yflip": 0.7, "frac_shift1": 0.6, "ok": True, "bank": {"sets": 60000, "distinct_logs": 900, "distinct_frames": 30000}}
     sn = os.path.join(td, "g.py")
     open(sn, "w", encoding="utf-8", newline="\n").write(g_py)
 
@@ -976,6 +983,6 @@ with tempfile.TemporaryDirectory(dir=tmp) as td:
     open(os.path.join(td, "empty.jsonl"), "w").write(json.dumps({"event": "preflight", "gates": {}}) + "\n")
     r_ = subprocess.run([sys.executable, sn, os.path.join(td, "empty.jsonl"), HERE], capture_output=True, text=True, encoding="utf-8", errors="replace")
     assert r_.returncode != 0 and "NOT proved" in (r_.stderr + r_.stdout)
-print("V11 ok (G19: head grad None/0.0 vs ego and command, control non-zero, the ego-into-head regression RED; G20: >= 64 frames, real >= 0.95, y-flip and one-frame-shift mutants RED; launch gate + chain wiring)")
+print("V11 ok (G19: head grad None/0.0 vs ego and command, control non-zero, the ego-into-head regression RED; G20: >= 64 frames, real >= the bar (0.99, A4), the pod's 0.957/0.958 mutants refused, y-flip and one-frame-shift mutants RED; launch gate + chain wiring)")
 
 print("ZZTEST_PASS")

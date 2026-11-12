@@ -6,8 +6,8 @@ G19  head -> (ego, command) DISJOINTNESS.  The drivable head reads ONE tensor (v
      depend on ego and command) must read non-zero, so a zero from a broken probe cannot pass.  The deliberate regression (REFE_AUX_MUTATE_EGO=1 in scorer_finetune.py) routes the model's ego token
      into the head's context and must turn this RED.
 
-G20  label ALIGNMENT.  On >= 64 real frames, P6's rank-0 target points must lie inside the stored drivable label at the banked rate (the store's own QC read 99.9989 %; the bar is 0.95, card and
-     SPEC_P7).  Two deliberate mutants are scored in the same call and EACH must read BELOW the bar: the label flipped in y, and the lookup shifted by one frame.  A check whose mutants also pass
+G20  label ALIGNMENT.  On >= 64 real frames, P6's rank-0 target points must lie inside the stored drivable label at the banked rate (the store's own QC read 99.9989 %; the bar is 0.99 = that
+     rate to two nines, PREREG_VDAC_P6_A4; it was 0.95, SPEC_P7's bar, and on 256 real frames both mutants read ~0.957 at 0.95).  Two deliberate mutants are scored in the same call and EACH must read BELOW the bar: the label flipped in y, and the lookup shifted by one frame.  A check whose mutants also pass
      cannot see a misaligned label, so it is not accepted.
 
 judge_g19 / judge_g20 re-judge the RAW FIELDS (gate_checks and the launch gate call them); the gate's own `ok` is a claim, never the evidence.
@@ -21,7 +21,7 @@ import torch
 
 # the label geometry (aux_label_store / aux_drivable_head: rear-axle frame, x forward, y left; index [ix, iy]; 0.5 m cells; + inside)
 X0, Y0, RES, NX, NY = -8.0, -32.0, 0.5, 160, 128
-BAR = 0.95
+BAR = 0.99         # PREREG_VDAC_P6_A4 (2026-11-12): the card's 'banked rate' (0.99999) to two nines; 0.95 (SPEC_P7's bar) let both mutants pass on real frames (0.9572 / 0.9582)
 MIN_FRAMES = 64
 MUTATE_EGO_ENV = "REFE_AUX_MUTATE_EGO"
 
