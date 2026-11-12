@@ -1,0 +1,20 @@
+282a283,292
+> def load_cache_parts(root: str, log: str, token: str):
+>     """(pdm_traj, ego, obs, centerline, route_lane_ids, drivable_area_map) exactly as navsim.evaluate.pdm_score reads a MetricCache"""
+>     import lzma
+>     import pickle
+>     p = os.path.join(root, log, "unknown", token, "metric_cache.pkl")
+>     with lzma.open(p, "rb") as fh:
+>         mc = pickle.loads(fh.read())
+>     return (mc.trajectory, mc.ego_state, mc.observation, mc.centerline, mc.route_lane_ids, mc.drivable_area_map)
+> 
+> 
+302a313,316
+>     ap.add_argument("--metric-cache-root", default="",
+>                     help="A1 FIX (WTRANSP_DIAG.md): hand the scorer the HARNESS'S OWN cached PDM-Closed / ego / observation / centerline / lanes / "
+>                          "drivable map (<root>/<log>/unknown/<token>/metric_cache.pkl, lzma pickle) instead of rebuilding them from the nuPlan DB. "
+>                          "Navtest only. With it the tracked arm is harness-identical (1e-12 on 200 tokens); without it ~27 % of tokens differ in EP.")
+354c368
+<                     parts = PT.metric_cache_parts(sc)
+---
+>                     parts = PT.metric_cache_parts(sc) if not a.metric_cache_root else load_cache_parts(a.metric_cache_root, lg, tok)

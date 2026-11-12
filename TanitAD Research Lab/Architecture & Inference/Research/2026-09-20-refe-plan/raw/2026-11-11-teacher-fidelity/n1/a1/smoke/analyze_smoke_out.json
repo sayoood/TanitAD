@@ -1,0 +1,73 @@
+{
+ "prereg": "UNSET (the MM writes the frozen sha256 here)",
+ "rows": [],
+ "n_rows": 200,
+ "n_error_lines": 0,
+ "n_primary": 200,
+ "controls": {
+  "C-COV": {
+   "pass": true,
+   "tokens": 200,
+   "expect": 200,
+   "primary": 200,
+   "expect_primary": 200,
+   "error_lines": 0,
+   "every_arm_on_every_token": true
+  },
+  "C-BUILD": {
+   "pass": false,
+   "why": "no --build-report"
+  },
+  "C-PIN": {
+   "pass": false,
+   "why": "no --pins"
+  },
+  "C-EST": {
+   "pass": true,
+   "proxy_eval_boot": [
+    0.9411952748608624,
+    0.9271482100823475,
+    0.9552372092457672
+   ],
+   "ours": [
+    0.9411952748608624,
+    0.9271482100823475,
+    0.9552372092457674
+   ],
+   "max_abs_dev": 2.220446049250313e-16
+  },
+  "C-ID-H": {
+   "pass": true,
+   "tol": 1e-06,
+   "tokens_compared": 200,
+   "missing_in_reference": 0,
+   "tokens_over_tol": 0,
+   "max_abs_diff": 0.0,
+   "max_abs_diff_by_metric": {
+    "nc": 0.0,
+    "dac": 0.0,
+    "ddc": 0.0,
+    "ep": 0.0,
+    "ttc": 0.0,
+    "c": 0.0,
+    "pdms": 0.0
+   },
+   "pdms_all_tokens_x100": 94.1195,
+   "reference_pdms_all_tokens_x100": 94.1195,
+   "reference": "pkx/eval/raw/e0_human_sub200/refe_e0b_human_sub200.csv"
+  },
+  "C-REG": {
+   "pass": false,
+   "N1W_pdms": 94.1195,
+   "N1T_pdms": 94.1195,
+   "bar": "PDMS(N1W) <= PDMS(N1T) - 10.0"
+  }
+ },
+ "diag_human_vs_banked_harness": {
+  "n": 200,
+  "tokens_over_tol": 0,
+  "max_abs_diff": 0.0,
+  "note": "diagnostic, decides nothing: the banked human seam is NAVSIM's human, the W-TRANSP human arm is the DB's logged future (they differ on the 36 C1 tokens by construction)"
+ },
+ "verdict": "NO VERDICT: a control failed; no N1C / N1M / CERT aggregate was computed"
+}
