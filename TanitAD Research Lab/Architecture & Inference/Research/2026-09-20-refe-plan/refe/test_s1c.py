@@ -41,6 +41,11 @@ import launch_gate as L  # noqa: E402
 import s1aux_checks as SC  # noqa: E402
 import test_s1aux_chain as TC  # noqa: E402  (bash helpers: header_text / fn_body / arm_args_of ...)
 import test_launch_gate as TLG  # noqa: E402  (preflight fixtures)
+# S1a fix (2026-11-12): on the pod neither of test_s1aux_chain's two literal inputs exists (NAVTEST is a repo-relative path, REAL_STORE the dev box's D: path), so end_to_end SKIPPED there and a skip is a FAIL under suite_skips_fail.  The same two env vars the pod chain exports for G-SUITE (AUX_NAVTEST / AUX_LABEL_STORE) now override them; unset, the module's own values stand.  Sandbox() reads both module globals at call time.
+if os.environ.get("AUX_NAVTEST"):
+    TC.NAVTEST = Path(os.environ["AUX_NAVTEST"])
+if os.environ.get("AUX_LABEL_STORE"):
+    TC.REAL_STORE = Path(os.environ["AUX_LABEL_STORE"])
 
 CHAIN_TEXT = (HERE / "s1aux_pod.sh").read_text(encoding="utf-8")
 N_OK = 0

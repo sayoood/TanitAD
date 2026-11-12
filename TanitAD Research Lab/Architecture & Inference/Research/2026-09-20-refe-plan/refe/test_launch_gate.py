@@ -1009,10 +1009,21 @@ def rls1_static() -> None:
         if k.startswith("G4_compw"):
             continue
         ev = cons(r0, notok=(k,))
-        if k.startswith(("G8_", "G12_", "G13_", "G14_", "G15_", "G16_", "G18_")):                  # r0 carries no lane labels / no --aux-drv / no --epo-con / no --hn-bank / no --ctx-cache: G8 / G12 / G13 / G14 / G15 are not obliged, so such a flag in the fixture is simply not written
+        if k.startswith(("G8_", "G12_", "G13_", "G14_", "G15_", "G16_", "G18_", "G19_", "G20_")):                  # r0 carries no lane labels / no --aux-drv / no --epo-con / no --hn-bank / no --ctx-cache / no --aux-drv-exclude-logs (G19 / G20): G8 / G12 / G13 / G14 / G15 are not obliged, so such a flag in the fixture is simply not written
             ok(ev["status"] == "PASS", (k, ev["reasons"]))
         else:
             ok(ev["status"] == "FAIL" and "not ok" in " ".join(ev["reasons"]) and k in " ".join(ev["reasons"]), (k, ev["reasons"]))
+    # S1a fix (2026-11-12): the G19_ / G20_ exemption above holds ONLY while --aux-drv-exclude-logs is not named.  When the lever IS named (every VDAC arm) both gates are OBLIGED, so a
+    # preflight that omits one is refused by name.  (The fixture's G12 / G19 / G20 rows carry no raw probe fields, so the arm fails for those reasons too: what is pinned here is that
+    # the ABSENT list names exactly the dropped gate, and that the control, with both present, names no ABSENT gate.)
+    va = L.vdac_argv("HA-s0")
+    ok("--aux-drv-exclude-logs" in va and "--aux-drv-exclude-logs" not in r0)
+    ok("ABSENT" not in " ".join(cons(va)["reasons"]), cons(va)["reasons"])
+    for g in ("G19", "G20"):
+        ev = cons(va, drop=(g,))
+        ok(ev["status"] == "FAIL" and f"ABSENT: ['{g}']" in " ".join(ev["reasons"]), (g, ev["reasons"]))
+    ev = cons(va, drop=("G19", "G20"))
+    ok(ev["status"] == "FAIL" and "ABSENT: ['G19', 'G20']" in " ".join(ev["reasons"]), ev["reasons"])
     g11_key = next(k for k in rls1_gate_keys() if k.startswith("G11_"))
     ok(cons(r0, add={"G2_live": {"ok": 1}})["status"] == "FAIL" and cons(r0, add={"G2_live": {"ok": "yes"}})["status"] == "FAIL")           # ok must be True, not truthy
     ok(cons(r0, add={"G2_live": "ok"})["status"] == "FAIL")

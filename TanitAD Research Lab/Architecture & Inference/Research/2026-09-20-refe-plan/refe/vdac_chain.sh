@@ -45,6 +45,8 @@ CKPT_SHA=968a469d5b9abdd279aff19b8031c53e9fec0e2683092bff12cfa93be6a4d3d1
 NTL=$PROOT/navtest_ids/navtest_logs.json;  NTL_SHA=79daa3c2ba3fbf1c6d45d0e3b630f43bb26a073160a34ca5f9c98553c0bf43e0
 NTT=$PROOT/navtest_ids/navtest_tokens.txt.gz; NTT_SHA=e61613ce129bb67dc654a5a575de2889a22fcfcbc64e4ec389a38295b8df9c7a
 H48F=$ROOT/h48_logs.txt
+NAVTEST_JSON=${AUX_NAVTEST:-$DATA/aux_drivable/navtest.json}; NAVTEST_SHA=3ba1c96488f157fd2ca7c57c83abe439b4c9680ebdb1eadf65c34ac323d42d44      # the aux navtest list G-SUITE's E10 reads (same pin as s1aux_pod.sh)
+navtest_sha() { tr -d '\r' < "$1" 2> /dev/null | sha256sum | cut -c1-64; }
 EXPORT=$ROOT/export/h48_proposals_subscores.npz
 export TANITAD_GATE_KEY_FILE=${TANITAD_GATE_KEY_FILE:-$ROOT/launch_gate.key}      # the HMAC key lives on the volume, OUTSIDE the shipped tree and anything the egress pushes
 mkdir -p $ROOT $S
@@ -276,8 +278,9 @@ fi
 log "ZZVDAC_PREFLIGHT_OK $ARMN"; stop_after "preflight_$LA"
 STAGE="gate_$ARMN"
 if ! stage_done "gate_$LA"; then
+  [ "$(navtest_sha "$NAVTEST_JSON")" = "$NAVTEST_SHA" ] || refuse "the navtest list $NAVTEST_JSON is absent or its CR-stripped bytes are not sha256 ${NAVTEST_SHA:0:12}: the live G-SUITE (E10) cannot read it"
   rm -rf "$ROOT/lg_$ARMN"; mkdir -p "$ROOT/lg_$ARMN"
-  env -u HF_TOKEN OMP_NUM_THREADS=4 "$PY_C" $RUN/launch_gate.py run --profile $PROFILE --arm-name "$ARMN" --pkg "$PKG" --args "$ARGS" --out-dir "$ROOT/lg_$ARMN" \
+  env -u HF_TOKEN OMP_NUM_THREADS=4 AUX_LABEL_STORE="$LABELS" AUX_NAVTEST="$NAVTEST_JSON" "$PY_C" $RUN/launch_gate.py run --profile $PROFILE --arm-name "$ARMN" --pkg "$PKG" --args "$ARGS" --out-dir "$ROOT/lg_$ARMN" \
     --gate-preflight-json $OUT/preflight.jsonl --gate-egr-json $ROOT/gate/g_egr_result.json > $ROOT/launch_gate_$ARMN.log 2>&1 200>&-
   echo "ZZEXIT $?" >> $ROOT/launch_gate_$ARMN.log
   token_ok "$ARMN" || refuse "the launch gate did not mint a PASS token that verifies for $ARMN: $(grep -E 'REASON|FAIL' $ROOT/launch_gate_$ARMN.log | head -n 3 | cut -c1-300 | tr '\n' ' ')"
