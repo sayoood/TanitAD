@@ -1576,6 +1576,54 @@ def _make_hook_no_e7(orig):
     return _hook_no_e7
 
 
+R9_WIRE_KNOCKOUTS = ("r9_map_chan_zero", "r9_box_tok_zero")
+
+
+def apply_r9_wire_knockout(model, n: str) -> dict:
+    """The ONE implementation of the two refcv9 planner-wire knockouts (W-MAP-2 / W-BOX): applies ``n`` to ``model`` in place and
+    returns its evidence record (incl. ``INERT``). Called by ``apply_ablations`` AND by the E2 per-frame battery
+    (``stack/ops/r9e2_read/run_battery_r9_e2.py``, env ``R9E2_ABLATE``). REFUSES (SystemExit) on a model without the wire."""
+    import torch
+    ev: dict = {}
+    if n == "r9_map_chan_zero":
+        pool = getattr(getattr(model, "_perception", None), "bev_pool", None)
+        mcp = getattr(pool, "map_chan_proj", None)
+        if mcp is None:
+            raise SystemExit(
+                "[refcv3_arm] ablation 'r9_map_chan_zero' needs a build with W-MAP-2 "
+                "(--r9-plan-map-channels): this model has no `_perception.bev_pool.map_chan_proj`, so there is no "
+                "wire to switch off. Refusing rather than reporting an unchanged arm as a knockout.")
+        ev["weight_abs_sum_before"] = float(sum(p.detach().abs().sum() for p in mcp.parameters()))
+        if ev["weight_abs_sum_before"] == 0.0:
+            ev["INERT"] = ("the projection is still exactly at its zero init, so the wire contributed nothing to "
+                           "this checkpoint and the knockout cannot change the forward")
+            _p(f"  ⛔ ablation r9_map_chan_zero is INERT: {ev['INERT']}")
+        mcp.register_forward_hook(lambda _m, _i, out: torch.zeros_like(out))
+        ev["effect"] = ("map_chan_proj output := 0 (refcv6_perception_branch.py:357 adds exactly zero to the pooled BEV)")
+    elif n == "r9_box_tok_zero":
+        core = getattr(model, "core", None)
+        gates = sorted((nm, p) for nm, p in model.named_parameters() if nm.rsplit(".", 1)[-1] == "box_gate")
+        if getattr(core, "box_tok_r9", None) is None or not gates:
+            raise SystemExit(
+                "[refcv3_arm] ablation 'r9_box_tok_zero' needs a build with W-BOX (--r9-plan-box-tokens): this model "
+                "has no `core.box_tok_r9` / `box_gate` parameter, so there is no wire to switch off. Refusing rather "
+                "than reporting an unchanged arm as a knockout.")
+        ev["gates_before"] = {nm: float(p.detach().reshape(-1)[0]) for nm, p in gates}
+        with torch.no_grad():
+            for _nm, p in gates:
+                p.zero_()
+        ev["gates_after"] = {nm: 0.0 for nm, _ in gates}
+        if all(v == 0.0 for v in ev["gates_before"].values()):
+            ev["INERT"] = ("every box_gate was ALREADY exactly 0.0 (the zero-init never opened), so W-BOX contributed "
+                           "nothing to this checkpoint and the knockout cannot change the forward")
+            _p(f"  ⛔ ablation r9_box_tok_zero is INERT: {ev['INERT']}")
+        ev["effect"] = (f"{len(gates)} box_gate(s) := 0.0, so gated_mix / the tactical mix return the agents-only "
+                        f"attention bit-for-bit")
+    else:
+        raise SystemExit(f"[refcv3_arm] {n!r} is not an r9 wire knockout {R9_WIRE_KNOCKOUTS}")
+    return ev
+
+
 def apply_ablations(model, cfg, names, *, steps: int, feed_ego: bool,
                     gstr_bank: str | None = None, gstr_seed: int = 0):
     """Apply the eval-time ablations and return ``(state, record)``.
@@ -1689,40 +1737,8 @@ def apply_ablations(model, cfg, names, *, steps: int, feed_ego: bool,
                             "at the core (which is how refc.py derives keep=0 "
                             "there); the model-free controls keep the MEASURED "
                             "v0 and must stay bit-identical across ablations")
-        elif n == "r9_map_chan_zero":
-            pool = getattr(getattr(model, "_perception", None), "bev_pool", None)
-            mcp = getattr(pool, "map_chan_proj", None)
-            if mcp is None:
-                raise SystemExit(
-                    "[refcv3_arm] ablation 'r9_map_chan_zero' needs a build with W-MAP-2 "
-                    "(--r9-plan-map-channels): this model has no `_perception.bev_pool.map_chan_proj`, so there is no "
-                    "wire to switch off. Refusing rather than reporting an unchanged arm as a knockout.")
-            ev["weight_abs_sum_before"] = float(sum(p.detach().abs().sum() for p in mcp.parameters()))
-            if ev["weight_abs_sum_before"] == 0.0:
-                ev["INERT"] = ("the projection is still exactly at its zero init, so the wire contributed nothing to "
-                               "this checkpoint and the knockout cannot change the forward")
-                _p(f"  ⛔ ablation r9_map_chan_zero is INERT: {ev['INERT']}")
-            mcp.register_forward_hook(lambda _m, _i, out: torch.zeros_like(out))
-            ev["effect"] = ("map_chan_proj output := 0 (refcv6_perception_branch.py:357 adds exactly zero to the pooled BEV)")
-        elif n == "r9_box_tok_zero":
-            core = getattr(model, "core", None)
-            gates = sorted((nm, p) for nm, p in model.named_parameters() if nm.rsplit(".", 1)[-1] == "box_gate")
-            if getattr(core, "box_tok_r9", None) is None or not gates:
-                raise SystemExit(
-                    "[refcv3_arm] ablation 'r9_box_tok_zero' needs a build with W-BOX (--r9-plan-box-tokens): this model "
-                    "has no `core.box_tok_r9` / `box_gate` parameter, so there is no wire to switch off. Refusing rather "
-                    "than reporting an unchanged arm as a knockout.")
-            ev["gates_before"] = {nm: float(p.detach().reshape(-1)[0]) for nm, p in gates}
-            with torch.no_grad():
-                for _nm, p in gates:
-                    p.zero_()
-            ev["gates_after"] = {nm: 0.0 for nm, _ in gates}
-            if all(v == 0.0 for v in ev["gates_before"].values()):
-                ev["INERT"] = ("every box_gate was ALREADY exactly 0.0 (the zero-init never opened), so W-BOX contributed "
-                               "nothing to this checkpoint and the knockout cannot change the forward")
-                _p(f"  ⛔ ablation r9_box_tok_zero is INERT: {ev['INERT']}")
-            ev["effect"] = (f"{len(gates)} box_gate(s) := 0.0, so gated_mix / the tactical mix return the agents-only "
-                            f"attention bit-for-bit")
+        elif n in R9_WIRE_KNOCKOUTS:
+            ev.update(apply_r9_wire_knockout(model, n))
         elif n == "frames_blind":
             state.frames_blind = True
             ev["effect"] = ("frames := their own scalar mean; ha / ha0 / "

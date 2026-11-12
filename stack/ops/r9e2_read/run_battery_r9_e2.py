@@ -16,9 +16,15 @@ NEW file (refcv9 E2-ROLL, 2026-11-04).  Existing files are NOT edited.  Three di
         ``configure_env()`` time), so the ``r8_repoint.py:42`` one-line edit is NOT needed for this entry point.
   (iv)  THOR GPU GATE (FIXED 2026-11-12) -- on Jetson Thor ``gpu_gate.gate`` is replaced, the moment the battery imports it, by ``thor_gate_factory``: the
         dev-box gate reads memory.used (Thor: "[N/A]") and free RAM through powershell.exe, so on Thor it can only WAIT (see the THOR_MARKER block).
+  (v)   ABLATE (2026-11-12) -- env ``R9E2_ABLATE`` = ``r9_map_chan_zero`` | ``r9_box_tok_zero`` rolls the checkpoint with ONE refcv9 planner-wire knockout.  It is
+        applied ONCE to the RAW model at the Stager's FIRST stage call (before the first forward) by ``refcv3_arm.apply_r9_wire_knockout`` -- the SAME function
+        ``refcv3_arm.apply_ablations`` calls (one implementation; the tool is loaded by file path from ``<read tree>/taniteval/tools``, or ``R9E2_ARM_TOOL``).
+        Unknown name / a model without the wire => REFUSED.  The record lands in the census (``r9e2_stage.ablation``, incl. ``INERT``).  The PARENT refuses when
+        ``--tag`` does not contain the name.  Unset / empty => today's behaviour, census unchanged.
 Pose-clock policy: E2 runs the CORRECTED clock => ``--no-baselines`` REQUIRED and ``R8_NO_POSE_SYNC`` must be UNSET (run_battery_r8.py:63-70).
 UNVERIFIED: no real K0 / K2 roll exists; the MM runs it on Thor.
 
+    R9E2_ABLATE=r9_map_chan_zero python run_battery_r9_e2.py ... --tag E2_K2abl_mapzero_pf ...   (knockout roll; the tag must contain the name's token, see ablate_tag_ok)
     python run_battery_r9_e2.py --ckpt <run>/model_ema.pt --config <run>/config.json --no-g0 --no-baselines --tag E2_K2_pf --infer-seeds 0,1 --lock-held --out-root <dir>
 """
 from __future__ import annotations
@@ -94,6 +100,46 @@ def item_batch(item, n):
     return {k: v[None].expand(n, *v.shape) for k, v in item.items() if torch.is_tensor(v)}
 
 
+# ---- ablation (R9E2_ABLATE) ----------------------------------------------------------------------------------------------------------- #
+ABLATE_ENV = "R9E2_ABLATE"
+#: the tag must carry the knockout's short token (r9_map_chan_zero -> "mapzero"/"map_chan_zero"; r9_box_tok_zero -> "boxzero"/"box_tok_zero") or the full name
+ABLATE_TAG_TOKENS = {"r9_map_chan_zero": ("r9_map_chan_zero", "map_chan_zero", "mapzero"),
+                     "r9_box_tok_zero": ("r9_box_tok_zero", "box_tok_zero", "boxzero")}
+
+
+def load_arm_tool(path=None):
+    """refcv3_arm.py by FILE PATH (``R9E2_ARM_TOOL`` or ``<read tree>/taniteval/tools/refcv3_arm.py``): the ONE implementation of the knockouts."""
+    import importlib.util
+    p = Path(path or os.environ.get("R9E2_ARM_TOOL") or HERE.parents[2] / "taniteval" / "tools" / "refcv3_arm.py")
+    if not p.is_file():
+        raise SystemExit(f"[r9e2] refusing: {ABLATE_ENV} needs refcv3_arm.py, not found at {p} (set R9E2_ARM_TOOL)")
+    spec = importlib.util.spec_from_file_location("_refcv3_arm_r9e2", p)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["_refcv3_arm_r9e2"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def ablate_from_env(env=None, arm=None):
+    """``R9E2_ABLATE`` -> a validated knockout name, or None when unset / empty.  REFUSES an unknown name or a list."""
+    env = os.environ if env is None else env
+    name = str(env.get(ABLATE_ENV, "")).strip()
+    if not name:
+        return None
+    arm = arm or load_arm_tool()
+    if name not in arm.R9_WIRE_KNOCKOUTS:
+        raise SystemExit(f"[r9e2] refusing: {ABLATE_ENV}={name!r} is not one of {list(arm.R9_WIRE_KNOCKOUTS)} (exactly ONE name)")
+    return name
+
+
+def ablate_tag_ok(name, tag):
+    if name is None:
+        return
+    if not tag or not any(tok in tag for tok in ABLATE_TAG_TOKENS[name]):
+        raise SystemExit(f"[r9e2] refusing: {ABLATE_ENV}={name} but --tag {tag!r} carries none of {list(ABLATE_TAG_TOKENS[name])} -- an ablated dump must never "
+                         f"be filed under a baseline tag")
+
+
 def default_mods():
     from tanitad.train import bev_warp_flag as _bw
     from tanitad.train import box_c5_flag as _bc5
@@ -101,8 +147,9 @@ def default_mods():
 
 
 class Stager:
-    def __init__(self, mods, episodes_of=None):
+    def __init__(self, mods, episodes_of=None, ablate=None, arm=None):
         self.mods, self.episodes_of = list(mods), episodes_of
+        self.ablate, self.arm, self.ablation = ablate, arm, None          # ablate: a knockout name (R9E2_ABLATE) applied once at the first stage()
         self.n_forwards, self.n_stage = 0, {lab: 0 for lab, _ in self.mods}
         self.batch_sizes, self.probe = {}, {}
 
@@ -118,6 +165,9 @@ class Stager:
 
     def stage(self, model, ctx, frames):
         import torch
+        if self.ablate and self.ablation is None:                          # ONCE, on the RAW model, before the first forward
+            arm = self.arm or load_arm_tool()
+            self.ablation = {"name": self.ablate, "record": arm.apply_r9_wire_knockout(model, self.ablate)}
         n, dev, item = int(frames.shape[0]), frames.device, getattr(ctx, "item", None)
         if item is None:
             raise RuntimeError("[r9e2-stage] a forward with no window item on the ctx -- nothing to stage from")
@@ -135,8 +185,11 @@ class Stager:
                           "bw_built": getattr(model, "_r9_bev_warp", None) is not None}
 
     def census(self) -> dict:
-        return {"n_forwards": self.n_forwards, "n_stage_calls": dict(self.n_stage), "batch_sizes": dict(self.batch_sizes),
-                "mechanisms_built": dict(self.probe), "order": [lab for lab, _ in self.mods]}
+        c = {"n_forwards": self.n_forwards, "n_stage_calls": dict(self.n_stage), "batch_sizes": dict(self.batch_sizes),
+             "mechanisms_built": dict(self.probe), "order": [lab for lab, _ in self.mods]}
+        if self.ablate:                                                    # key absent when unset: the baseline census is unchanged
+            c["ablation"] = {"requested": self.ablate, "applied": self.ablation}
+        return c
 
 
 class StagedModel:
@@ -179,7 +232,7 @@ def install_staging(RR, mods=None):
         holder["ds"] = out[0]
         return out
     RR.L.build_eval_dataset = capture
-    stager = Stager(mods or default_mods(), episodes_of=lambda: getattr(holder["ds"], "episodes", None))
+    stager = Stager(mods or default_mods(), episodes_of=lambda: getattr(holder["ds"], "episodes", None), ablate=ablate_from_env())
     RR.Refcv6Proxy = make_staging_proxy_cls(RR.Refcv6Proxy, stager)
     RR.R9E2_STAGER = stager
     return stager
@@ -298,6 +351,7 @@ def main(argv=None) -> int:
         del argv[i:i + 2]
         os.environ.setdefault("R9E2_SPLIT", split_path)
     pins = require_env()
+    ablate_tag_ok(ablate_from_env(), _val("--tag", argv))      # a knockout dump can never be filed under a baseline tag (the child re-reads the env)
     install_thor_gate(argv)                          # AFTER the env refusals (their tests run on Thor too), BEFORE the battery imports gpu_gate
     dev, hold, split = load_dev_hold(pins["R9E2_SPLIT"])
     census = {}
