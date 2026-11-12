@@ -1,0 +1,236 @@
+{
+ "n_rows": 33,
+ "rank": 0,
+ "thresholds": {
+  "R-TOL-1_min_frac": 0.995,
+  "R-TOL-2_median_max": 0.001,
+  "R-TOL-2_p99_max": 0.005,
+  "R-TOL-3_ratio_abs": 0.01,
+  "R-TOL-3_sim8_pp": 0.25
+ },
+ "verdict_json_rank0_context_only": {
+  "R_acc": 1.1581809446765852,
+  "R_hr": 1.5637556766379956
+ },
+ "row_matched_reference_dev_box": {
+  "R_acc": 1.1397126475739074,
+  "R_hr": 1.9945713797453692
+ },
+ "arms": {
+  "control_1thread": {
+   "lam": 3.0,
+   "warm_start": "fixture",
+   "blas_threads": 1,
+   "n_common": 33,
+   "rowmax_quantiles": {
+    "median": 0.0,
+    "p90": 0.0,
+    "p99": 0.0,
+    "max": 0.0
+   },
+   "n_rows_bit_identical": 33,
+   "n_sim8_identical": 33,
+   "frac_sim8_identical": 1.0,
+   "R-TOL-1": true,
+   "R-TOL-2": true,
+   "R-TOL-3_row_matched": {
+    "pass": true,
+    "ratio_acc": 1.1397126475739074,
+    "ratio_hr": 1.9945713797453692,
+    "ref_acc": 1.1397126475739074,
+    "ref_hr": 1.9945713797453692,
+    "ref_source": "recomputed with learn() from the stored control labels and the bank trajectories",
+    "diff_acc": 0.0,
+    "diff_hr": 0.0,
+    "sim8_fail_rate_pod": 0.0,
+    "sim8_fail_rate_dev_eval": 0.0,
+    "sim8_diff_pp": 0.0
+   },
+   "verdict_json_context_only": {
+    "R_acc": 1.1581809446765852,
+    "R_hr": 1.5637556766379956,
+    "ref_minus_verdict_acc": -0.018468297102677722,
+    "ref_minus_verdict_hr": 0.4308157031073736,
+    "note": "recorded only, not gated; with full 2,400-row coverage the row-matched reference must agree with verdict.json to 1e-9"
+   }
+  },
+  "noise_a_blas4": {
+   "lam": 3.0,
+   "warm_start": "fixture",
+   "blas_threads": 4,
+   "n_common": 33,
+   "rowmax_quantiles": {
+    "median": 6.031005979484361e-06,
+    "p90": 0.00016938592163228409,
+    "p99": 0.0003359474709739629,
+    "max": 0.0003976119533000144
+   },
+   "n_rows_bit_identical": 0,
+   "n_sim8_identical": 33,
+   "frac_sim8_identical": 1.0,
+   "R-TOL-1": true,
+   "R-TOL-2": true,
+   "R-TOL-3_row_matched": {
+    "pass": true,
+    "ratio_acc": 1.1397125314759247,
+    "ratio_hr": 1.994571033813807,
+    "ref_acc": 1.1397126475739074,
+    "ref_hr": 1.9945713797453692,
+    "ref_source": "recomputed with learn() from the stored control labels and the bank trajectories",
+    "diff_acc": -1.1609798278300332e-07,
+    "diff_hr": -3.4593156228446276e-07,
+    "sim8_fail_rate_pod": 0.0,
+    "sim8_fail_rate_dev_eval": 0.0,
+    "sim8_diff_pp": 0.0
+   },
+   "verdict_json_context_only": {
+    "R_acc": 1.1581809446765852,
+    "R_hr": 1.5637556766379956,
+    "ref_minus_verdict_acc": -0.018468297102677722,
+    "ref_minus_verdict_hr": 0.4308157031073736,
+    "note": "recorded only, not gated; with full 2,400-row coverage the row-matched reference must agree with verdict.json to 1e-9"
+   }
+  },
+  "noise_b_warm1t": {
+   "lam": 3.0,
+   "warm_start": "onethread",
+   "blas_threads": 1,
+   "n_common": 33,
+   "rowmax_quantiles": {
+    "median": 7.734019416005822e-07,
+    "p90": 4.196037282718779e-05,
+    "p99": 0.0002907378451554265,
+    "max": 0.000336829852144227
+   },
+   "n_rows_bit_identical": 10,
+   "n_sim8_identical": 33,
+   "frac_sim8_identical": 1.0,
+   "R-TOL-1": true,
+   "R-TOL-2": true,
+   "R-TOL-3_row_matched": {
+    "pass": true,
+    "ratio_acc": 1.1397128100830916,
+    "ratio_hr": 1.9945713797453692,
+    "ref_acc": 1.1397126475739074,
+    "ref_hr": 1.9945713797453692,
+    "ref_source": "recomputed with learn() from the stored control labels and the bank trajectories",
+    "diff_acc": 1.625091841095383e-07,
+    "diff_hr": 0.0,
+    "sim8_fail_rate_pod": 0.0,
+    "sim8_fail_rate_dev_eval": 0.0,
+    "sim8_diff_pp": 0.0
+   },
+   "verdict_json_context_only": {
+    "R_acc": 1.1581809446765852,
+    "R_hr": 1.5637556766379956,
+    "ref_minus_verdict_acc": -0.018468297102677722,
+    "ref_minus_verdict_hr": 0.4308157031073736,
+    "note": "recorded only, not gated; with full 2,400-row coverage the row-matched reference must agree with verdict.json to 1e-9"
+   }
+  },
+  "reg_lam1": {
+   "lam": 1.0,
+   "warm_start": "fixture",
+   "blas_threads": 1,
+   "n_common": 33,
+   "rowmax_quantiles": {
+    "median": 0.10678384375314343,
+    "p90": 0.3402918817697348,
+    "p99": 1.2567864608586161,
+    "max": 1.5877817703396024
+   },
+   "n_rows_bit_identical": 0,
+   "n_sim8_identical": 33,
+   "frac_sim8_identical": 1.0,
+   "R-TOL-1": true,
+   "R-TOL-2": false,
+   "R-TOL-3_row_matched": {
+    "pass": false,
+    "ratio_acc": 1.1996569761660993,
+    "ratio_hr": 2.7072535321866615,
+    "ref_acc": 1.1397126475739074,
+    "ref_hr": 1.9945713797453692,
+    "ref_source": "recomputed with learn() from the stored control labels and the bank trajectories",
+    "diff_acc": 0.0599443285921919,
+    "diff_hr": 0.7126821524412923,
+    "sim8_fail_rate_pod": 0.0,
+    "sim8_fail_rate_dev_eval": 0.0,
+    "sim8_diff_pp": 0.0
+   },
+   "verdict_json_context_only": {
+    "R_acc": 1.1581809446765852,
+    "R_hr": 1.5637556766379956,
+    "ref_minus_verdict_acc": -0.018468297102677722,
+    "ref_minus_verdict_hr": 0.4308157031073736,
+    "note": "recorded only, not gated; with full 2,400-row coverage the row-matched reference must agree with verdict.json to 1e-9"
+   }
+  },
+  "reg_lam10": {
+   "lam": 10.0,
+   "warm_start": "fixture",
+   "blas_threads": 1,
+   "n_common": 33,
+   "rowmax_quantiles": {
+    "median": 0.10410175112089948,
+    "p90": 0.39259786664315527,
+    "p99": 0.8459068875428667,
+    "max": 0.9463862183319312
+   },
+   "n_rows_bit_identical": 0,
+   "n_sim8_identical": 33,
+   "frac_sim8_identical": 1.0,
+   "R-TOL-1": true,
+   "R-TOL-2": false,
+   "R-TOL-3_row_matched": {
+    "pass": false,
+    "ratio_acc": 1.081252020001005,
+    "ratio_hr": 1.5532721935402698,
+    "ref_acc": 1.1397126475739074,
+    "ref_hr": 1.9945713797453692,
+    "ref_source": "recomputed with learn() from the stored control labels and the bank trajectories",
+    "diff_acc": -0.05846062757290249,
+    "diff_hr": -0.44129918620509945,
+    "sim8_fail_rate_pod": 0.0,
+    "sim8_fail_rate_dev_eval": 0.0,
+    "sim8_diff_pp": 0.0
+   },
+   "verdict_json_context_only": {
+    "R_acc": 1.1581809446765852,
+    "R_hr": 1.5637556766379956,
+    "ref_minus_verdict_acc": -0.018468297102677722,
+    "ref_minus_verdict_hr": 0.4308157031073736,
+    "note": "recorded only, not gated; with full 2,400-row coverage the row-matched reference must agree with verdict.json to 1e-9"
+   }
+  }
+ },
+ "verdicts": {
+  "control_1thread": {
+   "must": "max abs diff 0.0 (sanity)",
+   "result": "AS EXPECTED"
+  },
+  "noise_a_blas4": {
+   "must": "PASS R-TOL-1, R-TOL-2 and (row-matched) R-TOL-3",
+   "result": "AS EXPECTED"
+  },
+  "noise_b_warm1t": {
+   "must": "PASS R-TOL-1, R-TOL-2 and (row-matched) R-TOL-3",
+   "result": "AS EXPECTED"
+  },
+  "reg_lam1": {
+   "must": "FAIL R-TOL-2 or R-TOL-3",
+   "fails": [
+    "R-TOL-2",
+    "R-TOL-3"
+   ],
+   "result": "AS EXPECTED"
+  },
+  "reg_lam10": {
+   "must": "FAIL R-TOL-2 or R-TOL-3",
+   "fails": [
+    "R-TOL-2",
+    "R-TOL-3"
+   ],
+   "result": "AS EXPECTED"
+  }
+ }
+}
