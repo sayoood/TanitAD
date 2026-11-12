@@ -110,6 +110,9 @@ FLAG_CHECKS = {
     # PREREG_LEVELHEAD_A2 (arm LLR): the lead head + how O reads the heads. `lever:lead_head` = built_levers().get("lead_head", "off"); `cfg:w_lead` = the BUILT config's weight; `lever:aux_cond` = built_levers().get("aux_cond", "add")
     # (the BUILT wiring: e_lead / e_level exist iff add, e_aux iff token and a head is on). argv -> make_config -> the BUILT model -> declared_vs_built (bad_lead) -> lead_head_probe (G-LIVE) -> `lead_stage(b, LL)` BEFORE the ego stages.
     "lead_head": "lever:lead_head", "w_lead": "cfg:w_lead", "aux_cond": "lever:aux_cond",
+    # PREREG_V8F_STOPPERC arm A: the vision-only stop-location auxiliary. `lever:stop_aux` = built_levers().get("stop_aux", "off") (stop_head + stop_pres_head exist iff on); `cfg:w_stop_aux` = the BUILT config's weight; `path` = the
+    # per-clip sensor_extrinsics table (its coverage of the TRAIN clips is read back from the built arrays). argv -> make_config -> the BUILT model -> declared_vs_built (bad_stop_aux) -> stop_aux_probe (G-LIVE) -> `stop_aux_stage(b, SA)` BEFORE the ego stages.
+    "stop_aux": "lever:stop_aux", "w_stop_aux": "cfg:w_stop_aux", "stop_aux_extr": "path",
     "init_ckpt": "data:init_ckpt",            # O-RECOVER's start state: the MODEL weights of an earlier checkpoint, config-checked, loaded strictly and READ BACK (load_init_ckpt) -> declared_vs_built (bad_init_ckpt)
     # PREREG_V8F_LORA: the encoder lever. `enc:<k>` = equals the BUILT encoder's lever (enc.built_levers()); with --encoder cache there is no encoder and every
     # one of these must be at its default (a declared flag that builds nothing is REFUSED, not ignored)
@@ -168,6 +171,16 @@ def build_parser():
                     help="PREREG_LEVELHEAD_A2: how O reads the heads' outputs. add (default) = e_level(v_hat.detach() / 10) and e_lead([sigmoid(logit), gap_hat].detach()) are zero-initialised and ADDED to O's ego conditioning token (the step-0 forward is the "
                          "init's). token = O gets ONE extra conditioning token e_aux(Linear(3, d), default init) of [v_hat / 10 (0 without the level head), sigmoid(logit), gap_hat] (detached), REPLACING both additive paths (the step-0 forward differs "
                          "from the init's by construction). token is refused unless --level-head or --lead-head is on")
+    # ---- PREREG_V8F_STOPPERC arm A. All three default to the earlier behaviour and have their G-DVB entry in FLAG_CHECKS and their clause in bad_stop_aux.
+    ap.add_argument("--stop-aux", dest="stop_aux", choices=M.STOP_AUX_MODES, default="off",
+                    help="PREREG_V8F_STOPPERC arm A: off (default) = nothing is built = every earlier arm, bit for bit (state dict, RNG stream, losses, gradients). on = a VISION-ONLY head on the adapted 4x10 tokens of the NOW frame: per-token BCE on the "
+                         "4x10 cell the ego's rest point (stop_x_m, stop_y_m, NOW frame) projects into (column from the CYLINDRICAL bearing, row from the clip's sensor_extrinsics) + a presence BCE (negatives = presence 0). Nothing reads the head "
+                         "at inference: its gradient shapes the shared adapter only. Needs --grid pool4x10, --w-stop-aux > 0 and --stop-aux-extr")
+    ap.add_argument("--w-stop-aux", dest="w_stop_aux", type=float, default=0.0,
+                    help="PREREG_V8F_STOPPERC arm A: the weight of the stop-aux term in the total. 0.0 (default) with --stop-aux off. Must be > 0 with --stop-aux on and exactly 0.0 with it off. Fixed at the gate smoke so that W x term = T's goal-BCE term at step 0 "
+                         "(selfcheck.json stop_aux_probe.w_stop_aux_for_goal_equal; stop_aux_w_from_smoke.py), written into the argv and never tuned")
+    ap.add_argument("--stop-aux-extr", dest="stop_aux_extr", default=None,
+                    help="PREREG_V8F_STOPPERC arm A: the per-clip sensor_extrinsics table (JSON {clip_id: {qx, qy, qz, qw, x, y, z}}, the format of build_rig_extrinsics_table.py). Required with --stop-aux on; >= 99 %% of the TRAIN clips must have a row")
     # ---- PREREG_V8F_HACC_MC section 7 (O-RECOVER): an ego-state perturbation of the kinematic inputs; targets and labels are never touched. Every flag defaults to OFF (the defaults are
     # data.EGO_PERTURB_DEFAULTS), and every flag has its G-DVB entry in FLAG_CHECKS and its clause in bad_ego_perturb.
     ap.add_argument("--ego-perturb-p", dest="ego_perturb_p", type=float, default=D.EGO_PERTURB_DEFAULTS["p"],
@@ -325,7 +338,8 @@ def make_config(a) -> M.V8FMiniConfig:
                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm,
                            detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, launch_intent_w=a.launch_intent_w, goal_pos_weight_stop=a.goal_pos_weight_stop, lon_class_weight_stop=a.lon_class_weight_stop,
                            level_head=a.level_head, w_level=a.w_level,
-                           lead_head=a.lead_head, w_lead=a.w_lead, aux_cond=a.aux_cond)
+                           lead_head=a.lead_head, w_lead=a.w_lead, aux_cond=a.aux_cond,
+                           stop_aux=a.stop_aux, w_stop_aux=a.w_stop_aux)
 
 
 def bad_encoder(a, enc, data_info) -> list:
@@ -650,8 +664,8 @@ def bad_init_ckpt(a, data_info) -> list:
     elif got.get("skipped") != "resume":
         bad.append(f"init_ckpt: declared but neither applied nor skipped for a resume ({got.get('skipped')!r})")
     if got.get("applied"):                                  # PREREG_V8F_LEVEL: only the declared lever's keys may be fresh, and a lever-ON argv must have declared them
-        if bool(got.get("declared_new_keys")) != (a.level_head == "on" or a.lead_head == "on"):          # PREREG_LEVELHEAD_A2: the lead head adds keys too
-            bad.append(f"init_ckpt: level_head {a.level_head} / lead_head {a.lead_head} declared but the load declared new keys {got.get('declared_new_keys')}")
+        if bool(got.get("declared_new_keys")) != (a.level_head == "on" or a.lead_head == "on" or a.stop_aux == "on"):          # PREREG_LEVELHEAD_A2: the lead head adds keys too; PREREG_V8F_STOPPERC: so does the stop head
+            bad.append(f"init_ckpt: level_head {a.level_head} / lead_head {a.lead_head} / stop_aux {a.stop_aux} declared but the load declared new keys {got.get('declared_new_keys')}")
         if set(got.get("fresh_keys", [])) - set(got.get("declared_new_keys", [])):
             bad.append(f"init_ckpt: keys {sorted(set(got.get('fresh_keys', [])) - set(got.get('declared_new_keys', [])))} were left fresh but are not the declared lever's")
     return bad
@@ -943,6 +957,52 @@ def bad_lead(a, model, data_info=None) -> list:
     return bad
 
 
+def bad_stop_aux(a, model, data_info=None) -> list:
+    """PREREG_V8F_STOPPERC arm A, G-DVB: ``--stop-aux`` / ``--w-stop-aux`` / ``--stop-aux-extr`` read back from the BUILT model and the BUILT camera arrays. Empty = pass. Refused: a head declared on that builds nothing, a head built that was
+    not declared, a head with no loss (w 0), a weight with no head, an extrinsics table with no head, a head whose code names a non-vision input, a head on any grid but pool4x10, no extrinsics table, a table that covers fewer than
+    MIN_EXTR_COVERAGE of the TRAIN clips, and a head with no camera arrays or no label-bearing / in-view window to learn from."""
+    bad = []
+    built = model.built_levers()
+    got = built.get("stop_aux", "off")
+    if got != a.stop_aux:
+        bad.append(f"lever stop_aux: declared {a.stop_aux} but built {got}")
+    if model.cfg.w_stop_aux != a.w_stop_aux:
+        bad.append(f"cfg.w_stop_aux: declared {a.w_stop_aux} but built {model.cfg.w_stop_aux}")
+    if not (math.isfinite(a.w_stop_aux) and a.w_stop_aux >= 0.0):
+        bad.append(f"w_stop_aux {a.w_stop_aux!r} is not a finite number >= 0")
+    keys = [k for k in model.state_dict() if k.startswith(M.STOPAUX_KEY_PREFIXES)]
+    if a.stop_aux == "off":
+        if a.w_stop_aux != 0.0:
+            bad.append(f"w_stop_aux {a.w_stop_aux} declared with --stop-aux off: a loss weight with no head -- a lever that is declared and does nothing")
+        if a.stop_aux_extr:
+            bad.append("--stop-aux-extr declared with --stop-aux off: an input with no head -- a lever that is declared and does nothing")
+        if model.stop_head is not None or model.stop_pres_head is not None or keys:
+            bad.append(f"stop_aux off declared but a stop head was built ({len(keys)} state-dict keys)")
+        return bad
+    if not a.w_stop_aux > 0.0:
+        bad.append(f"stop_aux on declared but w_stop_aux is {a.w_stop_aux}: a head with no loss -- a lever that is declared and does nothing")
+    if model.stop_head is None or model.stop_pres_head is None or not keys:
+        bad.append("stop_aux on declared but no stop head was built")
+        return bad
+    if a.grid != "pool4x10" or model.cfg.n_tok != 40:
+        bad.append(f"stop_aux on needs the 4x10 grid (the label is a 4x10 cell): grid {a.grid}, n_tok {model.cfg.n_tok}")
+    if not built.get("stop_vision_only_source", False):
+        bad.append(f"the stop head's code names non-vision inputs: {M.stop_head_source_problems()}")
+    sa = (data_info or {}).get("stop_aux")
+    if not a.stop_aux_extr or not sa:
+        bad.append("stop_aux on declared but no extrinsics arrays were built (--stop-aux-extr)")
+        return bad
+    if sa.get("path") != os.path.abspath(a.stop_aux_extr):
+        bad.append(f"stop-aux extrinsics: declared {os.path.abspath(a.stop_aux_extr)!r} but built from {sa.get('path')!r}")
+    if not (isinstance(sa.get("sha256"), str) and len(sa["sha256"]) == 64):
+        bad.append(f"stop-aux extrinsics: the file's sha256 is not recorded ({sa.get('sha256')!r})")
+    from tanitad.data import v8f_stopaux as STOPAUX
+    if sa.get("coverage_train", 0.0) < STOPAUX.MIN_EXTR_COVERAGE:
+        bad.append(f"stop-aux extrinsics: {sa.get('n_train_clips_with_extrinsics')} of {sa.get('n_train_clips')} TRAIN clips have a sensor_extrinsics row (coverage {sa.get('coverage_train')} < {STOPAUX.MIN_EXTR_COVERAGE}): "
+                   "the row of the camera is per-clip (554 distinct heights in 2,400 clips), a clip without one cannot be projected")
+    return bad
+
+
 def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None, rec=None) -> list:
     """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
     bad = bad_encoder(a, enc, data_info)
@@ -950,6 +1010,7 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
     bad += bad_ego_perturb(a, ego) + bad_init_ckpt(a, data_info) + bad_schedule(a, sched)          # O-RECOVER (PREREG_V8F_HACC_MC section 7); bad_schedule: --warmup read back from the built schedule
     bad += bad_level(a, model, data_info)                                                        # PREREG_V8F_LEVEL: --level-head / --w-level read back from the BUILT model
     bad += bad_lead(a, model, data_info)                                                         # PREREG_LEVELHEAD_A2: --lead-head / --w-lead / --aux-cond read back from the BUILT model and the built label arrays
+    bad += bad_stop_aux(a, model, data_info)                                                     # PREREG_V8F_STOPPERC: --stop-aux / --w-stop-aux / --stop-aux-extr read back from the BUILT model and the built camera arrays
     bad += bad_dagger(a, dag, model.cfg, data_info)                                              # PREREG_V8F_DAGGER: --dagger-p / --dagger-bank / --dagger-seed read back from the BUILT swap
     bad += bad_ego_dagger(a, comp, ego, dag)                                                     # AMEND1 section 1: --ego-perturb-with-dagger read back from the BUILT stage
     parser_dests = {act.dest for act in build_parser()._actions if act.dest != "help"}
@@ -1095,6 +1156,8 @@ def live_check(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> dict:
         expect.add("level")                                              # PREREG_V8F_LEVEL
     if cfg.lead_head == "on":
         expect.add("lead")                                               # PREREG_LEVELHEAD_A2
+    if cfg.stop_aux == "on":
+        expect |= {"stop_aux", "stop_cell", "stop_pres"}                 # PREREG_V8F_STOPPERC arm A
     missing = sorted(expect - set(terms_seen))
     extra_pen = sorted(k for k in terms_seen if k.startswith("pen") and not cfg.consistency)
     declared_dead = [n for n in acc if cfg.wm == "a" and ".idm_heads." in n]
@@ -1581,6 +1644,123 @@ def lead_head_probe(model, batch, cfg, rtol: float = 1e-3) -> dict:
         raise AssertionError(f"lead probe: an ALL-FALSE lead_has must read exactly 0.0 (term {term_n}, total diff {res['control_allfalse_total_diff']}, head grad diff {res['control_allfalse_head_grad_diff']}): the mask is not what selects the rows")
     if res["control_prior_grad_diff"] != 0.0:
         raise AssertionError(f"lead probe: the frozen P10 prior's gradient moved with the weight ({res['control_prior_grad_diff']}): the control must read exactly 0.0")
+    res["pass"] = True
+    return res
+
+
+def make_stop_aux(a, cfg, J, clips, info):
+    """PREREG_V8F_STOPPERC arm A: the per-clip camera arrays aligned to the label join (``J["clip"]``), or None when the head is off (nothing is read). A missing table is a REFUSAL. Records the file's sha256 and the coverage of the
+    TRAIN clips (the clips this run trains on) in ``info["stop_aux"]`` for the gate and selfcheck.json."""
+    if cfg.stop_aux != "on":
+        return None
+    if not a.stop_aux_extr or not os.path.exists(a.stop_aux_extr):
+        raise SystemExit(f"ZZDVB-REFUSEDZZ stop-aux: --stop-aux on needs the per-clip sensor_extrinsics table and --stop-aux-extr {a.stop_aux_extr!r} does not exist")
+    from tanitad.data import v8f_stopaux as STOPAUX
+    SA = STOPAUX.make_stop_aux_arrays(J, STOPAUX.load_extrinsics(a.stop_aux_extr))
+    h = hashlib.sha256()
+    with open(a.stop_aux_extr, "rb") as fh:
+        for blk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(blk)
+    idx = {str(c): i for i, c in enumerate(J["clip"])}
+    n_tr = sum(1 for c in clips if str(c) in idx)
+    n_ok = sum(1 for c in clips if str(c) in idx and SA["ok"][idx[str(c)]])
+    info["stop_aux"] = {"path": os.path.abspath(a.stop_aux_extr), "sha256": h.hexdigest(), "n_join_clips": SA["n_clips"], "n_join_clips_with_extrinsics": SA["n_clips_with_extrinsics"],
+                        "n_train_clips": n_tr, "n_train_clips_with_extrinsics": n_ok, "coverage_train": (n_ok / n_tr) if n_tr else 0.0}
+    return SA
+
+
+def stop_aux_stage(batch: dict, SA: dict) -> tuple:
+    """PREREG_V8F_STOPPERC arm A: the ONE call that turns a COLLATED batch into the stop head's labels ``(stop_cell [B] long, stop_pos [B] bool, stop_has [B] bool)`` from the NOW-frame label ``batch["lab"]["cons"]`` (``stop_x_m`` /
+    ``stop_y_m``, NaN = no stop) and the sample's clip camera (``batch["ci"]``). The training loop calls it, and the main() probe batch / ``stop_aux_probe`` call the same function. It must run BEFORE ``ego.apply`` / ``dag.apply`` /
+    ``comp.apply`` / ``rcv.apply`` (the head sees the LOGGED frame and is asked for the LOGGED rest point). Labels may use ego; the head's input is vision only."""
+    from tanitad.data import v8f_stopaux as STOPAUX
+    return STOPAUX.stop_aux_labels(batch["lab"]["cons"], batch["lab"]["has"], batch["ci"], SA, M.CI["stop_x_m"], M.CI["stop_y_m"], batch["lab"]["lon_cls"])
+
+
+def stop_aux_probe(model, batch, cfg, rtol: float = 1e-3) -> dict:
+    """G-LIVE for PREREG_V8F_STOPPERC arm A, read from the BUILT model's own ``loss`` on the real probe batch (a COPY; O's zero-init head is woken on the copy so every path carries signal). With the head off nothing runs.
+
+      vision only    ``M.assert_stop_head_vision_only``: source clean, ``_stop`` reads only frame_ok, bit-identical when every non-vision key changes, moves with the features
+      labels         the probe batch has label-bearing windows AND windows whose rest point is in view (else the cell term is invisible)
+      term           finite and > 0 (stop_cell and stop_pres both)
+      contribution   total(w) - total(0) == w x term. DELETE the total line and this reads 0.0 -> RED
+      head gradient  sum |grad(total(w)) - grad(total(0))| over ``stop_head.`` > 0 AND over ``stop_pres_head.`` > 0, and over the ADAPTER (adapter.*) > 0
+      zero control   at w = 0 the head's gradient is EXACTLY 0.0 (nothing else reads the head); an ALL-FALSE stop_has gives term 0.0 and head-gradient difference EXACTLY 0.0; the frozen P10 prior's gradient difference is EXACTLY 0.0
+    ``w_stop_aux_for_goal_equal`` = T's goal-BCE term / the stop-aux term at STEP 0 (the W the card fixes). Returns the record selfcheck.json carries; any violation is an AssertionError."""
+    if cfg.stop_aux != "on":
+        return {"stop_aux": "off", "pass": True, "skipped": "--stop-aux not named: nothing is built (the default run is the pre-change run)"}
+    if not all(k in batch for k in ("stop_cell", "stop_pos", "stop_has")):
+        raise AssertionError("stop-aux probe: the probe batch carries no stop_cell / stop_pos / stop_has (the loop's own call is stop_aux_stage)")
+    W = float(cfg.w_stop_aux)
+    eps32 = float(torch.finfo(torch.float32).eps)
+    m = copy.deepcopy(model).cpu()
+    m.train()
+    vis = M.assert_stop_head_vision_only(m, batch)
+    fok = batch["frame_ok"][:, -1]
+    n_has, n_pos = int((batch["stop_has"] & fok).sum()), int((batch["stop_pos"] & batch["stop_has"] & fok).sum())
+    if n_has == 0 or n_pos == 0:
+        raise AssertionError(f"stop-aux probe: the probe batch has {n_has} label-bearing windows and {n_pos} with an in-view rest point: the probe cannot see the cell term (use a larger probe batch or the real corpus)")
+    with torch.no_grad():
+        torch.manual_seed(20261112)
+        o0 = m.loss(dict(batch), p_gt=0.5, gen=torch.Generator().manual_seed(11))
+    T0 = o0["terms"]
+    t0_total, t0_term, t0_goal = float(T0["total"]), float(T0["stop_aux"]), float(T0["goal"])
+    step0 = {"step0_total": t0_total, "step0_stop_aux_term": t0_term, "step0_stop_cell": float(T0["stop_cell"]), "step0_stop_pres": float(T0["stop_pres"]), "step0_goal_term": t0_goal,
+             "w_stop_aux_for_goal_equal": (t0_goal / t0_term) if t0_term > 0.0 else None}
+    g = torch.Generator().manual_seed(17)
+    with torch.no_grad():
+        wo = m.head_o[2].weight
+        wo.copy_(torch.randn(wo.shape, generator=g) * 0.05)
+    named = [(n, p) for n, p in m.named_parameters() if p.requires_grad]
+    none = torch.zeros_like(batch["stop_has"])
+
+    def run(w_, has_mask=None):
+        m.cfg.w_stop_aux = w_
+        for _, p in named:
+            p.grad = None
+        for p in m.prior.parameters():
+            p.grad = None
+        torch.manual_seed(20261112)
+        out = m.loss({**batch, "stop_has": batch["stop_has"] if has_mask is None else has_mask}, p_gt=0.5, gen=torch.Generator().manual_seed(11))
+        T = out["terms"]
+        for k, v in T.items():
+            if not torch.isfinite(v):
+                raise AssertionError(f"stop-aux probe: loss term {k} is not finite at w_stop_aux {w_}: {float(v)}")
+        T["total"].backward()
+        gr = {n: (p.grad.detach().clone() if p.grad is not None else torch.zeros_like(p)) for n, p in named}
+        gr["__prior__"] = torch.cat([(p.grad.detach().reshape(-1) if p.grad is not None else torch.zeros(p.numel())) for p in m.prior.parameters()])
+        return float(T["total"].detach()), float(T["stop_aux"].detach()), gr
+
+    t_w, term_w, g_w = run(W)
+    t_0, term_0, g_0 = run(0.0)
+    t_wb, _, g_wb = run(W)
+    t_n, term_n, g_n = run(W, none)
+    dsum = lambda ga, gb, pre: float(sum((ga[n] - gb[n]).abs().sum() for n in ga if n.startswith(pre)))      # noqa: E731
+    asum = lambda ga, pre: float(sum(ga[n].abs().sum() for n in ga if n.startswith(pre)))                       # noqa: E731
+    res = {"w_stop_aux_declared": W, "vision_only": vis, "probe_n_has": n_has, "probe_n_pos": n_pos, **step0, "term": term_w, "total_w": t_w, "total_0": t_0, "contribution": t_w - t_0, "w_x_term": W * term_w,
+           "head_grad_diff": dsum(g_w, g_0, "stop_head."), "pres_head_grad_diff": dsum(g_w, g_0, "stop_pres_head."), "adapter_grad_diff": dsum(g_w, g_0, "adapter."),
+           "head_grad_at_w0_zero_control": asum(g_0, "stop_head.") + asum(g_0, "stop_pres_head."),
+           "control_repeat_total_diff": abs(t_wb - t_w), "control_repeat_grad_diff": dsum(g_w, g_wb, ""),
+           "control_allfalse_term": term_n, "control_allfalse_total_diff": abs(t_n - t_0), "control_allfalse_head_grad_diff": dsum(g_n, g_0, "stop_head.") + dsum(g_n, g_0, "stop_pres_head."),
+           "control_prior_grad_diff": float((g_w["__prior__"] - g_0["__prior__"]).abs().sum())}
+    if not math.isfinite(term_w) or not term_w > 0.0:
+        raise AssertionError(f"stop-aux probe: the stop-aux term reads {term_w} (finite and > 0 required)")
+    if res["control_repeat_total_diff"] != 0.0 or res["control_repeat_grad_diff"] != 0.0:
+        raise AssertionError(f"stop-aux probe: the probe is not deterministic (the same loss twice differs by {res['control_repeat_total_diff']} / {res['control_repeat_grad_diff']}): its differences mean nothing")
+    if not res["w_x_term"] > 64.0 * eps32 * max(abs(t_0), 1.0):
+        raise AssertionError(f"stop-aux probe: w x term = {res['w_x_term']} is below float32 visibility against the total {t_0}: the probe cannot see the term")
+    if abs(res["contribution"] - res["w_x_term"]) > rtol * res["w_x_term"] + 4.0 * eps32 * max(abs(t_w), abs(t_0)):
+        raise AssertionError(f"stop-aux probe: the total moved by {res['contribution']} when the weight went from 0 to {W}, w x term is {res['w_x_term']}: the term does not reach the loss with its weight")
+    if not (res["head_grad_diff"] > 0.0 and res["pres_head_grad_diff"] > 0.0):
+        raise AssertionError(f"stop-aux probe: a head receives no gradient from the term (cell head {res['head_grad_diff']}, presence head {res['pres_head_grad_diff']})")
+    if not res["adapter_grad_diff"] > 0.0:
+        raise AssertionError("stop-aux probe: the adapter receives no gradient from the term: the auxiliary shapes nothing (the sum of |d total / d adapter| differences is 0.0)")
+    if res["head_grad_at_w0_zero_control"] != 0.0:
+        raise AssertionError(f"stop-aux probe: at w 0 the head's gradient is {res['head_grad_at_w0_zero_control']}, not EXACTLY 0.0: something other than the stop-aux term reaches the head")
+    if term_n != 0.0 or res["control_allfalse_total_diff"] != 0.0 or res["control_allfalse_head_grad_diff"] != 0.0:
+        raise AssertionError(f"stop-aux probe: an ALL-FALSE stop_has must read exactly 0.0 (term {term_n}, total diff {res['control_allfalse_total_diff']}, head grad diff {res['control_allfalse_head_grad_diff']}): the mask is not what selects the rows")
+    if res["control_prior_grad_diff"] != 0.0:
+        raise AssertionError(f"stop-aux probe: the frozen P10 prior's gradient moved with the weight ({res['control_prior_grad_diff']}): the control must read exactly 0.0")
     res["pass"] = True
     return res
 
@@ -2497,6 +2677,7 @@ def main(argv=None):
                               window_start=cfg.window_start)
     info["ds_window_start"] = ds.window_start                       # the held-age clamp's origin, read back from the BUILT dataset (G-DVB compares it)
     LL = make_lead_labels(a, cfg, J, info)                          # PREREG_LEVELHEAD_A2: the lead head's label arrays (None with the head off: nothing read, nothing built)
+    SA = make_stop_aux(a, cfg, J, clips, info)                      # PREREG_V8F_STOPPERC arm A: the per-clip camera arrays (None with the head off: nothing read, nothing built)
     prior = M.load_p10(a.p10) if not a.synthetic else M.P10Prior.synthetic(a.seed)
     mu, sd = M.cons_stats(J)
     model = M.V8FMini(cfg, prior, mu, sd).to(dev)
@@ -2537,6 +2718,8 @@ def main(argv=None):
             probe["level_y"], probe["level_ok"] = level_stage(probe)
         if cfg.lead_head == "on":                        # PREREG_LEVELHEAD_A2: as above (the lead labels, looked up by the probe's own clip index and step)
             probe["lead_y"], probe["lead_has"], probe["lead_near"] = lead_stage(probe, LL)
+        if cfg.stop_aux == "on":                         # PREREG_V8F_STOPPERC arm A: as above (the stop labels, from the probe's own NOW-frame label and clip camera)
+            probe["stop_cell"], probe["stop_pos"], probe["stop_has"] = stop_aux_stage(probe, SA)
         live = live_check(model.cpu(), probe, cfg)
     else:
         ds_probe = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
@@ -2548,6 +2731,8 @@ def main(argv=None):
             probe_f["level_y"], probe_f["level_ok"] = level_stage(probe_f)
         if cfg.lead_head == "on":                        # PREREG_LEVELHEAD_A2: as above
             probe_f["lead_y"], probe_f["lead_has"], probe_f["lead_near"] = lead_stage(probe_f, LL)
+        if cfg.stop_aux == "on":                         # PREREG_V8F_STOPPERC arm A: as above
+            probe_f["stop_cell"], probe_f["stop_pos"], probe_f["stop_has"] = stop_aux_stage(probe_f, SA)
         probe = {k: v for k, v in probe_f.items() if k not in ("frames_u8", "frame_map")}      # the cached tokens stay in `probe` (admissibility, identity)
         live = live_check_lora(model, enc, probe_f, cfg, a, dev, chunk)
         ident = identity_probe(enc, probe_f, dev, chunk)
@@ -2594,6 +2779,10 @@ def main(argv=None):
         ldp = lead_head_probe(model, probe, cfg)          # PREREG_LEVELHEAD_A2: G-LIVE on the loop's own label call (lead_stage); the term reaches the loss with its weight, BOTH outputs get their gradient, the detach control reads EXACTLY 0.0, the lead output reaches O, the head is vision-only (off: nothing run)
     except (AssertionError, ValueError) as e:
         raise SystemExit(f"ZZDVB-REFUSEDZZ lead-head: {e}")
+    try:
+        sap = stop_aux_probe(model, probe, cfg)           # PREREG_V8F_STOPPERC arm A: G-LIVE on the loop's own label call (stop_aux_stage); the term reaches the loss with its weight, both heads AND the adapter get the gradient, the zero control reads EXACTLY 0.0, the head is vision-only (off: nothing run)
+    except (AssertionError, ValueError) as e:
+        raise SystemExit(f"ZZDVB-REFUSEDZZ stop-aux: {e}")
     levers = model.built_levers()
     levers["ego_perturb"] = ego.built_levers()                        # recorded like every other lever (selfcheck.json, summary.json, the checkpoint)
     levers["dagger"] = dag.built_levers()                             # PREREG_V8F_DAGGER: what was BUILT (the bank's path and sha256 included) ...
@@ -2624,6 +2813,9 @@ def main(argv=None):
     if cfg.lead_head == "on":                                           # PREREG_LEVELHEAD_A2: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
         sc["lead_head_probe"] = ldp
         sc["lead_labels"] = info["lead_labels"]
+    if cfg.stop_aux == "on":                                            # PREREG_V8F_STOPPERC arm A: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
+        sc["stop_aux_probe"] = sap
+        sc["stop_aux_extrinsics"] = info["stop_aux"]
     if ident is not None:
         sc["identity_probe"] = ident
     json.dump(sc, open(os.path.join(a.out, "selfcheck.json"), "w"), indent=1, default=str)
@@ -2646,6 +2838,7 @@ def main(argv=None):
     launch_on = cfg.launch_intent_w > 0.0                          # PREREG_V8F_LAUNCH_INTENT: off (the default) = the loop runs no new line
     level_on = cfg.level_head == "on"                              # PREREG_V8F_LEVEL: off (the default) = the loop runs no new line
     lead_on = cfg.lead_head == "on"                                # PREREG_LEVELHEAD_A2: off (the default) = the loop runs no new line
+    stop_on = cfg.stop_aux == "on"                                 # PREREG_V8F_STOPPERC arm A: off (the default) = the loop runs no new line
     launch_tot = {"rows": 0, "eligible": 0, "n": 0}                # ... run totals: rows seen, GT-valid rows (the along-track label exists), GT-launch rows; carried in the checkpoint of an arm that has the lever ON only
     launch_int = {"rows": 0, "eligible": 0, "n": 0}                # ... and since the last log line
     if os.path.exists(ck_path) and not a.no_resume:
@@ -2668,7 +2861,7 @@ def main(argv=None):
 
     def save(final=False):
         blob = {"model": model.state_dict(), "opt": opt.state_dict(), "step": step, "epoch": ep, "batch_in_epoch": bi,
-                "argv_sha": argv_sha(argv), "cfg": cfg.__dict__, "p10_path": os.path.abspath(a.p10) if not a.synthetic else "",
+                "argv_sha": argv_sha(argv), "cfg": {k: v for k, v in cfg.__dict__.items() if cfg.stop_aux == "on" or k not in M.STOPAUX_CFG_FIELDS}, "p10_path": os.path.abspath(a.p10) if not a.synthetic else "",
                 "grid": a.grid, "arm": a.arm, "seed": a.seed, "cons_mu": mu, "cons_sd": sd,
                 "cfg_tuple_fields": {"wm_strides": list(cfg.wm_strides)},
                 "ego_perturb": ego.built_levers(), "init_ckpt": info.get("init_ckpt"), "ego_totals": dict(ego_tot),
@@ -2704,6 +2897,8 @@ def main(argv=None):
                 lvl_lab = level_stage(b)
             if lead_on:                                            # PREREG_LEVELHEAD_A2: the lead label of the LOGGED frame (clip index and step), taken BEFORE any ego stage (a swapped sample's ci / t is the own one)
                 lead_lab = lead_stage(b, LL)
+            if stop_on:                                            # PREREG_V8F_STOPPERC arm A: the stop labels of the LOGGED frame (NOW-frame label + clip camera), taken BEFORE any ego stage
+                stop_lab = stop_aux_stage(b, SA)
             if comp.on:                                            # AMEND1 section 1 (--ego-perturb-with-dagger): the swap is drawn first, the perturbation only on the samples the swap did not replace; the overlap is measured (exactly 0)
                 b = comp.apply(b, step)
                 for c_ in (ov_int, ov_tot):
@@ -2741,6 +2936,8 @@ def main(argv=None):
                 b["level_y"], b["level_ok"] = lvl_lab
             if lead_on:                                            # PREREG_LEVELHEAD_A2: attached AFTER the stages: the loss reads b["lead_y"], b["lead_has"], b["lead_near"]
                 b["lead_y"], b["lead_has"], b["lead_near"] = lead_lab
+            if stop_on:                                            # PREREG_V8F_STOPPERC arm A: attached AFTER the stages: the loss reads b["stop_cell"], b["stop_pos"], b["stop_has"]
+                b["stop_cell"], b["stop_pos"], b["stop_has"] = stop_lab
             b = to_dev(b, dev)
             for g in opt.param_groups:
                 g["lr"] = lr_at(step) * g.get("lr_mult", 1.0)

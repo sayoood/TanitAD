@@ -151,11 +151,21 @@ LEAD_HUBER_DELTA = 0.1                     # in gap / 40 units (= 4 m): the card
 AUX_TOKEN_DIM = 3                          # [v_hat / LEVEL_SCALE, sigmoid(presence logit), gap_hat]
 LEAD_KEY_PREFIXES = ("lead_head.", "e_lead.")
 AUX_KEY_PREFIXES = ("e_aux.",)
+#: PREREG_V8F_STOPPERC arm A (`--stop-aux`, `--w-stop-aux`): a VISION-ONLY stop-location auxiliary. ``off`` (default) builds NOTHING = every earlier arm, bit for bit (state dict, RNG stream, losses, gradients). ``on`` builds
+#: ``stop_head`` (MLP(d, d, 1) applied to EACH of the 40 adapted tokens of the CURRENT tick frame -> one logit per 4x10 cell) and ``stop_pres_head`` (MLP(d, d, 1) on the mean of those tokens -> "the ego's rest point is in view"). Loss
+#: = per-token BCE on the cell the rest point projects into (windows with an in-view rest point) + a presence BCE (positives AND negatives, negatives = presence 0). NOTHING reads the head at inference (no consumer in
+#: forward_infer / run_o / run_t): its gradient shapes the shared adapter only (Q4: a PURE auxiliary). Needs the 4x10 grid (n_tok 40: the label is a 4x10 cell).
+STOP_AUX_MODES = ("off", "on")
+STOPAUX_KEY_PREFIXES = ("stop_head.", "stop_pres_head.")
+STOPAUX_CFG_FIELDS = ("stop_aux", "w_stop_aux")             # recorded in a checkpoint's cfg ONLY when the lever is on (a flag-off checkpoint keeps the tip's key set, so NULL's sha256 can equal the tip's)
 #: every state-dict key a declared lever may ADD to an older checkpoint's key set (load_init_ckpt: EXACTLY these may be fresh)
-NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES
+NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + STOPAUX_KEY_PREFIXES
 #: identifiers the lead head's own code (``V8FMini._lead``) and the aux-token assembly (``V8FMini._aux_in``) must not mention (the level list + the lead labels): the head is VISION ONLY
 LEAD_FORBIDDEN_NAMES = LEVEL_FORBIDDEN_NAMES + ("lead_y", "lead_has", "lead_near", "lead_gap_h", "s_h", "pose_now")
 LEAD_ALLOWED_KEYS = frozenset({"frame_ok"})
+#: the stop head's own code (``V8FMini._stop``) must not mention these: the level list + the lead labels + the stop labels and the label dicts' cons cells (the head is VISION ONLY)
+STOP_FORBIDDEN_NAMES = LEAD_FORBIDDEN_NAMES + ("stop_cell", "stop_pos", "stop_has", "cons", "cons_std", "goal_y", "lat_al", "lon_al")
+STOP_ALLOWED_KEYS = frozenset({"frame_ok"})
 
 
 LIMITS_MS = (30 / 3.6, 50 / 3.6, 100 / 3.6, 120 / 3.6)
@@ -229,6 +239,8 @@ class V8FMiniConfig:
     lead_head: str = "off"             # PREREG_LEVELHEAD_A2 (`--lead-head`): off = nothing built (every earlier arm, bit for bit); on = the vision-only lead head (presence + gap) + O's lead conditioning (LEAD_HEAD_MODES)
     w_lead: float = 0.0                # PREREG_LEVELHEAD_A2 (`--w-lead`): the weight of BCE(presence) + Huber(gap_hat) in the total. Must be > 0 with the head on and exactly 0.0 with it off (checked by the launch gate)
     aux_cond: str = "add"              # PREREG_LEVELHEAD_A2 (`--aux-cond`): how O reads the head outputs: add (e_level / e_lead ADDED to the ego token, zero-init) | token (ONE extra conditioning token, replaces both additive paths)
+    stop_aux: str = "off"              # PREREG_V8F_STOPPERC arm A (`--stop-aux`): off = nothing built (every earlier arm, bit for bit); on = the vision-only stop-location auxiliary head (STOP_AUX_MODES)
+    w_stop_aux: float = 0.0            # PREREG_V8F_STOPPERC arm A (`--w-stop-aux`): the weight of (per-token cell BCE + presence BCE) in the total. Must be > 0 with the head on and exactly 0.0 with it off (checked by the launch gate)
     w_level: float = 0.0               # PREREG_V8F_LEVEL (`--w-level`): the weight of Huber(v_hat, logged speed) in the total. Must be > 0 with the head on and exactly 0.0 with it off (checked by the launch gate: a head with no loss, or a weight with no head, is refused)
 
     @property
@@ -264,6 +276,12 @@ class V8FMiniConfig:
             raise ValueError(f"aux_cond must be one of {AUX_COND_MODES}, got {self.aux_cond!r}")
         if not (math.isfinite(self.w_lead) and self.w_lead >= 0.0):
             raise ValueError(f"w_lead must be a finite number >= 0, got {self.w_lead!r}")
+        if self.stop_aux not in STOP_AUX_MODES:
+            raise ValueError(f"stop_aux must be one of {STOP_AUX_MODES}, got {self.stop_aux!r}")
+        if not (math.isfinite(self.w_stop_aux) and self.w_stop_aux >= 0.0):
+            raise ValueError(f"w_stop_aux must be a finite number >= 0, got {self.w_stop_aux!r}")
+        if self.stop_aux == "on" and self.n_tok != 40:
+            raise ValueError(f"stop_aux on needs the 4x10 grid (n_tok 40: the label is a cell of it), got n_tok {self.n_tok}")
         if self.hmax < self.hist + self.max_age_s:
             raise ValueError("hmax must cover hist + max_age_s")
         if self.window_start != -1 and not 0 <= self.window_start <= self.hist - 1:
@@ -737,6 +755,11 @@ class V8FMini(nn.Module):
                 nn.init.zeros_(self.e_lead.bias)
         if cfg.aux_cond == "token" and (self.lvl_head is not None or self.lead_head is not None):
             self.e_aux = nn.Linear(AUX_TOKEN_DIM, d)                       # default (non-zero) init: the extra token must carry signal from step 0
+        self.stop_head = None
+        self.stop_pres_head = None
+        if cfg.stop_aux == "on":                                           # PREREG_V8F_STOPPERC arm A: built LAST (the global RNG stream of every module above is the off model's); off = nothing built, no draw
+            self.stop_head = _mlp(d, d, 1)
+            self.stop_pres_head = _mlp(d, d, 1)
         self.p_gt = 1.0
 
     # ---- helpers -------------------------------------------------------------------------------------------
@@ -792,6 +815,12 @@ class V8FMini(nn.Module):
         ok = self._at(b["frame_ok"], last)
         lead_in = torch.where(ok[:, None], torch.stack([torch.sigmoid(logit.detach()), gap_hat.detach()], -1), torch.zeros_like(o))
         return logit, gap_hat, lead_in
+
+    def _stop(self, b, adapt: Tensor, last: Tensor):
+        """PREREG_V8F_STOPPERC arm A: ``(cell_logits [B, n_tok], pres_logit [B])``, float32. The head reads the adapted tokens of the frame at ``last`` -- VISION ONLY (no ego, nav, limit, code or label: pinned by
+        :func:`assert_stop_head_vision_only`). Nothing downstream consumes it: its gradient reaches the shared adapter only."""
+        tok = self._at(adapt, last)
+        return self.stop_head(tok).squeeze(-1).float(), self.stop_pres_head(tok.mean(1)).squeeze(-1).float()
 
     def _aux_in(self, b, adapt: Tensor, last: Tensor) -> Tensor:
         """PREREG_LEVELHEAD_A2 (``--aux-cond token``): the [B, 3] input of ``e_aux`` = ``[v_hat / LEVEL_SCALE (0 without the level head), sigmoid(presence logit), gap_hat (both 0 without the lead head)]``, detached,
@@ -879,6 +908,8 @@ class V8FMini(nn.Module):
             out["level_v"] = self._level(b, adapt, last_now)[0]
         if self.lead_head is not None:                                  # PREREG_LEVELHEAD_A2: (presence logit, gap_hat) from the CURRENT tick frame's vision tokens (for the loss); O recomputes the same values inside run_o
             out["lead_logit"], out["lead_gap"] = self._lead(b, adapt, last_now)[:2]
+        if self.stop_head is not None and use_labels:                   # PREREG_V8F_STOPPERC arm A: from the CURRENT tick frame's vision tokens, in the TRAINING forward only (for the loss; inference never computes it, nothing consumes it)
+            out["stop_cell_logits"], out["stop_pres_logit"] = self._stop(b, adapt, last_now)
         # ---- S at its tick
         ck_s = self.run_s(b, adapt, last_s)
         out["ckpt"] = ck_s
@@ -1039,6 +1070,18 @@ class V8FMini(nn.Module):
             T["lead_bce"] = (bce * lhas).sum() / lhas.sum().clamp_min(1.0)
             T["lead_huber"] = (hub * lnear).sum() / lnear.sum().clamp_min(1.0)
             T["lead"] = T["lead_bce"] + T["lead_huber"]
+        if cfg.stop_aux == "on":                                     # PREREG_V8F_STOPPERC arm A: computed ONLY when the head is built (off = no new tensor op, no new T key = the tip, bit for bit)
+            if "stop_cell" not in batch or "stop_pos" not in batch or "stop_has" not in batch:
+                raise ValueError("stop_aux on but the batch carries no `stop_cell` / `stop_pos` / `stop_has`: the trainer computes them from the label join and the clip's sensor_extrinsics before any ego stage (v8f_mini_train.py stop_aux_stage)")
+            fok = batch["frame_ok"][:, -1]
+            shas = (batch["stop_has"] & fok).float()                                   # windows with a label and a camera: the presence BCE (positives AND negatives)
+            spos = (batch["stop_pos"] & batch["stop_has"] & fok).float()              # windows whose rest point projects into the frame: the per-token cell BCE
+            tgt_cell = F.one_hot(batch["stop_cell"].clamp_min(0), out["stop_cell_logits"].shape[-1]).float()
+            bce_cell = F.binary_cross_entropy_with_logits(out["stop_cell_logits"], tgt_cell, reduction="none").mean(-1)
+            bce_pres = F.binary_cross_entropy_with_logits(out["stop_pres_logit"], (batch["stop_pos"] & batch["stop_has"]).float(), reduction="none")
+            T["stop_cell"] = (bce_cell * spos).sum() / spos.sum().clamp_min(1.0)
+            T["stop_pres"] = (bce_pres * shas).sum() / shas.sum().clamp_min(1.0)
+            T["stop_aux"] = T["stop_cell"] + T["stop_pres"]
         # consistency penalties
         lim = limit_ms_from_onehot(batch["limit"], batch["limit_ok"])
         if cfg.consistency:
@@ -1059,6 +1102,7 @@ class V8FMini(nn.Module):
         total = total + cfg.w_traj * cfg.launch_intent_w * T["launch_along"] / 3.0 if cfg.launch_intent_w > 0.0 else total      # PREREG_V8F_LAUNCH_INTENT: ONE line (a mutation deletes it); W 0 adds nothing: the tip's total
         total = total + cfg.w_level * T["level"] if cfg.level_head == "on" else total          # PREREG_V8F_LEVEL: ONE line (a mutation deletes it); head off adds nothing: the tip's total
         total = total + cfg.w_lead * T["lead"] if cfg.lead_head == "on" else total             # PREREG_LEVELHEAD_A2: ONE line (a mutation deletes it); head off adds nothing: the tip's total
+        total = total + cfg.w_stop_aux * T["stop_aux"] if cfg.stop_aux == "on" else total       # PREREG_V8F_STOPPERC arm A: ONE line (a mutation deletes it); head off adds nothing: the tip's total
         if cfg.consistency:
             total = total + cfg.w_pen * sum(T[f"pen_{r}"] for r in RULES) + cfg.w_pen_self * sum(T[f"pens_{r}"] for r in RULES)
         if self.wm is not None:
@@ -1091,6 +1135,8 @@ class V8FMini(nn.Module):
             g["LEAD"] = [self.lead_head] + ([self.e_lead] if self.e_lead is not None else [])
         if self.e_aux is not None:
             g["AUX"] = [self.e_aux]
+        if self.stop_head is not None:                                              # PREREG_V8F_STOPPERC arm A
+            g["STOPAUX"] = [self.stop_head, self.stop_pres_head]
         return g
 
     def built_levers(self) -> dict:
@@ -1127,6 +1173,9 @@ class V8FMini(nn.Module):
             lv["lead_vision_only_source"] = not lead_head_source_problems()
             if self.e_lead is not None:
                 lv["lead_token_zero_init"] = bool(float(self.e_lead.weight.detach().abs().sum()) == 0.0 and float(self.e_lead.bias.detach().abs().sum()) == 0.0)
+        if self.stop_head is not None:                                     # PREREG_V8F_STOPPERC arm A: present ONLY with the head built (a flag-off model keeps its key set); the gate reads built.get("stop_aux", "off")
+            lv["stop_aux"], lv["w_stop_aux"] = "on", cfg.w_stop_aux
+            lv["stop_vision_only_source"] = not stop_head_source_problems()
         if self.lead_head is not None or self.e_aux is not None:           # the BUILT wiring, read back by the gate (absent = the additive default with no head: a token declared with no head builds nothing and is refused)
             lv["aux_cond"] = "token" if self.e_aux is not None else "add"
             lv["aux_vision_only_source"] = not aux_source_problems()
@@ -1366,4 +1415,26 @@ def assert_aux_vision_only(model: V8FMini, batch: dict) -> dict:
     if src:
         raise AssertionError(f"the aux token's assembly names non-vision inputs: {src}")
     rec = _vision_only_run(model, batch, lambda b, adapt, last: model._aux_in(b, adapt, last), LEAD_ALLOWED_KEYS | LEVEL_ALLOWED_KEYS, "aux token input")
+    return {**rec, "source_problems": src}
+
+
+def stop_head_source_problems(fn=None) -> list:
+    """PREREG_V8F_STOPPERC arm A admissibility, STATIC half: the identifiers of ``V8FMini._stop``'s CODE that name an ego, nav, limit, code or label input (:data:`STOP_FORBIDDEN_NAMES`) -- empty = the head's code reads vision only."""
+    return _forbidden_in(V8FMini._stop if fn is None else fn, STOP_FORBIDDEN_NAMES)
+
+
+def assert_stop_head_vision_only(model: V8FMini, batch: dict) -> dict:
+    """PREREG_V8F_STOPPERC arm A admissibility (binding: labels may use ego, inference is vision-only), the form of :func:`assert_lead_head_vision_only`: the stop head's outputs (the 40 cell logits and the presence logit) are a
+    function of the VISION tokens alone. Raises AssertionError unless (1) :func:`stop_head_source_problems` is empty; (2) running ``model._stop`` on a key-guarded batch READS only :data:`STOP_ALLOWED_KEYS`; (3) its outputs are IDENTICAL
+    (bit for bit) when every non-vision batch key is replaced by a different value, and DIFFERENT when ``feats`` is. Returns the record the launch gate carries."""
+    if model.stop_head is None:
+        raise AssertionError("assert_stop_head_vision_only: the model has no stop head")
+    src = stop_head_source_problems(type(model)._stop)                 # the code of the model's OWN class (a subclass that rewires the head is read, not the base)
+    if src:
+        raise AssertionError(f"the stop head's code names non-vision inputs: {src}")
+    def call(b, adapt, last):
+        cl, pl = model._stop(b, adapt, last)
+        return torch.cat([cl, pl[:, None]], -1)
+
+    rec = _vision_only_run(model, batch, call, STOP_ALLOWED_KEYS, "stop head")
     return {**rec, "source_problems": src}
