@@ -14,6 +14,8 @@ NEW file (refcv9 E2-ROLL, 2026-11-04).  Existing files are NOT edited.  Three di
   (iii) NO DEV-BOX DEFAULT -- R8_LAUNCH_TREE, PF_R8_CODE, PF_NF_HOLD, R8_EVAL_KIT, R9E2_REMAP, R9E2_SPLIT, R9E2_PF_CODE come from the environment; the run
         REFUSES when one is unset.  ``r8_repoint.REMAP_OVERRIDES`` is set from R9E2_REMAP in-process (the technique camblind_roll_r9.py uses; it is read at
         ``configure_env()`` time), so the ``r8_repoint.py:42`` one-line edit is NOT needed for this entry point.
+  (iv)  THOR GPU GATE (FIXED 2026-11-12) -- on Jetson Thor ``gpu_gate.gate`` is replaced, the moment the battery imports it, by ``thor_gate_factory``: the
+        dev-box gate reads memory.used (Thor: "[N/A]") and free RAM through powershell.exe, so on Thor it can only WAIT (see the THOR_MARKER block).
 Pose-clock policy: E2 runs the CORRECTED clock => ``--no-baselines`` REQUIRED and ``R8_NO_POSE_SYNC`` must be UNSET (run_battery_r8.py:63-70).
 UNVERIFIED: no real K0 / K2 roll exists; the MM runs it on Thor.
 
@@ -21,12 +23,16 @@ UNVERIFIED: no real K0 / K2 roll exists; the MM runs it on Thor.
 """
 from __future__ import annotations
 
+import csv
 import hashlib
 import importlib.abc
 import importlib.machinery
+import io
 import json
 import os
+import subprocess
 import sys
+import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -209,6 +215,60 @@ def hook_on_import(name, fn):
     return f
 
 
+# ---- Jetson Thor: the battery's GPU gate (FIXED 2026-11-12) ---------------------------------------------------------------------------- #
+#: MEASURED 2026-11-12 10:08-10:18Z, the FIRST REAL E2 roll on Thor (runs/E2_READ_K2M1N20, roll_K0.out): run_battery_r7.gate_wait -> gpu_gate.gate WAITED
+#: 8 times and would have waited 12 h, holding thor_gpu.lock.  gpu_gate.py is the DEV-BOX gate (RTX 4060): it int()s `nvidia-smi --query-gpu=memory.used`
+#: (Thor answers "[N/A]" -> ValueError -> probe FAILED -> WAIT) and reads free RAM through powershell.exe.  The roll's DRY run skips the lock and the gate,
+#: so no test and no dry run ever reached it on Thor.  On Thor NO memory figure is admissible (TRAPS.md: unified memory; nvidia-smi / free / tegrastats /
+#: VmRSS all lie), so the Thor gate reads none: the caller holds thor_gpu.lock (--lock-held; r9e2_roll.sh takes it before any GPU stage) and NO OTHER
+#: compute app is on the GPU.  `--query-compute-apps` does list a live CUDA process on Thor (MEASURED 2026-11-12: own pid, python, "134 MiB"; empty when
+#: idle).  Stricter than the dev box: ANY other app (python or not) is a WAIT.  A probe that cannot be read is a WAIT (fail closed, as gpu_gate.PROBE_ERRORS).
+THOR_MARKER = Path("/etc/nv_tegra_release")
+THOR_RULE = ("THOR (unified memory: no memory probe is admissible, TRAPS.md): the caller holds thor_gpu.lock (--lock-held) and no OTHER compute app is on "
+             "the GPU (nvidia-smi --query-compute-apps); memory.used and free RAM are NOT read")
+_THOR_PROBE_ERRORS = (subprocess.SubprocessError, OSError, ValueError, IndexError)
+
+
+def is_thor(marker=None) -> bool:
+    return Path(THOR_MARKER if marker is None else marker).exists()
+
+
+def _compute_apps_query() -> str:
+    return subprocess.run(["nvidia-smi", "--query-compute-apps=pid,process_name,used_memory", "--format=csv,noheader"],
+                          capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60, check=True).stdout
+
+
+def thor_gate_factory(query=None):
+    """A drop-in for ``gpu_gate.gate`` on Thor: same keywords; ``max_used_mib`` / ``min_free_ram_gb`` are accepted and NOT applied (THOR_RULE)."""
+    q = _compute_apps_query if query is None else query
+
+    def gate(max_used_mib=4300, min_free_ram_gb=8.0, self_pid=None, self_pids=None):
+        own = {int(p) for p in (self_pids or ()) if p is not None}
+        own.add(os.getpid() if self_pid is None else int(self_pid))
+        g = {"platform": "thor", "gpu_used_mib": None, "free_ram_gb": None, "self_pids_excluded": sorted(own), "rule": THOR_RULE,
+             "t": time.strftime("%Y-%m-%dT%H:%M:%S")}
+        try:
+            apps = [(int(row[0].strip()), row[1].strip() if len(row) > 1 else "")
+                    for row in csv.reader(io.StringIO(q())) if row and any(c.strip() for c in row)]
+        except _THOR_PROBE_ERRORS as exc:                       # FAIL CLOSED: an unreadable probe (or an unparsable row) is a WAIT, never a PASS
+            return {**g, "ok": False, "probe_ok": False, "probe_error": f"{type(exc).__name__}: {str(exc)[:200]}",
+                    "compute_apps": None, "python_compute": None}
+        other = [(p, n) for p, n in apps if p not in own]
+        return {**g, "ok": not other, "probe_ok": True, "compute_apps": other, "python_compute": [(p, n) for p, n in other if "python" in n.lower()]}
+    gate.r9e2_thor = True
+    return gate
+
+
+def install_thor_gate(argv, marker=None, query=None):
+    """On Thor: REFUSE without ``--lock-held``, else replace ``gpu_gate.gate`` the moment the battery imports gpu_gate.  Elsewhere: nothing (the dev-box gate stays)."""
+    if not is_thor(marker):
+        return None
+    if "--lock-held" not in argv:
+        raise SystemExit("[r9e2] refusing: on Jetson Thor the battery GPU gate can read no memory figure (memory.used is [N/A]) -- the caller must hold "
+                         "thor_gpu.lock and pass --lock-held")
+    return hook_on_import("gpu_gate", lambda m: setattr(m, "gate", thor_gate_factory(query)))
+
+
 def pin_repoint(env=None):
     """Import r8_repoint from PF_R8_CODE and point it at the env pins BEFORE any apply() (REMAP_OVERRIDES is read at configure_env() time)."""
     env = os.environ if env is None else env
@@ -238,6 +298,7 @@ def main(argv=None) -> int:
         del argv[i:i + 2]
         os.environ.setdefault("R9E2_SPLIT", split_path)
     pins = require_env()
+    install_thor_gate(argv)                          # AFTER the env refusals (their tests run on Thor too), BEFORE the battery imports gpu_gate
     dev, hold, split = load_dev_hold(pins["R9E2_SPLIT"])
     census = {}
     pin_repoint()
