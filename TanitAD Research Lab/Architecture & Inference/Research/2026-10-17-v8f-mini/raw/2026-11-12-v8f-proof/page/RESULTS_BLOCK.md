@@ -7,7 +7,7 @@
 
 **Goal 2, validate the design: three parts hold, two gaps are located.**
 * Holds: the jump-ratio and linear-yardstick statements for the world model (T1, T6); the rule shield, with conformal coverage as proved (T3); a two-member weight average realises 0.74 of the ensemble gain (T9).
-* Gap A, the physical world beyond ego motion: the frozen camera tokens carry lead presence, lead range, nearest agent and agent count beyond ego motion, but the latents of the model do not expose them, and no stop cue is found in the pooled tokens. A finer grid carries more lead content under a full-kernel probe, and the probes are still rising at 111 episodes. The direct read on un-pooled and higher-resolution tokens (addendum 9) gives the interface a small part: un-pooling adds 0.05 R2 on lead gap, a higher-resolution centre crop adds 0.07 AUROC on lead presence, the full higher-resolution grid adds nothing, and no stop cue appears beyond ego motion.
+* Gap A, the physical world beyond ego motion: the frozen camera tokens carry lead presence, lead range, nearest agent and agent count beyond ego motion, but the latents of the model do not expose them, and no stop cue is found in the pooled tokens. A finer grid carries more lead content under a full-kernel probe, and the probes are still rising at 111 episodes. The direct read on un-pooled and higher-resolution tokens (addendum 9) gives the interface a small part: un-pooling adds 0.05 R2 on lead gap, a higher-resolution centre crop adds 0.07 AUROC on lead presence, the full higher-resolution grid adds nothing, and no stop cue appears beyond ego motion. Pictures decoded from the world-model state (addendum 10) show the scene gist and no object.
 * Gap B, decisions: the tactical confidence tells right from wrong decisions at AUROC 0.64; a commit rule needs about 0.9 to bank half of the oracle gain.
 
 **Goal 3, start scaling: started 13 Nov.**
@@ -96,4 +96,9 @@
 * The weighted training runs moved the threshold along one ROC; the stop-goal AUROC stays 0.82 and 0.85. A dose now costs a scalar edit and seconds instead of a training run.
 * What it cannot do: improve the ROC. A better stop decision needs a better cue.
 
-**Not read yet:** the latent pictures (addendum 10, running).
+**Pictures decoded from the world-model state (addendum 10, LATVIS), MEASURED, T0, a diagnostic.** Source `latvis/VERDICT_LATVIS.md`; 1,948 windows of 139 episodes; controls v1 to v3 pass. The pictures hold camera content and are kept private.
+* What is retained, outcome **Z-BELOW-G**: the 128-number state of the world model decodes at skill 0.36; the 4x10 token grid it comes from decodes at 0.78. The state shows the scene gist (sky, road, light level) and no object; the token grid shows a truck, close cars and a street light as blobs.
+* What is imagined at 2.0 s: the learned rollout is not closer to the true future frame than the decoded present; the stacked predictor is, at both seeds, by 0.6 to 0.7 of the available headroom (**IMAGINE-PIXELS** for the stack). The effect is small, because a mean-pooled state barely changes its picture in 2 s.
+* Committed next lever: a spatial world-model state (the token grid, not its mean), with this read as its acceptance test.
+
+**All thirteen reads of the programme so far are in.** Open: the six-seed hierarchy against flat replicate on the pod (addendum 11).
