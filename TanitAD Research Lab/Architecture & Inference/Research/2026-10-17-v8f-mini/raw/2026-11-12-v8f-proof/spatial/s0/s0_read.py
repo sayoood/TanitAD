@@ -328,6 +328,7 @@ def make_label_sets(D, folds_b, folds_w, mode: str):
     return {"main": main, "s1": s1}, both
 
 
+RB_PROBE = "bank"                # note N4 (stage 0b): "bank" = the r-a probe of the fold (training-fold bank frames); "windows" = the first read (N3b)
 PLANT_SIGMAS = 12.0              # S0_DEFS R13 s2: amplitude in natural standard deviations of the planted cell along the planted direction
 
 
@@ -373,6 +374,7 @@ def process_fold(f, D, M, labs, both, folds_b, folds_w, pl, log_=log):
     out["s4_maxabs_g"] = np.array([s4["g"]]); out["s4_maxabs_m"] = np.array([s4["m"]])
     log_(f"fold {f}: predictors done ({time.time() - t0:.0f}s)")
     for lab, L in labs.items():
+        ra_fit = {}
         # r-a
         for s in ("g", "m"):
             for tg in ("gap", "pres"):
@@ -384,6 +386,8 @@ def process_fold(f, D, M, labs, both, folds_b, folds_w, pl, log_=log):
                 if len(vtr) >= 12 and len(vte):
                     fit = fit_probe(St[s][vtr], y[vtr], epi[vtr], SEED + f)
                     out[key][vte] = fit(St[s][vte])
+                    if tg == "gap":
+                        ra_fit[s] = fit
         # r-b
         yk = L["gapk"]
         wv_tr = wtr[np.isfinite(yk[wtr])]; wv_te = wte[np.isfinite(yk[wte])]
@@ -392,13 +396,19 @@ def process_fold(f, D, M, labs, both, folds_b, folds_w, pl, log_=log):
                 out.setdefault(f"rb|{lab}|{s}|{nm}", np.full(nw, np.nan))
             if len(wv_tr) >= 12 and len(wv_te):
                 Z0, Zk = St[s][ri0], St[s][rik]
-                fit = fit_probe(Zk[wv_tr], yk[wv_tr], w_epi[wv_tr], SEED + f)
+                fit = ra_fit[s] if (RB_PROBE == "bank" and s in ra_fit) else fit_probe(Zk[wv_tr], yk[wv_tr], w_epi[wv_tr], SEED + f)
                 pos_in_te = {int(w): i for i, w in enumerate(wte)}
                 pi = np.array([pos_in_te[int(w)] for w in wv_te])
                 out[f"rb|{lab}|{s}|i"][wv_te] = fit(pred_states[s][pi])
                 out[f"rb|{lab}|{s}|ii"][wv_te] = fit(Z0[wv_te])
                 out[f"rb|{lab}|{s}|iii"][wv_te] = fit(Zk[wv_te])
         out.setdefault(f"rb|{lab}|ego|iv", np.full(nw, np.nan))
+        out.setdefault(f"rb|{lab}|ego|ivb", np.full(nw, np.nan))
+        yg_ = L["gap"]
+        vtr_ = tr[np.isfinite(yg_[tr])]
+        if len(vtr_) >= 12 and len(wv_te):
+            fit_e = fit_probe(E[vtr_], yg_[vtr_], epi[vtr_], SEED + f)
+            out[f"rb|{lab}|ego|ivb"][wv_te] = fit_e(E[rik[wv_te]])
         if len(wv_tr) >= 12 and len(wv_te):
             Fe = np.concatenate([E[ri0], A], 1)
             fit = fit_probe(Fe[wv_tr], yk[wv_tr], w_epi[wv_tr], SEED + f)
@@ -511,11 +521,16 @@ def analyse(D, oof, labs, both, folds_b, folds_w, B, floors):
         r["ra"]["gap|E"] = single_r2(epi, yg, fl["gap"][0], C, n_ep); r["ra"]["gap|E"]["chosen"] = fl["gap"][1]
         r["ra"]["pres|E"] = single_auc(epi, yp, fl["pres"][0], C); r["ra"]["pres|E"]["chosen"] = fl["pres"][1]
         r["rb"]["ego|iv"] = single_r2(w_epi, yk, oof[f"rb|{lab}|ego|iv"], C, n_ep)
+        r["rb"]["ego|ivb"] = single_r2(w_epi, yk, oof[f"rb|{lab}|ego|ivb"], C, n_ep)
         if lab == "main":
             r["ra_vs_E"] = {s: paired(epi, yg, oof[f"ra|main|{s}|gap"], fl["gap"][0], C, n_ep) for s in ("g", "m")}
             r["grid_vs_mean"] = paired(epi, yg, oof["ra|main|g|gap"], oof["ra|main|m|gap"], C, n_ep)
             r["rb_i_ii"] = {s: paired(w_epi, yk, oof[f"rb|main|{s}|i"], oof[f"rb|main|{s}|ii"], C, n_ep) for s in ("g", "m")}
-            r["rb_i_iv"] = {s: paired(w_epi, yk, oof[f"rb|main|{s}|i"], oof["rb|main|ego|iv"], C, n_ep) for s in ("g", "m")}
+            fl_key = "ivb" if r["rb"]["ego|ivb"]["r2"] > r["rb"]["ego|iv"]["r2"] else "iv"      # note N4: the HIGHER of the two ego floors decides
+            r["rb_floor_used"] = fl_key
+            r["rb_i_iv"] = {s: paired(w_epi, yk, oof[f"rb|main|{s}|i"], oof[f"rb|main|ego|{fl_key}"], C, n_ep) for s in ("g", "m")}
+            r["rb_i_iv_as_built"] = {s: paired(w_epi, yk, oof[f"rb|main|{s}|i"], oof["rb|main|ego|iv"], C, n_ep) for s in ("g", "m")}
+            r["rb_ii_iv"] = {s: paired(w_epi, yk, oof[f"rb|main|{s}|ii"], oof[f"rb|main|ego|{fl_key}"], C, n_ep) for s in ("g", "m")}
             r["rb_iii_i"] = {s: paired(w_epi, yk, oof[f"rb|main|{s}|iii"], oof[f"rb|main|{s}|i"], C, n_ep) for s in ("g", "m")}
         res[lab] = r
     # controls
@@ -533,6 +548,14 @@ def analyse(D, oof, labs, both, folds_b, folds_w, B, floors):
     ctr["s3"] = check_s3({s: res["main"]["rb"][f"{s}|i"]["r2"] for s in ("g", "m")}, {s: res["main"]["rb"][f"{s}|ii"]["r2"] for s in ("g", "m")},
                          {s: res["main"]["rb"][f"{s}|iii"]["r2"] for s in ("g", "m")}, res["main"]["ra"]["gap|E"]["r2"])
     ctr["s4"] = check_s4({"S0g": oof["s4_maxabs_g"], "S0m": oof["s4_maxabs_m"]})
+    if RB_PROBE == "bank":                                    # note N4, s5: (iii) of the test windows equals the r-a out-of-fold prediction at the same bank frames
+        yk_ = labs["main"]["gapk"]
+        d5 = {}
+        for s_ in ("g", "m"):
+            a_ = oof[f"rb|main|{s_}|iii"]; b_ = oof[f"ra|main|{s_}|gap"][D["rik"]]
+            ok_ = np.isfinite(a_) & np.isfinite(b_) & np.isfinite(yk_)
+            d5[s_] = {"n": int(ok_.sum()), "max_abs_diff": float(np.abs(a_[ok_] - b_[ok_]).max()) if ok_.any() else float("nan")}
+        ctr["s5"] = {"pass": bool(all(v["n"] > 0 and v["max_abs_diff"] <= 1e-9 for v in d5.values())), **d5, "bar": "max abs diff <= 1e-9 on rows where both exist"}
     res["controls"] = ctr
     res["controls_pass"] = bool(all(v["pass"] for v in ctr.values()))
     res["outcomes"] = outcome_names(res["main"]["ra_vs_E"], res["main"]["rb_i_ii"], res["main"]["rb_i_iv"], res["main"]["grid_vs_mean"])
@@ -551,7 +574,7 @@ def write_verdict(path, res, meta, smoke: bool):
     L.append("A negative of stage 0 is a negative about a LINEAR predictor on an untrained state; it does not close stage 1. r-c (pixels): " + meta["r_c"])
     L.append("")
     L.append("## CONTROLS (first)")
-    for k in (("s2", "s2p", "s4") if smoke else ("s1", "s2", "s2p", "s3", "s4")):
+    for k in (("s2", "s2p", "s4") if smoke else [k_ for k_ in ("s1", "s2", "s2p", "s3", "s4", "s5") if k_ in ctr]):
         c = ctr[k]
         L.append(f"- {k}: {'PASS' if c['pass'] else 'FAIL'} :: " + json.dumps({a: b for a, b in c.items() if a != 'pass'}, default=float))
     if not smoke:
@@ -576,6 +599,7 @@ def write_verdict(path, res, meta, smoke: bool):
         for s in ("g", "m"):
             L.append(f"- S0{s}: (i) predicted {m['rb'][f'{s}|i']['r2']:+.3f}, (ii) copy {m['rb'][f'{s}|ii']['r2']:+.3f}, (iii) true future {m['rb'][f'{s}|iii']['r2']:+.3f}; (i)-(ii) {m['rb_i_ii'][s]['diff']:+.3f} {ci_s(m['rb_i_ii'][s]['ci95'])}; (i)-(iv) {m['rb_i_iv'][s]['diff']:+.3f} {ci_s(m['rb_i_iv'][s]['ci95'])}")
         L.append(f"- (iv) ego only: {m['rb']['ego|iv']['r2']:+.3f} {ci_s(m['rb']['ego|iv']['ci95'])}")
+        L.append(f"- (iv-b) ego only, bank probe on the true future ego vector (note N4): {m['rb']['ego|ivb']['r2']:+.3f} {ci_s(m['rb']['ego|ivb']['ci95'])}; floor used by the outcome rule: {m.get('rb_floor_used')}; r-b probe rows: {RB_PROBE}")
         L.append("## OUTCOME NAMES")
         for nm in ("S0g", "S0m"):
             L.append(f"- {nm}: {res['outcomes'][nm]['lead']}; {res['outcomes'][nm]['imagine']}")

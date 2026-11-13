@@ -103,6 +103,11 @@
 
 **All thirteen reads of the programme so far are in.** Open: the six-seed hierarchy against flat replicate on the pod (addendum 11).
 
+**Stage 0 of the spatial-state experiment (addendum 12), MEASURED, T0, a diagnostic; no model trained.** Source `spatial/s0/VERDICT_S0.md`; 139 episodes, 9,321 frames; six controls pass. This is the second read: the first missed one control and was not quoted; one instrument setting was repaired, written down before the rerun.
+* Retention, outcome **S0-LEAD-KEPT** for the grid state: the lead gap is read at R2 0.40 from a state that keeps the 4x10 layout, 0.26 from the mean state and 0.13 from ego motion alone. Grid minus ego +0.27 [+0.08, +0.54]. The mean state does not separate from ego motion (**S0-LEAD-LOST**). Grid minus mean +0.14 [-0.004, +0.29]: by the card **GRID-EQUAL**, the interval reaches 0.
+* The lemma on real tokens: the position of a planted object is read at AUROC 1.000 from the grid state and 0.495 from the mean state; the solver lemma predicted 0.50 before the measurement.
+* Imagination at 2.0 s with a linear predictor, outcome **S0-IMAGINE-FLAT**: the predicted state reads the future gap at 0.34, a copy of the present at 0.36, the true future state at 0.37. The read has no room: the level of the gap barely changes in 2 s. The next read targets the change of the gap.
+
 **Next two experiments, frozen 13 Nov before any of their data.**
 * Addendum 12, SPATIAL: a world-model state that keeps the 4x10 cell layout (640 numbers) in place of the mean over cells (128). Stage 0 on the dev box needs no training: is the lead vehicle kept by such a state, and is its gap 2.0 s ahead predicted better than a copy and better than ego motion alone. Stage 1 on the pod: 4 arms (grid state, and a mean state of the same width as the control), read against the six-seed baseline of addendum 11.
 * Addendum 13, DATAEFF: the same model on 1/2, 1/4 and 1/8 of the clips at fixed steps (is it limited by data: this decides whether the scaling step is more clips), flat against hierarchy at 1/4 (does the margin of the hierarchy grow when data is scarce), and clips chosen by their share of selection-critical windows against random clips. 10 arms on the pod after addendum 12.
