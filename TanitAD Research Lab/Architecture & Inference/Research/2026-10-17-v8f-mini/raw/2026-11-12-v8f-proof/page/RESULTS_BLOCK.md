@@ -91,4 +91,9 @@
 * Stop cue: **CUE-ABSENT-FULLRES**. No token set beats ego motion alone on the stop flag or the stop distance (131 stop windows).
 * Control: a planted one-token object is found at AUROC 1.00 in un-pooled tokens and at 0.50 after 4x10 pooling, as theorem T5 predicts.
 
-**Not read yet:** the bias-edit run (dumps done, reader running) and the latent pictures (addendum 10, running).
+**One-scalar weight edit against a trained lever (addendum 4, BIASEDIT), MEASURED, T1-kin first tick, a diagnostic.** Source `bias/VERDICT_BIASEDIT.md`; eval-141, 117 stop-point windows; controls e1 to e3 pass.
+* Outcome **BIAS-MATCHES-ROC**: adding one number to the stop-goal bias of the unweighted model reproduces what a full training run with a stop class weight does to the stop decision. At the offset that matches the trained false-positive rate, the hit rate is within the replicate gap in all four cells (two doses, two seeds).
+* The weighted training runs moved the threshold along one ROC; the stop-goal AUROC stays 0.82 and 0.85. A dose now costs a scalar edit and seconds instead of a training run.
+* What it cannot do: improve the ROC. A better stop decision needs a better cue.
+
+**Not read yet:** the latent pictures (addendum 10, running).
