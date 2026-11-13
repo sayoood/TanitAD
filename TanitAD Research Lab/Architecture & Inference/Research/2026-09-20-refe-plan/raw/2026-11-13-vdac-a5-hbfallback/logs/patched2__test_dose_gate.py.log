@@ -1,0 +1,7 @@
+D1 ok (dose_argv, A1: exactly three flags differ from S1Z's: --max-updates 1600, --out, --epochs 2.0 right after the --max-updates value)
+   card-original argv refusals: ['refe_dose_s1z_p6 requires --epochs 2.0; the argv does not carry it', 'refe_dose_s1z_p6 PINS --epochs 2.0; the argv does not carry it', "refe_dose_s1z_p6 requires --epochs 2.0 (PREREG_SFT4 'Settings', the SFT-4R recipe); the argv resolves to 1.0 (the parser DEFAULT)", "the dose cannot reach --max-updates 1600: with --epochs 1.0 on 60000 train sets the trainer ends at update 938 (scorer_finetune.py:2786-2788), so the LR schedule and the run are not the card's 1,600-update dose; the frozen card names no --epochs; amendment A1 (PREREG_DOSE_P6_A1.md, 1aa0e702) adds --epochs 2.0"]
+D2 ok (the A1 argv is legal on the real profile; the card's original two-value argv is refused by the missing required --epochs AND the reach rule; every wrong case reads as required)
+D3 ok (the 23 existing profile digests unmoved; NEW refe_dose_s1z_p6 = 9085f9e5cf59c016...)
+D4 ok
+D5 ok (bash -n x3; dose_pod.sh vs launch_gate vs s1z_pod.sh, both DOSE_EPOCHS 2.0; no calibrate mode; S1Z's lambda only; mutations RED incl. DOSE_EPOCHS None / pod DOSE_EPOCHS dropped)
+ZZTEST_PASS

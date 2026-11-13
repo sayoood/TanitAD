@@ -1,0 +1,27 @@
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/gate_checks.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/gate_checks.py
+@@ -942,7 +942,7 @@
+       identity         feed off: two optimiser steps with the head leave the scorer bit-identical to two without, the reference replays identically and the probe reads one ulp;
+                        feed on: step 0 of the fed scorer == the base scorer exactly, a non-zero projection changes it, and the projection gets a gradient
+       adam             every head parameter holds Adam state after a step
+-      memory           the head's retained activations <= 1 GB where measured (CUDA)"""
++      memory           the head's retained activations <= 1.0 x (2.0 / cell)^2 GB where measured (CUDA): 1 GB at the 2 m grid, 4 GB at HC's 1 m grid (4x the queries); the trainer's own bound is cross-checked"""
+     import math
+     if not isinstance(g12, dict):
+         return ["G12 is not a dict"]
+@@ -983,8 +983,13 @@
+     if not (isinstance(n_, int) and n_ > 0 and k_ == n_):
+         r.append(f"G12: {k_} of {n_} head parameters hold Adam state (a registered parameter without state never received a gradient)")
+     mem = g12.get("head_retained_gb")
+-    if mem is not None and not mem <= 1.0:
+-        r.append(f"G12: the head retains {mem} GB for backward (> 1 GB)")
++    cell_g = float(getattr(ns, "aux_drv_cell", 2.0))
++    bound = 1.0 * (2.0 / cell_g) ** 2          # the sanity bound scales with the declared cell (HC's 1 m grid has 4x the queries of 2 m): 1.0 GB at 2 m, 4.0 GB at 1 m
++    tb = g12.get("head_retained_bound_gb")
++    if tb is not None and tb != bound:
++        r.append(f"G12: the trainer's own head_retained_bound_gb {tb} != the bound {bound:g} GB of the declared --aux-drv-cell {cell_g:g}")
++    if mem is not None and not mem <= bound:
++        r.append(f"G12: the head retains {mem} GB for backward (> {bound:g} GB, the bound at the declared {cell_g:g} m cell)")
+     if ns.aux_drv_feed == "off":
+         for k in ("reference_replay_identical", "scorer_params_bit_identical_2steps", "identity_probe_reads_one_ulp"):
+             if g12.get(k) is not True:

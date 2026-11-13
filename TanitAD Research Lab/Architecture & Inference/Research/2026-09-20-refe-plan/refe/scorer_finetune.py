@@ -2546,7 +2546,7 @@ def main() -> int:
             oHd.step()
             g["adam_head_params"] = sum(1 for _ in hd.parameters())
             g["adam_head_params_with_state"] = sum(1 for p_ in hd.parameters() if p_ in oHd.state and "exp_avg" in oHd.state[p_])
-        g["head_retained_gb"] = None
+        g["head_retained_gb"], g["head_retained_bound_gb"] = None, 1.0 * (2.0 / float(aux.cfg.cell)) ** 2          # HC: the sanity bound scales with the BUILT cell (1 m = 4x the queries of 2 m): 1.0 GB at 2 m, 4.0 GB at 1 m
         if dev == "cuda":
             torch.cuda.synchronize()
             m0 = torch.cuda.memory_allocated()
@@ -2567,7 +2567,7 @@ def main() -> int:
             path_ok = bool(g["feed_zero_init"] and g["feed_step0_equal_base"] and g["feed_probe_reads_difference"] and g["feed_proj_grad_abs"] > 0.0)
         g["ok"] = bool(label_ok > 0 and live and control and g["tap_is_visual_ctx"] and not g["tap_is_scene_ctx"] and g["score_to_head_grads_all_none"] and g["bce_near_ln2"]
                        and path_ok and g["adam_head_params"] > 0 and g["adam_head_params_with_state"] == g["adam_head_params"] and not g["mutate"]
-                       and (g["head_retained_gb"] is None or g["head_retained_gb"] <= 1.0)
+                       and (g["head_retained_gb"] is None or g["head_retained_gb"] <= g["head_retained_bound_gb"])
                        and (hb is None or (g["scene_proj_calls"] == 3 and g.get("tap_is_p6_visual_ctx") is False)))
         return g
 

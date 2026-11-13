@@ -13,14 +13,15 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ARM=${ARM:-}
 # VDAC A5 (DRAFT): HB = the head reads a LoRA copy of P6's trunk at P6's OWN LoRA lr (train.py single AdamW group, --lr 2e-4: p6_pod.sh:487); HC = 1 m cells + boundary weight 3 (band 3 m).  EXTRA = the arm's lever flags, NAMED (their defaults disable them).
 EXTRA=""
+BATCH=8; ACCUM=1          # HB arms ONLY: --batch 4 --accum 2 (the card's pre-registered memory fallback, effective batch 8; MEASURED 2026-11-12: HB-s0 at batch 8 OOMs on the L40's 44.39 GiB)
 HBX="--aux-drv-trunk-lora on --aux-drv-lora-lr 0.0002"
 HCX="--aux-drv-cell 1.0 --aux-drv-bw 3.0 --aux-drv-bw-band-m 3.0"
 case "$ARM" in
   HA-s0) SEED=0; UPD=10000; EVAL=5000; SHUF="" ;;
   HA-s1) SEED=1; UPD=10000; EVAL=5000; SHUF="" ;;
   HA-SHUF) SEED=0; UPD=2000; EVAL=1000; SHUF="--aux-drv-shuffle-seed 0" ;;
-  HB-s0) SEED=0; UPD=10000; EVAL=5000; SHUF=""; EXTRA="$HBX" ;;
-  HB-SHUF) SEED=0; UPD=2000; EVAL=1000; SHUF="--aux-drv-shuffle-seed 0"; EXTRA="$HBX" ;;
+  HB-s0) SEED=0; UPD=10000; EVAL=5000; SHUF=""; EXTRA="$HBX"; BATCH=4; ACCUM=2 ;;
+  HB-SHUF) SEED=0; UPD=2000; EVAL=1000; SHUF="--aux-drv-shuffle-seed 0"; EXTRA="$HBX"; BATCH=4; ACCUM=2 ;;
   HC-s0) SEED=0; UPD=10000; EVAL=5000; SHUF=""; EXTRA="$HCX" ;;
   HC-SHUF) SEED=0; UPD=2000; EVAL=1000; SHUF="--aux-drv-shuffle-seed 0"; EXTRA="$HCX" ;;
   *) echo "unknown ARM=$ARM (HA-s0 | HA-s1 | HA-SHUF | HB-s0 | HB-SHUF | HC-s0 | HC-SHUF)" >&2; exit 2 ;;
@@ -37,7 +38,7 @@ for f in --max-updates --eval-every --seed --out; do
 done
 echo "$PARGS" | grep -q -- '--aux-drv\|--split-half\|--pair-\|--twin-\|--epochs\|--batch\|--accum' && { echo "REFUSED: the parent argv already names a head / split / pair / twin / schedule lever" >&2; exit 2; }
 BASE="$(echo "$PARGS" | sed -E 's# --max-updates [^ ]+##; s# --eval-every [^ ]+##; s# --seed [^ ]+##; s# --out [^ ]+##')"
-ARGS="$BASE --max-updates $UPD --batch 8 --accum 1 --epochs 2 --eval-every $EVAL --seed $SEED --aux-drv --w-aux-drv 0.1 --aux-drv-lr 0.0002 --aux-drv-tap visual --aux-drv-depth 2 --aux-drv-labels $LABELS --aux-drv-exclude-logs $H48 --aux-drv-exclude-sha256 $H48_SHA $EXTRA $SHUF --dump-scores $OUT/scores --out $OUT"
+ARGS="$BASE --max-updates $UPD --batch $BATCH --accum $ACCUM --epochs 2 --eval-every $EVAL --seed $SEED --aux-drv --w-aux-drv 0.1 --aux-drv-lr 0.0002 --aux-drv-tap visual --aux-drv-depth 2 --aux-drv-labels $LABELS --aux-drv-exclude-logs $H48 --aux-drv-exclude-sha256 $H48_SHA $EXTRA $SHUF --dump-scores $OUT/scores --out $OUT"
 if [ "${MODE:-}" = "argv" ]; then echo "$ARGS" | tr -s ' ' | sed 's/ $//'; exit 0; fi
 case "${MODE:-}" in
   preflight|run|mutate|mutate_ego) ;;
