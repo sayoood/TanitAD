@@ -26,3 +26,5 @@ PREREG_V8F_PROOF_ADD6.md  frozen (file time) 2026-11-13 01:07:29
 PREREG_V8F_PROOF_ADD6B.md  frozen (file time) 2026-11-13 01:26:47
 PREREG_V8F_PROOF_ADD7.md  frozen (file time) 2026-11-13 01:38:31
 PREREG_V8F_PROOF_ADD8.md  frozen (file time) 2026-11-13 01:38:44
+PREREG_V8F_PROOF_ADD9.md  frozen 2026-11-13 02:20:51  (file time; no FULLRES encode or probe output existed: full/ was empty)
+PREREG_V8F_PROOF_ADD10.md  frozen 2026-11-13 02:29:04  (file time; no LATVIS output existed)
