@@ -1,4 +1,4 @@
-**Standing against the three goals, 13 Nov 07:15.** Every measured value below is a T0 or T1-kin diagnostic on logged frames, never driving performance. The strategic family is paused (PI item 25).
+**Standing against the three goals, 13 Nov 08:05.** Every measured value below is a T0 or T1-kin diagnostic on logged frames, never driving performance. The strategic family is paused (PI item 25).
 
 **Goal 1, prove dominance of the hierarchy: NOT ESTABLISHED yet. The deciding experiment is frozen and in preparation on the pod.**
 * Proved by the solver (47 conditions, 23 mutated twins refuted): what a hierarchy can gain over a flat model and through which term (T1, T2), and why a commit rule cannot bank that gain at the present decision quality (group J).
@@ -7,11 +7,11 @@
 
 **Goal 2, validate the design: three parts hold, two gaps are located.**
 * Holds: the jump-ratio and linear-yardstick statements for the world model (T1, T6); the rule shield, with conformal coverage as proved (T3); a two-member weight average realises 0.74 of the ensemble gain (T9).
-* Gap A, the physical world beyond ego motion: the frozen camera tokens carry lead presence, lead range, nearest agent and agent count beyond ego motion, but the latents of the model do not expose them, and no stop cue is found in the pooled tokens. A finer grid carries more lead content under a full-kernel probe, and the probes are still rising at 111 episodes. The direct read on un-pooled and higher-resolution tokens (addendum 9) is queued on the dev box.
+* Gap A, the physical world beyond ego motion: the frozen camera tokens carry lead presence, lead range, nearest agent and agent count beyond ego motion, but the latents of the model do not expose them, and no stop cue is found in the pooled tokens. A finer grid carries more lead content under a full-kernel probe, and the probes are still rising at 111 episodes. The direct read on un-pooled and higher-resolution tokens (addendum 9) gives the interface a small part: un-pooling adds 0.05 R2 on lead gap, a higher-resolution centre crop adds 0.07 AUROC on lead presence, the full higher-resolution grid adds nothing, and no stop cue appears beyond ego motion.
 * Gap B, decisions: the tactical confidence tells right from wrong decisions at AUROC 0.64; a commit rule needs about 0.9 to bank half of the oracle gain.
 
 **Goal 3, start scaling: started 13 Nov.**
-* The pod (A40) is prepared for training: environment, training token cache rebuilt from the frames, and a gated chain for the 24 arms.
+* The pod (A40) is rebuilding the training token cache from the frames (about 750 clips per hour, 4,713 clips); the gated chain for the 24 arms waits behind it.
 * Committed arms after the replicate, by its outcome: the data-efficiency pair (a quarter, a half and all of the clips), the finer-interface pair, training weighted toward selection-critical windows, and a third replicate for the three-member weight average.
 
 **Resolution probe (H-V8F-PROOF-4, RESPROBE), MEASURED, tier T0, a perception diagnostic. Outcome RES-REFUTED: a prediction of this page failed.** Source `res/VERDICT_RESPROBE.md`; frozen-feature probes (ridge on 256 principal components), 9,321 frames, 139 episodes (lead gap: 56), 5 folds by episode, episode-cluster bootstrap B 2,000.
@@ -84,4 +84,11 @@
 * Limit: the average is not ahead of the better member (3.254 against 3.238 m); it removes the risk of drawing the worse one (3.420 m). One pair, so no run-to-run interval.
 * Dose by weight interpolation (P2b): outcome DOSE-NONLINEAR, missed on the false-positive rate by 0.0004.
 
-**Not read yet:** the bias-edit run (running on the dev box), the un-pooled and higher-resolution token read (addendum 9, probe starting) and the latent pictures (addendum 10, queued behind it).
+**Un-pooled and higher-resolution tokens (addendum 9, FULLRES), MEASURED, T0, a perception diagnostic.** Source `full/VERDICT_FULLRES.md`; 139 episodes; controls f1 to f5 pass.
+* Lead gap R2 with ego motion: ego alone 0.13, 4x10 grid 0.40, 8x20 0.43, un-pooled 16x40 0.46, centre crop at twice the resolution 0.45, the full higher-resolution grid 0.39.
+* Outcomes: **UNPOOL-HELPS** (small: +0.027 R2 [+0.000, +0.056] over 8x20), **RES-FLAT** (the full higher-resolution grid is worse under this probe), **INTERFACE-PARTIAL** (+0.055 R2 [+0.000, +0.111] over 4x10, under the 0.10 bar).
+* Lead present: the centre crop at twice the resolution is best, AUROC 0.84 against 0.77 for 4x10 (+0.066 [+0.033, +0.103], the same under both probes).
+* Stop cue: **CUE-ABSENT-FULLRES**. No token set beats ego motion alone on the stop flag or the stop distance (131 stop windows).
+* Control: a planted one-token object is found at AUROC 1.00 in un-pooled tokens and at 0.50 after 4x10 pooling, as theorem T5 predicts.
+
+**Not read yet:** the bias-edit run (dumps done, reader running) and the latent pictures (addendum 10, running).

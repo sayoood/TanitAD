@@ -104,7 +104,7 @@ figcaption {{ font-size:13.5px; color:var(--mute); max-width:72ch }}
 <main>
 <div class="kicker">TanitAD · v8F · first edition, 13 Nov 2026</div>
 <h1>v8 proof programme: what is proved, what is measured, what comes next</h1>
-<p class="lead">Nine theorems tie the measured state of v8F to a way forward. The algebra behind each is checked by a solver; the premises are experiments. Ten were read. One refuted a prediction of this page, and a later read showed part of that refutation was a limit of the probe; one gave a mixed answer and one follow-up failed its bar; the weight average of two replicates realised 0.74 of the ensemble gain; three are not read yet.</p>
+<p class="lead">Nine theorems tie the measured state of v8F to a way forward. The algebra behind each is checked by a solver; the premises are experiments. Eleven were read. One refuted a prediction of this page, and a later read showed part of that refutation was a limit of the probe; one gave a mixed answer and one follow-up failed its bar; the weight average of two replicates realised 0.74 of the ensemble gain; the direct read on un-pooled and higher-resolution tokens found a small gain from un-pooling and none from the full higher-resolution grid; two are not read yet.</p>
 <div class="stats">
 <div class="stat"><b>47 / 47</b><span>verification conditions proved by Z3, statements frozen first</span></div>
 <div class="stat"><b>19 / 19</b><span>mutated twins refuted with a counterexample</span></div>
