@@ -102,3 +102,8 @@
 * Committed next lever: a spatial world-model state (the token grid, not its mean), with this read as its acceptance test.
 
 **All thirteen reads of the programme so far are in.** Open: the six-seed hierarchy against flat replicate on the pod (addendum 11).
+
+**Next two experiments, frozen 13 Nov before any of their data.**
+* Addendum 12, SPATIAL: a world-model state that keeps the 4x10 cell layout (640 numbers) in place of the mean over cells (128). Stage 0 on the dev box needs no training: is the lead vehicle kept by such a state, and is its gap 2.0 s ahead predicted better than a copy and better than ego motion alone. Stage 1 on the pod: 4 arms (grid state, and a mean state of the same width as the control), read against the six-seed baseline of addendum 11.
+* Addendum 13, DATAEFF: the same model on 1/2, 1/4 and 1/8 of the clips at fixed steps (is it limited by data: this decides whether the scaling step is more clips), flat against hierarchy at 1/4 (does the margin of the hierarchy grow when data is scarce), and clips chosen by their share of selection-critical windows against random clips. 10 arms on the pod after addendum 12.
+* Not carded: a finer token grid for the readers. The 8x20 arm of the programme read FAIL-NO-MECHANISM on 23 Oct, and the full-resolution probe measured a small ceiling (lead gap R2 0.40 to 0.46).
