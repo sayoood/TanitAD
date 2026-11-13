@@ -1,0 +1,52 @@
+{
+ "tol_identity": 0.0001,
+ "tol_cov": 0.001,
+ "split": "eval",
+ "clips": [
+  "01be5919-6e61-45ba-a193-5f447efb4b51",
+  "2e8a2df2-3f74-448e-9781-0739328ab42e",
+  "52ddcaaf-06cb-4654-894f-962f27c2bb34",
+  "826cd25c-fa4a-4e7d-9fbb-f64486fe3712",
+  "ac81f868-f505-4268-bfeb-c58c0a0a1605",
+  "e0e6b875-eb14-41ba-8988-884da8624b34"
+ ],
+ "identity": {
+  "slow": {
+   "max_abs_diff": 0.0,
+   "pass": true,
+   "wrong_kind_basis_max_abs_diff": 4.518149375915527,
+   "wrong_kind_fails_identity": true
+  },
+  "pca": {
+   "max_abs_diff": 0.0,
+   "pass": true,
+   "wrong_kind_basis_max_abs_diff": 4.518149375915527,
+   "wrong_kind_fails_identity": true
+  }
+ },
+ "SMOKE": false,
+ "cov_u_fit_frames": {
+  "pca_max_dev": 5.569897021384662e-08,
+  "pca_pass": true,
+  "slow_max_dev": 0.015352243985512048,
+  "slow_pass": false,
+  "slow_diag_min": 0.984647756014488,
+  "slow_diag_max": 0.9999002730558271,
+  "note": "SLOW is normalised V^T (C + ridge I) V = I as the card states, so cov(u) = I - ridge V^T V; the deviation is ridge / (variance + ridge) per direction"
+ },
+ "slow_vs_pca": {
+  "slow_top_mu": 0.9983713394516043,
+  "slow_top_autocorr_measured": 0.9984709213510126,
+  "pca_top_autocorr_measured": 0.9912784619950574,
+  "pass": true
+ },
+ "shuffled_time_basis": {
+  "slow_top_mu": 0.3114508693055725,
+  "slow_top_autocorr_measured": 0.815735052062544,
+  "pca_top_autocorr_measured": 0.9912784619950574,
+  "pass": false,
+  "must_fail": true
+ },
+ "pass": true,
+ "pass_cov_slow_card_tolerance": false
+}

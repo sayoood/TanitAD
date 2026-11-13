@@ -1,0 +1,147 @@
+[MM 2026-11-13 ~00:07] log created with the Write tool before the first launch of job_lp_slowwm.cmd (README step 3); the job appends below.
+[job] start 13.11.2026  0:06:14,76 
+00:06:48 A ('meta', 'SLOW_s0') 0.9 s ok
+00:06:48 A ('meta', 'PCA-B_s0') 1.2 s ok
+00:06:53 A ('meta', 'PCA-B_s1') 0.9 s ok
+00:06:53 A ('meta', 'SLOW_s1') 1.0 s ok
+00:06:55 A ('meta', 'SLOW_rep_s2') 1.2 s ok
+00:06:55 A ('meta', 'R35H_s0') 1.1 s ok
+00:06:56 A ('meta', 'R35H_s1') 0.8 s ok
+00:26:36 A ('p1', 'SLOW_s0', 'c1', 'true') 0.0 s ERR e
+    (g,) = torch.autograd.grad(cost.sum(), a)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\autograd\__init__.py", line 532, in grad
+    result = _engine_run_backward(
+        outputs,
+    ...<5 lines>...
+        accumulate_grad=False,
+    )
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\autograd\graph.py", line 869, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        t_outputs, *args, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )  # Calls into the C++ engine to run the backward pass
+    ^
+RuntimeError: [enforce fail at alloc_cpu.cpp:117] data. DefaultCPUAllocator: not enough memory: you tried to allocate 524288 byt
+00:26:36 A ('p1', 'SLOW_s0', 'c1', 'rand') 0.0 s ERR F:\TanitAD-scratch/slowwm/tree\stack\tanitad\models\hjepa.py", line 371, in forward
+    q, k, v = self.qkv(h).reshape(b, l, 3, self.heads, w // self.heads).permute(2, 0, 3, 1, 4)
+              ~~~~~~~~^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\linear.py", line 134, in forward
+    return F.linear(input, self.weight, self.bias)
+           ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: [enforce fail at alloc_cpu.cpp:117] data. DefaultCPUAllocator: not enough memory: you tried to allocate 1572864 byt
+[job] start 13.11.2026  2:22:39,26 
+02:22:47 A ('meta', 'SLOW_s0') 0.0 s skip
+02:22:48 A ('meta', 'PCA-B_s0') 0.0 s skip
+02:22:48 A ('meta', 'SLOW_s1') 0.0 s skip
+02:22:48 A ('meta', 'PCA-B_s1') 0.0 s skip
+02:22:48 A ('meta', 'SLOW_rep_s2') 0.0 s skip
+02:22:48 A ('meta', 'R35H_s0') 0.0 s skip
+02:22:48 A ('meta', 'R35H_s1') 0.0 s skip
+02:59:57 A ('p1', 'SLOW_s0', 'c1', 'rand') 2224.2 s ok
+03:05:49 A ('p1', 'SLOW_s0', 'c1', 'true') 2578.1 s ok
+03:13:53 A ('tune', 'SLOW_s0', 'c1', 0.0) 746.0 s ok
+03:16:48 A ('tune', 'SLOW_s0', 'c1', 0.01) 659.0 s ok
+03:24:02 A ('tune', 'SLOW_s0', 'c1', 0.03) 609.2 s ok
+03:32:51 A ('tune', 'SLOW_s0', 'c1', 0.1) 632.6 s ok
+03:34:34 A ('tune', 'SLOW_s0', 'c1', 0.3) 632.0 s ok
+03:41:12 A ('tune', 'SLOW_s0', 'c1', 1.0) 501.1 s ok
+03:51:30 A ('p1', 'PCA-B_s0', 'c1', 'true') 1003.7 s ok
+03:56:37 A ('p1', 'PCA-B_s0', 'c1', 'rand') 907.3 s ok
+04:00:54 A ('tune', 'PCA-B_s0', 'c1', 0.0) 564.1 s ok
+04:07:54 A ('tune', 'PCA-B_s0', 'c1', 0.01) 642.7 s ok
+04:11:44 A ('tune', 'PCA-B_s0', 'c1', 0.03) 613.4 s ok
+04:17:31 A ('tune', 'PCA-B_s0', 'c1', 0.1) 576.6 s ok
+04:21:01 A ('tune', 'PCA-B_s0', 'c1', 0.3) 556.9 s ok
+04:26:22 A ('tune', 'PCA-B_s0', 'c1', 1.0) 530.8 s ok
+04:38:55 A ('p1', 'SLOW_s1', 'c1', 'true') 1068.8 s ok
+04:42:22 A ('p1', 'SLOW_s1', 'c1', 'rand') 953.9 s ok
+04:47:45 A ('tune', 'SLOW_s1', 'c1', 0.0) 529.9 s ok
+04:51:08 A ('tune', 'SLOW_s1', 'c1', 0.01) 526.0 s ok
+04:56:02 A ('tune', 'SLOW_s1', 'c1', 0.03) 496.9 s ok
+04:59:24 A ('tune', 'SLOW_s1', 'c1', 0.1) 496.2 s ok
+05:05:06 A ('tune', 'SLOW_s1', 'c1', 0.3) 544.4 s ok
+05:09:54 A ('tune', 'SLOW_s1', 'c1', 1.0) 597.2 s ok
+05:28:55 A ('p1', 'PCA-B_s1', 'c1', 'true') 1339.3 s ok
+05:29:56 A ('p1', 'PCA-B_s1', 'c1', 'rand') 1160.5 s ok
+05:38:04 A ('tune', 'PCA-B_s1', 'c1', 0.0) 519.0 s ok
+05:38:25 A ('tune', 'PCA-B_s1', 'c1', 0.01) 509.2 s ok
+05:46:40 A ('tune', 'PCA-B_s1', 'c1', 0.03) 516.9 s ok
+05:46:50 A ('tune', 'PCA-B_s1', 'c1', 0.1) 505.1 s ok
+05:55:46 A ('tune', 'PCA-B_s1', 'c1', 1.0) 535.9 s ok
+05:56:01 A ('tune', 'PCA-B_s1', 'c1', 0.3) 560.8 s ok
+06:11:23 A ('p1', 'SLOW_rep_s2', 'c1', 'rand') 920.5 s ok
+06:12:34 A ('p1', 'SLOW_rep_s2', 'c1', 'true') 1003.9 s ok
+06:19:23 A ('tune', 'SLOW_rep_s2', 'c1', 0.0) 480.0 s ok
+06:21:11 A ('tune', 'SLOW_rep_s2', 'c1', 0.01) 510.5 s ok
+06:29:50 A ('tune', 'SLOW_rep_s2', 'c1', 0.03) 623.0 s ok
+06:30:56 A ('tune', 'SLOW_rep_s2', 'c1', 0.1) 585.5 s ok
+06:37:44 A ('tune', 'SLOW_rep_s2', 'c1', 0.3) 473.7 s ok
+06:38:16 A ('tune', 'SLOW_rep_s2', 'c1', 1.0) 439.7 s ok
+07:52:47 A ('p1', 'SLOW_s0', 'c3', 'true') 3657.0 s ok
+07:52:52 A ('p1', 'SLOW_s0', 'c3', 'rand') 3661.2 s ok
+08:28:26 A ('tune', 'SLOW_s0', 'c3', 0.0) 1778.9 s ok
+08:28:29 A ('tune', 'SLOW_s0', 'c3', 0.01) 1777.1 s ok
+08:56:50 A ('tune', 'SLOW_s0', 'c3', 0.03) 1703.5 s ok
+08:56:54 A ('tune', 'SLOW_s0', 'c3', 0.1) 1705.6 s ok
+09:23:09 A ('tune', 'SLOW_s0', 'c3', 0.3) 1579.4 s ok
+09:23:27 A ('tune', 'SLOW_s0', 'c3', 1.0) 1580.5 s ok
+10:26:07 A ('p1', 'PCA-B_s0', 'c3', 'true') 3773.0 s ok
+10:26:19 A ('p1', 'PCA-B_s0', 'c3', 'rand') 3771.1 s ok
+10:57:53 A ('tune', 'PCA-B_s0', 'c3', 0.0) 1905.5 s ok
+10:58:02 A ('tune', 'PCA-B_s0', 'c3', 0.01) 1902.2 s ok
+11:28:47 A ('tune', 'PCA-B_s0', 'c3', 0.1) 1845.1 s ok
+11:28:48 A ('tune', 'PCA-B_s0', 'c3', 0.03) 1855.0 s ok
+12:00:06 A ('tune', 'PCA-B_s0', 'c3', 1.0) 1878.8 s ok
+12:00:07 A ('tune', 'PCA-B_s0', 'c3', 0.3) 1880.5 s ok
+12:55:22 A ('p1', 'SLOW_s1', 'c3', 'rand') 3304.4 s ok
+12:59:36 A ('p1', 'SLOW_s1', 'c3', 'true') 3557.9 s ok
+13:28:29 A ('tune', 'SLOW_s1', 'c3', 0.0) 1963.7 s ok
+13:32:24 A ('tune', 'SLOW_s1', 'c3', 0.01) 1967.7 s ok
+14:08:14 A ('tune', 'SLOW_s1', 'c3', 0.03) 2384.3 s ok
+14:17:43 A ('tune', 'SLOW_s1', 'c3', 0.1) 2713.0 s ok
+15:16:35 A ('tune', 'SLOW_s1', 'c3', 0.3) 4101.3 s ok
+15:18:35 A ('tune', 'SLOW_s1', 'c3', 1.0) 3652.8 s ok
+16:26:46 A ('p1', 'PCA-B_s1', 'c3', 'true') 4177.0 s ok
+16:28:05 A ('p1', 'PCA-B_s1', 'c3', 'rand') 4168.0 s ok
+17:00:50 A ('tune', 'PCA-B_s1', 'c3', 0.0) 1893.5 s ok
+17:01:15 A ('tune', 'PCA-B_s1', 'c3', 0.01) 1900.8 s ok
+17:32:15 A ('tune', 'PCA-B_s1', 'c3', 0.03) 1885.3 s ok
+17:32:39 A ('tune', 'PCA-B_s1', 'c3', 0.1) 1883.8 s ok
+18:01:34 A ('tune', 'PCA-B_s1', 'c3', 1.0) 1734.5 s ok
+18:01:38 A ('tune', 'PCA-B_s1', 'c3', 0.3) 1751.3 s ok
+19:08:37 A ('p1', 'SLOW_rep_s2', 'c3', 'true') 4009.0 s ok
+19:10:39 A ('p1', 'SLOW_rep_s2', 'c3', 'rand') 4126.1 s ok
+19:37:41 A ('tune', 'SLOW_rep_s2', 'c3', 0.0) 1744.0 s ok
+19:39:11 A ('tune', 'SLOW_rep_s2', 'c3', 0.01) 1712.5 s ok
+20:10:00 A ('tune', 'SLOW_rep_s2', 'c3', 0.03) 1939.6 s ok
+20:11:35 A ('tune', 'SLOW_rep_s2', 'c3', 0.1) 1944.2 s ok
+20:42:22 A ('tune', 'SLOW_rep_s2', 'c3', 0.3) 1941.5 s ok
+20:43:14 A ('tune', 'SLOW_rep_s2', 'c3', 1.0) 1898.8 s ok
+20:50:26 B ('score', 'SLOW_s0', 'c1', 'rand', 1.0) 425.8 s ok
+20:50:51 B ('score', 'SLOW_s0', 'c1', 'true', 1.0) 450.7 s ok
+20:58:35 B ('score', 'PCA-B_s0', 'c1', 'true', 1.0) 487.9 s ok
+20:59:01 B ('score', 'PCA-B_s0', 'c1', 'rand', 1.0) 484.1 s ok
+21:07:22 B ('score', 'SLOW_s1', 'c1', 'true', 1.0) 520.5 s ok
+21:07:42 B ('score', 'SLOW_s1', 'c1', 'rand', 1.0) 520.3 s ok
+21:15:45 B ('score', 'PCA-B_s1', 'c1', 'rand', 1.0) 481.4 s ok
+21:16:03 B ('score', 'PCA-B_s1', 'c1', 'true', 1.0) 520.7 s ok
+21:23:58 B ('score', 'SLOW_rep_s2', 'c1', 'true', 1.0) 489.5 s ok
+21:24:02 B ('score', 'SLOW_rep_s2', 'c1', 'rand', 1.0) 477.4 s ok
+21:57:19 B ('score', 'SLOW_s0', 'c3', 'rand', 1.0) 1990.0 s ok
+21:57:22 B ('score', 'SLOW_s0', 'c3', 'true', 1.0) 1993.0 s ok
+22:29:47 B ('score', 'PCA-B_s0', 'c3', 'true', 1.0) 1940.9 s ok
+22:29:52 B ('score', 'PCA-B_s0', 'c3', 'rand', 1.0) 1946.0 s ok
+22:58:10 B ('score', 'SLOW_s1', 'c3', 'rand', 1.0) 1627.2 s ok
+23:01:39 B ('score', 'SLOW_s1', 'c3', 'true', 1.0) 1596.6 s ok
+23:29:20 B ('score', 'PCA-B_s1', 'c3', 'true', 1.0) 1743.5 s ok
+23:31:23 B ('score', 'PCA-B_s1', 'c3', 'rand', 1.0) 1776.8 s ok
+00:00:12 B ('score', 'SLOW_rep_s2', 'c3', 'true', 1.0) 1847.6 s ok
+00:02:58 B ('score', 'SLOW_rep_s2', 'c3', 'rand', 1.0) 1894.2 s ok
+[job] end 14.11.2026  0:03:00,18 rc=0 
