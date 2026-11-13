@@ -124,6 +124,9 @@ def _dump(root: Path, pairs):
     ws = np.asarray([r - OFF for r, _ in pairs], dtype=np.int64)
     v0 = np.asarray([v for _, v in pairs], dtype=np.float32)
     g = np.zeros((ws.size, K_DK, 2))
+    g[..., 0] = v0[:, None].astype(np.float64) * DT_DK * np.arange(1, K_DK + 1)   # constant-speed GT on the published 0.5 s clock: the reader's
+    # dt_check (r9_e2_families, 3624402e) refuses an all-zero GT for a moving ego (median |g[:, 0]| / v0 = 0 against grid.dt_s 0.5) -- MEASURED on the
+    # Thor E2 suite 2026-11-13 at d0974ba6; the speed proof this file tests is unchanged
     np.savez(d / "ep000.npz", g=g, os=g, ws=ws, v0=v0, eid=np.asarray([0]))
     (d / "manifest.json").write_text(json.dumps({"episodes": [{"file_index": 0, "clip_id": CLIP, "n_windows": int(ws.size)}],
                                                  "grid": {"dt_s": DT_DK, "k": K_DK, "n_windows": int(ws.size)},
