@@ -306,10 +306,20 @@ def cmd_derive(a) -> int:
 
 
 # ------------------------------------------------------------------------------------------------------------------ merge
+def _npz(p: str) -> dict:
+    """every array of an .npz, materialised ONCE. An NpzFile re-reads the whole member on each [key] access, so indexing it per token inside a loop
+    re-read (and, for kept rows, RETAINED) one full array per token: the TF-N5 merge ran out of memory that way on 2026-11-13 (12,146 x 1.1 MiB)."""
+    z = np.load(p, allow_pickle=False)
+    try:
+        return {k: np.array(z[k]) for k in z.files}
+    finally:
+        z.close()
+
+
 def check_unch(out_dir: str, n4d_plans: str, n4d_seam: str, n2r_plans: str, applied: dict, n_l1_run: int, n_l1_expect: int) -> dict:
     """C-UNCH on FILES: for N5-A and N5-X the plan20 AND the seam pose array of every token outside the L1-applied set is bit-identical to the banked N4-D's, the
     changed set equals the applied set exactly, and the count of L1-run tokens equals the card's 25; N5-R (builder-only, plans only) vs the banked N2-R plans."""
-    zb, sb, zr = np.load(n4d_plans, allow_pickle=False), np.load(n4d_seam, allow_pickle=False), np.load(n2r_plans, allow_pickle=False)
+    zb, sb, zr = _npz(n4d_plans), _npz(n4d_seam), _npz(n2r_plans)
     bt = [str(t) for t in zb["tokens"]]
     bi = {t: i for i, t in enumerate(bt)}
     sbi = {str(t): i for i, t in enumerate(sb["token"])}
@@ -322,7 +332,7 @@ def check_unch(out_dir: str, n4d_plans: str, n4d_seam: str, n2r_plans: str, appl
             out["arms"][arm] = {"pass": False, "why": "missing file"}
             out["pass"] = False
             continue
-        z = np.load(fp, allow_pickle=False)
+        z = _npz(fp)
         ref, refp = (zb, bi) if arm in SEAM_ARMS else (zr, {str(t): i for i, t in enumerate(zr["tokens"])})
         zt = [str(t) for t in z["tokens"]]
         changed_p = {t for i, t in enumerate(zt) if t in refp and not np.array_equal(z["plans20"][i], ref["plans20"][refp[t]])}
@@ -330,7 +340,7 @@ def check_unch(out_dir: str, n4d_plans: str, n4d_seam: str, n2r_plans: str, appl
         ok = changed_p == want and set(zt) == set(refp)
         rec = {"changed_plan20": len(changed_p), "applied": len(want), "tokens": len(zt), "unflagged_changed": sorted(changed_p - want)[:5], "flagged_unchanged": sorted(want - changed_p)[:5]}
         if arm in SEAM_ARMS:
-            s = np.load(sp, allow_pickle=False)
+            s = _npz(sp)
             stt = [str(t) for t in s["token"]]
             changed_s = {t for i, t in enumerate(stt) if t in sbi and not np.array_equal(s["poses"][i], sb["poses"][sbi[t]])}
             ok = ok and changed_s == want and set(stt) == set(sbi)
@@ -368,12 +378,12 @@ def cmd_merge(a) -> int:
     ND = G.ND
     P = {arm: CARD[arm] for arm in ARMS}
     rows, n_err, n_dup = read_rows(a.rows)
-    zr = np.load(a.n2r_plans, allow_pickle=False)
+    zr = _npz(a.n2r_plans)
     bt, bl, bp = [str(t) for t in zr["tokens"]], [str(x) for x in zr["logs"]], np.asarray(zr["plans20"], float)
-    zd = np.load(a.n4d_plans, allow_pickle=False)
+    zd = _npz(a.n4d_plans)
     dt, dpl = [str(t) for t in zd["tokens"]], np.asarray(zd["plans20"], float)
     assert dt == bt, "N4-D plan file token order != N2-R's"
-    sb = np.load(a.n4d_seam, allow_pickle=False)
+    sb = _npz(a.n4d_seam)
     order = [str(t) for t in sb["token"]]
     ix = {t: i for i, t in enumerate(bt)}
     rep: dict = {"n_tokens": len(bt), "n_rows": len(rows), "n_error_lines": n_err, "n_duplicate_lines": n_dup, "controls": {}, "diagnostics": {}, "files": {}}

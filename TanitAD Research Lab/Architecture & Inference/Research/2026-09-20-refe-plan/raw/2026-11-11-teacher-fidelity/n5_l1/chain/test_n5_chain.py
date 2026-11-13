@@ -263,6 +263,48 @@ class TestMerge(unittest.TestCase):
             rc = BD.cmd_merge(a)
         return rc, json.load(open(f"{out}/n5_build_report.json")), out
 
+    def test_npz_read_once_not_per_token(self):
+        # TF-N5 merge OOM 2026-11-13: indexing an NpzFile per token re-reads (and, for kept rows, retains) the whole member each time.
+        # Every npz member must be read at most once; the pre-fix per-token access (mutation) must make this probe go RED.
+        real_load = np.load
+        hits = {"n": 0, "members": 0}
+
+        class Counting:
+            def __init__(s, z):
+                s.z, s.files = z, z.files
+
+            def __getitem__(s, k):
+                hits["n"] += 1
+                return s.z[k]
+
+            def close(s):
+                s.z.close()
+
+        def counting_load(p, *a, **k):
+            z = real_load(p, *a, **k)
+            if hasattr(z, "files"):
+                hits["members"] += len(z.files)
+                return Counting(z)
+            return z
+        BD.np.load = counting_load
+        try:
+            rc, rep, out = self.merge()
+            self.assertEqual(rc, 0, rep["controls"])
+            self.assertGreater(hits["members"], 0)
+            self.assertLessEqual(hits["n"], hits["members"], hits)
+            hits.update(n=0, members=0)
+            fixed = BD._npz
+            BD._npz = lambda p: counting_load(p, allow_pickle=False)
+            try:
+                self.merge()
+            except Exception:
+                pass
+            finally:
+                BD._npz = fixed
+            self.assertGreater(hits["n"], hits["members"], ("mutation not detected", hits))
+        finally:
+            BD.np.load = real_load
+
     def test_green_and_files(self):
         rc, rep, out = self.merge()
         self.assertEqual(rc, 0, {k: v for k, v in rep["controls"].items() if not v["pass"]})
