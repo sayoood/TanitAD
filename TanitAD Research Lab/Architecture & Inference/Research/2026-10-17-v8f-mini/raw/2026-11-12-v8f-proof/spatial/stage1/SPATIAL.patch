@@ -1,0 +1,437 @@
+--- a/stack/tanitad/models/v8f_mini.py
++++ b/stack/tanitad/models/v8f_mini.py
+@@ -157,6 +157,9 @@
+ #: forward_infer / run_o / run_t): its gradient shapes the shared adapter only (Q4: a PURE auxiliary). Needs the 4x10 grid (n_tok 40: the label is a 4x10 cell).
+ STOP_AUX_MODES = ("off", "on")
+ STOPAUX_KEY_PREFIXES = ("stop_head.", "stop_pres_head.")
++WM_STATE_MODES = ("mean", "grid")                        # PREREG_V8F_PROOF_ADD12 (SPATIAL): the level-1 state of the world-model auxiliary: mean = the mean of the adapter tokens (today), grid = one projection per cell, concatenated
++WM_UPPER_DIM = 128                                        # levels 2 and 3 of the WM stack keep this width whatever the level-1 state width is
++SPATIAL_CFG_FIELDS = ("wm_state", "wm_cell_dim")          # recorded in a checkpoint's cfg ONLY when wm_state is grid (a mean checkpoint keeps the tip's key set)
+ STOPAUX_CFG_FIELDS = ("stop_aux", "w_stop_aux")             # recorded in a checkpoint's cfg ONLY when the lever is on (a flag-off checkpoint keeps the tip's key set, so NULL's sha256 can equal the tip's)
+ #: every state-dict key a declared lever may ADD to an older checkpoint's key set (load_init_ckpt: EXACTLY these may be fresh)
+ NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + STOPAUX_KEY_PREFIXES
+@@ -202,7 +205,9 @@
+     navonly: bool = False              # S and T lose the scene input (PREREG M1-navonly)
+     consistency: bool = True           # False = penalties at 0 (PREREG M1-nocons)
+     wm: str = "off"                    # off | a (H-JEPA aux without IDM) | b (with IDM)
+-    wm_dim: int = 128
++    wm_dim: int = 128                  # mean state: the level-1 state width (levels 2 and 3 stay WM_UPPER_DIM); grid state: unused
++    wm_state: str = "mean"             # PREREG_V8F_PROOF_ADD12: mean | grid
++    wm_cell_dim: int = 16              # grid state: numbers per cell (level-1 state width = n_tok x wm_cell_dim)
+     wm_strides: tuple = (2, 2)
+     w_ckpt: float = 1.0
+     w_tac: float = 1.0
+@@ -244,6 +249,16 @@
+     w_level: float = 0.0               # PREREG_V8F_LEVEL (`--w-level`): the weight of Huber(v_hat, logged speed) in the total. Must be > 0 with the head on and exactly 0.0 with it off (checked by the launch gate: a head with no loss, or a weight with no head, is refused)
+ 
+     @property
++    def wm_l1_dim(self) -> int:
++        """Width of the level-1 state of the WM stack: the mean state's ``wm_dim``, or ``n_tok x wm_cell_dim`` for the grid state."""
++        return self.n_tok * self.wm_cell_dim if self.wm_state == "grid" else self.wm_dim
++
++    @property
++    def wm_l1_pred_width(self) -> int:
++        """Level-1 predictor width: 128 while the state is 128 wide (today), 256 when it is wider."""
++        return 128 if self.wm_l1_dim == 128 else 256
++
++    @property
+     def window_start_effective(self) -> int:
+         """The number the data side must have built: ``hist - 1`` when the flag is absent (-1), else the flag."""
+         return self.hist - 1 if self.window_start == -1 else self.window_start
+@@ -253,6 +268,14 @@
+             raise ValueError(f"kin_mode must be one of {tuple(CH1_SCALE)}, got {self.kin_mode!r}")
+         if self.wm not in ("off", "a", "b"):
+             raise ValueError(f"wm must be off|a|b, got {self.wm!r}")
++        if self.wm_state not in WM_STATE_MODES:
++            raise ValueError(f"wm_state must be one of {WM_STATE_MODES}, got {self.wm_state!r}")
++        if self.wm_state == "grid" and self.wm == "off":
++            raise ValueError("wm_state grid needs the world-model auxiliary (wm a or b): with wm off there is no level-1 state to keep the cells of")
++        if not (isinstance(self.wm_cell_dim, int) and self.wm_cell_dim >= 1):
++            raise ValueError(f"wm_cell_dim must be an integer >= 1, got {self.wm_cell_dim!r}")
++        if not (isinstance(self.wm_dim, int) and self.wm_dim >= 1):
++            raise ValueError(f"wm_dim must be an integer >= 1, got {self.wm_dim!r}")
+         if self.cons_absent not in ("mask", "zero"):
+             raise ValueError(f"cons_absent must be mask|zero, got {self.cons_absent!r}")
+         if self.code_mix not in CODE_MIX_MODES:
+@@ -678,20 +701,46 @@
+         super().__init__()
+         from tanitad.models.hjepa import HJEPAStack, LevelConfig   # S3's module; absent => this arm cannot be built
+         gamma = cfg.wm_gamma if cfg.wm == "b" else 0.0
+-        mk = lambda **kw: LevelConfig(latent_dim=cfg.wm_dim, beta=cfg.wm_beta, gamma=gamma, pred_width=128,
+-                                      pred_depth=2, pred_heads=4, enc_hidden=128, macro_hidden=32, **kw)
+-        lv = [mk(action_dim=2, act_embed_dim=32),
+-              mk(action_dim=32, stride=cfg.wm_strides[0]), mk(action_dim=32, stride=cfg.wm_strides[1])]
++        mk = lambda **kw: LevelConfig(beta=cfg.wm_beta, gamma=gamma, pred_depth=2, pred_heads=4, enc_hidden=128, macro_hidden=32, **kw)
++        # PREREG_V8F_PROOF_ADD12: level 1 has the state width cfg.wm_l1_dim (128 today) and its own predictor width; levels 2 and 3 keep WM_UPPER_DIM / 128. At the defaults every number is the tip's.
++        up = WM_UPPER_DIM
++        lv = [mk(latent_dim=cfg.wm_l1_dim, pred_width=cfg.wm_l1_pred_width, action_dim=2, act_embed_dim=32),
++              mk(latent_dim=up, pred_width=128, action_dim=32, stride=cfg.wm_strides[0]),
++              mk(latent_dim=up, pred_width=128, action_dim=32, stride=cfg.wm_strides[1])]
+         self.stack = HJEPAStack(lv, sigreg_projections=256)
+-        self.proj = nn.Sequential(nn.LayerNorm(cfg.d), nn.Linear(cfg.d, cfg.wm_dim))
++        self.state_mode = cfg.wm_state
++        self.n_tok = cfg.n_tok
++        # mean: LayerNorm + Linear(d, wm_dim) on the mean token (today); grid: the SAME shape of module with the output width wm_cell_dim, applied to EVERY cell
++        self.proj = nn.Sequential(nn.LayerNorm(cfg.d), nn.Linear(cfg.d, cfg.wm_cell_dim if cfg.wm_state == "grid" else cfg.wm_dim))
+         self.gamma = gamma
+         self.ch1_scale = CH1_SCALE[cfg.kin_mode]
+ 
+     def z1(self, adapt: Tensor) -> Tensor:
+         """Level-1 latent of every cached frame: the mean-pooled adapter token, projected. ``adapt`` [B, F, n_tok, d] -> [B, F, D].
+         ONE spelling: ``forward`` (training) and rung beta's planner (``tanitad.models.v8f_beta``) both call it."""
++        if self.state_mode == "grid":
++            if adapt.shape[2] != self.n_tok:
++                raise ValueError(f"grid state: adapter tokens {adapt.shape[2]} != the {self.n_tok} the model was built for")
++            p = self.proj(adapt)                                                # [B, F, n_tok, cell_dim]: the same projection on every cell
++            return p.reshape(*p.shape[:2], p.shape[2] * p.shape[3])             # cell-major flatten: [B, F, n_tok * cell_dim]
+         return self.proj(adapt.mean(2))
+ 
++    @torch.no_grad()
++    def probe_state(self, d: int) -> dict:
++        """What ``z1`` BUILT does (the G-DVB 'built' side): the output width on a fixed random [1, 2, n_tok, d] input and whether swapping two cells of one frame moves it
++        (a state that keeps location moves; a mean does not). Fixed generator: the global RNG stream is not touched."""
++        g = torch.Generator().manual_seed(1234)
++        x = torch.randn(1, 2, self.n_tok, d, generator=g)
++        y = x.clone()
++        y[:, 0, 0], y[:, 0, self.n_tok - 1] = x[:, 0, self.n_tok - 1].clone(), x[:, 0, 0].clone()
++        was = self.training
++        self.eval()
++        try:
++            a, b = self.z1(x), self.z1(y)
++        finally:
++            self.train(was)
++        return {"z1_width": int(a.shape[-1]), "location_sensitive": bool((a - b).abs().max() > 1e-4)}
++
+     def scale_actions(self, act: Tensor) -> Tensor:
+         """Raw action channels ``act`` [..., 2] = (a [m/s^2], ch1) -> the WM's action units. ch1 = the recorded steer (kin_mode steer) or
+         the MEASURED yaw rate (kin_mode yaw, PI ruling D-PI-YAWRATE-1). ONE spelling for training and for the beta planner."""
+@@ -1163,6 +1212,15 @@
+                 "w": {"w_pen": cfg.w_pen if cfg.consistency else 0.0, "w_pen_self": cfg.w_pen_self if cfg.consistency else 0.0,
+                       "w_wm": cfg.w_wm if self.wm is not None else 0.0,
+                       "w_tac": cfg.w_tac, "w_cons": cfg.w_cons}}                       # PREREG_V8F_WC: T's constraint term is w_tac x w_cons
++        if self.wm is not None:                                            # PREREG_V8F_PROOF_ADD12: what the BUILT WM does -- read from the stack's modules and from z1's behaviour, not from the config
++            pr = self.wm.probe_state(cfg.d)
++            lv["wm_state"] = "grid" if pr["location_sensitive"] else "mean"
++            lv["wm_z1_width"] = pr["z1_width"]
++            lv["wm_l1_dim"] = int(self.wm.stack.cfg[0].latent_dim)
++            lv["wm_l1_pred_width"] = int(self.wm.stack.predictors[0].in_proj.weight.shape[0])
++            lv["wm_upper_dims"] = [int(c.latent_dim) for c in self.wm.stack.cfg[1:]]
++            lv["wm_cell_dim"] = int(self.wm.proj[1].out_features) if pr["location_sensitive"] else None
++            lv["wm_dim"] = int(self.wm.proj[1].out_features) if not pr["location_sensitive"] else None
+         if self.lvl_head is not None:                                      # PREREG_V8F_LEVEL: present ONLY with the head built (a flag-off model keeps its key set); the gate reads built.get("level_head", "off")
+             lv["level_head"], lv["w_level"] = "on", cfg.w_level
+             if self.e_level is not None:                                   # PREREG_LEVELHEAD_A2: absent under --aux-cond token (the additive path is not built)
+--- a/stack/tanitad/models/v8f_beta.py
++++ b/stack/tanitad/models/v8f_beta.py
+@@ -187,6 +187,7 @@
+     never ``goal_prob`` / ``lat_logits`` / ``lon_logits`` / ``cons_pred``). Returns CPU tensors keyed like :class:`BetaInputs`."""
+     if model.wm is None:
+         raise ValueError("rung beta needs a checkpoint with a world model (arm M2a / M2b); this one was built with wm='off'")
++    refuse_grid_state(model.wm)
+     g = M._KeyGuard(batch)
+     with torch.no_grad():
+         z1_0 = model.wm.z1(out["adapt"])[:, -1]
+@@ -203,6 +204,14 @@
+ 
+ 
+ # ------------------------------------------------------------------------------------------------ the scorer
++def refuse_grid_state(wm) -> None:
++    """PREREG_V8F_PROOF_ADD12 (SPATIAL): the beta planner was written for the mean level-1 state (width 128, goal latents at level 2). It is NOT ported to a
++    grid state: refuse, loudly, rather than score candidates on a state whose width and meaning it was never validated for."""
++    if getattr(wm, "state_mode", "mean") != "mean":
++        raise ValueError(f"rung beta REFUSES a world model with wm_state {wm.state_mode!r}: the planner is not ported to the grid state "
++                         "(PREREG_V8F_PROOF_ADD12 builds the lever for the training and the T0 / T1-kin reads only)")
++
++
+ def _dev(wm) -> torch.device:
+     return next(wm.parameters()).device
+ 
+@@ -211,6 +220,7 @@
+ def goal_latents(wm, inp: BetaInputs, goal_xy60: Tensor, *, chunk: int = 32) -> Tensor:
+     """g2(+6 s) [N, D2]: the WM's level-2 latent at the END of the rollout under ``goal_xy60`` [N, 60, 2] -- the SAME rollout + lift
+     (``score_candidates``) that scores a candidate."""
++    refuse_grid_state(wm)
+     dev, d2 = _dev(wm), wm.stack.cfg[WM_LEVEL - 1].latent_dim
+     out = []
+     for i0 in range(0, len(inp), chunk):
+@@ -233,6 +243,7 @@
+     ``cost_inc`` / ``cost_min`` [N]   the incumbent's cost and the best fan cost;
+     ``end_bar`` [N, D2], ``end_sig`` [N]   the fan's level-2 endpoint latents' mean and within-window spread (WM-sensitivity diagnostic).
+     A non-finite cost is +inf. Ties go to the lowest fan index and then to the incumbent."""
++    refuse_grid_state(wm)
+     dev = _dev(wm)
+     res = {k: [] for k in ("traj30", "replaced", "fan_idx", "traj30_fan", "cost_inc", "cost_min", "end_bar", "end_sig")}
+     for i0 in range(0, len(inp), chunk):
+--- a/stack/scripts/v8f_mini_train.py
++++ b/stack/scripts/v8f_mini_train.py
+@@ -67,6 +67,8 @@
+ #: run-control value recorded in summary.json; "path" = an input/output location asserted to exist (or be created).
+ FLAG_CHECKS = {
+     "arm": "lever:arm", "navonly": "lever:navonly", "no_consistency": "lever:consistency", "wm": "lever:wm",
++    # PREREG_V8F_PROOF_ADD12 (SPATIAL): argv -> make_config -> the BUILT config AND the BUILT model (built_levers: z1's measured width and location sensitivity, the stack's level-1 width and predictor width) -> declared_vs_built (bad_wm_state)
++    "wm_state": "lever:wm_state", "wm_cell_dim": "cfg:wm_cell_dim", "wm_dim": "cfg:wm_dim",
+     "cache_dir": "path", "out": "path", "v9_train": "path", "v9_train_md5": "data:v9_md5", "speed_train": "path",
+     "lead_train": "path", "join_train": "path", "p10": "path", "grid": "cfg:grid",
+     "data_frac": "data:n_clips", "steps_mult": "run", "steps": "run", "batch": "data:batch", "seed": "run",
+@@ -130,6 +132,10 @@
+     ap.add_argument("--navonly", action="store_true", default=None, help="override: S and T lose the scene")
+     ap.add_argument("--no-consistency", action="store_true", default=None, help="override: penalties at 0")
+     ap.add_argument("--wm", choices=("off", "a", "b"), default=None, help="override: H-JEPA auxiliary (a: no IDM, b: IDM)")
++    ap.add_argument("--wm-state", dest="wm_state", choices=M.WM_STATE_MODES, default="mean",
++                    help="PREREG_V8F_PROOF_ADD12: level-1 state of the WM auxiliary. mean (default, the tip bit for bit) = the mean of the adapter tokens; grid = one projection per cell, concatenated (width n_tok x --wm-cell-dim)")
++    ap.add_argument("--wm-cell-dim", dest="wm_cell_dim", type=int, default=16, help="grid state: numbers per cell (default 16: 40 cells -> 640)")
++    ap.add_argument("--wm-dim", dest="wm_dim", type=int, default=128, help="mean state: level-1 state width (default 128; 640 = the capacity control of PREREG_V8F_PROOF_ADD12)")
+     ap.add_argument("--cons-absent", choices=("mask", "zero"), default=None,
+                     help="override (PREREG_V8F_CZ): mask = an absent constraint is out of T's loss (every arm but M2b-cz); zero = T's "
+                          "target there is the 0 that O reads under teacher forcing")
+@@ -333,7 +339,7 @@
+     lv = declared_levers(a)
+     hmax = a.hmax or (16 if lv["wm"] != "off" else 10)
+     return M.V8FMiniConfig(d=a.d, ff=2 * a.d, hist=a.hist, hmax=hmax, window_start=a.window_start, n_q=a.n_q, nb=a.nb, navonly=lv["navonly"],
+-                           consistency=lv["consistency"], wm=lv["wm"], n_tok=40 if a.grid == "pool4x10" else 160,
++                           consistency=lv["consistency"], wm=lv["wm"], wm_state=a.wm_state, wm_cell_dim=a.wm_cell_dim, wm_dim=a.wm_dim, n_tok=40 if a.grid == "pool4x10" else 160,
+                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
+                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm,
+                            detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, launch_intent_w=a.launch_intent_w, goal_pos_weight_stop=a.goal_pos_weight_stop, lon_class_weight_stop=a.lon_class_weight_stop,
+@@ -674,6 +680,7 @@
+ #: the architecture-defining fields of V8FMiniConfig: a checkpoint may start a fine-tune only for a model of THIS shape and wiring (the training levers -- w_*, p_gt_*, code_mix, o_interface, cons_absent,
+ #: consistency, detach_upper -- may differ: a fine-tune moves them on purpose)
+ INIT_CKPT_MATCH = ("d", "heads", "ff", "d_feat", "n_tok", "hist", "hmax", "n_q", "depth_s", "depth_t", "depth_o", "nb", "res_scale_m", "navonly", "wm", "wm_dim", "wm_strides", "wm_beta", "wm_gamma",
++                   "wm_state", "wm_cell_dim",        # PREREG_V8F_PROOF_ADD12: a checkpoint without the keys is a mean-state one (defaults supplied below), so a grid argv cannot start from it nor the reverse
+                    "kin_mode", "max_age_t", "max_age_s",
+                    "o_interface")                      # PREREG_V8F_FLATDAG: a checkpoint trained under the cut must be fine-tuned under the cut (and a full one under full). The key is read only when the checkpoint HAS it:
+                                                        # checkpoints written before --o-interface existed (every M2b) carry none and load exactly as before. Without it a FLAT-DAG argv that forgets `--o-interface cut`
+@@ -692,7 +699,12 @@
+     if not isinstance(ck, dict) or "model" not in ck or not isinstance(ck.get("cfg"), dict):
+         raise ValueError("not a v8f_mini_train checkpoint (no 'model' / 'cfg')")
+     norm = lambda v: tuple(v) if isinstance(v, (list, tuple)) else v          # noqa: E731
+-    diff = {k: (norm(ck["cfg"][k]), norm(getattr(cfg, k))) for k in INIT_CKPT_MATCH if k in ck["cfg"] and norm(ck["cfg"][k]) != norm(getattr(cfg, k))}
++    ck_cfg = dict(ck["cfg"])
++    for k_, d_ in (("wm_state", "mean"), ("wm_cell_dim", 16)):                 # PREREG_V8F_PROOF_ADD12: an absent key is the default (a mean checkpoint is written without them)
++        ck_cfg.setdefault(k_, d_)
++    if ck_cfg["wm_state"] == "mean":
++        ck_cfg["wm_cell_dim"] = getattr(cfg, "wm_cell_dim") if getattr(cfg, "wm_state") == "mean" else ck_cfg["wm_cell_dim"]     # the cell width of a mean state is unused: not a mismatch
++    diff = {k: (norm(ck_cfg[k]), norm(getattr(cfg, k))) for k in INIT_CKPT_MATCH if k in ck_cfg and norm(ck_cfg[k]) != norm(getattr(cfg, k))}
+     if diff:
+         raise ValueError("config mismatch between the checkpoint and the model this argv builds (checkpoint vs built): " + "; ".join(f"{k}: {v[0]!r} != {v[1]!r}" for k, v in sorted(diff.items())))
+     sd = ck["model"]
+@@ -1003,11 +1015,39 @@
+     return bad
+ 
+ 
++def bad_wm_state(a, cfg, model) -> list:
++    """PREREG_V8F_PROOF_ADD12: --wm-state / --wm-cell-dim / --wm-dim read back from the BUILT model. A declared lever the model does not build, or a built one nobody declared, is a launch blocker."""
++    bad = []
++    built = model.built_levers()
++    if model.wm is None:
++        d = build_parser()
++        for f in ("wm_state", "wm_cell_dim", "wm_dim"):
++            if getattr(a, f) != d.get_default(f):
++                bad.append(f"--{f.replace('_', '-')} {getattr(a, f)!r} declared but no WM auxiliary was built (wm off): a lever that is declared and builds nothing")
++        return bad
++    l1 = a.wm_cell_dim * cfg.n_tok if a.wm_state == "grid" else a.wm_dim
++    want_pred = 128 if l1 == 128 else 256
++    if built.get("wm_state") != a.wm_state:
++        bad.append(f"lever wm_state: declared {a.wm_state} but built {built.get('wm_state')} (z1 location-sensitive: {built.get('wm_state') == 'grid'})")
++    if built.get("wm_z1_width") != l1 or built.get("wm_l1_dim") != l1:
++        bad.append(f"wm level-1 state width: declared {l1} but z1 emits {built.get('wm_z1_width')} and the stack's level 1 is {built.get('wm_l1_dim')}")
++    if built.get("wm_l1_pred_width") != want_pred:
++        bad.append(f"wm level-1 predictor width: declared {want_pred} (state {l1}) but built {built.get('wm_l1_pred_width')}")
++    if built.get("wm_upper_dims") != [M.WM_UPPER_DIM] * 2:
++        bad.append(f"wm levels 2 and 3 width: expected {M.WM_UPPER_DIM} but built {built.get('wm_upper_dims')}")
++    if a.wm_state == "grid" and built.get("wm_cell_dim") != a.wm_cell_dim:
++        bad.append(f"wm_cell_dim: declared {a.wm_cell_dim} but built {built.get('wm_cell_dim')}")
++    if a.wm_state == "mean" and built.get("wm_dim") != a.wm_dim:
++        bad.append(f"wm_dim: declared {a.wm_dim} but the mean projection emits {built.get('wm_dim')}")
++    return bad
++
++
+ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None, rec=None) -> list:
+     """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
+     bad = bad_encoder(a, enc, data_info)
+     bad += bad_recover(a, rec, data_info)                                                        # PREREG_RECOVER_FT: the eight --recover-* flags read back from the BUILT perturber (and the LOADED bank's sha256)
+     bad += bad_ego_perturb(a, ego) + bad_init_ckpt(a, data_info) + bad_schedule(a, sched)          # O-RECOVER (PREREG_V8F_HACC_MC section 7); bad_schedule: --warmup read back from the built schedule
++    bad += bad_wm_state(a, cfg, model)                                                           # PREREG_V8F_PROOF_ADD12: --wm-state / --wm-cell-dim / --wm-dim read back from the BUILT model
+     bad += bad_level(a, model, data_info)                                                        # PREREG_V8F_LEVEL: --level-head / --w-level read back from the BUILT model
+     bad += bad_lead(a, model, data_info)                                                         # PREREG_LEVELHEAD_A2: --lead-head / --w-lead / --aux-cond read back from the BUILT model and the built label arrays
+     bad += bad_stop_aux(a, model, data_info)                                                     # PREREG_V8F_STOPPERC: --stop-aux / --w-stop-aux / --stop-aux-extr read back from the BUILT model and the built camera arrays
+@@ -2861,7 +2901,7 @@
+ 
+     def save(final=False):
+         blob = {"model": model.state_dict(), "opt": opt.state_dict(), "step": step, "epoch": ep, "batch_in_epoch": bi,
+-                "argv_sha": argv_sha(argv), "cfg": {k: v for k, v in cfg.__dict__.items() if cfg.stop_aux == "on" or k not in M.STOPAUX_CFG_FIELDS}, "p10_path": os.path.abspath(a.p10) if not a.synthetic else "",
++                "argv_sha": argv_sha(argv), "cfg": {k: v for k, v in cfg.__dict__.items() if (cfg.stop_aux == "on" or k not in M.STOPAUX_CFG_FIELDS) and (cfg.wm_state == "grid" or k not in M.SPATIAL_CFG_FIELDS)}, "p10_path": os.path.abspath(a.p10) if not a.synthetic else "",
+                 "grid": a.grid, "arm": a.arm, "seed": a.seed, "cons_mu": mu, "cons_sd": sd,
+                 "cfg_tuple_fields": {"wm_strides": list(cfg.wm_strides)},
+                 "ego_perturb": ego.built_levers(), "init_ckpt": info.get("init_ckpt"), "ego_totals": dict(ego_tot),
+--- a/stack/tests/test_v8f_spatial_state.py
++++ b/stack/tests/test_v8f_spatial_state.py
+@@ -0,0 +1,168 @@
++"""PREREG_V8F_PROOF_ADD12 (SPATIAL): the level-1 world-model state that keeps location. CPU only.
++
++Run: CUDA_VISIBLE_DEVICES=-1 PYTHONPATH=<repo>/stack;<repo>/taniteval pytest -q stack/tests/test_v8f_spatial_state.py
++
++Pinned, and the control that must go red for each:
++  * widths: mean 128 / predictor 128 (the tip), grid 40 x 16 = 640 / predictor 256, mean --wm-dim 640 / predictor 256; levels 2 and 3 stay 128.
++  * the config refuses grid with wm off, a cell width below 1, an unknown mode.
++  * every new flag has its declared-vs-built entry; the gate goes RED when z1 ignores the flag, on a declared grid / built mean, the reverse, a wrong cell width.
++  * reachability: the WM term alone gives the new projection and the adapter a non-zero gradient; with w_wm 0 the gradient is EXACTLY 0.0.
++  * location: permuting the cells of one frame leaves the mean state unchanged (1e-5) and changes the grid state.
++  * a default (mean) checkpoint records no new cfg key; a grid checkpoint loads through the T1 builder and is refused as a fine-tune start by a mean argv.
++  * rung beta refuses a grid model.
++"""
++from __future__ import annotations
++
++import sys
++from pathlib import Path
++
++import numpy as np
++import pytest
++import torch
++
++REPO = Path(__file__).resolve().parents[2]
++for p in (REPO / "stack", REPO / "taniteval", REPO / "stack" / "scripts"):
++    if str(p) not in sys.path:
++        sys.path.insert(0, str(p))
++
++from tanitad.data import v8f_mini_data as D  # noqa: E402
++from tanitad.models import v8f_mini as M  # noqa: E402
++import v8f_mini_train as TR  # noqa: E402
++
++TINY = dict(d=32, ff=64, heads=4, n_q=2, depth_s=1, depth_t=1, depth_o=1, nb=6)
++
++
++@pytest.fixture(scope="module")
++def world(tmp_path_factory):
++    root = tmp_path_factory.mktemp("spatial")
++    w = D.make_synthetic_world(root, n_train=6, n_eval=2, T=60, seed=0)
++    J = D.load_join(Path(root) / "join_train.npz")
++    store = D.ClipStore(root, "train", lru=8)
++    wins = D.train_windows(store, J, w["names"]["train"])
++    ds = D.V8FMiniWindows(store, J, wins, hmax=16)
++    idx = np.random.default_rng(0).choice(len(wins), 8, replace=False)
++    batch = D.collate([ds.item(wins[i][0], wins[i][1], 1, 3) for i in idx])
++    return {"batch": batch, "J": J}
++
++
++def _args(extra=()):
++    return TR.build_parser().parse_args(["--out", "x", "--d", "32", "--n-q", "2", "--arm", "M2b", *extra])
++
++
++def _built(world, extra=(), **over):
++    a = _args(extra)
++    c0 = TR.make_config(a)
++    keep = {k: v for k, v in TINY.items() if k not in ("nb", "n_q", "d", "ff")}
++    cfg = M.V8FMiniConfig(**{**c0.__dict__, **keep, "d": 32, "ff": 64, **over})
++    mu, sd = M.cons_stats(world["J"])
++    torch.manual_seed(0)
++    model = M.V8FMini(cfg, M.P10Prior.synthetic(0), mu, sd)
++    opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=a.lr, weight_decay=a.wd)
++    info = {"n_clips": 6, "n_clips_expected": 6, "batch": a.batch, "md5_overridden": True, "kin_mode": a.kin_mode, "p10_units": None}
++    return a, cfg, model, opt, info
++
++
++@pytest.mark.parametrize("extra,l1,pw", [([], 128, 128), (["--wm-state", "grid"], 640, 256), (["--wm-dim", "640"], 640, 256),
++                                          (["--wm-state", "grid", "--wm-cell-dim", "8"], 320, 256)])
++def test_widths_are_the_declared_ones(world, extra, l1, pw):
++    a, cfg, model, opt, info = _built(world, extra)
++    b = model.built_levers()
++    assert (b["wm_l1_dim"], b["wm_z1_width"], b["wm_l1_pred_width"], b["wm_upper_dims"]) == (l1, l1, pw, [128, 128])
++    assert b["wm_state"] == ("grid" if "grid" in extra else "mean")
++    assert TR.declared_vs_built(a, cfg, model, opt, info) == []
++
++
++def test_default_is_the_tip_shape(world):
++    a, cfg, model, opt, info = _built(world)
++    assert [tuple(p.shape) for p in model.wm.proj.parameters()] == [(32,), (32,), (128, 32), (128,)]
++    assert model.wm.stack.predictors[0].in_proj.weight.shape[0] == 128
++    assert (cfg.wm_state, cfg.wm_cell_dim, cfg.wm_dim) == ("mean", 16, 128)
++
++
++def test_config_refuses_what_it_cannot_build():
++    with pytest.raises(ValueError, match="needs the world-model"):
++        M.V8FMiniConfig(wm="off", wm_state="grid")
++    with pytest.raises(ValueError, match="wm_cell_dim"):
++        M.V8FMiniConfig(wm="b", hmax=16, wm_state="grid", wm_cell_dim=0)
++    with pytest.raises(ValueError, match="wm_state"):
++        M.V8FMiniConfig(wm="b", hmax=16, wm_state="ring")
++
++
++def test_every_new_flag_has_an_entry_and_a_default():
++    d = {act.dest for act in TR.build_parser()._actions}
++    for f, dflt in (("wm_state", "mean"), ("wm_cell_dim", 16), ("wm_dim", 128)):
++        assert f in d and f in TR.FLAG_CHECKS and TR.build_parser().get_default(f) == dflt
++    assert {"wm_state", "wm_cell_dim", "wm_dim"} <= set(TR.INIT_CKPT_MATCH)
++
++
++def test_declared_vs_built_goes_red_on_every_lie(world, monkeypatch):
++    a, cfg, model, opt, info = _built(world, ["--wm-state", "grid"])
++    assert TR.declared_vs_built(a, cfg, model, opt, info) == []
++    with monkeypatch.context() as mp:
++        mp.setattr(M.WMAux, "z1", lambda self, adapt: self.proj(adapt.mean(2)))       # z1 ignores the flag
++        assert any("wm_state" in m for m in TR.declared_vs_built(a, cfg, model, opt, info))
++    assert TR.declared_vs_built(a, cfg, model, opt, info) == []
++    am, cm, mm, om, im = _built(world)                                                  # declared grid, built mean
++    assert any("wm_state" in m for m in TR.declared_vs_built(_args(["--wm-state", "grid"]), cm, mm, om, im))
++    assert any("wm_state" in m for m in TR.declared_vs_built(_args(), cfg, model, opt, info))                  # declared mean, built grid
++    assert any("wm_cell_dim" in m for m in TR.declared_vs_built(_args(["--wm-state", "grid", "--wm-cell-dim", "8"]), cfg, model, opt, info))
++    a1, c1, m1, o1, i1 = _built(world, ["--arm", "M1"])                                 # wm off: a lever flag with nothing to build is refused
++    assert any("no WM auxiliary" in m for m in TR.declared_vs_built(_args(["--arm", "M1", "--wm-dim", "640"]), c1, m1, o1, i1))
++
++
++def _wm_grads(world, extra, w_wm):
++    a, cfg, model, opt, info = _built(world, extra, w_wm=w_wm)
++    model.train()
++    out = model.loss(dict(world["batch"]), p_gt=0.5, gen=torch.Generator().manual_seed(11))
++    (cfg.w_wm * out["terms"]["wm"]).backward()
++    g = lambda ps: float(sum(float(p.grad.abs().sum()) for p in ps if p.grad is not None))
++    return g(model.wm.proj.parameters()), g(model.adapter.parameters())
++
++
++def test_the_wm_term_alone_reaches_projection_and_adapter_and_zero_weight_reads_exactly_zero(world):
++    gp, ga = _wm_grads(world, ["--wm-state", "grid"], 0.1)
++    assert gp > 0.0 and ga > 0.0
++    assert _wm_grads(world, ["--wm-state", "grid"], 0.0) == (0.0, 0.0)
++
++
++def test_location_is_in_the_grid_state_and_not_in_the_mean_state(world):
++    feats = world["batch"]["feats"].float()
++    perm = torch.randperm(40, generator=torch.Generator().manual_seed(5))
++    f2 = feats.clone()
++    f2[:, 2] = feats[:, 2][:, perm]                                                     # the cells of one frame
++    for extra, moves in (([], False), (["--wm-dim", "640"], False), (["--wm-state", "grid"], True)):
++        a, cfg, model, opt, info = _built(world, extra)
++        with torch.no_grad():
++            z0, z1 = (model.wm.z1(model._encode({"feats": f})) for f in (feats, f2))
++            tok = (model.adapter(feats).mean(2) - model.adapter(f2).mean(2)).abs().max()
++        assert float(tok) < 1e-5                                                         # the tokens before the position term
++        diff = float((z0[:, 2] - z1[:, 2]).abs().max())
++        assert (diff > 1e-3) if moves else (diff < 1e-5)
++        assert float((z0[:, [0, 1, 3]] - z1[:, [0, 1, 3]]).abs().max()) == 0.0           # the other frames are untouched
++
++
++def test_a_default_checkpoint_keeps_the_tip_cfg_keys_and_a_grid_one_round_trips(world, tmp_path):
++    base = ["--synthetic", "--arm", "M2b", "--batch", "8", "--d", "32", "--n-q", "2", "--threads", "1", "--steps", "2"]
++    assert TR.main([*base, "--out", str(tmp_path / "mean")]) == 0
++    assert TR.main([*base, "--wm-state", "grid", "--out", str(tmp_path / "grid")]) == 0
++    cm = torch.load(tmp_path / "mean" / "ckpt_last.pt", map_location="cpu", weights_only=False)
++    cg = torch.load(tmp_path / "grid" / "ckpt_last.pt", map_location="cpu", weights_only=False)
++    assert not (set(M.SPATIAL_CFG_FIELDS) & set(cm["cfg"])) and set(M.SPATIAL_CFG_FIELDS) <= set(cg["cfg"])
++    cfg = M.V8FMiniConfig(**cg["cfg"])                                                  # the T1 eval builder (v8f_t1_eval.cmd_run)
++    model = M.V8FMini(cfg, M.P10Prior(torch.zeros(8), torch.ones(8), torch.zeros(2 * M.K30)))
++    model.load_state_dict(cg["model"])
++    assert model.built_levers()["wm_state"] == "grid"
++    a, cfg2, m2, o2, i2 = _built(world)                                                  # a mean argv must not start from a grid checkpoint
++    with pytest.raises(ValueError, match="wm_state"):
++        TR.load_init_ckpt(str(tmp_path / "grid" / "ckpt_last.pt"), m2, cfg2)
++
++
++def test_rung_beta_refuses_a_grid_model(world):
++    from tanitad.models import v8f_beta as B
++    a, cfg, model, opt, info = _built(world, ["--wm-state", "grid"])
++    with pytest.raises(ValueError, match="REFUSES"):
++        B.refuse_grid_state(model.wm)
++    out = {"adapt": model._encode({"feats": world["batch"]["feats"].float()})}
++    with pytest.raises(ValueError, match="REFUSES"):
++        B.collect_beta_inputs(model, dict(world["batch"]), out)
++    B.refuse_grid_state(_built(world)[2].wm)                                              # the mean model passes

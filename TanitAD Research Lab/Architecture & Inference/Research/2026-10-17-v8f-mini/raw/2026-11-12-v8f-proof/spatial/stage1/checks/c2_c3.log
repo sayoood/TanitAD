@@ -1,0 +1,166 @@
+F:\TanitAD-scratch\v8proof\spatial\stage1\checks\c2_c3.py:62: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  return {"wm_term": float(T["wm"]), "grad_proj": gsum(model.wm.proj.parameters()),
+{
+ "c2": {
+  "grid_w_wm_0.1": {
+   "wm_term": 243.5708770751953,
+   "grad_proj": 6.91200353205204,
+   "grad_adapter": 283.2606644332409,
+   "grad_wm_stack": 1638.595885521383,
+   "grad_read_s": 0.0,
+   "proj_shapes": [
+    [
+     32
+    ],
+    [
+     32
+    ],
+    [
+     16,
+     32
+    ],
+    [
+     16
+    ]
+   ]
+  },
+  "grid_w_wm_0": {
+   "wm_term": 243.5708770751953,
+   "grad_proj": 0.0,
+   "grad_adapter": 0.0,
+   "grad_wm_stack": 0.0,
+   "grad_read_s": 0.0,
+   "proj_shapes": [
+    [
+     32
+    ],
+    [
+     32
+    ],
+    [
+     16,
+     32
+    ],
+    [
+     16
+    ]
+   ]
+  },
+  "mean_w_wm_0.1": {
+   "wm_term": 240.20004272460938,
+   "grad_proj": 18.48150271177292,
+   "grad_adapter": 283.5032720565796,
+   "grad_wm_stack": 991.3029169624206,
+   "grad_read_s": 0.0,
+   "proj_shapes": [
+    [
+     32
+    ],
+    [
+     32
+    ],
+    [
+     128,
+     32
+    ],
+    [
+     128
+    ]
+   ]
+  },
+  "mean640_w_wm_0.1": {
+   "wm_term": 243.59451293945312,
+   "grad_proj": 43.57655030488968,
+   "grad_adapter": 310.53491789102554,
+   "grad_wm_stack": 1774.5416715089232,
+   "grad_read_s": 0.0,
+   "proj_shapes": [
+    [
+     32
+    ],
+    [
+     32
+    ],
+    [
+     640,
+     32
+    ],
+    [
+     640
+    ]
+   ]
+  },
+  "PASS_reach": true,
+  "PASS_zero_control": true,
+  "control_read_s_is_zero_from_wm_term": true,
+  "mutation": {
+   "green_before": [],
+   "red_when_z1_ignores_flag": [
+    "lever wm_state: declared grid but built mean (z1 location-sensitive: False)",
+    "wm level-1 state width: declared 640 but z1 emits 16 and the stack's level 1 is 640",
+    "wm_cell_dim: declared 16 but built None"
+   ],
+   "green_after_restore": [],
+   "red_declared_grid_built_mean": [
+    "lever wm_state: declared grid but built mean (z1 location-sensitive: False)",
+    "wm level-1 state width: declared 640 but z1 emits 128 and the stack's level 1 is 128",
+    "wm level-1 predictor width: declared 256 (state 640) but built 128",
+    "wm_cell_dim: declared 16 but built None"
+   ],
+   "red_declared_mean_built_grid": [
+    "lever wm_state: declared mean but built grid (z1 location-sensitive: True)",
+    "wm level-1 state width: declared 128 but z1 emits 640 and the stack's level 1 is 640",
+    "wm level-1 predictor width: declared 128 (state 128) but built 256",
+    "wm_dim: declared 128 but the mean projection emits None"
+   ],
+   "red_declared_cell_8_built_16": [
+    "wm level-1 state width: declared 320 but z1 emits 640 and the stack's level 1 is 640",
+    "wm_cell_dim: declared 8 but built 16"
+   ],
+   "green_mean640": [],
+   "red_declared_mean128_built_mean640": [
+    "wm level-1 state width: declared 128 but z1 emits 640 and the stack's level 1 is 640",
+    "wm level-1 predictor width: declared 128 (state 128) but built 256",
+    "wm_dim: declared 128 but the mean projection emits 640"
+   ],
+   "config_refuses_grid_with_wm_off": "wm_state grid needs the world-model auxiliary (wm a or b): with wm off there is no level-1 state to keep the cells of"
+  },
+  "PASS_mutation": true
+ },
+ "c3": {
+  "mean": {
+   "state_width": 128,
+   "tokens_before_pos_mean_maxabs_diff_frame": 4.470348358154297e-08,
+   "z1_maxabs_diff_permuted_frame_features_path": 4.76837158203125e-07,
+   "z1_norm_diff_permuted_frame_features_path": 3.438961130086682e-06,
+   "z1_maxabs_diff_permuted_frame_adapt_path": 4.172325134277344e-07,
+   "z1_norm_diff_adapt_path": 3.6336432458483614e-06,
+   "z1_maxabs_diff_other_frames": 0.0,
+   "z1_norm_of_state_frame": 18.333391189575195
+  },
+  "grid": {
+   "state_width": 640,
+   "tokens_before_pos_mean_maxabs_diff_frame": 4.470348358154297e-08,
+   "z1_maxabs_diff_permuted_frame_features_path": 3.1791677474975586,
+   "z1_norm_diff_permuted_frame_features_path": 56.29877471923828,
+   "z1_maxabs_diff_permuted_frame_adapt_path": 3.2072372436523438,
+   "z1_norm_diff_adapt_path": 56.291744232177734,
+   "z1_maxabs_diff_other_frames": 0.0,
+   "z1_norm_of_state_frame": 41.24501037597656
+  },
+  "mean640": {
+   "state_width": 640,
+   "tokens_before_pos_mean_maxabs_diff_frame": 4.470348358154297e-08,
+   "z1_maxabs_diff_permuted_frame_features_path": 8.344650268554688e-07,
+   "z1_norm_diff_permuted_frame_features_path": 7.994291991053615e-06,
+   "z1_maxabs_diff_permuted_frame_adapt_path": 5.960464477539062e-07,
+   "z1_norm_diff_adapt_path": 7.557096068921965e-06,
+   "z1_maxabs_diff_other_frames": 0.0,
+   "z1_norm_of_state_frame": 41.8288688659668
+  },
+  "PASS": true,
+  "note": "permuted: the n_tok = 40 cells of frame 2 of the feature tensor [B, F, n_tok, d_feat] (one fixed random permutation, same for every window), either on the features (the adapter is per token, so this permutes the tokens before the position term) or on the adapt tensor after _encode (adapter + self.pos). self.pos enters in V8FMini._encode: adapt = adapter(feats) + pos[None, None]; a sum is permutation invariant, so the MEAN state cannot see the permutation on either path; the grid state concatenates per cell and does."
+ }
+}
+C2 reach True zero True mutation True C3 True
