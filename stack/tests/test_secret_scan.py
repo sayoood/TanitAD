@@ -401,6 +401,59 @@ def test_full_tracked_tree_is_clean():
     assert not rep.blocking, [f"{f.path}:{f.line}[{f.pattern}]" for f in rep.blocking]
 
 
+# --- the tracked scan's reader threads (MM 2026-11-13): the K2DC dev-box pinned run timed out twice in the test above (1800.1 s) because the
+# READ dominates (12.7 ms/file on F:, ~719 s of ~840 s). scan_tracked now prefetches each window with a thread pool; the report must be
+# exactly the sequential one, and the reads must really be concurrent.
+
+def _tracked_fixture(repo: Path) -> int:
+    for i in range(40):
+        _stage(repo, f"logs/run_{i:02d}.log", _hf() if i % 7 == 0 else f"ordinary line {i}")
+    _stage(repo, "bin/blob.bin", _sk(), binary=True)
+    _stage(repo, "data/arrays.npz", _ghp())                       # compressed suffix: skipped, never read
+    _stage(repo, "big/huge.log", _hf() + "\n" + "x" * 5000)      # over the max_bytes below: too-large
+    _stage(repo, "gone/missing.log", _akia())
+    (repo / "gone" / "missing.log").unlink()                      # tracked, absent from the worktree
+    _stage(repo, "secrets/.env", "A=1")                           # a credential-shaped PATH
+    return 2048
+
+
+def _report_tuple(rep) -> tuple:
+    return ([(f.path, f.line, f.pattern, f.blocking) for f in rep.findings], rep.files_scanned, rep.bytes_scanned,
+            dict(rep.skipped), {k: list(v) for k, v in rep.skipped_paths.items()}, list(rep.errors))
+
+
+def test_tracked_scan_with_reader_threads_is_exactly_the_sequential_report(repo):
+    mb = _tracked_fixture(repo)
+    seq = ss.scan_tracked(repo, max_bytes=mb, read_threads=1)
+    par = ss.scan_tracked(repo, max_bytes=mb, read_threads=8)
+    assert _report_tuple(par) == _report_tuple(seq)
+    assert len(seq.blocking) >= 7 and seq.files_scanned >= 41                                  # not vacuous: six hf logs + the binary sk
+    assert {"compressed-suffix", "too-large", "missing-in-worktree"} <= set(seq.skipped), seq.skipped
+    assert ss.scan_tracked(repo, max_bytes=mb).files_scanned == seq.files_scanned            # the default (threaded) path too
+
+
+def test_tracked_scan_reads_on_several_threads_by_default(repo, monkeypatch):
+    import threading
+    import time as _time
+    mb = _tracked_fixture(repo)
+    seen = {}
+    real = Path.read_bytes
+
+    def spy(self):
+        seen.setdefault(threading.get_ident(), 0)
+        seen[threading.get_ident()] += 1
+        _time.sleep(0.01)                                       # hold the read so a pool must overlap
+        return real(self)
+
+    monkeypatch.setattr(Path, "read_bytes", spy)
+    assert ss.TRACKED_READ_THREADS >= 4
+    ss.scan_tracked(repo, max_bytes=mb)
+    assert len(seen) >= 2, seen                                 # RED if the reads are sequential again
+    seen.clear()
+    ss.scan_tracked(repo, max_bytes=mb, read_threads=1)
+    assert len(seen) == 1, seen
+
+
 # ================================================================ IT MUST NOT LEAK
 
 

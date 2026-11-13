@@ -87,6 +87,7 @@ import os
 import re
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, asdict, field
 from fnmatch import fnmatch
 from pathlib import Path
@@ -1106,35 +1107,59 @@ def scan_staged(repo: Path, max_bytes: int = DEFAULT_MAX_BYTES) -> Report:
     return rep
 
 
-def scan_tracked(repo: Path, max_bytes: int = DEFAULT_MAX_BYTES) -> Report:
+#: scan_tracked's READ concurrency. MEASURED 2026-11-13 (dev box, F: 99 % full, the K2DC pinned run's extracted 7099a8c0 tree, 56,531
+#: candidates / 3.83 GB): the cost is the READ, not the regex -- 3,000 candidates in ls-files order read at 12.7 ms/file sequentially
+#: (~719 s for all) against ~118 s of scan_bytes in total, and the pinned gate's fixed 1,800 s per-file limit timed the full-tree test out
+#: twice (1800.1 s, K2DC at 3ef7016e and 7099a8c0). Eight reader threads read the same order at 4.4 ms/file (~247 s). Only the reads move:
+#: every file is still scanned, in ls-files order, with the same skip rules; scan_bytes stays on the calling thread. The window bounds
+#: what is held in memory (at most WINDOW x max_bytes; typically a few MB).
+TRACKED_READ_THREADS = 8
+TRACKED_READ_WINDOW = 64
+
+
+def _tracked_read(p: Path, max_bytes: int) -> tuple:
+    """One tracked file for scan_tracked: ("data", bytes) | ("skip", reason) | ("error", exception class name) -- the checks, and their
+    order, of the sequential loop this replaced."""
+    if p.suffix.lower() in SKIP_SUFFIXES:
+        return "skip", "compressed-suffix"
+    try:
+        size = p.stat().st_size
+    except OSError:
+        return "skip", "missing-in-worktree"
+    if size > max_bytes:
+        return "skip", "too-large"
+    try:
+        return "data", p.read_bytes()
+    except OSError as exc:
+        return "error", exc.__class__.__name__
+
+
+def scan_tracked(repo: Path, max_bytes: int = DEFAULT_MAX_BYTES,
+                 read_threads: int = TRACKED_READ_THREADS) -> Report:
     """Every tracked file, read from the working tree. This is the scope whose
-    blocking count MUST be zero -- it is what git would publish."""
+    blocking count MUST be zero -- it is what git would publish.
+
+    ``read_threads`` readers prefetch each window of TRACKED_READ_WINDOW files; the results are consumed in ls-files order, so the report
+    (findings, skips, counts, errors) is the one a sequential read gives (``read_threads=1``)."""
     rep = Report(scope="tracked", filter_rule=filter_rule(max_bytes, False))
     out = git(repo, "ls-files", "-z")
     paths = [p for p in out.split("\0") if p]
-    for rel in paths:
-        p = repo / rel
-        rep.findings.extend(scan_path_shape(rel, _file_content(p, max_bytes)))
-        if p.suffix.lower() in SKIP_SUFFIXES:
-            _skip(rep, "compressed-suffix", rel)
-            continue
-        try:
-            size = p.stat().st_size
-        except OSError:
-            _skip(rep, "missing-in-worktree", rel)
-            continue
-        if size > max_bytes:
-            _skip(rep, "too-large", rel)
-            continue
-        try:
-            data = p.read_bytes()
-        except OSError as exc:
-            rep.errors.append(f"read {rel}: {exc.__class__.__name__}")
-            _skip(rep, "read-error", rel)
-            continue
-        rep.files_scanned += 1
-        rep.bytes_scanned += len(data)
-        rep.findings.extend(scan_bytes(data, rel))
+    with ThreadPoolExecutor(max_workers=max(1, int(read_threads))) as ex:
+        for i in range(0, len(paths), TRACKED_READ_WINDOW):
+            window = paths[i:i + TRACKED_READ_WINDOW]
+            for rel, (kind, val) in zip(window, ex.map(lambda r: _tracked_read(repo / r, max_bytes), window)):
+                p = repo / rel
+                rep.findings.extend(scan_path_shape(rel, _file_content(p, max_bytes)))
+                if kind == "skip":
+                    _skip(rep, val, rel)
+                    continue
+                if kind == "error":
+                    rep.errors.append(f"read {rel}: {val}")
+                    _skip(rep, "read-error", rel)
+                    continue
+                rep.files_scanned += 1
+                rep.bytes_scanned += len(val)
+                rep.findings.extend(scan_bytes(val, rel))
     return rep
 
 
