@@ -5274,10 +5274,20 @@ def judge_live(terms: list[dict], problems: list[str], steps: list[dict], *,
     replay_steps = sorted(int(r.get("step", -1)) for r in train_rows
                           if r.get("gs_fp32_replay") == 1.0)
     det["fp32_replay_steps"] = replay_steps
-    if len(steps) != expect_steps + len(replay_steps):
+    # K2DC (PREREG_K2DC_2026-11-12): the map-dose controller takes ITS reading on its own fp32 replay (`map_dose_ctl.probe_before_forward`,
+    # prefix `dcp_`), stamped `dcp_fp32_replay: 1.0` on its firing row -- one more training-mode loss call per firing, counted the same way,
+    # from the run's own record. MEASURED 2026-11-13 (K2DC final gate at df49fd59): 102 calls = 100 + gs@50 + dcp@100, refused as
+    # unexplained before this rule existed. An extra call that NO row stamps still FAILS.
+    dc_replay_steps = sorted(int(r.get("step", -1)) for r in train_rows
+                             if r.get("dcp_fp32_replay") == 1.0)
+    if dc_replay_steps:
+        det["dc_fp32_replay_steps"] = dc_replay_steps
+    if len(steps) != expect_steps + len(replay_steps) + len(dc_replay_steps):
         reasons.append(f"{len(steps)} training loss calls observed, expected {expect_steps}"
                        + (f" + {len(replay_steps)} fp32 gradient-share replay(s) at {replay_steps}"
-                          if replay_steps else ""))
+                          if replay_steps else "")
+                       + (f" + {len(dc_replay_steps)} dose-controller fp32 replay(s) at {dc_replay_steps}"
+                          if dc_replay_steps else ""))
     n = max(len(steps), 1)
     per_term = []
     for t in terms:
@@ -6318,6 +6328,41 @@ def dose_controller_live_reasons(launch_argv: list[str], rows: list[dict]) -> tu
         if not (pred_ok and (abs(pred - target) <= 1e-6 or (isinstance(cl, (int, float)) and cl > 0.0))):
             out.append(f"DOSE-CTL: row {r.get('step')}: dc_share_pred {pred!r} != target {target:g} (+-1e-6) and dc_clamped is {cl!r}")
     return out, det
+
+
+@contextlib.contextmanager
+def dose_ctl_for_dvb(T, model, args):
+    """K2DC, G-DVB. `train()` attaches `model._map_dose_ctl` AFTER its data sources (refc_v3_train.py: `_dose = _mdc.controller_for(args)`,
+    just before the resume block), i.e. past `trainer_capture`'s stop at the first data-source call -- so the captured model never carried
+    it, and G-DVB read `--map-hires-share-target: declared 0.1 but BUILT None` for a K2DC argv whose real smoke built AND fired the
+    controller (MEASURED 2026-11-13, K2DC final gate at df49fd59: the smoke's row 100 carries dc_w_eff / dc_share_read / dcp_fp32_replay).
+    For the G-DVB judgement ONLY, the controller is attached with the TRAINER'S OWN builder (`T._mdc.controller_for(args)`, the call
+    `train()` makes), so G-DVB still judges the trainer's argv -> controller mapping (a builder that drops or alters a flag still FAILS),
+    and it is removed again on exit so no other check sees a gate-made attachment. That `train()` really makes the call and the controller
+    fires is G-LIVE's job (`dose_controller_live_reasons`: controller ON and no `dc_w_eff` row in the real smoke = FAIL).
+    Inert when the argv declares no controller, when the model already carries one, or without a model. Yields what it did (a dict)."""
+    det: dict[str, Any] = {"attached": False}
+    mdc = getattr(T, "_mdc", None)
+    if model is None or args is None or not callable(getattr(mdc, "controller_for", None)):
+        det["why"] = "no model / args, or the trainer has no _mdc.controller_for"
+    elif getattr(model, "_map_dose_ctl", None) is not None:
+        det["why"] = "already on the captured model"
+    else:
+        ctl = mdc.controller_for(args)
+        if ctl is None:
+            det["why"] = "OFF: the argv declares no controller (or the trainer's builder built none)"
+        else:
+            model._map_dose_ctl = ctl
+            det.update(attached=True, via="T._mdc.controller_for(args): the trainer's own build hop, run past the capture point",
+                       target=ctl.target, every=ctl.every, group=ctl.group, bounds=[ctl.lo, ctl.hi])
+    try:
+        yield det
+    finally:
+        if det.get("attached"):
+            try:
+                del model._map_dose_ctl
+            except AttributeError:
+                pass
 
 
 def smoke_argv(base: list[str], steps: int, log_every: int) -> tuple[list[str], dict]:
@@ -8855,8 +8900,10 @@ def job_model(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
             ev["inputs_read"]["gate:nav-tau-record"] = fingerprint(ctx.options["nav_tau_record"])
         D, why = import_optional(ctx, "tanitad.train.declared_vs_built", "missing_dvb_module")
         try:
-            reasons, det = judge_dvb(D, model, args, parser, argv, why,
-                                     forbid_kinds=tuple(ctx.prof.get("dvb_forbid_kinds", ())))
+            with dose_ctl_for_dvb(T, model, args) as _dc_att:     # K2DC: train() attaches its controller PAST the capture point
+                reasons, det = judge_dvb(D, model, args, parser, argv, why,
+                                         forbid_kinds=tuple(ctx.prof.get("dvb_forbid_kinds", ())))
+            det["dose_ctl_attach"] = _dc_att
         except Exception as e:                            # noqa: BLE001 -- a crash is not a pass
             reasons, det = [f"G-DVB crashed: {type(e).__name__}: {e}"], {
                 "traceback": traceback.format_exc()[-2000:]}
