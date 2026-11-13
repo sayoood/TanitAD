@@ -37,9 +37,14 @@ fi
 ML="$(git --git-dir="$REPO/.git" -c core.quotepath=false ls-tree -r --name-only "$CAND" | awk '{ if (length > m) m = length } END { print m + 0 }')"
 [ "$ML" -gt 0 ] 2>/dev/null || { say "cannot read the longest path of $CAND"; mark ZZGS3-PINNED-ARCHIVE-FAILZZ; exit 2; }
 path_need() { echo $(( ${#1} + 13 + $2 )); }   # <suite-work> "/f" <10 hex> "/" <longest repo path>: the deepest file the extraction writes
+# MAX_PATH, AGAIN (MM 2026-11-13, MEASURED): the repo's longest path reached 232 characters (a banked copy under TanitAD Research Lab/), so
+# <stage>/sw1 (21) needed 266 and K2DC was refused PATH-LONG 266 at d0974ba6. The suite-work dir is therefore <stage drive>/q/<study>sw<N>
+# (F:/q/e2sw1 = 10 characters: repo paths up to 236 fit). Per study, because two studies' drivers may run at once; two levels deep, because an
+# agent may not delete at a drive's top level. The start-of-run sweep below frees this study's earlier dirs there AND any left under <stage>.
+SWROOT="${STAGE%%/*}/q"
 # a FAILed arm keeps its sw<N> for diagnosis until the NEXT driver run, which frees every earlier sw<N> before its first arm (the archive is a git
 # export; the FAIL record itself is devbox_evidence_<C12>_<ARM>, which is kept)
-for d in "$STAGE"/sw[0-9]*; do [ -d "$d" ] && PENDING="$PENDING $d"; done; purge
+for d in "$STAGE"/sw[0-9]* "$SWROOT/$R9_STUDY"sw[0-9]*; do [ -d "$d" ] && PENDING="$PENDING $d"; done; purge
 NA=0
 # the NT env (final_pinned_f7.sh): the CUDA-gated tests, the lidar-BEV GT dir, the calibration dir
 # CPU ONLY (MM 2026-11-03, MEASURED): with the dev-box GPU visible, tests/test_v8f_ego_dagger_compose.py fails 3/36 (device mismatch "cuda:0 and
@@ -51,7 +56,7 @@ for ARM in $ARMS; do
   R9_PROFILE="$(r9_profile_of_arm "$ARM")"   # e3: a `<V>_d1` arm runs under the D1 profile (its argv carries --wsd-branch-from, which only that profile admits)
   # a D1 arm's `--wsd-branch-from` names a Thor path whose config.json the gate reads: <stage>/pathmap_<ARM>.txt (one line FROM=TO, optional, absent for every other arm) maps it to a local copy
   PMAP="$(cat "$STAGE/pathmap_${ARM}.txt" 2>/dev/null | tr -d '\r' | head -1)"
-  ARGVF="$T/stack/ops/runs.d/${R9_PREFIX}_${ARM}.argv.json"; OUT="$STAGE/devbox_evidence_${C12}_${ARM}"; NA=$((NA + 1)); SW="$STAGE/sw$NA"; LOG="$STAGE/devbox_pinned_${C12}_${ARM}.log"
+  ARGVF="$T/stack/ops/runs.d/${R9_PREFIX}_${ARM}.argv.json"; OUT="$STAGE/devbox_evidence_${C12}_${ARM}"; NA=$((NA + 1)); SW="$SWROOT/${R9_STUDY}sw$NA"; LOG="$STAGE/devbox_pinned_${C12}_${ARM}.log"
   [ -s "$ARGVF" ] || { say "no argv $ARGVF"; mark ZZGS3-PINNED-${ARM}-FAILZZ; continue; }
   PN=$(path_need "$SW" "$ML"); [ "$PN" -le 259 ] || { say "$ARM: the deepest extracted path would be $PN characters (> 259) under $SW"; mark "ZZGS3-PINNED-${ARM}-FAILZZ PATH-LONG $PN"; continue; }
   t0=$(date +%s)

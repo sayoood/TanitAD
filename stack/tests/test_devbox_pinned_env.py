@@ -168,10 +168,23 @@ def test_the_suite_work_dir_is_short_and_per_arm():
     i, j = _loop_span(lines)
     body = lines[i + 1:j]
     assert not any("gsw_" in l for l in lines), [l for l in lines if "gsw_" in l]
-    sw = [l for l in body if 'SW="$STAGE/sw$NA"' in l]
-    assert len(sw) == 1 and sw[0].index("NA=$((NA + 1))") < sw[0].index('SW="$STAGE/sw$NA"'), sw
+    sw = [l for l in body if 'SW="$SWROOT/${R9_STUDY}sw$NA"' in l]
+    assert len(sw) == 1 and sw[0].index("NA=$((NA + 1))") < sw[0].index('SW="$SWROOT/${R9_STUDY}sw$NA"'), sw
     assert lines.index("NA=0") < i                                              # numbered per run, from 1
-    assert len("F:/refcv9_e1/gate/sw1") == len("F:/refcv9_e2/gate/sw1") == 21
+    root = [l for l in lines if l.startswith("SWROOT=")]
+    assert root == ['SWROOT="${STAGE%%/*}/q"'] and lines.index(root[0]) < i, root   # 2026-11-13: <stage drive>/q, per study (was <stage>/sw<N>, 21)
+    assert len("F:/q/e1sw1") == len("F:/q/e2sw1") == len("F:/q/e3sw1") == 10
+
+
+@R2.needs_bash
+def test_the_suite_work_root_is_the_stage_drives_short_dir_per_study():
+    src = DRIVER.read_text(encoding="utf-8")
+    root = next(l for l in _lines(src) if l.startswith("SWROOT="))           # the driver's OWN line, executed
+    script = 'for STAGE in "$@"; do ' + root + '; R9_STUDY=e2; NA=1; SW="$SWROOT/${R9_STUDY}sw$NA"; echo "$SW"; done'
+    out = subprocess.run([R2.BASH, "-c", script, "_", "F:/refcv9_e2/gate", "F:/refcv9_e1/gate", "E:/x/y"],
+                         capture_output=True, text=True, encoding="utf-8", timeout=60)
+    assert out.returncode == 0, out.stderr
+    assert out.stdout.split() == ["F:/q/e2sw1", "F:/q/e2sw1", "E:/q/e2sw1"], out.stdout
 
 
 def test_every_arm_is_refused_on_path_long_before_its_gate():
@@ -202,14 +215,27 @@ def test_path_need_reproduces_the_measured_k2m1n20_failure():
 
 
 @R2.needs_bash
+def test_path_need_reproduces_the_measured_k2dc_refusal_and_the_short_root_fits():
+    # MEASURED 2026-11-13 (F:/refcv9_e2/gate/pinned_status.txt at d0974ba6): "ZZGS3-PINNED-K2DC-FAILZZ PATH-LONG 266", longest repo path 232
+    fn = next(l for l in DRIVER.read_text(encoding="utf-8").splitlines() if l.startswith("path_need() {"))
+    script = fn + '\nfor s in "$@"; do path_need "$s" 232; done'
+    out = subprocess.run([R2.BASH, "-c", script, "_", "F:/refcv9_e2/gate/sw1", "F:/q/e2sw1"], capture_output=True, text=True, encoding="utf-8", timeout=60)
+    assert out.returncode == 0, out.stderr
+    assert out.stdout.split() == ["266", "255"], out.stdout                      # 266 refused (> 259); the short root fits with 4 to spare
+
+
+@R2.needs_bash
 def test_the_start_of_run_sweep_queues_only_earlier_sw_dirs(tmp_path):
     src = DRIVER.read_text(encoding="utf-8")
     defs = "\n".join(l for l in src.splitlines() if l.startswith(('PENDING=""', "purge() {")))
-    sweep = [l for l in src.splitlines() if l.startswith('for d in "$STAGE"/sw[0-9]*')]
+    sweep = [l for l in src.splitlines() if l.startswith('for d in "$STAGE"/sw[0-9]* "$SWROOT/$R9_STUDY"sw[0-9]*')]
     assert len(sweep) == 1, sweep
+    st, q = tmp_path / "stage", tmp_path / "q"
     for n in ("sw1", "sw2", "devbox_evidence_x_K0", "swap"):
-        (tmp_path / n / "x").mkdir(parents=True)
-    script = defs + '\nSTAGE="$1"\n' + sweep[0] + '\nls "$STAGE"'
-    out = subprocess.run([R2.BASH, "-c", script, "_", tmp_path.as_posix()], capture_output=True, text=True, encoding="utf-8", timeout=60)
+        (st / n / "x").mkdir(parents=True)
+    for n in ("e2sw1", "e2sw3", "e1sw1", "e3sw2", "e2swap"):                    # the short root: only THIS study's sw<N> go
+        (q / n / "x").mkdir(parents=True)
+    script = defs + '\nSTAGE="$1"; SWROOT="$2"; R9_STUDY=e2\n' + sweep[0] + '\nls "$STAGE"; echo --; ls "$SWROOT"'
+    out = subprocess.run([R2.BASH, "-c", script, "_", st.as_posix(), q.as_posix()], capture_output=True, text=True, encoding="utf-8", timeout=60)
     assert out.returncode == 0, out.stderr
-    assert out.stdout.split() == ["devbox_evidence_x_K0", "swap"], out.stdout   # the FAIL record and a look-alike name stay
+    assert out.stdout.split() == ["devbox_evidence_x_K0", "swap", "--", "e1sw1", "e2swap", "e3sw2"], out.stdout   # FAIL record, look-alikes, other studies stay
