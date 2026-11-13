@@ -37,6 +37,7 @@ import importlib
 import json
 import math
 import os
+import re
 import subprocess
 import sys
 import time
@@ -2504,6 +2505,19 @@ def suite_nest_refusals(stack: list, entries: list) -> list:
     return out
 
 
+SUITE_TAIL_STDOUT, SUITE_TAIL_STDERR, SUITE_TAIL_LINE = 40, 20, 300
+_SUITE_SECRET_RE = re.compile(r"hf_[A-Za-z0-9]{8,}")
+
+
+def suite_tail(text: str, n: int) -> list:
+    """FAILING-script evidence only (2026-11-13): the last `n` lines of a suite script's output, each cut to SUITE_TAIL_LINE chars; a line carrying an HF token pattern or `HF_TOKEN=` is replaced
+    by `<redacted>`.  Evidence, never a verdict input: check_suite's reasons, ok and exit code do not read it."""
+    out = []
+    for ln in (text or "").splitlines()[-n:]:
+        out.append("<redacted>" if (_SUITE_SECRET_RE.search(ln) or "HF_TOKEN=" in ln) else ln[:SUITE_TAIL_LINE])
+    return out
+
+
 def check_suite(profile: dict, arm=None, rehearsal=False) -> dict:
     reasons, det = [], {"scripts": []}
     entries = [dict(e) for e in profile.get("suite", ())]
@@ -2527,6 +2541,8 @@ def check_suite(profile: dict, arm=None, rehearsal=False) -> dict:
         det["scripts"].append({"script": name, "rc": r.returncode, "token": token, "token_seen": token in r.stdout, "skips": skipped[:4],
                                "seconds": round(time.perf_counter() - t_script, 1)})            # where the G-SUITE time went (evidence only)
         if not ok:
+            det["scripts"][-1]["stdout_tail"] = suite_tail(r.stdout, SUITE_TAIL_STDOUT)           # why it failed, on the pod's own record (evidence only)
+            det["scripts"][-1]["stderr_tail"] = suite_tail(r.stderr, SUITE_TAIL_STDERR)
             reasons.append(f"{name}: rc {r.returncode}, {token!r} {'seen' if token in r.stdout else 'NOT seen'}")
         if skipped and profile.get("suite_skips_fail", True):
             reasons.append(f"{name}: {len(skipped)} check(s) SKIPPED -- a skip is not a pass ({skipped[0][:100]})")
