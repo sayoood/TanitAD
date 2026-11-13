@@ -31,6 +31,7 @@ STOP_KEYS = sorted(f"{h}.{i}.{p}" for h in ("stop_head", "stop_pres_head") for i
 WPH, W_RE = "W_PLACEHOLDER", re.compile(r"^[0-9]+\.[0-9]{4}$")
 ARGVS_FILE = os.path.join(HERE, "argvs_stopperc.txt")
 HOME_DECL = B.DECL_D + r"\stopperc"
+WSMOKE_TAG = "A_s0"   # the arm whose selfcheck the W smoke runs (cmd_wsmoke); G-LIVE6 compares the probe W with the argv W on this arm only
 TABLE = {"NULL_s0": {"kind": "null", "arm": "NULL", "seed": 0, "init": 0, "order": 1, "blocked": None},
          "NULL_rep2": {"kind": "null", "arm": "NULL", "seed": 3, "init": 0, "order": 2, "blocked": None},
          "A_s0": {"kind": "null", "arm": "A", "seed": 0, "init": 0, "order": 3, "blocked": None},
@@ -155,10 +156,16 @@ def a_problems(tag, toks, sc):
         p.append(f"G-LIVE5 probe_n_pos = {pb.get('probe_n_pos')!r}, wanted >= 1 (the probe cannot see the cell term)")
     if not (isinstance(pb.get("probe_n_has"), int) and isinstance(pb.get("probe_n_pos"), int) and pb["probe_n_has"] >= pb["probe_n_pos"]):
         p.append(f"G-LIVE5 probe_n_has = {pb.get('probe_n_has')!r} < probe_n_pos = {pb.get('probe_n_pos')!r} (stop_has must contain stop_pos: AMENDMENT_3 section 1)")
-    # G-LIVE 6: W equals the argv's to the W script's rounding
+    # G-LIVE 6: W equals the argv's to the W script's rounding -- ON THE W SMOKE'S OWN ARM ONLY (A_s0: the smoke's seed, init and probe batch).
+    # The card fixes ONE W at the gate smoke ("W is fixed at the gate smoke ... never tuned"; the chain writes one W.txt for every A argv). Another seed's step-0
+    # ratio differs through its init and probe batch (MEASURED 2026-11-13: A_s1 0.06279 vs W 0.0533), so comparing it refused a correct A_s1 (MM fix 2026-11-13,
+    # tests/DRYRUN_FIXES.md section 4). There it must still be a finite positive reading; the read reports it beside, never as a refusal.
     wf = pb.get("w_stop_aux_for_goal_equal")
-    if w is None or not (B.finite(wf) and abs(round(wf, 4) - float(w)) <= 1e-9):
-        p.append(f"G-LIVE6 w_stop_aux_for_goal_equal = {wf!r} rounds to {round(wf, 4) if B.finite(wf) else None!r}, the argv's W is {w!r}")
+    if B.base_tag(tag) == WSMOKE_TAG:
+        if w is None or not (B.finite(wf) and abs(round(wf, 4) - float(w)) <= 1e-9):
+            p.append(f"G-LIVE6 w_stop_aux_for_goal_equal = {wf!r} rounds to {round(wf, 4) if B.finite(wf) else None!r}, the argv's W is {w!r}")
+    else:
+        pos(f"G-LIVE6 w_stop_aux_for_goal_equal ({B.base_tag(tag)}: beside, W is the smoke's {w!r})", wf)
     # G-LIVE 7: live.pass with the stop terms present and nothing unexpectedly dead
     lp = sc.get("live") if isinstance(sc.get("live"), dict) else {}
     terms = lp.get("terms") if isinstance(lp.get("terms"), dict) else {}
@@ -222,12 +229,15 @@ def post_problems(tag, toks, out):
 
 
 def eval_build_problems(ck):
-    """G-LIVE 8 (build half): the eval loader's route -- V8FMiniConfig(**ck['cfg']) + strict load -- builds the ON checkpoint. (forward_infer's independence of the head is pinned by the tree's test_inference_never_reads_the_head, not re-run here.)"""
+    """G-LIVE 8 (build half): the eval loader's route -- V8FMiniConfig(**ck['cfg']), V8FMini(cfg, placeholder P10Prior) + strict load -- builds the ON checkpoint. (forward_infer's independence of the head is pinned by the tree's test_inference_never_reads_the_head, not re-run here.)
+    MM 2026-11-13 16:45: the first version called V8FMini(cfg) without the prior; V8FMini.__init__(self, cfg, prior, ...) needs it (3e264bbf v8f_mini.py:707), so A_s0 trained 3,000 steps
+    and then failed here with "missing 1 required positional argument: 'prior'". The placeholder is the eval loaders' own (3e264bbf stack/scripts/v8f_t1_eval.py:510, v8f_mini_eval.py:262)."""
     try:
         sp = os.path.join(B.repo(), "stack")
         sys.path.insert(0, sp)
+        import torch
         from tanitad.models import v8f_mini as M
-        m = M.V8FMini(M.V8FMiniConfig(**ck["cfg"]))
+        m = M.V8FMini(M.V8FMiniConfig(**ck["cfg"]), M.P10Prior(torch.zeros(8), torch.ones(8), torch.zeros(2 * M.K30)))
         m.load_state_dict(ck["model"], strict=True)
         return []
     except Exception as e:                                                      # noqa: BLE001  any failure is a problem, never a pass

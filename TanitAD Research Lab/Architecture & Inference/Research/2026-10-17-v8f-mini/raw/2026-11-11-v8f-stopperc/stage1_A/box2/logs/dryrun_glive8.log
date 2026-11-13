@@ -1,0 +1,10 @@
+== 1 normal flow: ship, W smoke, NULL_s0, reuse EQUAL, NULL_rep2, A_s0, A_s1, DONE
+== 1b the box-side pin refuses a changed token and a changed W (checker run directly on the fake box, no transport)
+== 2 reuse DIFFERS appends NULL_s1 and NULL_rep and runs them; reuse UNKNOWN stops (rc 13)
+== 3 W smoke refusals: probe_n_pos 0 (STOP rc 14, no run starts), W script refuses, W rounds to 0.0000, the pinned W script differs
+== 4 busy marker held by another owner
+== 5 gate refusal on A_s0 stops the chain; STOP.txt refuses a rerun; STOPPERC_RESUME=1 resumes from done/ markers
+== 6 ship, disk and transport fail-closed
+== 7 early refusals: camera table, pinned base checker, one real sha not equal
+== 8 hygiene
+DRYRUN ok=113 failed=0

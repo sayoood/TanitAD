@@ -192,3 +192,66 @@ def test_no_cr_bytes_in_shipped_files():
         for f in fs:
             if f.endswith((".py", ".sh", ".txt", ".md")) and "__pycache__" not in root:
                 assert b"\r" not in open(os.path.join(root, f), "rb").read(), os.path.join(root, f)
+
+
+# ---- G-LIVE8 eval build (MM 2026-11-13: A_s0 failed here on the real box; the dry run skips this check) -------------------------------------------------------
+_STUB = '''import torch
+K30 = 3
+class P10Prior:
+    def __init__(self, mu, sd, flat):
+        self.mu, self.sd, self.flat = mu, sd, flat
+class V8FMiniConfig:
+    def __init__(self, stop_aux="off", w_stop_aux=0.0):
+        self.stop_aux, self.w_stop_aux = stop_aux, w_stop_aux
+class V8FMini(torch.nn.Module):
+    def __init__(self, cfg, prior, cons_mu=None, cons_sd=None):   # the signature of 3e264bbf v8f_mini.py:707: the prior is required
+        super().__init__()
+        assert isinstance(prior, P10Prior) and prior.flat.shape == (2 * K30,)
+        self.trunk = torch.nn.Linear(2, 2)
+        if cfg.stop_aux == "on":
+            self.stop_head = torch.nn.Linear(2, 1)
+'''
+
+
+def _stub_tree(tmp_path, monkeypatch):
+    import torch
+    d = tmp_path / "repo" / "stack" / "tanitad" / "models"
+    d.mkdir(parents=True)
+    (d.parent / "__init__.py").write_text("")
+    (d / "__init__.py").write_text("")
+    (d / "v8f_mini.py").write_text(_STUB)
+    for m in ("tanitad", "tanitad.models", "tanitad.models.v8f_mini"):
+        monkeypatch.delitem(sys.modules, m, raising=False)
+    monkeypatch.setattr(sys, "path", list(sys.path))
+    monkeypatch.setattr(B, "repo", lambda: str(tmp_path / "repo"))
+    ns = {}
+    exec(_STUB, ns)
+    on = ns["V8FMini"](ns["V8FMiniConfig"]("on", 0.0533), ns["P10Prior"](torch.zeros(8), torch.ones(8), torch.zeros(6)))
+    return {"cfg": {"stop_aux": "on", "w_stop_aux": 0.0533}, "model": dict(on.state_dict())}
+
+
+def test_eval_build_passes_a_well_formed_on_checkpoint_with_the_loaders_prior(tmp_path, monkeypatch):
+    ck = _stub_tree(tmp_path, monkeypatch)
+    assert C.eval_build_problems(ck) == []
+
+
+def test_eval_build_red_arm_a_missing_head_tensor_is_refused(tmp_path, monkeypatch):
+    ck = _stub_tree(tmp_path, monkeypatch)
+    ck["model"].pop("stop_head.bias")
+    p = C.eval_build_problems(ck)
+    assert len(p) == 1 and p[0].startswith("G-LIVE8") and "stop_head.bias" in p[0]
+
+
+# ---- G-LIVE6 scope (MM 2026-11-13: the real A_s1 gate refused W 0.0533 because its own step-0 ratio read 0.06279; the card fixes ONE W at the smoke) ----------
+def test_live6_compares_w_on_the_smoke_arm_only():
+    assert C.WSMOKE_TAG == "A_s0"
+    s1 = mut(["stop_aux_probe", "w_stop_aux_for_goal_equal"], 0.06278651564882848)        # the real A_s1 reading
+    assert not any("G-LIVE6" in x for x in C.a_problems("A_s1", a_toks("A_s1"), s1))
+    assert any("G-LIVE6" in x for x in C.a_problems("A_s0", a_toks("A_s0"), s1))           # on the smoke's arm a different ratio is still refused
+
+
+def test_live6_other_seed_still_needs_a_finite_positive_reading():
+    for bad in (float("nan"), 0.0, None):
+        got = C.a_problems("A_s1", a_toks("A_s1"), mut(["stop_aux_probe", "w_stop_aux_for_goal_equal"], bad))
+        assert any("G-LIVE6" in x for x in got), (bad, got)
+    assert C.a_problems("A_s1", a_toks("A_s1"), good_a()) == []
