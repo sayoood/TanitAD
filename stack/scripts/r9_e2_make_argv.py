@@ -61,20 +61,25 @@ K0_SET_LINES = [
     "(the gate binds it by content; operator: confirm this tree path)"]
 
 #: K2 variants: name -> the E1 map arm whose banded flags the variant carries (None = C0's 8-code head, no banded head).
-VARIANTS = {"K2": None, "K2M1N20": "M1N20", "K2M3": "M3", "K2M3N20": "M3N20"}
+VARIANTS = {"K2": None, "K2M1N20": "M1N20", "K2M3": "M3", "K2M3N20": "M3N20", "K2DC": "M1N20"}
 T1H_ARM = "T1h"
 #: variant -> the E1 T1 arm whose levers it composes. K2M1N20 / K2M3N20 compose T1v (`--r9-hist-supervise-geom`, ONE flag) INSTEAD of the four T1h flags: REFCV9_E1_T1V_PREREG.md committed outcome 0
 #: (T1v KEEP vs C0 and the replacement read vs T1h passed, 2026-11-09 -- `r9_e1_verdict.T1V_OUTCOMES`). K2 and K2M3 keep T1h (their committed files regenerate byte-equal; K2M3 is the refused-near-lift
 #: variant, K2 has no banded head).
 T1V_ARM = "T1v"
-T1_ARM_OF = {"K2": T1H_ARM, "K2M1N20": T1V_ARM, "K2M3": T1H_ARM, "K2M3N20": T1V_ARM}
+T1_ARM_OF = {"K2": T1H_ARM, "K2M1N20": T1V_ARM, "K2M3": T1H_ARM, "K2M3N20": T1V_ARM, "K2DC": T1V_ARM}
 MAP_W = 1.0                      # --w-map-hires of every banded variant (E1's M1N20 fixed 1.0; M3 / M3N20 PREREG_M3: M1's 1.0) == K0's own value
 #: K2M1N20 RE-DOSE (MM 4a3d05, 2026-11-10): K2M1N20 failed G-LIVE's SHARE-ALARM at w 1.0 (banded map 0.00125 of the trunk gradient < 0.05); it is re-dosed to w 25, everything
 #: else unchanged. Pre-registered in E:/Projects/TanitAD-artifacts/dagland/e2/PREREG_K2_REDOSE_2026-11-10.md (sha256 2c5c147bf10368bb88677f964f9474acf2b6eef4b96dfe06f72fa8e22043b5df).
 #: K0 (1.0) and every other variant are unchanged.
 REDOSE_PREREG = "E:/Projects/TanitAD-artifacts/dagland/e2/PREREG_K2_REDOSE_2026-11-10.md"
 REDOSE_PREREG_SHA256 = "2c5c147bf10368bb88677f964f9474acf2b6eef4b96dfe06f72fa8e22043b5df"
-MAP_W_REDOSE = {"K2M1N20": 25.0}
+MAP_W_REDOSE = {"K2M1N20": 25.0, "K2DC": 25.0}
+#: K2DC (MM 4a3d05, 2026-11-12, PI-approved "Approve K2DC"): K2M1N20 + the map-dose SHARE CONTROLLER (stack/tanitad/train/map_dose_ctl.py). 25 is only the INITIAL weight
+#: (steps 0-249, so G-LIVE's step-50 SHARE-ALARM reads as K2M1N20's); from row 250 the controller re-solves it every 250 rows for a 0.10 trunk share, clamped to [1, 25].
+#: Pre-registered in E:/Projects/TanitAD-artifacts/dagland/e2/PREREG_K2DC_2026-11-12.md. The four flags are appended after every other token; nothing else moves.
+DOSE_PREREG = "E:/Projects/TanitAD-artifacts/dagland/e2/PREREG_K2DC_2026-11-12.md"
+DOSE_CTL = {"K2DC": ["--map-hires-share-target", "0.10", "--map-hires-share-every", "250", "--map-hires-share-group", "trunk", "--map-hires-w-bounds", "1,25"]}
 PLAN_ANCHOR = "--bev-planner-crop-m"         # the C8 wires go right after the planner crop (planner-side flags, after K0's map group)
 PLAN_MAP, PLAN_BOX = "--r9-plan-map-channels", "--r9-plan-box-tokens"
 CRITIC, W_CRITIC = "--r8-critic-drivable", "--w-r8-drivable"
@@ -189,7 +194,7 @@ def compose(k0_doc: dict, variant: str, w_drivable: float, out: str | None = Non
         res += [f] + vals
         if f == PLAN_ANCHOR:
             res += wires
-    return res
+    return res + list(DOSE_CTL.get(variant, []))          # K2DC: the controller flags, last
 
 
 def variant_doc(k0_doc: dict, k0_bytes: bytes, variant: str, w_drivable: float, *, provisional: bool, w_source: str, out: str | None = None) -> dict:
@@ -219,11 +224,17 @@ def variant_doc(k0_doc: dict, k0_bytes: bytes, variant: str, w_drivable: float, 
                              "agent implements it). The gate's STATIC admission does not read the trainer's pin.") if t1 == T1H_ARM else
                             ("GATE: launch_gate (refcv9-e2 / -full / -full-d1) admits --r9-hist-supervise-geom by exact name (_R9F_T1V_ADMITTED, 926820a9). The trainer's pin (bev_warp_flag._pin_geom) "
                              "accepts it with --r9-map-banded / --r9-map-banded-near-m 20 / --r9-map-own-enc."))
+    if variant in DOSE_CTL:
+        lever["dose_ctl"] = list(DOSE_CTL[variant])
+        lever["dose_ctl_provenance"] = ("K2DC = K2M1N20 + the map-hires share controller (target 0.10 of the trunk gradient, every 250 rows, bounds 1..25; the initial "
+                                        "--w-map-hires 25 is K2M1N20's re-dose). %s. PI-approved 2026-11-12: \"Approve K2DC\"." % DOSE_PREREG)
     what = (("%s = K0 + the crowned E1 lever bundle T1h + the C8 planner wires (REFCV9_DESIGN 4.4 K2; map config: %s). Composed by stack/scripts/r9_e2_make_argv.py from "
              "stack/ops/runs.d/r9e2_K0.argv.json -- never hand-written; base_sha256 = sha256 of the K0 FILE bytes." % (variant, lever["map_config"])) if t1 == T1H_ARM else
             ("%s = K0 + E1 lever T1v (--r9-hist-supervise-geom) INSTEAD of the four T1h flags + the C8 planner wires (REFCV9_DESIGN 4.4 K2; map config: %s). T1v: REFCV9_E1_T1V_PREREG.md "
              "committed outcome 0, 2026-11-09 (KEEP vs C0; replacement read vs T1h passed). W-COST: %s. Composed by "
              "stack/scripts/r9_e2_make_argv.py from stack/ops/runs.d/r9e2_K0.argv.json -- never hand-written; base_sha256 = sha256 of the K0 FILE bytes." % (variant, lever["map_config"], "PROVISIONAL until the K2 explore smoke measures it with T1v" if provisional else "MEASURED with T1v at the K2 explore smoke")))
+    if variant in DOSE_CTL:
+        what += " K2DC: the same composition as K2M1N20 + the map-dose share controller %s (%s)." % (" ".join(DOSE_CTL[variant]), DOSE_PREREG)
     return {"schema": "r9e2-argv-v1", "arm": "r9e2_%s" % variant, "seed": 0, "steps": E2_STEPS, "argv": argv,
             "base_sha256": hashlib.sha256(k0_bytes).hexdigest(), "derived_from": "r9e2_K0", "lever": lever,
             "what": what,

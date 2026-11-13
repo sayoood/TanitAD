@@ -3394,6 +3394,7 @@ def profile_argv_rules(prof: dict, argv: list[str], options: dict | None = None,
     refusals += lr_schedule_reasons(prof, argv)[0]                 # refcv9-full family (inert otherwise)
     refusals += wsd_branch_reasons(prof, argv, pmap)[0]            # refcv9-full-d1 only (inert otherwise)
     refusals += map_weight_reasons(prof, argv)[0]                  # refcv9-full family (inert otherwise)
+    refusals += dose_controller_static_reasons(argv)[0]            # K2DC: --map-hires-share-* declared without a target / incoherent (inert without any of the four flags)
     return refusals, pi_pending_reasons(prof, argv)
 
 
@@ -3772,6 +3773,10 @@ def full_profile_live_reasons(prof: dict, launch_argv: list[str], run_argv: list
         elif min(vals) < float(sh["floor"]):
             reasons.append(f"SHARE-ALARM: the banded map takes {min(vals):.4f} of the trunk gradient (`{sh['row_key']}`), below the floor "
                            f"{sh['floor']} (E0j: {sh['e0j']}) -- the map weight is too small to shape layer2")
+    dcr, dcd = dose_controller_live_reasons(launch_argv, rows)            # K2DC (inert without the four --map-hires-share-* flags)
+    if dcd.get("on"):
+        det["dose_controller"] = dcd
+    reasons += dcr
     return reasons, det
 
 
@@ -6221,6 +6226,100 @@ def gs_reading_rows(argv: list[str], steps: int | None = None) -> list[int]:
     return list(range(every, n + 1, every))
 
 
+#: K2DC (PREREG_K2DC_2026-11-12): the map-dose share controller's four flags (`tanitad/train/map_dose_ctl.py`).
+_DC_TARGET = "--map-hires-share-target"
+_DC_FLAGS = (_DC_TARGET, "--map-hires-share-every", "--map-hires-share-group", "--map-hires-w-bounds")
+
+
+def _dc_bounds(argv: list[str]) -> tuple[float, float] | None:
+    v = flag_values(argv, "--map-hires-w-bounds")
+    try:
+        lo, hi = (float(x) for x in str((v or ["1,25"])[0]).split(","))
+    except ValueError:
+        return None
+    return (lo, hi) if 0.0 < lo <= hi < float("inf") else None
+
+
+def dose_controller_static_reasons(argv: list[str]) -> tuple[list[str], dict]:
+    """K2DC, STATIC: inert when argv carries none of the four flags. A controller flag WITHOUT `--map-hires-share-target` is a
+    controller declared and never built (the deliberate-regression arm: target unset) -> refused; with the target: 0 < target < 1,
+    LO,HI parse (0 < LO <= HI), the INITIAL `--w-map-hires` lies inside, and `map_hires` is among the terms the gradient-share reading
+    separates (`--grad-share-terms`, when given)."""
+    decl = [f for f in _DC_FLAGS if has_flag(argv, f)]
+    if not decl:
+        return [], {"on": False}
+    det: dict[str, Any] = {"on": True, "declared": decl}
+    if not has_flag(argv, _DC_TARGET):
+        return [f"DOSE-CTL: {', '.join(decl)} declared but {_DC_TARGET} is not passed -- the controller would be declared in argv and never built"], det
+    out: list[str] = []
+    try:
+        t = float((flag_values(argv, _DC_TARGET) or ["nan"])[0])
+    except ValueError:
+        t = float("nan")
+    if not (t == t and 0.0 < t < 1.0):
+        out.append(f"DOSE-CTL: {_DC_TARGET} {(flag_values(argv, _DC_TARGET) or [None])[0]!r} must satisfy 0 < target < 1")
+    bd = _dc_bounds(argv)
+    if bd is None:
+        out.append(f"DOSE-CTL: --map-hires-w-bounds {(flag_values(argv, '--map-hires-w-bounds') or ['1,25'])[0]!r} is not LO,HI with 0 < LO <= HI")
+    else:
+        try:
+            w = float((flag_values(argv, "--w-map-hires") or ["nan"])[0])
+        except ValueError:
+            w = float("nan")
+        if not (bd[0] <= w <= bd[1]):
+            out.append(f"DOSE-CTL: the initial --w-map-hires {w} is outside --map-hires-w-bounds [{bd[0]:g}, {bd[1]:g}]")
+        det["bounds"] = list(bd)
+    terms = flag_values(argv, "--grad-share-terms")
+    if terms and "map_hires" not in str(terms[0]).split(",") and str(terms[0]) != "all":
+        out.append(f"DOSE-CTL: --grad-share-terms {terms[0]} does not separate `map_hires`, the term the controller holds")
+    return out, det
+
+
+def dc_reading_rows(argv: list[str], steps: int | None = None) -> list[int]:
+    """The metrics rows on which K2DC's controller fires (`--map-hires-share-every` multiples up to `--steps`); [] when off."""
+    if not has_flag(argv, _DC_TARGET):
+        return []
+    ev = flag_values(argv, "--map-hires-share-every")
+    try:
+        every = int(ev[0]) if ev else 250
+        n = int(steps if steps is not None else ((flag_values(argv, "--steps") or ["0"])[0]))
+    except ValueError:
+        return []
+    return list(range(every, n + 1, every)) if every > 0 else []
+
+
+def dose_controller_live_reasons(launch_argv: list[str], rows: list[dict]) -> tuple[list[str], dict]:
+    """K2DC, G-LIVE (the SMOKE's rows): inert when the launch argv carries none of the four flags. Controller ON with NO `dc_w_eff` row
+    is a FAIL (a controller that never fired is declared and untested -- never a pass); every `dc_w_eff` row must carry a finite weight
+    inside [LO, HI] and a `dc_share_pred` equal to the target within 1e-6, or `dc_clamped` true (no root inside the bounds)."""
+    decl = [f for f in _DC_FLAGS if has_flag(launch_argv, f)]
+    if not decl:
+        return [], {"on": False}
+    if not has_flag(launch_argv, _DC_TARGET):
+        return [f"DOSE-CTL: {', '.join(decl)} declared but {_DC_TARGET} is not passed"], {"on": True}
+    try:
+        target = float(flag_values(launch_argv, _DC_TARGET)[0])
+    except (ValueError, TypeError, IndexError):
+        return [f"DOSE-CTL: {_DC_TARGET} is not a number"], {"on": True}
+    bd = _dc_bounds(launch_argv) or (float("nan"), float("nan"))
+    firing = [r for r in rows if "dc_w_eff" in r]
+    det: dict[str, Any] = {"on": True, "target": target, "bounds": list(bd), "n_firings": len(firing),
+                           "firings": [{k: r.get(k) for k in ("step", "dc_w_before", "dc_w_eff", "dc_share_read", "dc_share_pred", "dc_clamped")}
+                                       for r in firing]}
+    if not firing:
+        return [f"DOSE-CTL: the controller is ON ({_DC_TARGET} {target:g}) but the smoke carries no `dc_w_eff` row -- it never fired inside G-LIVE "
+                f"(declared and untested is a FAIL)"], det
+    out: list[str] = []
+    for r in firing:
+        w, pred, cl = r.get("dc_w_eff"), r.get("dc_share_pred"), r.get("dc_clamped")
+        if not (isinstance(w, (int, float)) and w == w and bd[0] - 1e-9 <= w <= bd[1] + 1e-9):
+            out.append(f"DOSE-CTL: row {r.get('step')}: dc_w_eff {w!r} is not a finite weight inside [{bd[0]:g}, {bd[1]:g}]")
+        pred_ok = isinstance(pred, (int, float)) and pred == pred
+        if not (pred_ok and (abs(pred - target) <= 1e-6 or (isinstance(cl, (int, float)) and cl > 0.0))):
+            out.append(f"DOSE-CTL: row {r.get('step')}: dc_share_pred {pred!r} != target {target:g} (+-1e-6) and dc_clamped is {cl!r}")
+    return out, det
+
+
 def smoke_argv(base: list[str], steps: int, log_every: int) -> tuple[list[str], dict]:
     """The G-LIVE smoke's argv from the LAUNCH argv: `--steps` -> the smoke length, and every flag whose value is a
     STEP of the launch (a number the trainer's own pins compare with `--steps`) re-expressed inside the smoke.
@@ -6249,6 +6348,15 @@ def smoke_argv(base: list[str], steps: int, log_every: int) -> tuple[list[str], 
         out = set_flag(set_flag(out, "--grad-share-every", [str(L)]), "--grad-share-at", [str(L)])
         dep["--grad-share-every/--grad-share-at"] = (f"{was} -> every {L} at {L} (one reading inside the smoke, "
                                                      f"SPEC_REFCV8 3.2 item 5; its cost is excluded from s/step)")
+    if has_flag(base, _DC_TARGET):
+        # K2DC: EXACTLY ONE controller firing inside the smoke. `--map-hires-share-every L` would fire at every multiple of L inside the smoke
+        # (the smoke is >= 2 L long: rows L and 2 L), so the cadence is the largest multiple of L that fits -- the smoke's last logged row --
+        # and the weight that firing leaves is what G-CKPT's resume leg must restore.
+        dce = flag_values(base, "--map-hires-share-every")
+        every_dc = max(L, (int(steps) // L) * L)
+        out = set_flag(out, "--map-hires-share-every", [str(every_dc)])
+        dep["--map-hires-share-every"] = (f"{(dce or ['250'])[0]} -> {every_dc} (the largest multiple of --log-every {L} inside the {steps}-step smoke: "
+                                          f"EXACTLY ONE controller firing, on the last logged row; its cost is excluded from s/step)")
     gs = flag_values(base, "--b1-guard-step")
     try:
         late = bool(gs) and int(gs[0]) > steps
@@ -9304,7 +9412,7 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         # admissible memory reading)
         h = ctx.prof.get("map_hires") or {}
         det["cost"] = {**step_cost(run1.get("step_times") or [], int(h.get("cost_warmup_steps", 10)),
-                                   exclude_rows=gs_reading_rows(argv1), nontrain_rows=nontrain_rows(argv1)),
+                                   exclude_rows=sorted(set(gs_reading_rows(argv1)) | set(dc_reading_rows(argv1))), nontrain_rows=nontrain_rows(argv1)),
                        "cuda_max_mem_gb": run1.get("cuda_max_mem_gb"),
                        "batch": int(args.batch)}
         needs_pi = False

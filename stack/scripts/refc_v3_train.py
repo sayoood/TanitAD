@@ -99,6 +99,7 @@ from tanitad.refs import refcv6_tactical as v6tac  # noqa: E402
 from tanitad.refs import refcv8_conditioning as r8c  # noqa: E402  refcv8 WP-B
 from tanitad.train import refcv8_train as r8train  # noqa: E402  refcv8 WP-B (trainer side)
 from tanitad.train import grad_share as _gshare  # noqa: E402  refcv8 X4: the in-run P-GRAD statistic
+from tanitad.train import map_dose_ctl as _mdc  # noqa: E402  K2DC: the map-dose share controller (--map-hires-share-*; OFF = target None: nothing built)
 from tanitad.train import weight_ema as _wema  # noqa: E402  refcv8 R8-WARMUP: weight EMA + the B1 guard
 from tanitad.train import map_only_ft as _mof  # noqa: E402  PI D-R9-MAPHEAD-PRECISION: --r8-train-only-map
 from tanitad.refs import refcv9_progress as _r9p  # noqa: E402  refcv9 R9-PF: --r9-progress-head (OFF: nothing)
@@ -207,6 +208,8 @@ _r9ph.register_dvb_levers(_dvb.register)
 _r9p.register_dvb_levers(_dvb.register)
 # refcv9 GT-in-pool schedule (H-R9-ALLOC-ORACLE-1): the attached schedule's spec / seed, read off the built model
 _r9af.register_dvb_levers(_dvb.register)
+# K2DC (PREREG_K2DC): --map-hires-share-target / -every / -group / --map-hires-w-bounds are `built` levers (the controller object model._map_dose_ctl)
+_mdc.register_dvb_levers(_dvb.register)
 import numpy as _np  # noqa: E402
 
 # --- v3-only loss weights (everything shared is imported above) --------------
@@ -933,6 +936,7 @@ def _pin_refcv8(cfg, args) -> None:
         _gshare.parse_at(getattr(args, "grad_share_at", None), _gse, int(getattr(args, "steps", 0) or 0))
     except ValueError as e:
         raise SystemExit(f"[refcv8] --grad-share-at: {e}")
+    _mdc.pin_args(args)          # K2DC: --map-hires-share-*'s refusals (a no-op while --map-hires-share-target is unset)
     if bool(getattr(args, "smoke_seed_ego_frames", False)) and int(getattr(args, "steps", 0) or 0) > 100:
         raise SystemExit("[v3] --smoke-seed-ego-frames is a SMOKE flag (it adds an extra, hand-picked batch): "
                          "refused above --steps 100")
@@ -5684,7 +5688,7 @@ def _ckpt_payload(model, opt, step, dpos, n_windows, args, ema, b1) -> dict:
                          "n": n_windows, "seed": int(args.seed),
                          "batch_size": int(args.batch)},
             "param_names": _opt_param_names(model, opt),
-            **_ema_ckpt_extra(ema, b1), **_p10_ckpt_extra(model), **_rng_ckpt_extra(model)}
+            **_ema_ckpt_extra(ema, b1), **_mdc.ckpt_extra(model), **_p10_ckpt_extra(model), **_rng_ckpt_extra(model)}
 
 
 def _ema_summary_extra(ema, b1) -> dict:
@@ -11189,12 +11193,20 @@ def train(args) -> dict:
     _wsd_branch = _lrs.stage_branch(args, out_dir, _wsd_src)     # refcv9 C6: a branch's stable ckpt becomes THIS run's ckpt.pt (no flag: None)
     _data_order = {"scheme": ResumableEpochSampler.SCHEME, "seed": int(args.seed),
                    "resumed_from": None, "legacy_checkpoint": False}
+    # K2DC: the controller the argv declares (None = OFF: nothing is attached, the tip's constant weight). Built BEFORE the resume block
+    # (the checkpoint's `map_dose_ctl` is restored into it there) and BEFORE G-DVB (which reads it off the model).
+    _dose = _mdc.controller_for(args)
+    _dose_groups = {}
+    if _dose is not None:
+        model._map_dose_ctl = _dose
+        _dose_groups = _mdc.groups_for(model, _dose)
     _ema_resume = _b1_resume = None       # refcv8 R8-WARMUP: what the resumed checkpoint carries
     _rng_resume = None                    # RNG-RESUME: ckpt["rng"] of the checkpoint this run resumes (None: fresh, or an OLD checkpoint)
     if ck.exists():
         state = torch.load(ck, map_location=device, weights_only=False)
         _ema_resume, _b1_resume = _resume_ema_guard(state, args)     # refuses a mismatch BEFORE any state is loaded
         _resume_p10_guard(state, model)                              # v8F alpha-1: the same P10, or REFUSE
+        _mdc.resume_guard(state, _dose)                                # K2DC: controller ON needs the checkpoint's state (restores w_eff), OFF refuses one; BEFORE any state is loaded
         model.load_state_dict(state["model"])          # strict — resume exact
         opt.load_state_dict(state["opt"])
         step = int(state["step"])
@@ -11246,6 +11258,8 @@ def train(args) -> dict:
             _mof_rec["init_from"]["step"], _mof_rec["init_from"]["verify"]["result"],
             _mof_rec["init_from"]["verify"]["checked_keys"]), flush=True)
     _dvb.refuse_on_mismatch(model, args, build_parser(), where="train")
+    if _dose is not None:                       # K2DC: G-DVB read model._w_map_hires == argv's INITIAL weight; from here the run's weight is the controller's (a resume: the checkpoint's)
+        model._w_map_hires = float(_dose.w_eff)
     # ⛔ M18: the record is CHECKED before it is written. A knob that does not
     # reach config.json refuses the run here, not in an audit months later.
     _seams = _seam_stamp(cfg, args)
@@ -11844,6 +11858,11 @@ def train(args) -> dict:
                 model, lambda: compute_losses_v3(model, batch, device, mode=args.mode,
                                                  ablate_frames=args.ablate_frames, log_metrics=False),
                 _gs_groups, _gshare.weights_of(model, TRAJ_WEIGHT), keep=_gs_keep)
+        # K2DC hop 1: the controller's own fp32 replay (bf16 trunk only; on ITS schedule, `dcp_` prefix -- the gs_ rows above are untouched)
+        _dose_replay = _mdc.probe_before_forward(
+            _dose, model, step + 1, _dose_groups,
+            lambda: compute_losses_v3(model, batch, device, mode=args.mode,
+                                      ablate_frames=args.ablate_frames, log_metrics=False), TRAJ_WEIGHT)
         losses = compute_losses_v3(model, batch, device, mode=args.mode,
                                    ablate_frames=args.ablate_frames,
                                    log_metrics=_logged_after(step, args.log_every, args.steps))
@@ -11929,6 +11948,8 @@ def train(args) -> dict:
         elif _gs_due:
             _gs_row = _gshare.measure(_gshare.term_tensors(losses, _gshare.weights_of(model, TRAJ_WEIGHT), _gs_keep),
                                       losses["loss"], _gs_groups)
+        # K2DC hop 2: the controller's reading (BEFORE the backward, `autograd.grad` only) -> its decision `dc_*`; {} when not due / OFF
+        _dose_row = _mdc.read_after_losses(_dose, model, losses, step + 1, _dose_groups, TRAJ_WEIGHT, _dose_replay)
         # ⚠️ `subtract` mode reads `.grad`, so it must run AFTER the backward
         # (and the backward must retain the graph for its one aux pass) and
         # BEFORE `clip_grad_norm_`, which rescales `.grad` in place.
@@ -11943,6 +11964,9 @@ def train(args) -> dict:
             losses["loss"].backward()
         if _cd_sub:
             _cd_row = _cd.measure_after_backward(_cd_la, step=step).row()
+        # K2DC hop 3: AFTER this step's backward the solved weight becomes `model._w_map_hires`, the attribute `_map_hires_loss` /
+        # `_map_banded_loss` multiply the map term by -- so it acts from the NEXT step (no firing: nothing happens)
+        _mdc.apply_weight(_dose, model, _dose_row)
         # D-TACGOAL-2: read the gradient HERE -- after backward,
         # before the global clip rescales it, and before the next
         # zero_grad wipes it.
@@ -12032,6 +12056,8 @@ def train(args) -> dict:
                 row.update(_pr_row)
             if _gs_row:                          # exact, AFTER the rounding (a 1e-4 share must not read 0)
                 row.update(_gs_row)
+            if _dose_row:                          # K2DC: the controller's probe + decision, exact (never rounded)
+                row.update(_dose_row)
             # ⛔ AFTER the rounding comprehension, for the same reason as
             # `_gp_row`: a conflict of -1e-8 rounded to 5 dp reads 0.0, which is
             # "no conflict" -- the exact misreading this instrument exists to
@@ -12098,7 +12124,7 @@ def train(args) -> dict:
                                      "batch_size": int(args.batch)},
                         # optimizer-id-ordered names: stack/scripts/zerograd_gate.py (post-training gate)
                         "param_names": _opt_param_names(model, opt),
-                        **_ema_ckpt_extra(_ema, _b1), **_p10_ckpt_extra(model), **_rng_ckpt_extra(model)}, ck)
+                        **_ema_ckpt_extra(_ema, _b1), **_mdc.ckpt_extra(model), **_p10_ckpt_extra(model), **_rng_ckpt_extra(model)}, ck)
             # the one line that makes the order VERIFIABLE from train.log
             print(f"[v3:{args.arm}] ckpt step {step} -> {ck.name}",
                   flush=True)
@@ -13840,6 +13866,7 @@ def build_parser() -> argparse.ArgumentParser:
                          "taken; each must be a multiple of --grad-share-every and <= --steps. Default = every "
                          "--grad-share-every-th row (the tip's schedule). A reading costs ~16 min inside the fp32 "
                          "replay on Thor (MEASURED 2026-10-11), so a ladder arm reads only where its consumer looks.")
+    _mdc.add_arguments(g8)       # K2DC: --map-hires-share-target / -every / -group / --map-hires-w-bounds (target unset = OFF)
     g8.add_argument("--ema-decay", type=float, default=0.0,
                     help="refcv8 R8-WARMUP: weight EMA (tanitad/train/weight_ema.py). 0 = off (the tip's loop, "
                          "checkpoint and rows, bit for bit). >0: an fp32 shadow of every trainable parameter and float "
