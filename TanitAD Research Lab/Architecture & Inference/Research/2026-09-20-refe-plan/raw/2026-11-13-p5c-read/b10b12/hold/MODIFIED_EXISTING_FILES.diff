@@ -1,0 +1,283 @@
+ 1 file changed, 41 insertions(+), 8 deletions(-)
+diff --git a/p5c_read.py b/E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p5c_b10b12/files/eval/p5c/p5c_read.py
+index c5103aa..d0215eb 100644
+--- a/p5c_read.py
++++ b/E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p5c_b10b12/files/eval/p5c/p5c_read.py
+@@ -204,6 +204,9 @@ def g2_from_famci(j: dict | None) -> dict:
+             if r:
+                 adverse.append({"family": fam, "component": k, "direction": fam_direction(k),
+                                 "diff_C1_minus_C0": e["diff_B_minus_A"]})
++    if compared == 0 and not adverse:     # an evaluation over zero components is not an evaluation (found 2026-11-13: a RAISED families block gave an empty frame and a PASS)
++        return {"status": "NOT-EVALUATED", "reason": "fam_ci frame holds no comparable LONGITUDINAL / LATERAL component (0 compared): G2 was not evaluated", "adverse": [],
++                "components_compared": 0, "components_undecided": undecided}
+     return {"status": "FAIL" if adverse else "PASS", "adverse": adverse, "components_compared": compared, "components_undecided": undecided,
+             "frame": "executed_tracked (the transparent frame is never a guard, card 8.2)", "strategic": STRATEGIC,
+             "source_estimator": j.get("estimator")}
+@@ -223,7 +226,7 @@ def qualifier(td: dict, dt: dict) -> dict:
+     return {"code": q, "text": txt}
+ 
+ 
+-def verdict_table(d: dict, B: float, g1_fail: list, g2: dict, ctrl1_valid: bool, controls_ok, p1c: dict | None) -> dict:
++def verdict_table(d: dict, B: float, g1_fail: list, g2: dict, ctrl1_valid: bool, controls_ok, p1c: dict | None, missing_kinds=()) -> dict:
+     """card 6.2. d = tracked C1 - C0 {point, lo, hi}. Order: INVALID, REFUTED, NULL, SWAMPED, GUARD-FAIL, then the LEVER ladder."""
+     p1a, p1b = d["lo"] > 0, d["point"] > B
+     base = {"P1-a": bool(p1a), "P1-b": bool(p1b), "G1": "FAIL" if g1_fail else "PASS", "G2": g2["status"], "CTRL-1": bool(ctrl1_valid),
+@@ -240,7 +243,7 @@ def verdict_table(d: dict, B: float, g1_fail: list, g2: dict, ctrl1_valid: bool,
+         return {"verdict": "GUARD-FAIL", "wording": "NOT ADOPTED; the component is named", "named": {"G1": g1_fail, "G2": [a["component"] for a in g2["adverse"]]},
+                 "clauses": base}
+     if g2["status"] != "PASS" or controls_ok is None:
+-        return {"verdict": "INCOMPLETE", "wording": "a required input is missing (" + ("G2 not evaluated" if g2["status"] != "PASS" else "no controls supplied") + "): no verdict",
++        return {"verdict": "INCOMPLETE", "wording": "a required input is missing (" + ("G2 not evaluated" if g2["status"] != "PASS" else ("required controls missing: " + ", ".join(missing_kinds)) if missing_kinds else "no controls supplied") + "): no verdict",
+                 "clauses": base}
+     if p1c is None:
+         return {"verdict": "SEPARATED-SINGLE", "wording": "separated, single seed, not yet a lever claim", "clauses": base}
+@@ -268,7 +271,7 @@ def goal_status(lv: dict) -> dict:
+     return {"goal": GOAL_LEVEL, "status": s, "level_tracked": lv, "harness_gap": "<= ~0.25 reported, never subtracted (card 6.5)"}
+ 
+ 
+-def run(rows: dict, c1, c0, base, c0r=None, human=None, fam_ci=None, controls=(), n_boot=NBOOT, rehearsal=None) -> dict:
++def run(rows: dict, c1, c0, base, c0r=None, human=None, fam_ci=None, controls=(), n_boot=NBOOT, rehearsal=None, tactical=None, sealed=None, require_kinds=(), rows_paths=None) -> dict:
+     arms = [a for a in (c1, c0, base, c0r, human) if a]
+     P = per_token(rows, arms)
+     bt = Boot(P["logs"], n_boot)
+@@ -297,9 +300,16 @@ def run(rows: dict, c1, c0, base, c0r=None, human=None, fam_ci=None, controls=()
+     cs = []
+     for fp in controls:
+         j = json.load(open(fp, encoding="utf-8"))
+-        cs.append({"file": fp, "pass": bool(j.get("pass", j.get("verdict") == "PASS"))})
+-    controls_ok = (all(c["pass"] for c in cs) if cs else None)
+-    v = verdict_table(d, B_BAR, g1_fail, g2, ctrl1["valid"], controls_ok, p1c)
++        cs.append({"file": fp, "kind": j.get("control"), "pass": bool(j.get("pass", j.get("verdict") == "PASS"))})
++    sealed_res = None
++    if sealed is not None:                      # B11: SEALED.json is verified HERE, so the read cannot consume a tampered or late seal
++        import p5c_seal
++        sealed_res = p5c_seal.verify_sealed(sealed["doc"], sealed.get("card"), bool(sealed.get("recheck")), rows_paths)
++        cs.append({"file": sealed.get("file"), "kind": p5c_seal.KIND_SEALED, "pass": sealed_res["pass"]})
++    kinds = {c["kind"] for c in cs if c["kind"]}
++    missing_kinds = [k for k in require_kinds if k not in kinds]
++    controls_ok = (False if any(not c["pass"] for c in cs) else (None if (not cs or missing_kinds) else True))
++    v = verdict_table(d, B_BAR, g1_fail, g2, ctrl1["valid"], controls_ok, p1c, missing_kinds)
+     q = qualifier(TD, dT)
+     dep_ci = cons[f"{c1}-{base}"]
+     adv_base = [m for m in G1_SUBS + ("ddc",) if dep_ci[m]["tracked"]["hi"] < 0]
+@@ -308,7 +318,7 @@ def run(rows: dict, c1, c0, base, c0r=None, human=None, fam_ci=None, controls=()
+               "c1_minus_base": dep_ci["pdms"], "adverse_subscores": adv_base,
+               "outcome": ("TRUNK CHANGE" if (lever and dep_ci["pdms"]["tracked"]["lo"] > 0 and not adv_base) else "label lever shown, trunk unchanged")}
+     res.update(g1={"subscores": list(G1_SUBS), "adverse": g1_fail, "status": "FAIL" if g1_fail else "PASS", "rule": "adverse = CI-hi < 0 of tracked C1 - C0"},
+-               g2=g2, ctrl1=ctrl1, p1c=p1c, controls={"supplied": cs, "all_pass": controls_ok}, verdict=v, qualifier=q, deploy=deploy,
++               g2=g2, ctrl1=ctrl1, p1c=p1c, controls={"supplied": cs, "all_pass": controls_ok, "required_kinds": list(require_kinds), "missing_kinds": missing_kinds}, sealed=sealed_res, verdict=v, qualifier=q, deploy=deploy,
+                goal=goal_status(res["levels"][c1]["pdms"]["tracked"]), rates=rates_block(bt, P, arms, c1, c0, base),
+                d_headline={"d_tracked": d, "d_T_transparent": dT, "TD": TD})
+     res["no_tracker_numbers"] = {"note": f"numbers with no tracker in them carry the label '{NO_TRACKER}'"}
+@@ -318,7 +328,19 @@ def run(rows: dict, c1, c0, base, c0r=None, human=None, fam_ci=None, controls=()
+         "Q-3 G1 lists NC, DAC, TTC, EP, C (no DDC); DDC is reported but is not a G1 term.",
+         "Q-4 G2 polarity: directional components use the PAIRED C1-C0 interval; bias / ratio components use P6's unpaired interval rule (proxy_eval.fam_adverse), conservative.",
+         "Q-5 with no controls supplied, no positive verdict is issued (INCOMPLETE): the card makes any failed read control INVALID but is silent on absent ones.",
++        "Q-7 B10: the card names per-token PDMS; the instrument requires EVERY sub-score identical too (stricter), and the subset rule is k = ceil(0.10 n) via default_rng(20261112).choice (the card gives n and seed, not the RNG).",
++        "Q-8 B11: the card gives the ledger entry shape, not the seal's schema; SEALED.json carries both sha256s, card and base sha256, UTC time and a self-hash; a real read refuses without it and checks the score rows are not older than the seal.",
++        "Q-10 G2 over ZERO comparable components (an empty fam_ci frame, e.g. a RAISED families block) is NOT-EVALUATED, not PASS; the card does not say. B9 also refuses a RAISED families block.",
++        "Q-9 B12: the card calls the TACTICAL row computable 'as in P6's read'; selection quality (64 harness columns, ~4 to 6.4 h CPU) is reported NOT COMPUTED with reason and n unless a table is supplied. Required controls for a real read default to B10_determinism + B11_sealed (W-TRANSP ii-iv carry no kind name yet).",
+     ]
++    import p5c_tactical
++    if tactical is None:                        # B12: never a silent omission
++        tactical = p5c_tactical.not_computed("no tactical.json (p5c_tactical.py) was supplied to this read", len(P["tokens"]))
++    bad_t = p5c_tactical.validate_block(tactical)
++    if bad_t:
++        raise Refused("tactical block invalid: " + "; ".join(bad_t))
++    res["tactical"] = tactical
++    res["tactical_authority"] = "NONE: a reported family; it never decides the verdict (card 8.2)"
+     if rehearsal:
+         res["REHEARSAL"] = {"label": rehearsal, "claim": "none: no P5-C arm has trained; arms here are stand-ins, the verdict string is a pipeline exercise"}
+         res["verdict"] = dict(v, verdict="REHEARSAL:" + v["verdict"])
+@@ -336,12 +358,20 @@ def main() -> int:
+     ap.add_argument("--fam-ci", default=None, help="fam_ci.py JSON of C1 vs C0 (--a C0 --b C1); B9 writes it")
+     ap.add_argument("--controls", nargs="*", default=[], help="JSON results with a boolean `pass` (B6 identity, W-TRANSP controls, B10 determinism)")
+     ap.add_argument("--rehearsal", default=None, help="label; REQUIRED when no --controls are supplied")
++    ap.add_argument("--tactical", default=None, help="tactical.json from p5c_tactical.py (B12); absent = the block says NOT COMPUTED")
++    ap.add_argument("--sealed", default=None, help="SEALED.json (B11, card section 11); REQUIRED unless --rehearsal; verified by the read itself")
++    ap.add_argument("--card", default=None, help="PREREG_P5C.md: with --sealed, its sha256 must equal the sealed card_sha256")
++    ap.add_argument("--recheck-files", action="store_true", help="with --sealed: re-hash the sealed model files")
++    ap.add_argument("--require-kinds", nargs="*", default=None, help="control kinds that must be supplied; default for a real read: B10_determinism B11_sealed")
+     ap.add_argument("--n-boot", type=int, default=NBOOT)
+     ap.add_argument("--out", required=True)
+     a = ap.parse_args()
+     if not a.controls and not a.rehearsal:
+         print("REFUSED: no --controls and no --rehearsal label: a real read needs its controls", file=sys.stderr)
+         return 2
++    if not a.sealed and not a.rehearsal:
++        print("REFUSED: a real read needs --sealed SEALED.json (card section 11: both arms' model_final.pt sha256 sealed before either pass)", file=sys.stderr)
++        return 2
+     paths = [p for g in a.rows for p in sorted(glob.glob(g))]
+     rows, bad = load_rows(paths)
+     if bad:
+@@ -349,7 +379,10 @@ def main() -> int:
+         return 2
+     famj = json.load(open(a.fam_ci, encoding="utf-8")) if a.fam_ci else None
+     try:
+-        res = run(rows, a.c1, a.c0, a.base, a.c0r, a.human, famj, a.controls, a.n_boot, a.rehearsal)
++        sealed = {"doc": json.load(open(a.sealed, encoding="utf-8")), "file": a.sealed, "card": a.card, "recheck": a.recheck_files} if a.sealed else None
++        tact = json.load(open(a.tactical, encoding="utf-8")) if a.tactical else None
++        req = tuple(a.require_kinds) if a.require_kinds is not None else (() if a.rehearsal else ("B10_determinism", "B11_sealed"))
++        res = run(rows, a.c1, a.c0, a.base, a.c0r, a.human, famj, a.controls, a.n_boot, a.rehearsal, tact, sealed, req, paths)
+     except Refused as e:
+         print("REFUSED:", e, file=sys.stderr)
+         return 2
+ 1 file changed, 62 insertions(+)
+diff --git a/p5c_render.py b/E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p5c_b10b12/files/eval/p5c/p5c_render.py
+index 786f2c1..429d491 100644
+--- a/p5c_render.py
++++ b/E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p5c_b10b12/files/eval/p5c/p5c_render.py
+@@ -111,6 +111,66 @@ def claim_block(res: dict) -> list:
+     return out
+ 
+ 
++def _nt(name: str, text: str) -> str:
++    return render_number(name, {"no_tracker": True, "value": text})
++
++
++def _acc(c: dict) -> str:
++    a = c["accuracy"]
++    k = c["kappa"]
++    kp = "undefined" if k["point"] is None else f"{k['point']:.3f}"
++    return f"{a['point']:.3f} [{a['ci95'][0]:.3f}, {a['ci95'][1]:.3f}] (n {c['n']}), kappa {kp}"
++
++
++def render_tactical(t) -> list:
++    """TACTICAL block (B12): per family, never pooled; a family that could not be computed prints its reason and n."""
++    if not t:
++        raise RenderRefused("the read carries no tactical block (it must say NOT COMPUTED, never be absent)")
++    L = ["== TACTICAL family (reported, no decision authority; plan-side numbers, not tracker scores) =="]
++    if t.get("rehearsal"):
++        L.append("TACTICAL REHEARSAL: subset, not the registered read")
++    ca = t["command_adherence"]
++    if ca["status"] != "COMPUTED":
++        L.append(_nt("command adherence", f"{ca['status']}: {ca.get('reason') or ca.get('invalid')} (n {ca.get('n', ca.get('n_tokens'))})"))
++    else:
++        for role, a in ca["arms"].items():
++            L.append(_nt(f"{role} command adherence, turn-active (headline)", _acc(a["turn_active"])))
++            L.append(_nt(f"{role} command adherence, all tokens", _acc(a["all_tokens"])))
++            L.append(_nt(f"{role} turn-active confusion (rows LEFT, STRAIGHT, RIGHT command; cols plan)", str(a["turn_active"]["confusion_command_rows_plan_cols"])))
++        for pair, v in ca["paired_C1_minus_x"].items():
++            d = v["turn_active"]["accuracy_delta"]
++            L.append(_nt(f"{pair} turn-active accuracy delta", f"{d['point']:+.3f} [{d['ci95'][0]:+.3f}, {d['ci95'][1]:+.3f}] separated {d['separated']}"))
++        fl = ca["random_proposal_floor"]
++        if fl.get("status") == "NOT COMPUTED":
++            L.append(_nt("random-proposal floor", f"NOT COMPUTED: {fl['reason']} (n {fl['n']}); the adherence read is INCOMPLETE without it"))
++        else:
++            f = fl["turn_active"]["floor_accuracy"]
++            L.append(_nt("random-proposal floor, turn-active accuracy", f"{f['point']:.3f} [{f['ci95'][0]:.3f}, {f['ci95'][1]:.3f}]; floor >= actual: {fl['turn_active']['floor_ge_actual_point']}"))
++        L.append(_nt("command adherence gates", ", ".join(f"{k}={'ok' if v['ok'] else ('not verified' if v['ok'] is None else 'FAILED')}" for k, v in ca["gates"].items())))
++    for arm, s in t["selection_quality"].items():
++        if s["status"] == "COMPUTED":
++            lv = s["levels_x100"]
++            L.append(_nt(f"{arm} selection quality x100 (random / actual / best-of-64)", " / ".join(f"{lv[k]['mean']:.2f}" for k in ("random", "actual", "best_of_64")) + f" (n {s['n_tokens']})"))
++        else:
++            L.append(_nt(f"{arm} selection quality", f"{s['status']}: {s.get('reason') or s.get('invalid')} (n {s.get('n', s.get('n_tokens'))})"))
++    g = t["goal_setting"]
++    L.append(_nt("tactical goal-setting", f"{g['status']}: {g['reason']} (n {g['n']})"))
++    return L
++
++
++def render_controls(res: dict) -> list:
++    c = res.get("controls") or {}
++    L = ["== read controls =="]
++    for x in c.get("supplied", []):
++        L.append(f"control {x.get('kind') or 'unnamed'} ({x['file']}): {'PASS' if x['pass'] else 'FAIL'}")
++    if c.get("missing_kinds"):
++        L.append("required controls MISSING: " + ", ".join(c["missing_kinds"]))
++    s = res.get("sealed")
++    if s:
++        L.append(f"SEALED.json {s['sealed_sha256'][:12]}: {s['verdict']}; arms " + ", ".join(f"{a} {h[:12]}" for a, h in s["arms"].items()))
++    return L
++
++
+ def render(res: dict, notes: str = "") -> str:
+     lines = claim_block(res)
+     lines += ["", f"n tokens {res['n_tokens']}, logs {res['n_logs']}; {res['estimator']['kind']}, {res['estimator']['draws']} draws, seed {res['estimator']['seed']}, "
+@@ -135,6 +195,8 @@ def render(res: dict, notes: str = "") -> str:
+     lines.append("clauses: " + ", ".join(f"{k}={v}" for k, v in c.items()))
+     lines.append(f"B = {res['B']['value']} ({res['B']['arithmetic']}); 2F3 = {res['B']['2F3_beside']} beside it, decides nothing")
+     lines.append(f"G2: {res['g2']['status']}; adverse (tracked-executed frame only): {[a['component'] for a in res['g2']['adverse']]}")
++    lines += render_tactical(res.get("tactical"))
++    lines += render_controls(res)
+     lines.append(f"STRATEGIC family: {res['strategic_family']['status']} ({res['strategic_family']['reason']})")
+     lines.append(f"goal 94.55: {res['goal']['status']}; deploy: {res['deploy']['outcome']}")
+     lines.append(render_number("training-loss-like quantities", {"no_tracker": True, "value": "none in this read"}))
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+diff --git a/p5c_read_prep.py b/E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p5c_b10b12/files/eval/p5c/p5c_read_prep.py
+index 534c02d..8ba12f3 100644
+--- a/p5c_read_prep.py
++++ b/E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p5c_b10b12/files/eval/p5c/p5c_read_prep.py
+@@ -262,7 +262,7 @@ def cmd_identity(a) -> int:
+     rows, errs = read_rows(paths)
+     expected = [str(t) for t in np.load(a.plans, allow_pickle=False)["tokens"]]
+     res = check_identity(rows, errs, a.arm, read_harness_csv(a.csv), expected, a.bar)
+-    res.update(csv=os.path.abspath(a.csv), csv_sha256=sha256_file(a.csv), evidence="MEASURED (this run); tier T1 executed (LQR)")
++    res.update(control="B6_identity", csv=os.path.abspath(a.csv), csv_sha256=sha256_file(a.csv), evidence="MEASURED (this run); tier T1 executed (LQR)")
+     with open(a.out, "w", encoding="utf-8", newline="\n") as f:
+         json.dump(res, f, indent=1)
+     print("ZZP5CR_IDENTITY", a.arm, res["verdict"], "n", res["n_scored"], "/", res["n_expected"], "over", res["n_over_bar"],
+ 1 file changed, 13 insertions(+)
+diff --git a/p5c_families.py b/E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p5c_b10b12/files/eval/p5c/p5c_families.py
+index 26aa9f4..9e89da4 100644
+--- a/p5c_families.py
++++ b/E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p5c_b10b12/files/eval/p5c/p5c_families.py
+@@ -41,6 +41,19 @@ def arm_families(rows_glob: str, arm: str, out_dir: str, n_boot: int, python: st
+                   "--per-window", "--tanitad-repo", repo], os.path.join(out_dir, f"fam_{arm}.log"))
+     if rc != 0 or not os.path.exists(out):
+         raise SystemExit(f"families_run failed for {arm} (rc {rc}); see {out_dir}/fam_{arm}.log")
++    raised = raised_frames(json.load(open(out, encoding="utf-8")))
++    if raised:       # a frame whose block RAISED has no components: fam_ci would write empty families and G2 would read a vacuous PASS
++        raise SystemExit(f"families_run for {arm}: frames {raised} RAISED (first: {raised[0][1]}); the --repo tree is probably older than the instrument (per_window); see {out}")
++    return out
++
++
++def raised_frames(fam: dict) -> list:
++    """[(frame, error)] for every frame of a families_run JSON whose block did not compute."""
++    out = []
++    for fr, blk in (fam.get("frames") or {}).items():
++        b = blk.get("block") if isinstance(blk, dict) else None
++        if isinstance(b, dict) and b.get("status") == "RAISED":
++            out.append((fr, b.get("error")))
+     return out
+ 
+ 
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+diff --git a/test_p5c_read.py b/E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p5c_b10b12/files/eval/p5c/test_p5c_read.py
+index f114011..a1071d1 100644
+--- a/test_p5c_read.py
++++ b/E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p5c_b10b12/files/eval/p5c/test_p5c_read.py
+@@ -145,7 +145,16 @@ def ent(lo, hi, point=None, A=None, B=None):
+ def test_G2_reads_only_the_tracked_executed_frame():
+     bad = {"speed_mae_mps": ent(0.1, 0.3)}                      # lower-is-better, diff lo > 0 -> C1 worse
+     assert R.g2_from_famci(_fam(entries_tracked=bad))["status"] == "FAIL"
+-    assert R.g2_from_famci(_fam(entries_transp=bad))["status"] == "PASS"      # transparent frame is never a guard
++    ok_t = {"speed_mae_mps": ent(-0.1, 0.1)}                     # tracked frame with one comparable, non-adverse component
++    assert R.g2_from_famci(_fam(entries_tracked=ok_t, entries_transp=bad))["status"] == "PASS"      # transparent frame is never a guard
++
++
++def test_RED_G2_over_zero_components_is_not_evaluated_not_pass():
++    """found 2026-11-13: a RAISED families block gave an empty fam_ci frame and G2 read PASS over nothing (Q-10)."""
++    g = R.g2_from_famci(_fam())
++    assert g["status"] == "NOT-EVALUATED" and g["components_compared"] == 0
++    d = {"point": 2.0, "lo": 1.0, "hi": 3.0}
++    assert R.verdict_table(d, R.B_BAR, [], g, True, True, None)["verdict"] == "INCOMPLETE"
+ 
+ 
+ def test_G2_polarity_flip_is_detected():
+ 1 file changed, 7 insertions(+)
+diff --git a/test_p5c_families.py b/E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p5c_b10b12/files/eval/p5c/test_p5c_families.py
+index b1e54b5..c737856 100644
+--- a/test_p5c_families.py
++++ b/E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p5c_b10b12/files/eval/p5c/test_p5c_families.py
+@@ -66,3 +66,10 @@ def test_polarity_rule_matches_proxy_eval_if_present():
+         pytest.skip("proxy_eval not importable here")
+     for k in ("speed_mae_mps", "accel_mae_mps2", "target_speed_acc.within_1.0_mps", "heading_bias_deg", "lead_progress_ratio", "kappa"):
+         assert fam_direction(k) == m.fam_direction(k)
++
++
++def test_RED_raised_frames_are_detected():
++    """a families_run frame whose block RAISED must stop B9 (else fam_ci writes empty families and G2 reads a vacuous PASS)."""
++    ok = {"frames": {"executed_tracked": {"role": "PRIMARY", "block": {"status": "OK", "longitudinal": {}}}}}
++    bad = {"frames": {"executed_tracked": {"role": "PRIMARY", "block": {"status": "RAISED", "error": "TypeError: per_window"}}, "reference": {"block": {"status": "OK"}}}}
++    assert F.raised_frames(ok) == [] and F.raised_frames(bad) == [("executed_tracked", "TypeError: per_window")]

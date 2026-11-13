@@ -111,6 +111,66 @@ def claim_block(res: dict) -> list:
     return out
 
 
+def _nt(name: str, text: str) -> str:
+    return render_number(name, {"no_tracker": True, "value": text})
+
+
+def _acc(c: dict) -> str:
+    a = c["accuracy"]
+    k = c["kappa"]
+    kp = "undefined" if k["point"] is None else f"{k['point']:.3f}"
+    return f"{a['point']:.3f} [{a['ci95'][0]:.3f}, {a['ci95'][1]:.3f}] (n {c['n']}), kappa {kp}"
+
+
+def render_tactical(t) -> list:
+    """TACTICAL block (B12): per family, never pooled; a family that could not be computed prints its reason and n."""
+    if not t:
+        raise RenderRefused("the read carries no tactical block (it must say NOT COMPUTED, never be absent)")
+    L = ["== TACTICAL family (reported, no decision authority; plan-side numbers, not tracker scores) =="]
+    if t.get("rehearsal"):
+        L.append("TACTICAL REHEARSAL: subset, not the registered read")
+    ca = t["command_adherence"]
+    if ca["status"] != "COMPUTED":
+        L.append(_nt("command adherence", f"{ca['status']}: {ca.get('reason') or ca.get('invalid')} (n {ca.get('n', ca.get('n_tokens'))})"))
+    else:
+        for role, a in ca["arms"].items():
+            L.append(_nt(f"{role} command adherence, turn-active (headline)", _acc(a["turn_active"])))
+            L.append(_nt(f"{role} command adherence, all tokens", _acc(a["all_tokens"])))
+            L.append(_nt(f"{role} turn-active confusion (rows LEFT, STRAIGHT, RIGHT command; cols plan)", str(a["turn_active"]["confusion_command_rows_plan_cols"])))
+        for pair, v in ca["paired_C1_minus_x"].items():
+            d = v["turn_active"]["accuracy_delta"]
+            L.append(_nt(f"{pair} turn-active accuracy delta", f"{d['point']:+.3f} [{d['ci95'][0]:+.3f}, {d['ci95'][1]:+.3f}] separated {d['separated']}"))
+        fl = ca["random_proposal_floor"]
+        if fl.get("status") == "NOT COMPUTED":
+            L.append(_nt("random-proposal floor", f"NOT COMPUTED: {fl['reason']} (n {fl['n']}); the adherence read is INCOMPLETE without it"))
+        else:
+            f = fl["turn_active"]["floor_accuracy"]
+            L.append(_nt("random-proposal floor, turn-active accuracy", f"{f['point']:.3f} [{f['ci95'][0]:.3f}, {f['ci95'][1]:.3f}]; floor >= actual: {fl['turn_active']['floor_ge_actual_point']}"))
+        L.append(_nt("command adherence gates", ", ".join(f"{k}={'ok' if v['ok'] else ('not verified' if v['ok'] is None else 'FAILED')}" for k, v in ca["gates"].items())))
+    for arm, s in t["selection_quality"].items():
+        if s["status"] == "COMPUTED":
+            lv = s["levels_x100"]
+            L.append(_nt(f"{arm} selection quality x100 (random / actual / best-of-64)", " / ".join(f"{lv[k]['mean']:.2f}" for k in ("random", "actual", "best_of_64")) + f" (n {s['n_tokens']})"))
+        else:
+            L.append(_nt(f"{arm} selection quality", f"{s['status']}: {s.get('reason') or s.get('invalid')} (n {s.get('n', s.get('n_tokens'))})"))
+    g = t["goal_setting"]
+    L.append(_nt("tactical goal-setting", f"{g['status']}: {g['reason']} (n {g['n']})"))
+    return L
+
+
+def render_controls(res: dict) -> list:
+    c = res.get("controls") or {}
+    L = ["== read controls =="]
+    for x in c.get("supplied", []):
+        L.append(f"control {x.get('kind') or 'unnamed'} ({x['file']}): {'PASS' if x['pass'] else 'FAIL'}")
+    if c.get("missing_kinds"):
+        L.append("required controls MISSING: " + ", ".join(c["missing_kinds"]))
+    s = res.get("sealed")
+    if s:
+        L.append(f"SEALED.json {s['sealed_sha256'][:12]}: {s['verdict']}; arms " + ", ".join(f"{a} {h[:12]}" for a, h in s["arms"].items()))
+    return L
+
+
 def render(res: dict, notes: str = "") -> str:
     lines = claim_block(res)
     lines += ["", f"n tokens {res['n_tokens']}, logs {res['n_logs']}; {res['estimator']['kind']}, {res['estimator']['draws']} draws, seed {res['estimator']['seed']}, "
@@ -135,6 +195,8 @@ def render(res: dict, notes: str = "") -> str:
     lines.append("clauses: " + ", ".join(f"{k}={v}" for k, v in c.items()))
     lines.append(f"B = {res['B']['value']} ({res['B']['arithmetic']}); 2F3 = {res['B']['2F3_beside']} beside it, decides nothing")
     lines.append(f"G2: {res['g2']['status']}; adverse (tracked-executed frame only): {[a['component'] for a in res['g2']['adverse']]}")
+    lines += render_tactical(res.get("tactical"))
+    lines += render_controls(res)
     lines.append(f"STRATEGIC family: {res['strategic_family']['status']} ({res['strategic_family']['reason']})")
     lines.append(f"goal 94.55: {res['goal']['status']}; deploy: {res['deploy']['outcome']}")
     lines.append(render_number("training-loss-like quantities", {"no_tracker": True, "value": "none in this read"}))

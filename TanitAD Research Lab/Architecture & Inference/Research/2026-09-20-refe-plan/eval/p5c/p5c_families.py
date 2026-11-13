@@ -41,6 +41,19 @@ def arm_families(rows_glob: str, arm: str, out_dir: str, n_boot: int, python: st
                   "--per-window", "--tanitad-repo", repo], os.path.join(out_dir, f"fam_{arm}.log"))
     if rc != 0 or not os.path.exists(out):
         raise SystemExit(f"families_run failed for {arm} (rc {rc}); see {out_dir}/fam_{arm}.log")
+    raised = raised_frames(json.load(open(out, encoding="utf-8")))
+    if raised:       # a frame whose block RAISED has no components: fam_ci would write empty families and G2 would read a vacuous PASS
+        raise SystemExit(f"families_run for {arm}: frames {raised} RAISED (first: {raised[0][1]}); the --repo tree is probably older than the instrument (per_window); see {out}")
+    return out
+
+
+def raised_frames(fam: dict) -> list:
+    """[(frame, error)] for every frame of a families_run JSON whose block did not compute."""
+    out = []
+    for fr, blk in (fam.get("frames") or {}).items():
+        b = blk.get("block") if isinstance(blk, dict) else None
+        if isinstance(b, dict) and b.get("status") == "RAISED":
+            out.append((fr, b.get("error")))
     return out
 
 

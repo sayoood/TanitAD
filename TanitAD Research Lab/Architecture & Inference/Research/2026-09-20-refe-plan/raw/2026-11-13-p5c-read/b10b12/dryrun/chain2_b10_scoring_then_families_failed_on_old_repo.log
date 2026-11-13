@@ -1,0 +1,52 @@
+== B10 compare (control: identical rerun)
+ZZP5C_B10 PASS subset 20 tokens over tolerance 0 max |diff| 0.0
+rc=0
+== B10 RED: perturbed plans (C1 x + 1 mm), real scorer
+ZZP5CR_SCORE_DONE rcs [0]
+ZZP5C_B10 FAIL subset 20 tokens over tolerance 9 max |diff| 0.0001870687270200122
+rc_RED=1
+== identity
+ZZP5CR_IDENTITY C1 PASS n 200 / 200 over 0 max 1.8000045898247663e-12
+ZZP5CR_IDENTITY C0 PASS n 200 / 200 over 0 max 1.6472379016363448e-12
+ZZP5CR_IDENTITY base PASS n 200 / 200 over 0 max 1.89859239441148e-12
+== families
+families_run failed for C1 (rc 1); see C:/Users/Admin/p5cb/run/fam/fam_C1.log
+== tactical
+ZZP5C_TACTICAL COMPUTED n 200 rehearsal
+== read (PASS B10, sealed)
+Traceback (most recent call last):
+  File "C:\Users\Admin\p5cb\pk\eval\p5c\p5c_read.py", line 394, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\Admin\p5cb\pk\eval\p5c\p5c_read.py", line 376, in main
+    famj = json.load(open(a.fam_ci, encoding="utf-8")) if a.fam_ci else None
+                     ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/Admin/p5cb/run/fam/famci_C1_vs_C0.json'
+== read (RED B10 result supplied)
+Traceback (most recent call last):
+  File "C:\Users\Admin\p5cb\pk\eval\p5c\p5c_read.py", line 394, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\Admin\p5cb\pk\eval\p5c\p5c_read.py", line 376, in main
+    famj = json.load(open(a.fam_ci, encoding="utf-8")) if a.fam_ci else None
+                     ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/Admin/p5cb/run/fam/famci_C1_vs_C0.json'
+== read (no B10 supplied)
+Traceback (most recent call last):
+  File "C:\Users\Admin\p5cb\pk\eval\p5c\p5c_read.py", line 394, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\Admin\p5cb\pk\eval\p5c\p5c_read.py", line 376, in main
+    famj = json.load(open(a.fam_ci, encoding="utf-8")) if a.fam_ci else None
+                     ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/Admin/p5cb/run/fam/famci_C1_vs_C0.json'
+== render
+Traceback (most recent call last):
+  File "C:\Users\Admin\p5cb\pk\eval\p5c\p5c_render.py", line 227, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\Admin\p5cb\pk\eval\p5c\p5c_render.py", line 214, in main
+    res = json.load(open(a.read, encoding="utf-8"))
+                    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/Admin/p5cb/run/read_b10pass.json'
+CHAIN2_DONE

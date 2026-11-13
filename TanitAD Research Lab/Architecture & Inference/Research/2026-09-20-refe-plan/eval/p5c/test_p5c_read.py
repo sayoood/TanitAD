@@ -145,7 +145,16 @@ def ent(lo, hi, point=None, A=None, B=None):
 def test_G2_reads_only_the_tracked_executed_frame():
     bad = {"speed_mae_mps": ent(0.1, 0.3)}                      # lower-is-better, diff lo > 0 -> C1 worse
     assert R.g2_from_famci(_fam(entries_tracked=bad))["status"] == "FAIL"
-    assert R.g2_from_famci(_fam(entries_transp=bad))["status"] == "PASS"      # transparent frame is never a guard
+    ok_t = {"speed_mae_mps": ent(-0.1, 0.1)}                     # tracked frame with one comparable, non-adverse component
+    assert R.g2_from_famci(_fam(entries_tracked=ok_t, entries_transp=bad))["status"] == "PASS"      # transparent frame is never a guard
+
+
+def test_RED_G2_over_zero_components_is_not_evaluated_not_pass():
+    """found 2026-11-13: a RAISED families block gave an empty fam_ci frame and G2 read PASS over nothing (Q-10)."""
+    g = R.g2_from_famci(_fam())
+    assert g["status"] == "NOT-EVALUATED" and g["components_compared"] == 0
+    d = {"point": 2.0, "lo": 1.0, "hi": 3.0}
+    assert R.verdict_table(d, R.B_BAR, [], g, True, True, None)["verdict"] == "INCOMPLETE"
 
 
 def test_G2_polarity_flip_is_detected():

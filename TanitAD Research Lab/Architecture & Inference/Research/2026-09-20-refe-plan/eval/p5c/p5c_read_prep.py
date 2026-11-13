@@ -262,7 +262,7 @@ def cmd_identity(a) -> int:
     rows, errs = read_rows(paths)
     expected = [str(t) for t in np.load(a.plans, allow_pickle=False)["tokens"]]
     res = check_identity(rows, errs, a.arm, read_harness_csv(a.csv), expected, a.bar)
-    res.update(csv=os.path.abspath(a.csv), csv_sha256=sha256_file(a.csv), evidence="MEASURED (this run); tier T1 executed (LQR)")
+    res.update(control="B6_identity", csv=os.path.abspath(a.csv), csv_sha256=sha256_file(a.csv), evidence="MEASURED (this run); tier T1 executed (LQR)")
     with open(a.out, "w", encoding="utf-8", newline="\n") as f:
         json.dump(res, f, indent=1)
     print("ZZP5CR_IDENTITY", a.arm, res["verdict"], "n", res["n_scored"], "/", res["n_expected"], "over", res["n_over_bar"],

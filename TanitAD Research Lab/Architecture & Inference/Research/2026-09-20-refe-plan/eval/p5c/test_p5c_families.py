@@ -66,3 +66,10 @@ def test_polarity_rule_matches_proxy_eval_if_present():
         pytest.skip("proxy_eval not importable here")
     for k in ("speed_mae_mps", "accel_mae_mps2", "target_speed_acc.within_1.0_mps", "heading_bias_deg", "lead_progress_ratio", "kappa"):
         assert fam_direction(k) == m.fam_direction(k)
+
+
+def test_RED_raised_frames_are_detected():
+    """a families_run frame whose block RAISED must stop B9 (else fam_ci writes empty families and G2 reads a vacuous PASS)."""
+    ok = {"frames": {"executed_tracked": {"role": "PRIMARY", "block": {"status": "OK", "longitudinal": {}}}}}
+    bad = {"frames": {"executed_tracked": {"role": "PRIMARY", "block": {"status": "RAISED", "error": "TypeError: per_window"}}, "reference": {"block": {"status": "OK"}}}}
+    assert F.raised_frames(ok) == [] and F.raised_frames(bad) == [("executed_tracked", "TypeError: per_window")]
