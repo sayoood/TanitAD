@@ -21,3 +21,6 @@ The freeze times written inside the cards, the specs and the first state entries
 The proof results were written on the pod and copied back, so their times are copy times (later than the run).
 
 Note: `fv/FV_SPEC_V2.md` and `fv/fv_check_v2.py` were written by one command, the spec first; their times are equal to the second.
+PREREG_V8F_PROOF_ADD5.md  frozen (file time) 2026-11-13 01:03:38
+PREREG_V8F_PROOF_ADD6.md  frozen (file time) 2026-11-13 01:07:29
+PREREG_V8F_PROOF_ADD6B.md  frozen (file time) 2026-11-13 01:26:47
