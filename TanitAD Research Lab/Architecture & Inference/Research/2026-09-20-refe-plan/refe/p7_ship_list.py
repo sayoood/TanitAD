@@ -9,6 +9,8 @@ The ship step had a hand-kept directory list; nothing tied it to what the suite 
           1. the suite: `launch_gate.PROFILES[profile]["suite"]` (+ any --extra-script, e.g. test_p7_chain.py:ZZP7CHAIN_PASS), read from the package's own launch_gate.py;
           2. STATIC scan: the AST of every suite script and, transitively, of every refe/ module it imports or names; every string constant and every `a / "b" / "c"` chain that RESOLVES to
              a file under the package root (or, for a bare name, under refe/) is a read candidate (an over-approximation: a shipped file too many is harmless, a missing one is a 40-minute loss);
+             so is every `os.path.join(X, "raw", "d", "f")` / `X.joinpath(...)` / `Path(X, ...)` call (2026-11-13: A5's list missed such a read).  A candidate under raw/ or eval/
+             that names NO file in the tree REFUSES the derive (ZZP7SHIP_BAD unresolved=...: a partial export lost three files that way); --allow-unresolved PATH, disclosed in the list;
           3. TRACED run (--trace): each suite entry is run with a `sys.addaudithook("open")` sitecustomize on PYTHONPATH (inherited by child pythons); every file opened for reading under the
              package root is recorded.  --trace-file merges a previous trace instead of re-running (the suite takes ~40 min); it is REFUSED when the closure changed since that trace was taken.
           Output: the files with sha256 + how found (static / trace) + which script reads them, and the sha256 of every script in the closure (the staleness binding).
@@ -102,6 +104,34 @@ def _leaves(node):
     return [node]
 
 
+JOIN_ATTRS = ("join", "joinpath")                       # os.path.join(PKG, "raw", "x", "f.out"), posixpath.join(...), PKG.joinpath("raw", "f.out")
+PATH_CTORS = ("Path", "PurePath", "PurePosixPath", "PureWindowsPath")   # Path(PKG, "raw", "f.out")
+PKG_TOP_DIRS = ("raw", "eval", "code", "splits", "refe")  # a candidate rooted here that resolves to NO file is a read the list cannot pin (derive REFUSES it)
+
+
+def _const_tail(leaves) -> str:
+    """'/'-joined string constants AFTER the last non-constant leaf ('' if the chain ends in a non-constant): the anchor (HERE / PKG / tmp) is not part of the relative path."""
+    consts = []
+    for x in leaves:
+        if isinstance(x, ast.Constant) and isinstance(x.value, str):
+            consts.append(x.value.strip("/"))
+        else:
+            consts = []                                 # restart after any non-constant leaf
+    return "/".join(consts)
+
+
+def _call_args(n: ast.Call):
+    """The path-part arguments of a path-joining call, or None.  2026-11-13: test_aux_drivable_head.py reads
+    os.path.join(PKG, "raw", "2026-10-11-aux-drivable", "head_proto_selftest.out"); the Div-only scan saw three bare constants, none of which resolves,
+    so the file was never listed, never shipped, and HC-s0's G-SUITE failed on the pod (A1, rc 1, 28 s) after a 45-minute P7 pause."""
+    f = n.func
+    if isinstance(f, ast.Attribute) and f.attr in JOIN_ATTRS:
+        return list(n.args)
+    if (isinstance(f, ast.Name) and f.id in PATH_CTORS) or (isinstance(f, ast.Attribute) and f.attr in PATH_CTORS):
+        return list(n.args)
+    return None
+
+
 def candidates(src: str) -> set:
     tree = ast.parse(src)
     out = set()
@@ -111,16 +141,24 @@ def candidates(src: str) -> set:
             if s and "\n" not in s and " " not in s and len(s) < 260:
                 out.add(s[2:] if s.startswith("./") else s)
         elif isinstance(n, ast.BinOp) and isinstance(n.op, ast.Div):
-            lv = _leaves(n)
-            consts = []
-            for x in lv:
-                if isinstance(x, ast.Constant) and isinstance(x.value, str):
-                    consts.append(x.value.strip("/"))
-                else:
-                    consts = []                         # restart after any non-constant leaf: the anchor (HERE / PKG / tmp) is not part of the relative path
-            if consts:
-                out.add("/".join(consts))
+            tail = _const_tail(_leaves(n))
+            if tail:
+                out.add(tail)
+        elif isinstance(n, ast.Call):
+            args = _call_args(n)
+            if args:
+                tail = _const_tail(args)
+                if "/" in tail:                         # one bare constant is already a candidate of its own (above)
+                    out.add(tail)
     return out
+
+
+def pkg_rooted(cand: str) -> bool:
+    """A candidate that names a FILE under one of the package's top directories (raw/..., eval/..., ...): if it resolves to nothing, the list is incomplete
+    (derive ran on a partial tree, or the file is absent at this commit), and a pod G-SUITE that opens it fails after the pause, not at ship time."""
+    parts = cand.split("/")
+    return (len(parts) >= 2 and parts[0] in PKG_TOP_DIRS and "." in parts[-1] and all(parts)
+            and not any(ch in cand for ch in "*{}<>:\\") and ".." not in parts)
 
 
 def resolve(pkg: Path, cand: str):
@@ -172,7 +210,8 @@ def closure_digest(scripts: dict) -> str:
     return sha256_bytes(json.dumps(scripts, sort_keys=True).encode())
 
 
-def static_reads(pkg: Path, scripts: dict) -> dict:
+def static_reads(pkg: Path, scripts: dict, unresolved: dict | None = None) -> dict:
+    """{rel path: {reader, ...}} of the candidates that resolve; package-rooted candidates that resolve to NO file go to `unresolved` ({cand: {reader, ...}})."""
     out: dict = {}
     for rel, p in scripts.items():
         if p.suffix != ".py":
@@ -181,6 +220,8 @@ def static_reads(pkg: Path, scripts: dict) -> dict:
             q = resolve(pkg, c)
             if q is not None:
                 out.setdefault(rel_of(pkg, q), set()).add(rel)
+            elif unresolved is not None and pkg_rooted(c):
+                unresolved.setdefault(c, set()).add(rel)
     return out
 
 
@@ -221,7 +262,8 @@ def derive(a) -> int:
     scripts = closure(pkg, suite)
     cdig = closure_digest({k: sha_pair(p)[1] for k, p in scripts.items()})
     files: dict = {}
-    for rel, readers in static_reads(pkg, scripts).items():
+    unresolved: dict = {}
+    for rel, readers in static_reads(pkg, scripts, unresolved).items():
         files.setdefault(rel, {"via": set(), "readers": set()})
         files[rel]["via"].add("static")
         files[rel]["readers"] |= readers
@@ -253,6 +295,18 @@ def derive(a) -> int:
             pass
     for rel in made_later:
         files.pop(rel, None)
+    # UNRESOLVED package-rooted reads (2026-11-13): a candidate under raw/ or eval/ that names no file in THIS tree is a read the list cannot pin.  Run on a
+    # partial export it is how A5's list lost raw/2026-10-11-aux-drivable/head_proto_selftest.out (and two PREREG files) without a word.  Under the shipped
+    # roots (refe/ code/ splits/ ship whole) an unresolved name is a test fixture built in a temp package (MEASURED: 18 of 20 on the A5 export), reported only.
+    outside_unres = {c: sorted(r) for c, r in sorted(unresolved.items()) if c.split("/")[0] not in SHIPPED_ROOTS}
+    allowed = sorted(set(a.allow_unresolved or ()) & set(outside_unres))
+    refused = [c for c in outside_unres if c not in allowed]
+    if refused:
+        print(f"ZZP7SHIP_BAD unresolved={len(refused)} first={refused[:4]}: the suite names these files outside the shipped roots and this tree has none of them "
+              f"(derive needs the FULL package: add them from the commit and re-derive; a path the suite only builds in a temp tree: --allow-unresolved <path>, disclosed in the list)")
+        for c in refused:
+            print(f"  unresolved {c}  readers={','.join(outside_unres[c][:3])}")
+        return 1
     out_files = {}
     for rel in sorted(files):
         p = pkg / rel
@@ -261,7 +315,8 @@ def derive(a) -> int:
                           "outside_shipped_roots": rel.split("/")[0] not in SHIPPED_ROOTS}
     doc = {"schema": SCHEMA, "profile": a.profile, "suite": [e.get("script", "raw") for e in suite], "closure_digest": cdig,
            "scripts": {k: sha_pair(p)[1] for k, p in sorted(scripts.items())}, "trace": trace_note, "files": out_files,
-           "required_top": list(REQUIRED_TOP), "shipped_roots": list(SHIPPED_ROOTS)}
+           "required_top": list(REQUIRED_TOP), "shipped_roots": list(SHIPPED_ROOTS),
+           "unresolved_allowed": {c: outside_unres[c] for c in allowed}, "unresolved_in_roots": sorted(c for c in unresolved if c not in outside_unres)}
     Path(a.out).write_text(json.dumps(doc, indent=1, sort_keys=True), encoding="utf-8")
     outside = [k for k, v in out_files.items() if v["outside_shipped_roots"]]
     print(f"ZZP7SHIP_DERIVED files={len(out_files)} outside_roots={len(outside)} scripts={len(scripts)} trace={trace_note} closure={cdig[:12]}")
@@ -324,6 +379,7 @@ def main(argv=None) -> int:
     p.add_argument("--trace-file", default=None)
     p.add_argument("--allow-stale-trace", action="store_true")
     p.add_argument("--timeout", type=int, default=7200)
+    p.add_argument("--allow-unresolved", action="append", default=[], metavar="PATH")
     p = sub.add_parser("check")
     p.add_argument("--pkg", required=True)
     p.add_argument("--list", required=True)
