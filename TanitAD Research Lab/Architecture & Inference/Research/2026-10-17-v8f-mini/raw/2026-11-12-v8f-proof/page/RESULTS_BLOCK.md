@@ -12,6 +12,7 @@
 * Second banked pair (the same fine-tunes without own-state supervision), outcome CRIT-PARTIAL: selection-critical -0.1817 [-0.3054, -0.0686] / -0.1196 [-0.2619, +0.0243] m; bulk +0.3180 [-0.0079, +0.7169] / +0.4928 [+0.2488, +0.7552] m. There the hierarchy is worse than flat on the common case.
 * Critical minus bulk is negative and separated in all four cells (-0.2948, -0.2291, -0.4997, -0.6124 m).
 * The exact decomposition did not confirm the theory as read (outcome MIXED): at seed 0 of the first pair -0.2594 of -0.3451 m sits on windows where neither arm has the logged mode, -0.0536 where exactly one has it, -0.0320 where both have it. Both arms miss the 12-cell logged mode on 53 % to 71 % of windows.
+* Commit rule (addendum 8, GATEMIX, `gate/VERDICT_GATEMIX.md`, all four controls pass), outcome **GATE-COSTS**: letting the hierarchy drive only where its own tactical output is confident of a decision that is not the common case beats both models in no cell and is worse than one of them in two of four. That confidence tells selection-critical from bulk windows with AUROC 0.64 only. A gate that knows the logged window class (a privileged ceiling) is ahead of the flat model in all four cells (-0.26, -0.09, -0.10, -0.07 m). The information to commit only where it pays is not in the tactical output today.
 * Reading: the hierarchy gains where the future is not the common case and can cost where it is. These reads locate the difference; they do not establish dominance. A label-swap control missed its written single-seed bar once; over 20 swap seeds it reads 19 / 18 of 20 (first pair) and 18 / 15 of 20 (second pair, bar 15).
 
 **World-model yardstick (H-V8F-PROOF-3: WMCEIL, WMSTACK, JUMPCURVE), MEASURED, tier T0, a world-model diagnostic.** Sources `wm/VERDICT_WMCEIL.md`, `wm/VERDICT_WMSTACK.md`; eval-141, 1,976 windows, 141 episodes, 5 folds by episode, two seeds (s0 / s1); cards frozen before the data. Controls: the banked world-model skill is reproduced to 0.000000; a shuffled target reads at most +0.0027; a stack fed only the learned prediction reproduces it exactly.
@@ -33,6 +34,14 @@
 * With the cue the model itself emits (T-CUE) nothing is gained: the stop flag fires on 19 / 33 windows, 10 / 18 of them stop windows, and its stop position is off by 11.8 / 9.6 m (median). Outcome SHIELD-HOLDS-NO-GAIN.
 * Reading: the rule mechanism is worth about 3.4 m on stop windows and costs nothing measurable; all of it waits on the cue. No replicate arm exists, so the interval answers another draw of episodes only; the effect is about 12 times the tactical replicate floor (0.287 m). The plan has 30 knots at 0.2 s, so the shield ran at dt 0.2 s (the card assumed 0.1 s; recorded as a deviation).
 
+**Stop cue from the frozen tokens (addendum 5, CUEPROBE), MEASURED, T0 for the probes and T1-kin on logged frames for the shield, a diagnostic.** Source `cue/VERDICT_CUEPROBE.md`; closed-form probes cross-fitted by episode on the 2,399 windows of the rule-shield read (131 stop windows); zero training.
+* Stop flag: ego kinematics alone AUROC 0.810 [0.744, 0.868]; adding the 8x20 tokens gives 0.799 (difference -0.011 [-0.061, +0.043]). Outcome **VISION-FLAT**.
+* Stop distance: ego kinematics reach 3.82 / 3.97 m median error; the tokens reach 10.5 to 12.5 m, no better than a constant (10.3 m). Outcome **CUE-ABSENT**.
+* Shield with this cue: no gain on stop windows (+0.09 m [-0.53, +0.64] / +0.09 [-0.45, +0.61]) and +0.052 / +0.049 m cost elsewhere. Outcome **CUE-PROBE-COSTS**. The flag hits 27 % of stop windows at a 2.2 % false-positive rate.
+* The conformal margin does what the theory says: coverage 0.908 (119 of 131) for a nominal 0.9, and with the true stop windows the overrun share falls from 0.916 / 0.847 to 0.107 / 0.092. The margin is about 7.4 m, so the plan stops short and the error does not improve.
+* Reading: for lead range the pooled tokens carry coarse content; for the stop cue they carry nothing these probes can find. The rule is safe by construction; its usefulness waits on a sharp cue.
+* One control missed its bar as implemented: the leak-regression arm raises the flag AUROC on the two vision-only sets and not on the two sets with ego. Limit: 131 stop windows, one frame, a closed-form probe.
+
 **Bias edit, arithmetic preview only (addendum 4, BIASEDIT; the weight-edit run is the deciding read and has not run).** Source `bias/QUICK_OFFSET.md`, banked first-tick reads, T1-kin. Adding one offset to the stop-goal logit of the unweighted model reproduces the false-positive rate of the trained weighting doses at offsets 1.09 and 2.76 (seed 0; ln W is 1.52 and 3.04), and the hit rate there is within 0.009 and 0.026 of the trained arms, inside the replicate gap of 0.068.
 
 **Weight-space read of a lever (H-V8F-PROOF-2 TASKVEC), MEASURED, banked checkpoints, one replicate pair, no interval.** Source `wsp/TASKVEC.md`. Outcome **DIFFUSE**.
@@ -47,4 +56,4 @@
 
 **Literature, now primary.** Six cited papers were added to the Library (sha256 verified) and nine already banked ones were linked. The two bounds the first pass left unsure are read from the PDFs: MBPO Theorem 4.1 and the 2018 hierarchy sub-optimality bound (`kb/BOUNDS_VERBATIM.md`).
 
-**Not read yet:** the weight-average test (SOUP), the bias-edit run and the stop-cue probe (addendum 5). The first dev-box jobs stopped on out-of-memory errors at 00:26 and 00:28 on 13 November; they now run one at a time behind a free-memory gate.
+**Not read yet:** the weight-average test (SOUP) and the bias-edit run (running on the dev box behind a free-memory gate), and the probe rank and data curves (addendum 7, running).

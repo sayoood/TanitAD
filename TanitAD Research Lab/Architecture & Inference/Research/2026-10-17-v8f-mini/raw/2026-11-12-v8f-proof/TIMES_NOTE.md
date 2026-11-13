@@ -24,3 +24,5 @@ Note: `fv/FV_SPEC_V2.md` and `fv/fv_check_v2.py` were written by one command, th
 PREREG_V8F_PROOF_ADD5.md  frozen (file time) 2026-11-13 01:03:38
 PREREG_V8F_PROOF_ADD6.md  frozen (file time) 2026-11-13 01:07:29
 PREREG_V8F_PROOF_ADD6B.md  frozen (file time) 2026-11-13 01:26:47
+PREREG_V8F_PROOF_ADD7.md  frozen (file time) 2026-11-13 01:38:31
+PREREG_V8F_PROOF_ADD8.md  frozen (file time) 2026-11-13 01:38:44
