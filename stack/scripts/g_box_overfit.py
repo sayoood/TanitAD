@@ -1235,6 +1235,14 @@ class TrainerAdapter:
         if a.anchors:
             m.core.decoder.load_anchors(art.anchors.to(dev), None if art.controls is None else art.controls.to(dev))
         tr._apply_withheld_bank(m, a, [], dev)
+        # ⭐ K2DC (PREREG_K2DC; MEASURED on Thor 2026-11-13 03:50Z, queue 21 `box_K2DC` at fd225446310b, 157 s in): train() builds the map-dose share
+        # controller with the trainer's OWN `_mdc.controller_for(args)` BEFORE its G-DVB (refc_v3_train.py:11198, `model._map_dose_ctl`); the replay never did,
+        # so G-DVB refused the K2DC argv: `--map-hires-share-target: declared 0.1 but BUILT None (read from model._map_dose_ctl)`. The controller is a plain
+        # object (no parameter, no buffer, no RNG draw); the harness never calls its three hops, so the replay trains at the argv's INITIAL --w-map-hires,
+        # as train()'s steps before the first firing do. OFF (--map-hires-share-target unset): `controller_for` returns None and nothing is attached.
+        _dose = tr._mdc.controller_for(a)
+        if _dose is not None:
+            m._map_dose_ctl = _dose
         # ⭐ the replay is CHECKED against the launch argv (the harness trains the declared model or refuses)
         from tanitad.train import declared_vs_built as dvb
         bad = list(dvb.check(m, a))

@@ -562,6 +562,13 @@ def _build_model(config: dict, ckpt_path: str, device: str = "cuda", remap: dict
                       if v.numel() else 0.0}
     rec["anchor_file_vs_ckpt_buffers"] = anc_ctl
     del ck
+    # ---- train() K2DC (refc_v3_train.py:11198): the map-dose share controller, built from argv BEFORE G-DVB exactly as train() builds it
+    # (MEASURED on Thor 2026-11-13: without it G-DVB refuses every K2DC argv, `--map-hires-share-target: declared 0.1 but BUILT None`). A plain
+    # object: no parameter, no buffer, no RNG draw; eval never fires it. OFF (target unset): nothing attached, nothing recorded ---------------- #
+    _dose = tr._mdc.controller_for(args)
+    if _dose is not None:
+        model._map_dose_ctl = _dose
+        rec["map_dose_ctl"] = {"built": True, "ckpt_carries_state": tr._mdc.STATE_KEY in rec["state_dict"]["ckpt_keys"]}
     # ---- train():8995 -- G-DVB: ARGV against the BUILT model (the loader's OWN build) ----- #
     _dvb = tr._dvb
     _bad = list(_dvb.check(model, args, tr.build_parser()))
