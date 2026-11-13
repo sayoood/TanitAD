@@ -34,7 +34,7 @@ figcaption { font-size:13.5px; color:var(--mute); max-width:72ch }
 <main>
 <div class="kicker">TanitAD · v8F · first edition, 13 Nov 2026</div>
 <h1>v8 proof programme: what is proved, what is measured, what comes next</h1>
-<p class="lead">Nine theorems tie the measured state of v8F to a way forward. The algebra behind each is checked by a solver; the premises are experiments. Nine were read this night. One refuted a prediction of this page, and a later read showed part of that refutation was a limit of the probe; one gave a mixed answer and one follow-up failed its bar; four are not read yet.</p>
+<p class="lead">Nine theorems tie the measured state of v8F to a way forward. The algebra behind each is checked by a solver; the premises are experiments. Ten were read. One refuted a prediction of this page, and a later read showed part of that refutation was a limit of the probe; one gave a mixed answer and one follow-up failed its bar; the weight average of two replicates realised 0.74 of the ensemble gain; three are not read yet.</p>
 <div class="stats">
 <div class="stat"><b>47 / 47</b><span>verification conditions proved by Z3, statements frozen first</span></div>
 <div class="stat"><b>19 / 19</b><span>mutated twins refuted with a counterexample</span></div>
@@ -60,6 +60,24 @@ figcaption { font-size:13.5px; color:var(--mute); max-width:72ch }
 </ul>
 </div>
 <h2>Results of this programme so far</h2>
+<p><strong>Standing against the three goals, 13 Nov 07:15.</strong> Every measured value below is a T0 or T1-kin diagnostic on logged frames, never driving performance. The strategic family is paused (PI item 25).</p>
+<p><strong>Goal 1, prove dominance of the hierarchy: NOT ESTABLISHED yet. The deciding experiment is frozen and in preparation on the pod.</strong></p>
+<ul>
+<li>Proved by the solver (47 conditions, 23 mutated twins refuted): what a hierarchy can gain over a flat model and through which term (T1, T2), and why a commit rule cannot bank that gain at the present decision quality (group J).</li>
+<li>Measured on the banked rollouts: the hierarchy is ahead of its flat control on selection-critical windows in all four cells (-0.48, -0.16, -0.18, -0.12 m on 6 s ADE; three of the four intervals exclude 0). On common-case windows it is ahead in one cell and behind in three. On all windows the verdict of the programme stays NOT ESTABLISHED: one training run per arm per seed.</li>
+<li>Deciding experiment (addendum 11, frozen 13 Nov 07:03 before its arms): 24 arms, six seeds, hierarchy against flat in both training protocols, seeds as the unit. A class reads HIER only when all six seed differences agree in sign and the two-level interval excludes 0.</li>
+</ul>
+<p><strong>Goal 2, validate the design: three parts hold, two gaps are located.</strong></p>
+<ul>
+<li>Holds: the jump-ratio and linear-yardstick statements for the world model (T1, T6); the rule shield, with conformal coverage as proved (T3); a two-member weight average realises 0.74 of the ensemble gain (T9).</li>
+<li>Gap A, the physical world beyond ego motion: the frozen camera tokens carry lead presence, lead range, nearest agent and agent count beyond ego motion, but the latents of the model do not expose them, and no stop cue is found in the pooled tokens. A finer grid carries more lead content under a full-kernel probe, and the probes are still rising at 111 episodes. The direct read on un-pooled and higher-resolution tokens (addendum 9) is queued on the dev box.</li>
+<li>Gap B, decisions: the tactical confidence tells right from wrong decisions at AUROC 0.64; a commit rule needs about 0.9 to bank half of the oracle gain.</li>
+</ul>
+<p><strong>Goal 3, start scaling: started 13 Nov.</strong></p>
+<ul>
+<li>The pod (A40) is prepared for training: environment, training token cache rebuilt from the frames, and a gated chain for the 24 arms.</li>
+<li>Committed arms after the replicate, by its outcome: the data-efficiency pair (a quarter, a half and all of the clips), the finer-interface pair, training weighted toward selection-critical windows, and a third replicate for the three-member weight average.</li>
+</ul>
 <p><strong>Resolution probe (H-V8F-PROOF-4, RESPROBE), MEASURED, tier T0, a perception diagnostic. Outcome RES-REFUTED: a prediction of this page failed.</strong> Source <code>res/VERDICT_RESPROBE.md</code>; frozen-feature probes (ridge on 256 principal components), 9,321 frames, 139 episodes (lead gap: 56), 5 folds by episode, episode-cluster bootstrap B 2,000.</p>
 <ul>
 <li>Predicted from the camera geometry: the 4x10 token grid cannot carry far range, and the 8x20 grid would do better. Measured: neither.</li>
@@ -130,7 +148,14 @@ figcaption { font-size:13.5px; color:var(--mute); max-width:72ch }
 <li>Data: the probes are still rising at the full 111 training episodes, about 37 minutes of driving: lead present AUROC 0.73, 0.78, 0.84 at 28, 56, 111 episodes. Outcome DATA-LIMITED for lead present, UNDECIDED for lead gap.</li>
 <li>Selection, outcome <strong>SELECT-FLAT</strong>: choosing a quarter or a half of the episodes by coverage or by leverage in token space is inside the range of random draws on every target.</li>
 </ul>
-<p><strong>Not read yet:</strong> the weight-average test (SOUP) and the bias-edit run (running on the dev box behind a free-memory gate), the un-pooled and higher-resolution token read (addendum 9, encoding) and the latent pictures (addendum 10). Addendum 7 is read above.</p>
+<p><strong>Weight average of two replicates (main card, SOUP), MEASURED, T1-kin, a diagnostic.</strong> Source <code>wsp/VERDICT_WSP.md</code>; eval-141; controls c1 to c3 pass.</p>
+<ul>
+<li>Outcome <strong>SOUP-REALISES</strong>: averaging the weights of two same-init replicates gives -0.075 m [-0.103, -0.047] on tactical ADE against the mean of the two, 0.74 [0.48, 0.99] of what running both models and averaging their plans would give, at the cost of one model.</li>
+<li>No family pays for it: longitudinal and lateral cells are equal or better, tactical decisions are unchanged.</li>
+<li>Limit: the average is not ahead of the better member (3.254 against 3.238 m); it removes the risk of drawing the worse one (3.420 m). One pair, so no run-to-run interval.</li>
+<li>Dose by weight interpolation (P2b): outcome DOSE-NONLINEAR, missed on the false-positive rate by 0.0004.</li>
+</ul>
+<p><strong>Not read yet:</strong> the bias-edit run (running on the dev box), the un-pooled and higher-resolution token read (addendum 9, probe starting) and the latent pictures (addendum 10, queued behind it).</p>
 <h2>The camera interface, drawn</h2>
 <figure class="panel" style="margin:0">
 <div class="fig"><svg viewBox="0 0 720 360" role="img" aria-label="Pixel size of a signal head, a car and a stop line against range, at the corpus scale and at native scale">
@@ -256,14 +281,16 @@ figcaption { font-size:13.5px; color:var(--mute); max-width:72ch }
 <ul>
 <li>The rank-one edit dl*k^T/(k.k) is the least change of a weight matrix that moves one key to a chosen value (VC-F1, VC-F2).</li>
 <li>The mean of K members has error = mean member error - mean member scatter (VC-G1, VC-G2), so it is never worse than the member mean (VC-G3). A weight average equals that output average exactly for a head that is linear in its weights (VC-F3) and approximately when the members are linearly connected.</li>
-<li>v8F: the replicate floor (0.287 m) is 5 to 14 times the lever effects being tested. Averaging K members divides the run-to-run variance by K. MEASURED (TASKVEC, <code>wsp/TASKVEC.md</code>, a weight-space read of banked checkpoints, one replicate pair, no interval): outcome DIFFUSE. The displacement that the stop weighting causes is below the seed displacement in every module group (0.42 over all trainable tensors); doubling the dose does not scale it (norm ratio 0.98, cosine 0.50 between the two doses). The only tensors where the lever clearly exceeds seed noise are two head biases (<code>h_lon.bias</code> 3.81, <code>h_goal.bias</code> 1.55). That is what T4 says a class weight is: a logit offset. Tests running: SOUP (does a two-member weight average realise the ensemble gain) and BIASEDIT (addendum 4: does adding ln W to one bias scalar reproduce the trained dose).</li>
+<li>v8F: the replicate floor (0.287 m) is 5 to 14 times the lever effects being tested. Averaging K members divides the run-to-run variance by K. MEASURED (TASKVEC, <code>wsp/TASKVEC.md</code>, a weight-space read of banked checkpoints, one replicate pair, no interval): outcome DIFFUSE. The displacement that the stop weighting causes is below the seed displacement in every module group (0.42 over all trainable tensors); doubling the dose does not scale it (norm ratio 0.98, cosine 0.50 between the two doses). The only tensors where the lever clearly exceeds seed noise are two head biases (<code>h_lon.bias</code> 3.81, <code>h_goal.bias</code> 1.55). That is what T4 says a class weight is: a logit offset. Test running: BIASEDIT (addendum 4: does adding ln W to one bias scalar reproduce the trained dose).</li>
+<li>MEASURED (SOUP, main card, T1-kin, eval-141, <code>wsp/VERDICT_WSP.md</code>; controls c1 to c3 pass; one member pair and one soup, so the interval answers another draw of episodes only): card outcome <strong>SOUP-REALISES</strong>. The 50/50 weight average of two same-init replicates (seeds 0 and 2, tactical ADE 3.2375 and 3.4202) reads 3.2535: against the member mean, -0.0754 m [-0.1029, -0.0469] on tactical ADE and -0.0508 m [-0.0693, -0.0318] on 6 s ADE. The output ensemble of the two plans gains 0.1022 (computed from the member dumps by VC-G1 before the soup was read, residual 2e-13); the soup realises kappa = 0.738 [0.480, 0.988] of it at one forward pass. No separated cost in any family; tactical decisions unchanged (TAC-LAT +0.0033 [-0.0060, +0.0125], TAC-LON +0.0085 [-0.0098, +0.0263]). The soup is not ahead of the better member (3.2375); what it removes is the risk of the worse one (member gap 0.1826). Committed next lever: a three-member soup and leave-one-out soups, which need a third same-init replicate (a training arm).</li>
+<li>MEASURED (P2b, same card): card outcome <strong>DOSE-NONLINEAR</strong>. The checkpoint halfway along the dose-2 weight displacement reads stop hit 0.2479 and false-positive rate 0.0385: between no dose and dose 2 on both, within the replicate gap of the trained dose 1 on hit (0.0256 against 0.0684) and outside it on the false-positive rate by 0.0004 (0.0107 against 0.0103). So no dose sweep by weight interpolation is claimed; the logit offset of T4 is the route under test (BIASEDIT).</li>
 <li>"Weight-space programming" (Takehi, Teoh, Zhang, Khattab, blog post of 2 Nov 2026, PUBLISHED-SECONDARY, not peer reviewed): a model reads and edits raw weights from a stated goal without gradient descent. Their own limit: edits remove obstacles but do not add a missing ability. For v8F that fits T5: weight edits can average, interpolate and re-point what is there; they cannot create resolution.</li>
 </ul>
 <h2>3. What is proved and what is not</h2>
 <ul>
 <li>Proved by the solver: 47 conditions (45 on the theory, 2 on the speed-cap construction of the existing code), each with its statement frozen before the proof script; 23 mutated twins refuted. The 9 conditions of group J (commit rules) were written after the read they explain.</li>
 <li>Not machine-checked: the reduction steps (linearity of sums, induction, Cauchy-Schwarz for n terms, whitening) and the two probabilistic statements (conformal coverage, the minimax tightness example). A Lean 4 + Mathlib proof would remove the reductions from the trust base; its installer was blocked by the permission layer of this session and waits for the PI.</li>
-<li>The theorems are implications. The premises are measurements. Read on 13 Nov: the jump ratio (T1) and the linear yardstick (T6) hold; the rule shield holds and gains with a perfect cue (T3); the visibility prediction of T5 is refuted at the pooled-grid level; the flat control of T2, already run by the programme, is NOT ESTABLISHED, and its margin is located on selection-critical windows but not in the selection term. The cue probe (T3) reads: no stop cue in the pooled tokens beyond ego motion, conformal coverage as proved. Not read yet: the soup ratio (T9), the bias edit (T4).</li>
+<li>The theorems are implications. The premises are measurements. Read on 13 Nov: the jump ratio (T1) and the linear yardstick (T6) hold; the rule shield holds and gains with a perfect cue (T3); the visibility prediction of T5 is refuted at the pooled-grid level; the flat control of T2, already run by the programme, is NOT ESTABLISHED, and its margin is located on selection-critical windows but not in the selection term. The cue probe (T3) reads: no stop cue in the pooled tokens beyond ego motion, conformal coverage as proved. The soup ratio (T9) reads 0.74 (SOUP-REALISES). Not read yet: the bias edit (T4).</li>
 </ul>
 <h2>4. Way forward, in the order the evidence gives</h2>
 <p class="step">1. <strong>Decisions on common-case windows (T2 as measured).</strong> The margin of the hierarchy over flat is on selection-critical windows; its cost is on common-case windows when the decision is wrong. Next: replicate arms of the matched pair with the primary read on selection-critical windows (needs training), and better decisions on the common case. A commit rule gated by the tactical confidence was tested on the banked rollouts and does not work (GATE-COSTS, confidence AUROC 0.64): the decision accuracy itself is the lever. Target from group J: a flag that separates selection-critical from bulk windows with AUROC near 0.9 banks half of the oracle gain; the other route is a hierarchy whose cost on bulk windows is zero (db &lt;= 0), which needs no gate at all.</p>
@@ -271,6 +298,6 @@ figcaption { font-size:13.5px; color:var(--mute); max-width:72ch }
 <p class="step">2. <strong>World-model yardstick (T6, T1).</strong> If the learned model is below the linear ceiling, write the linear solution in as the base and train a residual; then test the jump criterion per level.</p>
 <p class="step">3. <strong>Rules as a shield (T3)</strong> on the speed profile, with a conformal envelope on the stop constraint; measured as rule violations (zero by construction given the cue) and four-family cost.</p>
 <p class="step">4. <strong>Selector by imagined outcome (T7)</strong> over the top-3 tactical candidates, once item 2 gives positive skill.</p>
-<p class="step">5. <strong>Variance (T9).</strong> Soups or ensembles to bring the floor under the lever sizes; tail averaging inside a run as a training arm.</p>
+<p class="step">5. <strong>Variance (T9).</strong> A two-member soup realises 0.74 of the ensemble gain (SOUP-REALISES). Next: a third same-init replicate for the three-member and leave-one-out soups, and tail averaging inside a run as a training arm, both on the pod.</p>
 <p class="step">6. <strong>Data selection (T8)</strong> from the unused corpus, after item 1. Coverage rules in token space gave nothing at the probe level (SELECT-FLAT); the rule to test with a trained arm is selection by window class or by model error.</p>
 </main>

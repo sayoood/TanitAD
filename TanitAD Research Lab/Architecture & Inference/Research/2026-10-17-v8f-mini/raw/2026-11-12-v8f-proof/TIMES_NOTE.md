@@ -28,3 +28,4 @@ PREREG_V8F_PROOF_ADD7.md  frozen (file time) 2026-11-13 01:38:31
 PREREG_V8F_PROOF_ADD8.md  frozen (file time) 2026-11-13 01:38:44
 PREREG_V8F_PROOF_ADD9.md  frozen 2026-11-13 02:20:51  (file time; no FULLRES encode or probe output existed: full/ was empty)
 PREREG_V8F_PROOF_ADD10.md  frozen 2026-11-13 02:29:04  (file time; no LATVIS output existed)
+* PREREG_V8F_PROOF_ADD11.md (HIERREP, replicate arms of the hierarchy / flat pair on the pod): file time 2026-11-13 07:03:09, sha256 94647519b965e5d0ac5b6decc0475719ed16a57757decd6a1994ebb25ee29d1c. No pod training output existed at that time (pod cache not yet built).

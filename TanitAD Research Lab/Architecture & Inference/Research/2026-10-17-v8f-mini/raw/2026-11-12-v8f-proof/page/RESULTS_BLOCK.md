@@ -1,3 +1,19 @@
+**Standing against the three goals, 13 Nov 07:15.** Every measured value below is a T0 or T1-kin diagnostic on logged frames, never driving performance. The strategic family is paused (PI item 25).
+
+**Goal 1, prove dominance of the hierarchy: NOT ESTABLISHED yet. The deciding experiment is frozen and in preparation on the pod.**
+* Proved by the solver (47 conditions, 23 mutated twins refuted): what a hierarchy can gain over a flat model and through which term (T1, T2), and why a commit rule cannot bank that gain at the present decision quality (group J).
+* Measured on the banked rollouts: the hierarchy is ahead of its flat control on selection-critical windows in all four cells (-0.48, -0.16, -0.18, -0.12 m on 6 s ADE; three of the four intervals exclude 0). On common-case windows it is ahead in one cell and behind in three. On all windows the verdict of the programme stays NOT ESTABLISHED: one training run per arm per seed.
+* Deciding experiment (addendum 11, frozen 13 Nov 07:03 before its arms): 24 arms, six seeds, hierarchy against flat in both training protocols, seeds as the unit. A class reads HIER only when all six seed differences agree in sign and the two-level interval excludes 0.
+
+**Goal 2, validate the design: three parts hold, two gaps are located.**
+* Holds: the jump-ratio and linear-yardstick statements for the world model (T1, T6); the rule shield, with conformal coverage as proved (T3); a two-member weight average realises 0.74 of the ensemble gain (T9).
+* Gap A, the physical world beyond ego motion: the frozen camera tokens carry lead presence, lead range, nearest agent and agent count beyond ego motion, but the latents of the model do not expose them, and no stop cue is found in the pooled tokens. A finer grid carries more lead content under a full-kernel probe, and the probes are still rising at 111 episodes. The direct read on un-pooled and higher-resolution tokens (addendum 9) is queued on the dev box.
+* Gap B, decisions: the tactical confidence tells right from wrong decisions at AUROC 0.64; a commit rule needs about 0.9 to bank half of the oracle gain.
+
+**Goal 3, start scaling: started 13 Nov.**
+* The pod (A40) is prepared for training: environment, training token cache rebuilt from the frames, and a gated chain for the 24 arms.
+* Committed arms after the replicate, by its outcome: the data-efficiency pair (a quarter, a half and all of the clips), the finer-interface pair, training weighted toward selection-critical windows, and a third replicate for the three-member weight average.
+
 **Resolution probe (H-V8F-PROOF-4, RESPROBE), MEASURED, tier T0, a perception diagnostic. Outcome RES-REFUTED: a prediction of this page failed.** Source `res/VERDICT_RESPROBE.md`; frozen-feature probes (ridge on 256 principal components), 9,321 frames, 139 episodes (lead gap: 56), 5 folds by episode, episode-cluster bootstrap B 2,000.
 * Predicted from the camera geometry: the 4x10 token grid cannot carry far range, and the 8x20 grid would do better. Measured: neither.
 * The 4x10 tokens carry range beyond ego motion at 12.5 m and more: lead-gap R2 gain over the ego-only control +0.707 [+0.353, +1.178] in that stratum (bar 0.20). Both stratum R2 are below 0 (ego -0.846, tokens -0.139): the tokens find the range band, not the range inside it.
@@ -62,4 +78,10 @@
 * Data: the probes are still rising at the full 111 training episodes, about 37 minutes of driving: lead present AUROC 0.73, 0.78, 0.84 at 28, 56, 111 episodes. Outcome DATA-LIMITED for lead present, UNDECIDED for lead gap.
 * Selection, outcome **SELECT-FLAT**: choosing a quarter or a half of the episodes by coverage or by leverage in token space is inside the range of random draws on every target.
 
-**Not read yet:** the weight-average test (SOUP) and the bias-edit run (running on the dev box behind a free-memory gate), the un-pooled and higher-resolution token read (addendum 9, encoding) and the latent pictures (addendum 10). Addendum 7 is read above.
+**Weight average of two replicates (main card, SOUP), MEASURED, T1-kin, a diagnostic.** Source `wsp/VERDICT_WSP.md`; eval-141; controls c1 to c3 pass.
+* Outcome **SOUP-REALISES**: averaging the weights of two same-init replicates gives -0.075 m [-0.103, -0.047] on tactical ADE against the mean of the two, 0.74 [0.48, 0.99] of what running both models and averaging their plans would give, at the cost of one model.
+* No family pays for it: longitudinal and lateral cells are equal or better, tactical decisions are unchanged.
+* Limit: the average is not ahead of the better member (3.254 against 3.238 m); it removes the risk of drawing the worse one (3.420 m). One pair, so no run-to-run interval.
+* Dose by weight interpolation (P2b): outcome DOSE-NONLINEAR, missed on the false-positive rate by 0.0004.
+
+**Not read yet:** the bias-edit run (running on the dev box), the un-pooled and higher-resolution token read (addendum 9, probe starting) and the latent pictures (addendum 10, queued behind it).

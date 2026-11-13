@@ -6,7 +6,7 @@ Definitions and numbered deviations R1..: FULL_DEFS.md (same folder). Exit code 
 """
 import os
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0")     # ruleshield_read (label loader) would setdefault -1 at import
-import argparse, hashlib, json, sys, time
+import argparse, gc, hashlib, json, sys, time
 import numpy as np
 import torch
 import torch.nn as nn
@@ -21,6 +21,7 @@ import resprobe as RP          # noqa: E402  numpy-only at import
 import cueprobe as CP          # noqa: E402  numpy-only at import (torch / tanitad only inside rs())
 
 FEAT, KERN, STAGES = HERE + "/feat", HERE + "/kern", HERE + "/stages"
+KERN_IN_RAM = True      # R17: Gram matrices stay in memory (about 3.3 GB); F: is at the 20 GB floor of another session
 HI_DEFAULT = "C:/Users/Admin/v8proof_tmp/full/HI_r128.i8"
 CARD = V8 + "/PREREG_V8F_PROOF_ADD9.md"
 RES_BANKED = V8 + "/res/RESULT_RESPROBE.json"
@@ -568,7 +569,7 @@ def load_inputs(smoke):
     restrict = None
     if smoke:
         done = json.load(open(FEAT + "/progress.json", encoding="utf-8"))
-        restrict = done[:10]
+        restrict = done[:139]
     lab = get_stop_labels(cache=not smoke)
     tbl = build_table(idx, bank, cue, lab, restrict=restrict, nf=2 if smoke else N_FOLDS)
     return idx, bank, tbl
@@ -613,7 +614,7 @@ def gpu_stage(tbl, lo, hm, P, dev, epochs, smoke, Yperm, OOF, f4, f5, KS):
             ts = build_tokset(s, tbl["mrow"], lo, hm, dev, scale)
             assert torch.isfinite(ts.get(torch.arange(min(N, 8), device=dev))).all()
             log("set", s, tuple(ts.X.shape), ts.X.dtype, f"{time.time() - t0:.0f}s")
-            kp = None if smoke else f"{KERN}/K_{s}.npy"
+            kp = None if (smoke or KERN_IN_RAM) else f"{KERN}/K_{s}.npy"
             if kp is None or not os.path.exists(kp):
                 K = gram_gpu(ts)
                 if kp:
@@ -631,7 +632,7 @@ def gpu_stage(tbl, lo, hm, P, dev, epochs, smoke, Yperm, OOF, f4, f5, KS):
                 Y1, M1 = plant["flag_np"].astype(np.float64)[:, None], np.ones((N, 1), bool)
                 f5["P3_" + s] = p3_cv("F5_" + s, lambda ib, ts=ts: ts.get(ib, "white", plant), R, tbl, Y1, M1, [True], epochs, dev)[:, 0]
             if s == "U640":
-                kp5 = None if smoke else f"{KERN}/K_U640_plant.npy"
+                kp5 = None if (smoke or KERN_IN_RAM) else f"{KERN}/K_U640_plant.npy"
                 if kp5 is None or not os.path.exists(kp5):
                     K = gram_gpu(ts, plant)
                     if kp5:
@@ -639,9 +640,14 @@ def gpu_stage(tbl, lo, hm, P, dev, epochs, smoke, Yperm, OOF, f4, f5, KS):
                     else:
                         KS["plant"] = K
                     del K
-            del ts
+            del ts, gx      # gx holds the token set through its default argument (R16)
+            gc.collect()
             torch.cuda.empty_cache()
     finally:
+        from fullres_encode import used_mib
+        gc.collect()
+        torch.cuda.empty_cache()
+        log("gpu stage end: GPU used MiB", used_mib())
         release(lock)
     return plant
 
@@ -686,13 +692,13 @@ def cmd_run(a, smoke=False):
     # ---- stage C (CPU): P1 on every Gram (f3 reads L40), f5 P1
     for s in SETS:
         t0 = time.time()
-        K = KS[s] if smoke else np.load(f"{KERN}/K_{s}.npy")
+        K = KS[s] if (smoke or KERN_IN_RAM) else np.load(f"{KERN}/K_{s}.npy")
         d = p1_cv(K, E, Y, M, tbl["epi"], tbl["folds"], nf, list(range(6)))
         OOF["P1"][s] = np.stack([d[t] for t in range(6)], 1)
         log("P1", s, f"{time.time() - t0:.0f}s")
         del K
     Y1, M1 = plant["flag_np"].astype(np.float64)[:, None], np.ones((N, 1), bool)
-    K = KS["plant"] if smoke else np.load(f"{KERN}/K_U640_plant.npy")
+    K = KS["plant"] if (smoke or KERN_IN_RAM) else np.load(f"{KERN}/K_U640_plant.npy")
     f5["P1_U640"] = p1_cv(K, E, Y1, M1, tbl["epi"], tbl["folds"], nf, [0])[0]
     del K
     if smoke:
@@ -769,6 +775,13 @@ def run_temporal(tbl, lo, hm, P, dev, epochs, smoke=False, OOF=None, boot=None):
     N = tbl["N"]
     ok = tbl["g"] >= 5
     prev = np.where(ok, tbl["mrow"] - 5, tbl["mrow"])
+    from fullres_encode import used_mib
+    t_w = time.time()
+    while used_mib() >= 3500 and time.time() - t_w < 1800:      # R16: bounded wait, never an open-ended one
+        time.sleep(30)
+    if used_mib() >= 3500:
+        log("temporal not run: GPU used MiB", used_mib(), "not below the idle bar after 1800 s")
+        return None if smoke else {"run": False, "reason": "named blocker: GPU memory not below the idle bar of the shared lock (3,500 MiB) within 1,800 s"}
     lock = take_lock("v8proof-fullres-probe-temporal")
     try:
         scale = torch.tensor(P["scale"], dtype=torch.float32, device=dev)
@@ -780,7 +793,8 @@ def run_temporal(tbl, lo, hm, P, dev, epochs, smoke=False, OOF=None, boot=None):
             z, o = torch.zeros(a.shape[0], a.shape[1], 1, device=a.device), torch.ones(a.shape[0], a.shape[1], 1, device=a.device)
             return torch.cat([torch.cat([a, z], 2), torch.cat([b, o], 2)], 1)
         oof = p3_cv("TEMP_U640", gx, R + 1, tbl, tbl["Y"], tbl["M"], BINCOL, epochs, dev, rows_ok=ok)
-        del ts0, ts1
+        del ts0, ts1, gx
+        gc.collect()
         torch.cuda.empty_cache()
     finally:
         release(lock)
