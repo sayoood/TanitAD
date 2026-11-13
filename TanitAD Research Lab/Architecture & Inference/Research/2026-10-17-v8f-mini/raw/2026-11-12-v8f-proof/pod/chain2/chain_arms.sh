@@ -31,6 +31,14 @@ ts() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 log() { echo "[$NAME $(ts)] $*" | tee -a "$LOG"; }
 stop() { log "STOP at $1: ${2:-}"; echo "$1: ${2:-} ($(ts))" > "$CH/${NAME}_STOP.txt"; exit 1; }
 sha_of() { sha256sum "$1" | cut -c1-64; }
+# the process environment of the HIERREP arms (chain_hierrep.sh lines 98 to 100): the arms of this script are read against them
+export OMP_NUM_THREADS=${HR_THREADS:-6} MKL_NUM_THREADS=${HR_THREADS:-6} OPENBLAS_NUM_THREADS=${HR_THREADS:-6}
+export PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+HEAVY=$W/chains/heavy.lock
+heavy() { # heavy <limit s> <cmd...>: one CPU-heavy phase at a time across the queues that use this script (two gates at once starved each other and the running arm for 11 min on 2026-11-13); bounded
+  local t=$1; shift
+  if command -v flock >/dev/null 2>&1; then flock -w 5400 "$HEAVY" timeout "$t" "$@"; else timeout "$t" "$@"; fi
+}
 gpu_used() { nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' '; }
 
 build_argv() { # build_argv <seed> <kind> <exclude> <cache> <out> <extra...>  -> ARGV
@@ -74,7 +82,7 @@ for ln in "${LINES[@]}"; do
   [ "$(sha_of "$a/$b")" = "$c" ] || stop PIN "$a/$b sha256 $(sha_of "$a/$b") != $c"
 done
 log "pins hold"
-[ -f "$SB/gate_token.py" ] && [ -f "$C2/gate_extra.py" ] || stop TOOLS "gate_token.py or gate_extra.py absent"
+[ -f "$C2/gate_token2.py" ] && [ -f "$C2/gate_extra.py" ] || stop TOOLS "gate_token2.py or gate_extra.py absent"
 [ -f "$GRID" ] && [ -f "$JOINE" ] && [ -f "$JOINT" ] && [ -f "$TRACKS" ] && [ -f "$P10" ] || stop INPUTS "an eval pin or a training input is absent"
 
 t1dump() { # t1dump <tree> <ckpt> <name>
@@ -82,9 +90,13 @@ t1dump() { # t1dump <tree> <ckpt> <name>
   [ -f "$out/T1_DONE" ] && [ "$(ls "$out/dump_$tag" 2>/dev/null | grep -c '^ep.*npz$')" = 141 ] && { log "[skip] T1 dump $name"; return 0; }
   mkdir -p "$out/ticks"; rm -f "$out/T1_DONE"
   log "T1-kin dump $name"
-  "$PY" "$tree/stack/scripts/v8f_t1_eval.py" run --ckpt "$ck" --tag "$tag" --tracks "$TRACKS" --eval-cache "$EVALC" --eval-grid "$GRID" --eval-join "$JOINE" --out-dir "$out" \
-     --replan-steps 10 --nav deadreckon --scene logged --schedule periodic --limit causal --dump-ticks "$out/ticks" --dump-heads --device cuda >> "$out/t1.log" 2>&1
-  local rc=$?; [ $rc = 0 ] || stop "T1-$name" "v8f_t1_eval.py rc=$rc (see $out/t1.log)"
+  local rc=1 att
+  for att in 1 2 3; do   # the dump alone takes about 3 min; its environment is the one of the HIERREP dumps (no thread cap)
+    heavy 2700 "$PY" "$tree/stack/scripts/v8f_t1_eval.py" run --ckpt "$ck" --tag "$tag" --tracks "$TRACKS" --eval-cache "$EVALC" --eval-grid "$GRID" --eval-join "$JOINE" --out-dir "$out" \
+       --replan-steps 10 --nav deadreckon --scene logged --schedule periodic --limit causal --dump-ticks "$out/ticks" --dump-heads --device cuda >> "$out/t1.log" 2>&1; rc=$?
+    [ $rc = 124 ] || break; log "T1-kin dump $name: no result in 2700 s (attempt $att)"; sleep 90
+  done
+  [ $rc = 0 ] || stop "T1-$name" "v8f_t1_eval.py rc=$rc (see $out/t1.log)"
   [ "$(ls "$out/dump_$tag" 2>/dev/null | grep -c '^ep.*npz$')" = 141 ] || stop "T1-$name" "dump does not hold 141 ep files"
   touch "$out/T1_DONE"
 }
@@ -93,13 +105,14 @@ for ln in "${LINES[@]}"; do
   IFS='|' read -r typ name tree kind seed ex cache extra expect <<< "$ln"
   [ "$typ" = ARM ] || continue
   g=$GATE/$name; out=$RUN/$name; mkdir -p "$g"
+  export PYTHONPATH=$tree/stack:$tree/taniteval TREE=$tree   # as chain_hierrep.sh does for its one tree
   read -r -a EX <<< "$extra"; read -r -a EXP <<< "$expect"
   [ -f "$tree/stack/scripts/v8f_mini_train.py" ] || stop "ARM-$name" "no trainer in $tree"
   build_argv "$seed" "$kind" "$ex" "$cache" "$out" ${EX[@]+"${EX[@]}"}; printf '%s\n' "${ARGV[@]}" > "$g/train_argv.txt"
   build_argv "$seed" "$kind" "$ex" "$cache" "$g/out" ${EX[@]+"${EX[@]}"}; printf '%s\n' "${ARGV[@]}" --selfcheck-only > "$g/gate_argv.txt"
   if [ -f "$out/summary.json" ] && [ -f "$out/ckpt_last.pt" ] && [ -f "$g/token.json" ] && [ -f "$g/extra_token.json" ] \
      && "$PY" -c "import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if d.get('done') is True and d.get('steps')==19164 else 1)" "$out/summary.json" \
-     && "$PY" "$SB/gate_token.py" verify-run --token "$g/token.json" --argv-json "$out/argv.json" >/dev/null 2>&1; then
+     && "$PY" "$C2/gate_token2.py" verify-run --token "$g/token.json" --argv-json "$out/argv.json" >/dev/null 2>&1; then
     log "[skip] train $name"
   else
     wait_idle
@@ -107,12 +120,16 @@ for ln in "${LINES[@]}"; do
     rm -f "$g/token.json" "$g/extra_token.json"
     log "gate $name (selfcheck-only)"
     mapfile -t GA < "$g/gate_argv.txt"
-    "$PY" "$tree/stack/scripts/v8f_mini_train.py" "${GA[@]}" > "$g/gate.log" 2>&1
-    rc=$?; [ $rc = 0 ] || stop "GATE-$name" "selfcheck rc=$rc: $(grep -a -m1 -E 'ZZDVB|REFUSED|Error' "$g/gate.log" | head -c 300)"
+    ec=4512; ee=60; for e in ${EXP[@]+"${EXP[@]}"}; do case "$e" in info.n_clips=*) ec=${e#info.n_clips=};; info.n_excluded=*) ee=${e#info.n_excluded=};; esac; done   # the arm's declared counts
+    rc=1; for att in 1 2 3; do   # the selfcheck alone takes about 12 s
+      heavy 900 "$PY" "$tree/stack/scripts/v8f_mini_train.py" "${GA[@]}" > "$g/gate.log" 2>&1; rc=$?
+      [ $rc = 124 ] || break; log "gate $name: no result in 900 s (attempt $att)"; sleep 90
+    done
+    [ $rc = 0 ] || stop "GATE-$name" "selfcheck rc=$rc: $(grep -a -m1 -E 'ZZDVB|REFUSED|Error' "$g/gate.log" | head -c 300)"
     grep -aq "SELFCHECK PASS" "$g/gate.log" || stop "GATE-$name" "rc 0 but no SELFCHECK PASS line"
-    "$PY" "$SB/gate_token.py" make --selfcheck "$g/out/selfcheck.json" --argv-file "$g/gate_argv.txt" --out "$g/token.json" --kind "$kind" --commit "$COMMIT" --commit-verified true >> "$g/gate.log" 2>&1 \
+    "$PY" "$C2/gate_token2.py" make --selfcheck "$g/out/selfcheck.json" --argv-file "$g/gate_argv.txt" --out "$g/token.json" --kind "$kind" --commit "$COMMIT" --commit-verified true --expect-clips "$ec" --expect-excluded "$ee" >> "$g/gate.log" 2>&1 \
       || stop "GATE-$name" "token refused: $(tail -c 300 "$g/gate.log")"
-    "$PY" "$SB/gate_token.py" verify --token "$g/token.json" --argv-file "$g/train_argv.txt" >> "$g/gate.log" 2>&1 || stop "GATE-$name" "training argv differs from the gated argv"
+    "$PY" "$C2/gate_token2.py" verify --token "$g/token.json" --argv-file "$g/train_argv.txt" >> "$g/gate.log" 2>&1 || stop "GATE-$name" "training argv differs from the gated argv"
     "$PY" "$C2/gate_extra.py" check --selfcheck "$g/out/selfcheck.json" --card "$CARD" --out "$g/extra_token.json" --expect "${EXP[@]}" >> "$g/gate.log" 2>&1 \
       || stop "GATE-$name" "extra gate refused: $(grep -a -m1 REFUSED "$g/gate.log" | head -c 300)"
     # deliberate regression of the extra gate, once per arm: a wrong expectation must be refused
@@ -125,7 +142,7 @@ for ln in "${LINES[@]}"; do
     rc=$?; [ $rc = 0 ] || stop "TRAIN-$name" "trainer rc=$rc (see $out/train.log)"
     "$PY" -c "import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if d.get('done') is True and d.get('steps')==19164 else 1)" "$out/summary.json" 2>/dev/null || stop "TRAIN-$name" "no summary.json done at step 19164"
     [ -f "$out/ckpt_last.pt" ] || stop "TRAIN-$name" "no ckpt_last.pt"
-    "$PY" "$SB/gate_token.py" verify-run --token "$g/token.json" --argv-json "$out/argv.json" >> "$g/gate.log" 2>&1 || stop "TRAIN-$name" "the trainer argv.json differs from the gated argv"
+    "$PY" "$C2/gate_token2.py" verify-run --token "$g/token.json" --argv-json "$out/argv.json" >> "$g/gate.log" 2>&1 || stop "TRAIN-$name" "the trainer argv.json differs from the gated argv"
   fi
   t1dump "$tree" "$out/ckpt_last.pt" "$name"
   log "ARM DONE $name"
