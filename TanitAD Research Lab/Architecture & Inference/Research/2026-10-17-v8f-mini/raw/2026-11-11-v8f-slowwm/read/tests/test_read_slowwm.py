@@ -215,6 +215,37 @@ def test_committed_red_arm_majority_rule_would_differ():
     assert got["next_step_of"] != "SLOW-PLANS"
 
 
+# ------------------------------------------------------------------------------------------------------------- controls main(): merge of an earlier error
+def _planted_controls(monkeypatch, tmp_path, stale, raise_in=None):
+    out = tmp_path / "CONTROLS_READ_SLOWWM.json"
+    json.dump(stale, open(out, "w", encoding="utf-8"))
+    monkeypatch.setattr(C, "OUT", str(out))
+
+    def ok(tag):
+        def f():
+            if tag == raise_in:
+                raise MemoryError("planted refusal in this run")
+            return dict(pass_=True)
+        return f
+    monkeypatch.setattr(C, "control_a", ok("a"))
+    monkeypatch.setattr(C, "control_b_c", lambda: (ok("b")(), dict(pass_=True)))
+    monkeypatch.setattr(C, "control_d", ok("d"))
+    rc = C.main([])
+    return rc, json.load(open(out, encoding="utf-8"))
+
+
+def test_controls_main_a_stale_error_from_an_earlier_run_does_not_survive_a_passing_run(monkeypatch, tmp_path):
+    # MEASURED 2026-11-13: four fresh runs read a, b, c, d pass True and all_pass False, because main() merged the "error" of an earlier refused run.
+    rc, got = _planted_controls(monkeypatch, tmp_path, {"tier": "T0", "error": "MemoryError: free RAM 2.0 GB < 8.0 GB", "all_pass": False})
+    assert rc == 0 and got["all_pass"] is True and "error" not in got
+    assert "MemoryError" in got["error_previous_run"]
+
+
+def test_controls_main_red_arm_an_error_in_this_run_still_fails(monkeypatch, tmp_path):
+    rc, got = _planted_controls(monkeypatch, tmp_path, {"tier": "T0"}, raise_in="a")
+    assert rc == 1 and got["all_pass"] is False and "planted refusal" in got["error"]
+
+
 # ------------------------------------------------------------------------------------------------------------- heavy: real checkpoint, planted basis arm
 def _ram_ok():
     return S.LR.free_gb() >= 8.0 and os.path.exists(C.R35H_DIR)

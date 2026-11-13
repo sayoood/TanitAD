@@ -251,6 +251,11 @@ def main(argv):
     want = [a for a in argv if a in "abcd"] or ["a", "b", "c", "d"]
     res = json.load(open(OUT, encoding="utf-8")) if os.path.exists(OUT) else {}
     res.setdefault("tier", "T0")
+    # An "error" belongs to the run that raised it. Without this pop, an error merged from an EARLIER refused run kept all_pass False through
+    # four fresh runs that each read a, b, c and d pass True (MEASURED 2026-11-13 01:18-02:21). A control that raises in THIS run sets it again below.
+    stale = res.pop("error", None)
+    if stale is not None:
+        res["error_previous_run"] = stale
     try:
         if "a" in want:
             res["a_adapter_identity"] = control_a()
