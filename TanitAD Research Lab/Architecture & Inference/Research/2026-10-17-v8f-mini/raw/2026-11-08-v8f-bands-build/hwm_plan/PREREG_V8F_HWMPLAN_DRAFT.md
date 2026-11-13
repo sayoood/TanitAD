@@ -29,7 +29,7 @@ The PI made multi-hierarchy world-model planning the baseline of the redesign (`
   The goal-head card itself (training, its own gate) is separate; this card reads its output as the HWM-PLAN goal.
 
 ## The solver setting (fixed by PLANTEST2, filled in by the Master Mind at freeze)
-`SolverCfg(seed_mode, lam, ...)`: HOLD seed with lambda from PLANTEST2's TUNE choice if PLANTEST2 reads PLANNABLE; PLANTEST's initialisation otherwise. Placeholder until then: `seed_mode = hold`, `lam = 0`. Macro decode: `decode_lam 0`, 300 AdamW iterations from HOLD.
+`SolverCfg(seed_mode, lam, ...)`: HOLD seed with lambda from PLANTEST2's TUNE choice if PLANTEST2 reads PLANNABLE; PLANTEST's initialisation otherwise. **Filled 2026-11-09:** PLANTEST2 read NO-GAIN (not PLANNABLE; `raw/2026-11-09-v8f-plantest2/`, register H-V8F-PLANTEST2), so this card uses PLANTEST's initialisation: `SolverCfg.plantest()`-equivalent, `seed_mode = prior`, `lam = 0`. Macro decode: `decode_lam 0`, 300 AdamW iterations from HOLD.
 
 ## Read (paired episode-cluster bootstrap over the SCORE episodes, B 2,000, seed 0, `taniteval/ci.py`; both training seeds required; inference-seed replicate for every sampling arm)
 Per band (0-2 s, 2-6 s, full 6 s), per family, reported separately and never pooled:
