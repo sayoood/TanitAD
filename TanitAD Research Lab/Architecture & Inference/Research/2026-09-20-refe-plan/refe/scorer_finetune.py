@@ -2573,7 +2573,8 @@ def main() -> int:
 
     # ---------------- PREFLIGHT (the launch gate)
     if a.preflight:
-        gates = {}
+        gates = HB.MemGates(log)                             # a dict that appends one `preflight_mem` row (that gate's peak allocated / reserved bytes) to preflight.jsonl when each gate is assigned; None values on CPU
+        _prev_excepthook = gates.install_fail_hook()          # an unhandled exception (an OOM) appends a `preflight_mem_fail` row: the last finished gate, the peak since, the innermost frames
         tn = ckpt_io.trainable_names(model)
         want = {n for n, _ in model.named_parameters() if n.split(".")[0] in SCORER}
         gates["G1_trainable_is_exactly_the_scorer"] = {"ok": tn == want, "n_trainable": len(tn), "n_scorer": len(want),
@@ -2708,9 +2709,13 @@ def main() -> int:
                 model, armB, lambda mode: con_probe(batch, prow, mode), lambda: epo_con_dual_reach(dual), lambda: epo_con_ckpt_roundtrip(dual),
                 kl_tol=(1e-2 if (a.lane_head and not native7) else 0.0), temp=dual.temp)
         if aux is not None:                                  # G12 (aux head): live + exact-zero control + identity + tap storage + Adam state
+            if hb is not None:
+                HB.release_aux_graph(cap)                    # HB: the first forward's trunk-copy graph is dead weight now; drop it BEFORE G12 builds its own (HB_MEMORY.md)
             gates["G12_aux_drv_live_and_identity"] = g12_probe(batch, aux_lv)
         if hb is not None:                                   # G21 (VDAC A5, arm HB): the copy is isolated -- P6 untouched, the copy live, exact-zero control, no scorer path, step-0 identity, 2-update state hash
+            HB.release_aux_graph(cap)                        # G12's retained trunk-copy graph is dead weight now; G21 builds its own
             def _g21_state():
+                HB.release_aux_graph(cap)                    # G21's own retained graph is read for the last time before step_probe runs (the two-update probe and step0_equal do their own forwards)
                 r_ = HB.two_update_probe(model=model, hb=hb, aux=aux, scorer_names=SCORER, img=batch[0].to(dev), calib=batch[8] if batch[8].numel() else None, lv=aux_lv, dev=dev,
                                          autocast=lambda: torch.autocast("cuda", dtype=torch.bfloat16), lr_head=a.aux_drv_lr, lr_lora=a.aux_drv_lora_lr)
                 with torch.autocast("cuda", dtype=torch.bfloat16):
@@ -2930,8 +2935,9 @@ def main() -> int:
         ok = all(v["ok"] for v in gates.values())
         res = {"event": "preflight", "verdict": "PASS" if ok else "FAIL", "gates": gates,
                "s_per_microbatch": round(sp, 2), "est_hours_per_epoch": round(len(tr_idx) / a.batch * sp / 3600, 2),
-               "gpu_mem_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2)}
+               "gpu_mem_gb": round(max(gates.peak_allocated, torch.cuda.max_memory_allocated()) / 1e9, 2)}
         log(res)
+        sys.excepthook = _prev_excepthook
         if ok and os.environ.get("REFE_SFT_MUTATE_UNFREEZE") != "1" and os.environ.get("REFE_RL_MUTATE_EPO_DETACH") != "1"                 and not any(os.environ.get(k_) == "1" for k_ in AUX_MUTATE_ENVS + EPO_CON_MUTATE_ENVS + PAIR_MUTATE_ENVS + TWIN_MUTATE_ENVS):
             json.dump(res, open(os.path.join(a.out, "PREFLIGHT_PASS.json"), "w"), indent=1, default=str)
         print("ZZSFT_PREFLIGHT_" + ("PASS" if ok else "FAIL"))

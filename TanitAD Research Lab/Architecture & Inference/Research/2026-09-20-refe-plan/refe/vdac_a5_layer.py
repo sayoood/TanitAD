@@ -7,6 +7,19 @@ refe/test_vdac_hb.py proves peel(trainer) == the a3cc6a77 blob.
 TIP_TRAINER_BLOB = "4df07e51278303abd9854f4f61f9bc4960b5a98d"
 MARKER = "import aux_hb as HB"
 REVERSALS = (
+    # HB_MEMORY.md (2026-11-13): the memory instrument + the preflight hygiene, reversed FIRST (they are the newest edits; each `new` text occurs exactly once)
+    ("        gates = HB.MemGates(log)                             # a dict that appends one `preflight_mem` row (that gate's peak allocated / reserved bytes) to preflight.jsonl when each gate is assigned; None values on CPU\n        _prev_excepthook = gates.install_fail_hook()          # an unhandled exception (an OOM) appends a `preflight_mem_fail` row: the last finished gate, the peak since, the innermost frames\n",
+     '        gates = {}\n'),
+    ('            if hb is not None:\n                HB.release_aux_graph(cap)                    # HB: the first forward\'s trunk-copy graph is dead weight now; drop it BEFORE G12 builds its own (HB_MEMORY.md)\n            gates["G12_aux_drv_live_and_identity"] = g12_probe(batch, aux_lv)\n',
+     '            gates["G12_aux_drv_live_and_identity"] = g12_probe(batch, aux_lv)\n'),
+    ("            HB.release_aux_graph(cap)                        # G12's retained trunk-copy graph is dead weight now; G21 builds its own\n",
+     ''),
+    ("                HB.release_aux_graph(cap)                    # G21's own retained graph is read for the last time before step_probe runs (the two-update probe and step0_equal do their own forwards)\n",
+     ''),
+    ('round(max(gates.peak_allocated, torch.cuda.max_memory_allocated()) / 1e9, 2)',
+     'round(torch.cuda.max_memory_allocated() / 1e9, 2)'),
+    ('        sys.excepthook = _prev_excepthook\n',
+     ''),
     ('import aux_drivable_head as AUX  # noqa: E402  (the auxiliary drivable-area head; every flag it adds defaults OFF)\nimport aux_hb as HB  # noqa: E402  (VDAC A5: arm HB\'s LoRA trunk copy, HC\'s cell / boundary-weight flags; every flag defaults OFF)\n\nSCORER = ("score_q_mlp", "score_dec", "score_head")\nV1_W = (5.0, 5.0, 2.0)\nAUX_MUTATE_ENVS = ("REFE_AUX_MUTATE_TAP", "REFE_AUX_MUTATE_DROP_LOSS", "REFE_AUX_MUTATE_DETACH_HEAD") + HB.HB_MUTATE_ENVS      # --aux-drv deliberate regressions: each must turn G12 RED (the HB ones also G21 / G19)\n',
      'import aux_drivable_head as AUX  # noqa: E402  (the auxiliary drivable-area head; every flag it adds defaults OFF)\n\nSCORER = ("score_q_mlp", "score_dec", "score_head")\nV1_W = (5.0, 5.0, 2.0)\nAUX_MUTATE_ENVS = ("REFE_AUX_MUTATE_TAP", "REFE_AUX_MUTATE_DROP_LOSS", "REFE_AUX_MUTATE_DETACH_HEAD")      # --aux-drv deliberate regressions: each must turn G12 RED\n'),
     ("\n    def __init__(self, cell: float = AUX.CELL_M):\n        self.cell = cell                                     # HC: the head's own grid (2.0 for HA / HB, 1.0 for HC)\n        self.inter = self.union = self.agree = self.cells = self.frames = self.labelled = 0",

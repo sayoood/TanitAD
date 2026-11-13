@@ -285,7 +285,8 @@ def identical_runs(r0: dict, r1: dict) -> list:
     if (r0.get("rc_pre"), r0.get("rc_run")) != (r1.get("rc_pre"), r1.get("rc_run")):
         bad.append("exit codes")
     for log in ("preflight.jsonl", "sft.jsonl"):
-        if [norm_row(r) for r in r0["rows"][log]] != [norm_row(r) for r in r1["rows"][log]]:
+        # HB_MEMORY.md: the `preflight_mem` / `preflight_mem_fail` rows are allocator READINGS (bytes, None on CPU) appended by aux_hb.MemGates; the pre-edit trainer writes none, and no value of any other row depends on them
+        if [norm_row(r) for r in r0["rows"][log] if r.get("event") not in ("preflight_mem", "preflight_mem_fail")] != [norm_row(r) for r in r1["rows"][log] if r.get("event") not in ("preflight_mem", "preflight_mem_fail")]:
             bad.append(f"{log} rows")
     for arm in ("A", "B"):
         if not tensors_equal(r0[arm], r1[arm]):
