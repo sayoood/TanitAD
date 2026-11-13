@@ -96,7 +96,10 @@ BANDED_NEW = {"BANDED_SCHEMA", "BANDED_CHANNEL_CLASS", "BANDED_CHANNELS", "BANDE
               # refcv9 E1-REUSE (MM 207ebd): the GPU-free identity of a harness invocation (`--identity-only`), pure functions that run BEFORE any model
               "IDENTITY_SCHEMA", "IDENTITY_KEYS", "identity_sha256", "identity_block", "identity_harness_part", "main_identity",
               # refcv9 E1-NEAR20 (MM 2026-11-07): a --launch-argv whose banded near-band end is not --near-lift-m refuses (only --banded reaches them)
-              "NEAR_M_FLAG", "argv_banded_near_m", "check_near_vs_argv"}
+              "NEAR_M_FLAG", "argv_banded_near_m", "check_near_vs_argv",
+              # refcv9 E1-M3N20L64 (e5cd251b): the own 64-ch encoder flag and its argv-only resolution (only --banded reaches them; main is unchanged).
+              # Missing here, this test failed the K2DC dev-box pinned run at 3ef7016e (2026-11-13) and every pinned run after e5cd251b.
+              "OWN_ENC_L64_FLAG", "resolve_own_enc_lift64"}
 
 
 def _key(n):
