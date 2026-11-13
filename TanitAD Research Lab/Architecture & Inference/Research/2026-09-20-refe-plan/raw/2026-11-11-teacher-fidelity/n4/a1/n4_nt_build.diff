@@ -1,0 +1,100 @@
+--- run-tree n4/n4_nt_build.py	2026-11-13 01:25:25.861926400 +0100
++++ a1/n4_nt_build.py	2026-11-13 01:26:08.811687900 +0100
+@@ -43,7 +43,7 @@
+ SEAM_LABEL = {"N4D": "refe_tfn4_n4d", "N4X": "refe_tfn4_n4x", "N4DM": "refe_tfn4_n4dm"}
+ N_CDERIV, CDERIV_BAR_M = 200, 1e-9
+ DET_N, DET_PER_SHARD = 50, 25
+-MUTATIONS = ("none", "cert_off", "repair_all", "margin_neg")
++MUTATIONS = ("none", "cert_off", "repair_all", "margin_neg", "label_ego_cache")
+ MET8 = ("nc", "dac", "ddc", "ep", "ttc", "c", "pdms")
+ CSV_COL = {"nc": "no_at_fault_collisions", "dac": "drivable_area_compliance", "ep": "ego_progress", "ttc": "time_to_collision_within_bound",
+            "c": "comfort", "ddc": "driving_direction_compliance", "pdms": "score"}
+@@ -189,13 +189,31 @@
+     return d
+ 
+ 
++def db_ego_fn(dbs: dict, lg: str, tok: str):
++    """A1: lazy fetch of the token's nuPlan-DB ego (scenario.initial_ego_state, as TF-N2's tfn2_nt_build.py:153-157); only called when labels() runs.
++    Raises G.LabelEgoMissing when the log has no DB or the scenario builder does not return exactly this token."""
++    import n4_geom as G
++
++    def fn():
++        if lg not in dbs:
++            raise G.LabelEgoMissing(f"no nuPlan DB for log {lg} (token {tok})")
++        scs = list(G.NS.build_scenarios_for_log(dbs[lg], [tok]))
++        if len(scs) != 1 or scs[0]._initial_lidar_token != tok:
++            raise G.LabelEgoMissing(f"DB scenario for token {tok} not built ({len(scs)} returned)")
++        return scs[0].initial_ego_state
++    return fn
++
++
+ def ctx_stream(a, todo: dict):
+     """yield (token, log, Ctx); cache route = the harness's own metric cache (card section 3), navtrain route = nuPlan-DB rebuild (smoke only)"""
+     import n4_geom as G
+     if a.route == "cache":
+         import transp_score as TS
++        dbs = G.NS.index_dbs(db_root=G.DB_ROOT)
+         for tok, lg in sorted(todo.items()):
+-            yield tok, lg, G.Ctx.from_parts(TS.load_cache_parts(a.metric_cache_root, lg, tok))
++            cx = G.Ctx.from_parts(TS.load_cache_parts(a.metric_cache_root, lg, tok), label_ego_fn=db_ego_fn(dbs, lg, tok))
++            cx.force_cache_label_ego = getattr(a, "mutate", "none") == "label_ego_cache"      # smoke-only mutation (needs --smoke-allow-mutation)
++            yield tok, lg, cx
+     else:
+         by: dict = {}
+         for t, lg in todo.items():
+@@ -221,7 +239,7 @@
+     si, sn = (int(x) for x in a.shard.split("/"))
+     cder = set(sorted(toks, key=sha1_int)[:N_CDERIV])
+     done = done_tokens(a.out)
+-    todo = {t: logs[ix[t]] for t in toks if sha1_int(t) % sn == si and t not in done}
++    todo = {t: logs[ix[t]] for t in toks if sha1_int(t) % sn == si and t not in done and (not a.cderiv_only or t in cder)}
+     missing = [t for t in todo if t not in rolls]
+     if missing:
+         raise SystemExit(f"REFUSING: {len(missing)} tokens have no RJ5 target row, e.g. {missing[:3]}")
+@@ -232,6 +250,7 @@
+         if torn:
+             open(a.out, "a", encoding="utf-8").write("\n")
+     n, t0, ndet = 0, time.time(), sum(1 for ln in open(a.out, encoding="utf-8") if '"det_equal"' in ln) if os.path.exists(a.out) else 0
++    import n4_geom as G
+     with open(a.out, "a", encoding="utf-8") as fo:
+         for tok, lg, cx in ctx_stream(a, todo):
+             ts, rec = time.time(), {"log": lg, "token": tok}
+@@ -244,7 +263,7 @@
+                 dac0 = base["dac"] == 0.0
+                 rec["dac0"] = bool(dac0)
+                 rec["arms"] = {}
+-                if dac0 or a.mutate == "repair_all":
++                if (dac0 or a.mutate == "repair_all") and not a.cderiv_only:
+                     for arm in ARMS:
+                         r = fns[arm](cx, t20, base)
+                         if r is None:
+@@ -257,7 +276,10 @@
+                         r2 = fns["N4D"](cx, t20, base)
+                         rec["det_equal"] = bool(r2 is not None and np.array_equal(np.asarray(r2["plan"]), np.asarray(d["plan"])))
+                         ndet += 1
++                rec["label_ego"] = cx.label_ego_src if cx.label_ego_src else "none"             # A1: "none" = no label was built for this token
+                 rec["t_s"] = round(time.time() - ts, 3)
++            except G.LabelEgoMissing:
++                raise                                                      # REFUSE: never an error row, never a cache-ego fallback
+             except Exception as e:                                    # noqa: BLE001
+                 rec = {"log": lg, "token": tok, "error": f"{type(e).__name__}: {str(e)[:200]}"}
+             fo.write(json.dumps(rec) + "\n")
+@@ -342,6 +364,10 @@
+     dev = [rows[t].get("cderiv_maxdev_m", float("nan")) for t in cd if t in rows]
+     C["C-DERIV"] = {"pass": len(dev) == len(cd) and bool(np.nanmax(dev) <= CDERIV_BAR_M) and not any(np.isnan(dev)), "n": len(dev), "expected_n": len(cd),
+                     "max_dev_m": float(np.nanmax(dev)) if dev else None, "bar_m": CDERIV_BAR_M}
++    lab_rows = [t for t in ok_t if "cderiv_maxdev_m" in rows[t] or rows[t]["base"]["dac"] == 0.0]
++    not_db = sorted(t for t in lab_rows if rows[t].get("label_ego") != "db")
++    C["C-LABELEGO"] = {"pass": not not_db, "label_rows": len(lab_rows), "db": len(lab_rows) - len(not_db), "not_db": len(not_db), "examples": not_db[:5],
++                       "what": "A1 read-back: every row that built labels (C-DERIV tokens + builder DAC-0 tokens) used the nuPlan-DB ego"}
+     applied = {arm: sorted(t for t in ok_t if rows[t]["arms"].get(arm, {}).get("applied")) for arm in ARMS}
+     dac0 = sorted(t for t in ok_t if rows[t]["base"]["dac"] == 0.0)
+     repaired = {arm: sorted(t for t in applied[arm] if rows[t]["base"]["dac"] == 0.0) for arm in ARMS}
+@@ -417,6 +443,7 @@
+     ap.add_argument("--out", default="")
+     ap.add_argument("--shard", default="0/1")
+     ap.add_argument("--mutate", choices=MUTATIONS, default="none")
++    ap.add_argument("--cderiv-only", action="store_true", help="A1 check: derive ONLY the 200 C-DERIV tokens, base score + label re-derivation, NO repair arm (the chain never passes this)")
+     ap.add_argument("--smoke-allow-mutation", action="store_true")
+     ap.add_argument("--rows", nargs="*", default=[])
+     ap.add_argument("--seam", default="")

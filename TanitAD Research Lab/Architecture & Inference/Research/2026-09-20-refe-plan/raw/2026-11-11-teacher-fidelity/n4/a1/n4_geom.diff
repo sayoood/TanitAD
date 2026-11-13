@@ -1,0 +1,58 @@
+--- run-tree n4/n4_geom.py	2026-11-13 01:25:25.982058800 +0100
++++ a1/n4_geom.py	2026-11-13 01:25:59.167300400 +0100
+@@ -38,10 +38,14 @@
+     return (np.asarray(a, np.float64) + np.pi) % (2 * np.pi) - np.pi
+ 
+ 
++class LabelEgoMissing(RuntimeError):
++    """A token needs labels but its nuPlan-DB ego cannot be fetched (A1: the label pipeline never falls back to the metric-cache ego)."""
++
++
+ class Ctx:
+     """One token: scenery parts, ego, drivable union polygon, and a batch scorer for 20-pose plans."""
+ 
+-    def __init__(self, sc, parts=None):
++    def __init__(self, sc, parts=None, label_ego_fn=None):
+         """sc = a navtrain scenario (nuPlan-DB rebuild route); or parts = the harness MetricCache parts (navtest route, `Ctx.from_parts`)"""
+         from shapely.ops import unary_union
+         from nuplan.common.maps.maps_datatypes import SemanticMapLayer
+@@ -54,16 +58,34 @@
+                                            SemanticMapLayer.CARPARK_AREA])
+         self.drivable = unary_union([dam._geometries[i] for i in idx])
+         self.vp = self.ego.car_footprint.vehicle_parameters
++        self.label_ego_fn, self._label_ego, self.force_cache_label_ego, self.label_ego_src = label_ego_fn, None, False, None
+ 
+     @classmethod
+-    def from_parts(cls, parts):
+-        """navtest route: the harness's own stored MetricCache parts (transp_score.load_cache_parts); no scenario, no nuPlan DB"""
+-        return cls(None, parts=parts)
++    def from_parts(cls, parts, label_ego_fn=None):
++        """navtest route: the harness's own stored MetricCache parts (transp_score.load_cache_parts); no scenario, no nuPlan DB for SCORING.
++        label_ego_fn (A1) = a zero-argument callable returning the token's nuPlan-DB ego state; the LABEL pipeline (labels()) uses it, scoring does not."""
++        return cls(None, parts=parts, label_ego_fn=label_ego_fn)
++
++    def label_ego(self):
++        """-> (ego state, source) for label construction. DB route (sc given): the scenario's own ego = the nuPlan-DB ego. Cache route: label_ego_fn()
++        or REFUSE. force_cache_label_ego is the smoke-only mutation (labels from the metric-cache ego, the void TF-N4 route)."""
++        if self.force_cache_label_ego:
++            return self.ego, "cache"
++        if self.sc is not None:
++            return self.ego, "db"
++        if self._label_ego is None:
++            if self.label_ego_fn is None:
++                raise LabelEgoMissing("labels() on the cache route without a nuPlan-DB ego provider")
++            self._label_ego = self.label_ego_fn()
++            if self._label_ego is None:
++                raise LabelEgoMissing("label_ego_fn returned no ego (no DB for this token)")
++        return self._label_ego, "db"
+ 
+     def labels(self, t20):
++        ego, self.label_ego_src = self.label_ego()
+         ctl = {"knot_exact": True, "knot_checks": 0}
+-        tc = iterate20(ND, t20, ND.to_navsim(t20), self.ego, ctl, None, "cubic")[0]
+-        track = lambda Pb: tracked8(ND, Pb, self.ego)                    # noqa: E731
++        tc = iterate20(ND, t20, ND.to_navsim(t20), ego, ctl, None, "cubic")[0]
++        track = lambda Pb: tracked8(ND, Pb, ego)                         # noqa: E731
+         rl = R.solve(t20, tc - t20, [LAM], track, ND.to_navsim)[LAM]["label"]
+         return {"T": t20, "C": tc, "R": rl}
+ 
