@@ -1,0 +1,10 @@
+@echo off
+rem TF-N7 chain launch (DRAFT). Fill <CARD_SHA256> and <PINS_SHA256> (N7_PINS.json of the run tree, made by n7/n7_make_pins.py after the freeze; the template pins are N7_PINS.template.json).
+rem Launch detached through Win32_Process Create (CreateFlags 0x08000200); never from an agent shell. WMI .cmd must call the interpreter by full path (as here).
+rem The frozen card goes to C:\Users\Admin\n7nt\run\n7\PREREG_TF_N7.md; the ledger (banked ledger incl. the TF-N6 n = 49 entry + the TF-N7 n = 50 entry) to C:\Users\Admin\n7nt\run\inputs\ledger_K.json.
+rem Run tree on C: (NTFS, ~6 GB free at build time) hence --min-free-gb 5; with a copy on F: (>= 21 GB free) use F: paths and drop --min-free-gb.
+set "CUDA_VISIBLE_DEVICES=-1"
+set "PYTHONIOENCODING=utf-8"
+set "PYTHONDONTWRITEBYTECODE=1"
+cd /d C:\Users\Admin\n7nt\run
+C:\Users\Admin\navsim-crun\venv\Scripts\python.exe C:/Users/Admin/n7nt/run/n7/n7_nt_chain.py --run-dir C:/Users/Admin/n7nt/run --card C:/Users/Admin/n7nt/run/n7/PREREG_TF_N7.md --card-sha256 <CARD_SHA256> --pins-sha256 <PINS_SHA256> --ledger C:/Users/Admin/n7nt/run/inputs/ledger_K.json --k 50 --procs 2 --min-free-gb 5 >> C:\Users\Admin\n7nt\run\n7run\chain.log 2>&1 < NUL
