@@ -1,0 +1,148 @@
+{
+ "ok": true,
+ "arms": [
+  {
+   "arm": "N4D",
+   "ok": true,
+   "bad": [],
+   "readback": {
+    "target": "n4_repair.repair_target",
+    "is_frozen_repair_target": true,
+    "margin": 0.05,
+    "iters": 5,
+    "sign": 1.0,
+    "cert": "full"
+   },
+   "probe": {
+    "never_certifies_returns_none": true,
+    "label_builds_at_cap": 6,
+    "last_pose_y_after_cap_m": 0.7500000000000001,
+    "dac1_nc_worse_accepted": false
+   },
+   "what": "REPAIR-D at A1 settings"
+  },
+  {
+   "arm": "N5A",
+   "ok": true,
+   "bad": [],
+   "readback": {
+    "margin": 0.05,
+    "iters": 5,
+    "sign": 1.0,
+    "centre_m": 0.05,
+    "fallback_margin": 0.005,
+    "damp": 0.5,
+    "damp_cum": false,
+    "cert": "full",
+    "target": "n4_repair_l1.repair_l1"
+   },
+   "signature_sha1": "048423e6ed5bb4f94c5a8fd62f4f831f66628418",
+   "what": "L1 at the TF-N5 frozen parameters"
+  },
+  {
+   "arm": "N6H",
+   "ok": true,
+   "bad": [],
+   "readback": {
+    "dac": 1.0,
+    "nc": true,
+    "ddc": true,
+    "ttc": false,
+    "c": false,
+    "pdms_gt": true,
+    "tie": "earliest",
+    "order": [
+     "teacher",
+     "human"
+    ]
+   },
+   "signature_sha1": "9d0070fb324b727ccc0ce68e00cf635f5f848dae",
+   "what": "selector N6H"
+  },
+  {
+   "arm": "N6T",
+   "ok": true,
+   "bad": [],
+   "readback": {
+    "dac": 1.0,
+    "nc": true,
+    "ddc": true,
+    "ttc": false,
+    "c": false,
+    "pdms_gt": true,
+    "tie": "earliest",
+    "order": [
+     "teacher"
+    ]
+   },
+   "signature_sha1": "4918efdb56397bf21058c8e1e139e3c03f0094bd",
+   "what": "selector N6T"
+  },
+  {
+   "arm": "N6X",
+   "ok": true,
+   "bad": [],
+   "readback": {
+    "dac": 0.0,
+    "nc": true,
+    "ddc": true,
+    "ttc": false,
+    "c": false,
+    "pdms_gt": true,
+    "tie": "earliest",
+    "order": [
+     "teacher",
+     "human"
+    ]
+   },
+   "signature_sha1": "5cae27ec685fd08b16fdc364676cd122007d44b3",
+   "what": "selector N6X"
+  }
+ ],
+ "real": {
+  "fixture_sha256": "a1ff2cde24f3adcf84279f804fba0de93ceb9653c5995c8de97ae6ba89588e83",
+  "instances": {
+   "easy": {
+    "base_dac": 0.0,
+    "n_teacher_cands": 3,
+    "iterate0_is_label": true,
+    "deterministic": true,
+    "human_built": true,
+    "human_why": "ok",
+    "human_dac": 1.0,
+    "n6h": [
+     "D",
+     1
+    ],
+    "n6t": [
+     "D",
+     1
+    ],
+    "n6x": null,
+    "n6h_dac": 1.0,
+    "ok": true
+   },
+   "multi_iter": {
+    "base_dac": 0.0,
+    "n_teacher_cands": 7,
+    "iterate0_is_label": true,
+    "deterministic": true,
+    "human_built": true,
+    "human_why": "ok",
+    "human_dac": 1.0,
+    "n6h": [
+     "L1",
+     3
+    ],
+    "n6t": [
+     "L1",
+     3
+    ],
+    "n6x": null,
+    "n6h_dac": 1.0,
+    "ok": true
+   }
+  },
+  "ok": true
+ }
+}
