@@ -893,6 +893,7 @@ DVB_KINDS_SCORER = {
     "out": "run", "eval_every": "run", "workers": "run",
     "dump_scores": "run",              # the per-proposal score .npz rl_val_eval.py reads; observational (bit-identical on/off, test_dump_scores.py)
     "preflight": "control",
+    "h48x_only": "control",            # VDAC A5 A1: the forward-only resume (no training; MM runs it by hand; never in a launch argv: every profile pins its argv exactly)
 }
 SCORER_EPO_KEYS = ("temp", "beta", "ramp", "lam", "lam_d", "w_prog", "k", "lam_k", "l", "lam_l", "ref")     # the keys of the data event's `epo` block
 SCORER_EPO_CON_KEYS = ("mode", "comps", "cols", "eps", "lr", "max", "lam0", "ref", "temp")     # the keys of the data event's `epo_con` block (SAFEOBJ; every --epo run writes it, an OFF run included)

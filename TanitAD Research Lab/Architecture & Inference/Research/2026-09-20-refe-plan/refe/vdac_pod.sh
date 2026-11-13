@@ -1,5 +1,5 @@
 #!/bin/bash
-# VDAC heads on P6's trunk (PREREG_VDAC_P6 frozen 2026-11-11 sha256 5594c2ae...; A1 8f121bdf...; A2 c3d56358...; H48 list = A3).  ARM=HA-s0|HA-s1|HA-SHUF   MODE=argv | preflight | mutate | run
+# VDAC heads on P6's trunk (PREREG_VDAC_P6 frozen 2026-11-11 sha256 5594c2ae...; A1 8f121bdf...; A2 c3d56358...; H48 list = A3).  ARM=HA-s0|HA-s1|HA-SHUF   MODE=argv | preflight | mutate | run | h48x
 #   HA-s0 / HA-s1 = S1c's head recipe (frozen trunk, visual tap, depth 2, feed off, 10,000 updates x batch 8 x accum 1, seeds 0 / 1) from P6's model_final.pt; HA-SHUF = the same with --aux-drv-shuffle-seed 0 (a derangement of ALL store keys), 2,000 updates, seed 0.
 #   Every arm excludes the 48 logs of H48 from the head's labels (--aux-drv-exclude-logs + --aux-drv-exclude-sha256) and NAMES --epochs 2 (P6's bank holds 60,000 sets: 10,000 x 8 = 80,000 draws needs more than the default 1.0 epoch).
 # THE ARGV IS THE PARENT'S, NOT A COPY: this script runs scorer1p6_pod.sh (ARM=C0) MODE=argv, drops C0's --max-updates / --eval-every / --seed / --out and appends the arm's tail (launch_gate.vdac_argv builds the same argv in Python;
@@ -42,8 +42,8 @@ BASE="$(echo "$PARGS" | sed -E 's# --max-updates [^ ]+##; s# --eval-every [^ ]+#
 ARGS="$BASE --max-updates $UPD --batch $BATCH --accum $ACCUM --epochs 2 --eval-every $EVAL --seed $SEED --aux-drv --w-aux-drv 0.1 --aux-drv-lr 0.0002 --aux-drv-tap visual --aux-drv-depth 2 --aux-drv-labels $LABELS --aux-drv-exclude-logs $H48 --aux-drv-exclude-sha256 $H48_SHA $EXTRA $SHUF --dump-scores $OUT/scores --out $OUT"
 if [ "${MODE:-}" = "argv" ]; then echo "$ARGS" | tr -s ' ' | sed 's/ $//'; exit 0; fi
 case "${MODE:-}" in
-  preflight|run|mutate|mutate_ego) ;;
-  *) echo "unknown MODE=${MODE:-} (argv | preflight | mutate | mutate_ego | run)" >&2; exit 2 ;;
+  preflight|run|mutate|mutate_ego|h48x) ;;
+  *) echo "unknown MODE=${MODE:-} (argv | preflight | mutate | mutate_ego | run | h48x)" >&2; exit 2 ;;
 esac
 source $WS/teacher_env.sh
 PY="$DRIVERL_EVAL_PYTHON"
@@ -60,5 +60,6 @@ case "${MODE:-}" in
   mutate) env CUBLAS_WORKSPACE_CONFIG=:4096:8 REFE_AUXEXCL_MUTATE_NOFILTER=1 "$PY" scorer_finetune.py $ARGS --preflight --out $OUT/mutate_exclude > $OUT/mutate_exclude.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $OUT/mutate_exclude.log ;;
   mutate_ego) env CUBLAS_WORKSPACE_CONFIG=:4096:8 REFE_AUX_MUTATE_EGO=1 "$PY" scorer_finetune.py $ARGS --preflight --out $OUT/mutate_ego > $OUT/mutate_ego.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $OUT/mutate_ego.log ;;
   run) "$PY" scorer_finetune.py $ARGS > $OUT/sft.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $OUT/sft.log ;;      # the script's own exit status IS the trainer's
+  h48x) "$PY" scorer_finetune.py $ARGS --h48x-only $OUT > $OUT/h48x_only.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $OUT/h48x_only.log ;;      # VDAC A5 A1: forward-only resume of a finished run (no training; the SAME argv + --h48x-only <this arm's dir>)
 esac
 exit $rc

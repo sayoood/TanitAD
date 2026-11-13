@@ -1,0 +1,39 @@
+BEFORE (unfixed tip 1f65b081)
+test_vdac_hb.py rc=0 t=324s :: ZZTEST_PASS 133 
+test_vdac_hb_accum.py rc=0 t=16s :: ZZTEST_PASS 40 
+test_vdac_hbmem.py rc=0 t=108s :: ZZTEST_PASS 83 
+test_vdac_gate.py rc=0 t=91s :: ZZTEST_PASS 
+test_vdac_g12_bound.py rc=0 t=2s :: ZZTEST_PASS 15 
+test_aux_s1_wiring.py rc=0 t=539s :: g12_tap_check_bypassed                         pre/regression_switch_REFE
+test_aux_drivable_head.py rc=1 t=62s ::   [FAIL] E3 shard bytes are verified against the manifest on load (con
+test_vdac_stage0.py rc=1 t=0s :: 
+test_vdac_stage0_forward.py rc=1 t=9s :: 
+test_gsuite_tail.py rc=0 t=4s :: ZZTEST_PASS 3 
+DONE
+test_p7_ship_list.py rc=1 t=28s :: 
+test_dump_scores.py rc=1 t=8s :: ModuleNotFoundError: No module named 'rl_val_eval' 
+test_label_dir_refusal.py rc=0 t=22s :: ZZTEST_PASS 6 
+test_p7_head_wiring.py rc=0 t=18s :: 
+test_aux_g12_bf16.py rc=0 t=11s :: 
+test_launch_gate.py --static --no-banked rc=1 t=152s :: FileNotFoundError: [Errno 2] No such file or directory
+DONE
+
+AFTER (fixed)
+test_vdac_hb_h48x.py rc=0 t=100s ::   RED  aux_drv.pt update != the argv's total updates  [EXC RuntimeError: -
+test_vdac_hb.py rc=0 t=330s :: ZZTEST_PASS 133 
+test_vdac_hb_accum.py rc=0 t=18s :: ZZTEST_PASS 40 
+test_vdac_hbmem.py rc=0 t=85s :: ZZTEST_PASS 83 
+test_vdac_gate.py rc=0 t=56s :: ZZTEST_PASS 
+test_vdac_g12_bound.py rc=0 t=3s :: ZZTEST_PASS 15 
+test_aux_s1_wiring.py rc=0 t=310s :: g12_tap_check_bypassed                         pre/regression_switch_REFE
+test_aux_drivable_head.py rc=1 t=122s ::   [FAIL] E3 shard bytes are verified against the manifest on load (co
+test_vdac_stage0.py rc=1 t=3s :: 
+test_vdac_stage0_forward.py rc=1 t=9s :: 
+test_gsuite_tail.py rc=0 t=5s :: ZZTEST_PASS 3 
+test_p7_ship_list.py rc=1 t=22s :: 
+test_dump_scores.py rc=1 t=7s :: ModuleNotFoundError: No module named 'rl_val_eval' 
+test_label_dir_refusal.py rc=0 t=20s :: ZZTEST_PASS 6 
+test_p7_head_wiring.py rc=0 t=21s :: 
+test_aux_g12_bf16.py rc=0 t=11s :: 
+test_launch_gate.py --static --no-banked rc=1 t=166s :: FileNotFoundError: [Errno 2] No such file or directory
+DONE

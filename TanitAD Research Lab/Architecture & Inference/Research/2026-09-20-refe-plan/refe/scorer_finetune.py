@@ -1170,6 +1170,22 @@ def aux_s1_refusals(a):
     return bad
 
 
+def h48x_only_refusals(a):
+    """--h48x-only (VDAC A5 A1, forward-only resume): the lever needs the head AND the excluded-log list (else there is no h48x frame set), cannot be a preflight / calibration, and the run dir must hold aux_drv.pt.  [] = fine."""
+    bad = []
+    if not getattr(a, "h48x_only", ""):
+        return bad
+    if a.preflight or a.pair_calibrate:
+        bad.append("--h48x-only cannot be combined with --preflight / --pair-calibrate")
+    if not (a.aux_drv and a.aux_drv_exclude_logs):
+        bad.append("--h48x-only needs --aux-drv and --aux-drv-exclude-logs (the run's own argv): without them there is no h48x frame set")
+    if not os.path.isfile(os.path.join(a.h48x_only, "aux_drv.pt")):
+        bad.append(f"--h48x-only {a.h48x_only}: no aux_drv.pt there")
+    if os.path.exists(os.path.join(a.out, "head_pred_h48x.npz")):
+        bad.append(f"--out {a.out} already holds head_pred_h48x.npz: refusing to overwrite a banked file")
+    return bad
+
+
 def aux_excl_cli_refusals(a):
     """VDAC (--aux-drv-exclude-logs / --aux-drv-exclude-sha256): the pair is named together or not at all, needs the head, and the file must hash to the declared sha256 BEFORE anything starts"""
     bad = []
@@ -1613,6 +1629,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--preflight", action="store_true")
+    ap.add_argument("--h48x-only", default="", metavar="RUN_DIR", help="VDAC A5 A1 (forward-only resume): build the model / head / HB copy exactly as the run did (SAME argv as that run), load RUN_DIR/aux_drv.pt (+ cross-check RUN_DIR/scorer_states_last.pt), train NOTHING, run ONLY the post-training h48x forward by the trainer's own fwd(), write head_pred_h48x.npz + h48x_provenance.json into --out.  Refuses unless the saved update == this argv's total.  A measuring mode: forbidden in a training launch argv.")
     ap.add_argument("--max-updates", type=int, default=0)
     # SFT-2 (LANE-1 follow-on); all default OFF = SFT-1 exactly
     ap.add_argument("--lane-labels-train", default="", help="side files of onpolicy_relabel_lane.py for --onpolicy")
@@ -1713,6 +1730,11 @@ def main() -> int:
         for msg in bad_cli + AUX.aux_refusals(a) + aux_s1_refusals(a) + aux_excl_cli_refusals(a) + HB.hb_refusals(a):         # + the aux head's levers: named without --aux-drv, labels missing, shuffle with the feed on, no head LR ...
             print("REFUSED: " + msg)
         return 4
+    bad_h48 = h48x_only_refusals(a)                                    # VDAC A5 A1: --h48x-only named inconsistently never starts
+    if bad_h48:
+        for msg in bad_h48:
+            print("REFUSED: " + msg)
+        return 4
     bad_hn = hn_refusals(a, ap)                                         # P6-HN-S: --hn-bank / --ctx-cache levers named inconsistently never start
     if bad_hn:
         for msg in bad_hn:
@@ -1721,7 +1743,7 @@ def main() -> int:
     os.makedirs(a.out, exist_ok=True)
     dev = "cuda"
     torch.manual_seed(a.seed)
-    log_p = os.path.join(a.out, "preflight.jsonl" if a.preflight else "sft.jsonl")
+    log_p = os.path.join(a.out, "preflight.jsonl" if a.preflight else ("h48x_only.jsonl" if a.h48x_only else "sft.jsonl"))
 
     def log(row):
         row["at"] = time.strftime("%Y-%m-%dT%H:%M:%S")
@@ -1729,7 +1751,7 @@ def main() -> int:
             f.write(json.dumps(row) + "\n")
         print(json.dumps(row), flush=True)
 
-    if not a.preflight and not a.pair_calibrate and not os.path.exists(os.path.join(a.out, "PREFLIGHT_PASS.json")):      # --pair-calibrate is a measuring mode that trains nothing (forbidden in a launch argv): it runs BEFORE any preflight, in its own dir
+    if not a.preflight and not a.pair_calibrate and not a.h48x_only and not os.path.exists(os.path.join(a.out, "PREFLIGHT_PASS.json")):      # --pair-calibrate is a measuring mode that trains nothing (forbidden in a launch argv): it runs BEFORE any preflight, in its own dir
         print("REFUSED: no PREFLIGHT_PASS.json in --out -- run --preflight first (the launch gate)"); return 4
 
     # ---------------- model: built and loaded EXACTLY as the planner does
@@ -2979,6 +3001,79 @@ def main() -> int:
     if a.max_updates:
         total = min(total, a.max_updates)
     lr_at = lambda u: a.lr * (u + 1) / a.warmup if u < a.warmup else a.lr * 0.5 * (1 + math.cos(math.pi * (u - a.warmup) / max(total - a.warmup, 1)))
+    def run_h48x():
+        """The post-training h48x forward: the head's predictions on the excluded-log frames in this bank, by the trainer's OWN fwd(), one row per frame -> head_pred_h48x.npz in --out.  A closure of main() so that
+        the training run and `--h48x-only` execute THE SAME code.  CLOSURE HAZARD (2026-11-13, the HB-s0 crash): fwd() reads `hb` / `aux` / `model` from main()'s scope at CALL time, so no loop below may
+        rebind one of those names (the batch variable here was once called `hb` and replaced the HB trunk with a list -> AttributeError 'list' has no attribute 'ctx').  -> the frame count."""
+        with torch.no_grad():
+            cap["aux_buf"] = []
+            try:
+                for h48_batch in DataLoader(Subset(ds, h48x_idx), batch_size=16, shuffle=False, num_workers=2):
+                    fwd(h48_batch)
+                buf_h = cap["aux_buf"]
+            finally:
+                cap["aux_buf"] = None
+        n_h = sum(int(x[0].shape[0]) for x in buf_h)
+        if n_h != len(h48x_idx):
+            raise RuntimeError(f"h48 forward: {n_h} head outputs for {len(h48x_idx)} frames")
+        rows_h = [ds.rows[i_] for i_ in h48x_idx]
+        np.savez(os.path.join(a.out, "head_pred_h48x.npz"), log=np.asarray([r_.get("log_name", "") for r_ in rows_h]), token=np.asarray([r_.get("token", "") for r_ in rows_h]),
+                 step=np.asarray([int(r_.get("step", 0)) for r_ in rows_h], np.int64), logit=torch.cat([x[0] for x in buf_h]).numpy().astype(np.float32),
+                 sdf_m=torch.cat([x[1] for x in buf_h]).numpy().astype(np.float32))
+        log({"event": "h48x_forward", "frames": n_h, "file": "head_pred_h48x.npz"})
+        return n_h
+
+    def run_h48x_only():
+        """--h48x-only RUN_DIR: no training.  Load the run's saved head (+ HB copy) into the objects this process BUILT from the run's own argv, cross-check the states file, run run_h48x(), bank provenance."""
+        rd = a.h48x_only
+        f_aux, f_st = os.path.join(rd, "aux_drv.pt"), os.path.join(rd, "scorer_states_last.pt")
+        files = {"aux_drv.pt": f_aux, **({"scorer_states_last.pt": f_st} if os.path.isfile(f_st) else {})}
+        prov = {"event": "h48x_only", "run_dir": rd, "out": a.out, "argv": sys.argv[1:], "total_updates_of_this_argv": total,
+                "loaded": {k_: {"path": p_, "sha256": hashlib.sha256(open(p_, "rb").read()).hexdigest(), "bytes": os.path.getsize(p_)} for k_, p_ in files.items()}, "torch": torch.__version__, "device": dev}
+        ck = torch.load(f_aux, map_location="cpu", weights_only=False)
+        if hb is not None:
+            u_aux = HB.load_v2(ck, aux=aux, hb=hb, optH=optH, optL=optL)
+        else:                                                 # HA: a head-only aux_drv/1 file
+            if not isinstance(ck, dict) or ck.get("format") != "aux_drv/1":
+                raise RuntimeError(f"--h48x-only without --aux-drv-trunk-lora needs an aux_drv/1 file, got {ck.get('format') if isinstance(ck, dict) else type(ck).__name__}")
+            aux.head.load_state_dict(ck["head"], strict=True)
+            if aux.feed is not None:
+                aux.feed.load_state_dict(ck["feed"], strict=True)
+            u_aux = int(ck["update"])
+        prov["update_read_back"] = {"aux_drv.pt": int(u_aux)}
+        if int(u_aux) != total:
+            raise RuntimeError(f"--h48x-only: aux_drv.pt holds update {u_aux}, this argv trains {total} updates: not the run's FINAL state")
+        if os.path.isfile(f_st):
+            st = torch.load(f_st, map_location="cpu", weights_only=False)
+            prov["update_read_back"]["scorer_states_last.pt"] = int(st["update"])
+            if int(st["update"]) != int(u_aux):
+                raise RuntimeError(f"--h48x-only: scorer_states_last.pt holds update {st['update']} but aux_drv.pt holds {u_aux}")
+            for m_ in SCORER:                                 # arm A's scorer, as the training run's model held it at the end (the head reads the copy's ctx, not the scorer; loaded for fidelity)
+                getattr(model, m_).load_state_dict(st["A"][m_], strict=True)
+            cross = {"aux_head_equal": all(torch.equal(v_, aux.state_dict()[k_].cpu()) for k_, v_ in st["AUX"].items()) if "AUX" in st else None}
+            if hb is not None and "HB" in st:
+                cur = hb.lora_state()
+                cross["hb_lora_equal"] = sorted(cur) == sorted(st["HB"]["lora"]) and all(torch.equal(cur[k_], st["HB"]["lora"][k_].cpu()) for k_ in cur)
+            prov["states_file_cross_check"] = cross
+            if any(v_ is False for v_ in cross.values()):
+                raise RuntimeError(f"--h48x-only: scorer_states_last.pt and aux_drv.pt disagree: {cross}")
+        else:
+            prov["states_file_cross_check"] = None
+            prov["scorer_A_loaded"] = False
+        n_h = run_h48x()
+        out_f = os.path.join(a.out, "head_pred_h48x.npz")
+        want_h = (aux_excl_info or {}).get("excluded_frames")                 # the chain's run check: the h48x forward's frame count == the exclusion audit's excluded frames
+        prov.update({"excluded_frames_audit": want_h, "frames_equal_audit": (n_h == want_h) if want_h is not None else None})
+        if want_h is not None and n_h != want_h:
+            raise RuntimeError(f"--h48x-only: {n_h} head outputs but the exclusion audit counts {want_h} excluded frames")
+        prov.update({"frames": n_h, "head_pred_h48x": {"sha256": hashlib.sha256(open(out_f, "rb").read()).hexdigest(), "bytes": os.path.getsize(out_f)}})
+        json.dump(prov, open(os.path.join(a.out, "h48x_provenance.json"), "w", encoding="utf-8"), indent=1)
+        log({k_: v_ for k_, v_ in prov.items() if k_ not in ("argv",)})
+        print("ZZSFT_H48X_ONLY_DONE")
+        return 0
+
+    if a.h48x_only:
+        return run_h48x_only()
     log({"event": "start", "updates": total, "micro_per_update": a.accum, "batch": a.batch, "train_sets": len(tr_idx)})
     run_evaluate("step0")
     upd, micro, t0 = 0, 0, time.time()
@@ -3086,22 +3181,7 @@ def main() -> int:
     if aux is not None:
         log({"event": "aux_saved", "path": save_aux(upd)})
     if aux is not None and h48x_idx:                         # VDAC: the head's predictions on the frames it never trained on (the excluded logs in this bank), by the trainer's own fwd(), one row per frame
-        with torch.no_grad():
-            cap["aux_buf"] = []
-            try:
-                for hb in DataLoader(Subset(ds, h48x_idx), batch_size=16, shuffle=False, num_workers=2):
-                    fwd(hb)
-                buf_h = cap["aux_buf"]
-            finally:
-                cap["aux_buf"] = None
-        n_h = sum(int(x[0].shape[0]) for x in buf_h)
-        if n_h != len(h48x_idx):
-            raise RuntimeError(f"h48 forward: {n_h} head outputs for {len(h48x_idx)} frames")
-        rows_h = [ds.rows[i_] for i_ in h48x_idx]
-        np.savez(os.path.join(a.out, "head_pred_h48x.npz"), log=np.asarray([r_.get("log_name", "") for r_ in rows_h]), token=np.asarray([r_.get("token", "") for r_ in rows_h]),
-                 step=np.asarray([int(r_.get("step", 0)) for r_ in rows_h], np.int64), logit=torch.cat([x[0] for x in buf_h]).numpy().astype(np.float32),
-                 sdf_m=torch.cat([x[1] for x in buf_h]).numpy().astype(np.float32))
-        log({"event": "h48x_forward", "frames": n_h, "file": "head_pred_h48x.npz"})
+        run_h48x()
     log({"event": "done", "updates": upd, "model_A": pA, "model_B": pB, "hours": (time.time() - t0) / 3600, **({"epo_con": dual.state_dict()} if dual.active else {}),
          **({"twin_share": {h_: {**d_, "share_with_pair": d_["sets_with_pair"] / max(d_["sets"], 1)} for h_, d_ in twin_run.items()}} if twin_run else {})})
     print("ZZSFT_DONE")
