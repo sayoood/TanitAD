@@ -108,6 +108,13 @@
 * The lemma on real tokens: the position of a planted object is read at AUROC 1.000 from the grid state and 0.495 from the mean state; the solver lemma predicted 0.50 before the measurement.
 * Imagination at 2.0 s with a linear predictor, outcome **S0-IMAGINE-FLAT**: the predicted state reads the future gap at 0.34, a copy of the present at 0.36, the true future state at 0.37. The read has no room: the level of the gap barely changes in 2 s. The next read targets the change of the gap.
 
+**Stages 0c and 0d of the spatial-state experiment (notes N5 and N6), MEASURED, T0, a diagnostic; no model trained.** Sources `spatial/s0c/VERDICT_S0C_c.md` and `spatial/s0c/VERDICT_S0C.md`; controls k1 to k4 pass in both.
+* The change of the lead gap over 2.0 s, as skill over a forecast of no change. Stage 0c, 1,752 pairs of 51 episodes: grid state +0.002 [-0.093, +0.102], mean state +0.044 [-0.013, +0.114], ego motion alone -0.033 [-0.151, +0.057]. Outcome **S0-CHANGE-FLAT** for both states.
+* A defect of the target, found on the labels alone: in 9.6 % of the pairs the lead label jumps to another vehicle, and these pairs carry 54.7 % of the squared change. One repair, written down before the rerun: pairs with a continuous lead only.
+* Stage 0d, 1,586 pairs of 50 episodes: ego motion alone +0.111 [-0.105, +0.253], grid state -0.087 [-0.299, +0.079], mean state +0.035 [-0.143, +0.183]. **S0-CHANGE-FLAT** again, the ego block included: 50 episodes give no linear read any power.
+* The second face of the lemma on real tokens: a planted motion is read at AUROC 1.000 from two frames of the grid state, 0.493 from two frames of the mean state and 0.511 from one grid frame.
+* Next, frozen in note N7 before its data: the same reads on 1,200 training clips (a lead gap on 36.9 % of the training frames), stage 0e.
+
 **Next two experiments, frozen 13 Nov before any of their data.**
 * Addendum 12, SPATIAL: a world-model state that keeps the 4x10 cell layout (640 numbers) in place of the mean over cells (128). Stage 0 on the dev box needs no training: is the lead vehicle kept by such a state, and is its gap 2.0 s ahead predicted better than a copy and better than ego motion alone. Stage 1 on the pod: 4 arms (grid state, and a mean state of the same width as the control), read against the six-seed baseline of addendum 11.
 * Addendum 13, DATAEFF: the same model on 1/2, 1/4 and 1/8 of the clips at fixed steps (is it limited by data: this decides whether the scaling step is more clips), flat against hierarchy at 1/4 (does the margin of the hierarchy grow when data is scarce), and clips chosen by their share of selection-critical windows against random clips. 10 arms on the pod after addendum 12.
