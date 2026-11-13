@@ -1,0 +1,106 @@
+{
+ "tag": "PCM",
+ "tier": "T0 (probes on a trained state; a world-model diagnostic, never driving performance)",
+ "where": "eval bank frames, out-of-sample for the model",
+ "estimator": "episode-cluster bootstrap, B 2000, seed 0, one draw shared; folds by episode (5, seed 0)",
+ "families": "LONGITUDINAL, LATERAL, TACTICAL: not measured by this read; STRATEGIC: PAUSED (PI item 25, never a pass)",
+ "controls": {
+  "v1": {
+   "bank_rows": 9321,
+   "missing": 0,
+   "duplicate_state_keys": 0,
+   "pass": true
+  },
+  "v4": {
+   "width": 128,
+   "expected": 128,
+   "record_state_mode": "mean",
+   "record_ckpt_sha256": null,
+   "ckpt_checked": false,
+   "pass": true
+  },
+  "v2": {
+   "ego_gap_r2": 0.13274532858514854,
+   "reference": 0.1327,
+   "chosen": "linear",
+   "bar": "equal at 4 decimals",
+   "pass": true
+  },
+  "v3": {
+   "state_gap_r2_permuted": -0.024692620098046403,
+   "bar": 0.02,
+   "pass": true
+  }
+ },
+ "counts": {
+  "episodes": 139,
+  "frames": 9321,
+  "gap_frames": 2485,
+  "presence_frames": 8838,
+  "state_width": 128
+ },
+ "controls_pass": true,
+ "ra": {
+  "state_gap": {
+   "r2": 0.2226074199411221,
+   "ci95": [
+    -0.0038134909641521276,
+    0.40513226319198553
+   ],
+   "n": 2485
+  },
+  "ego_gap": {
+   "r2": 0.13274532858514854,
+   "ci95": [
+    -0.20927207753577948,
+    0.36662808755865817
+   ],
+   "n": 2485
+  },
+  "state_minus_ego_gap": {
+   "diff": 0.08986209135597356,
+   "ci95": [
+    -0.11583698172900517,
+    0.35856690333258
+   ],
+   "separated_pos": false,
+   "separated_neg": false
+  },
+  "state_presence": {
+   "auc": 0.772557586982623,
+   "ci95": [
+    0.6860776509513025,
+    0.8423805360680312
+   ],
+   "n": 8838
+  },
+  "ego_presence": {
+   "auc": 0.5958643724459143,
+   "ci95": [
+    0.5052374011198562,
+    0.685234724127315
+   ],
+   "n": 8838
+  },
+  "state_minus_ego_presence": {
+   "diff": 0.17669321453670872,
+   "ci95": [
+    0.07781563849356742,
+    0.27021754403348985
+   ],
+   "separated_pos": true,
+   "separated_neg": false
+  },
+  "ego_floor_gap": "linear",
+  "ego_floor_presence": "linear"
+ },
+ "untrained_references_stage_0b": {
+  "grid_gap_r2": 0.3981,
+  "mean_gap_r2": 0.2577,
+  "ego_gap_r2": 0.1327,
+  "grid_presence_auc": 0.761,
+  "mean_presence_auc": 0.742,
+  "ego_presence_auc": 0.596
+ },
+ "seconds": 121.6
+}

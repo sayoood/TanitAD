@@ -1,0 +1,35 @@
+"""Writes job_s0e.cmd (CRLF, backslash paths) for the lead to launch detached (WMI, like spatial/s0c/job_s0c.cmd). Run: python make_job.py"""
+LINES = [
+    r"@echo off",
+    r"rem S0e job (PREREG_V8F_PROOF_ADD12 note N7): CPU only, no GPU, no lock. Waits for free commit >= 8 GB, then runs the full read on the TRUE labels. Launch via WMI, not from an agent shell with a pipe.",
+    r'set "PATH=C:\Windows\System32;C:\Windows;C:\Windows\System32\WindowsPowerShell\v1.0"',
+    r"set PYTHONIOENCODING=utf-8",
+    r"set CUDA_VISIBLE_DEVICES=-1",
+    r"set OMP_NUM_THREADS=4",
+    r"set MKL_NUM_THREADS=4",
+    r"set OPENBLAS_NUM_THREADS=4",
+    r"cd /d F:\TanitAD-scratch\v8proof\spatial\s0e",
+    r"if exist S0E_DONE.txt del S0E_DONE.txt",
+    r"if exist S0E_STOP.txt del S0E_STOP.txt",
+    r'set "WAITS=0"',
+    r":waitmem",
+    r'set "FREE=0"',
+    r"""for /f %%i in ('powershell -NoProfile -Command "[int]((Get-CimInstance Win32_OperatingSystem).FreeVirtualMemory/1MB)"') do set "FREE=%%i" """.rstrip(),
+    r"if %FREE% GEQ 8 goto memok",
+    r"set /a WAITS+=1",
+    r"if %WAITS% GEQ 240 ( echo ZZ S0E-STOP commit-wait-timeout free=%FREE%GB > S0E_STOP.txt & exit /b 1 )",
+    r"echo wait %WAITS% free %FREE% GB >> s0e_job.log",
+    r"ping -n 121 127.0.0.1 > NUL",
+    r"goto waitmem",
+    r":memok",
+    r"echo start free %FREE% GB %DATE% %TIME% >> s0e_job.log",
+    r"C:\Users\Admin\venvs\tanitad\Scripts\python.exe s0e_read.py run >> s0e_job.log 2>&1",
+    r'set "RC=%ERRORLEVEL%"',
+    r'if "%RC%"=="2" ( echo ZZ S0E-STOP control-missed rc 2 see VERDICT_S0E.md and s0e_job.log > S0E_STOP.txt & exit /b 2 )',
+    r'if not "%RC%"=="0" ( echo ZZ S0E-STOP run-failed rc %RC% see s0e_job.log > S0E_STOP.txt & exit /b 1 )',
+    r"echo ZZ S0E-DONE %DATE% %TIME% > S0E_DONE.txt",
+    r"exit /b 0",
+]
+with open(r"F:\TanitAD-scratch\v8proof\spatial\s0e\job_s0e.cmd", "w", encoding="utf-8", newline="") as fh:
+    fh.write("\r\n".join(LINES) + "\r\n")
+print("written", len(LINES), "lines")

@@ -115,6 +115,15 @@
 * The second face of the lemma on real tokens: a planted motion is read at AUROC 1.000 from two frames of the grid state, 0.493 from two frames of the mean state and 0.511 from one grid frame.
 * Next, frozen in note N7 before its data: the same reads on 1,200 training clips (a lead gap on 36.9 % of the training frames), stage 0e.
 
+**First read of a trained world-model state (note N8), MEASURED, T0, a diagnostic; one seed.** The hierarchy arm at seed 0 of the six-seed replicate; its level-1 state is a mean over cells, 128 numbers. Sources `spatial/s1/VERDICT_S1EVAL_HIER_s0.md` and `spatial/s1/VERDICT_S1_HIER_s0.md`; all controls pass.
+* Held-out clips (139 episodes): the state tells whether a lead vehicle is present at AUROC 0.807 [0.727, 0.871]; ego motion alone gives 0.596. Difference +0.211 [+0.105, +0.314]. For the lead's distance the state reads R2 0.237 and ego motion 0.133; the difference +0.104 [-0.124, +0.389] is not separated on this sample.
+* 1,200 training clips (in-sample for the model; 33,114 frames with a lead): distance R2 0.456 [0.411, 0.496] against 0.187 from ego motion, difference +0.268 [+0.220, +0.316]; presence 0.790 against 0.559.
+* How the distance changes over 2.0 s (24,206 pairs): ego motion alone explains 29 % of the squared change (skill +0.291 [0.243, 0.334]); with the state added the skill is +0.263; the state adds nothing, -0.028 [-0.065, +0.008].
+* In words: the trained state knows where the lead is, beyond ego motion, and nothing about where it is going, beyond ego motion. A mean over cells keeps totals and loses motion, as the solver lemma says. The grid-state arms on the pod must change the second number.
+* One seed: five more hierarchy seeds are read automatically as they finish.
+
+**Stages 0e and 0f (notes N7 and N9): not quoted.** The same reads on 1,200 training clips with untrained states. Both ways of shrinking the tokens missed the fidelity control, which repeats the eval-bank read through the same reduction: a random projection to 64 numbers read 0.216 where the full tokens gave 0.398; principal directions from other training clips read 0.328, a miss of the 0.03 tolerance by 0.070. As committed beforehand, no outcome is named and no third variant is tried.
+
 **Next two experiments, frozen 13 Nov before any of their data.**
 * Addendum 12, SPATIAL: a world-model state that keeps the 4x10 cell layout (640 numbers) in place of the mean over cells (128). Stage 0 on the dev box needs no training: is the lead vehicle kept by such a state, and is its gap 2.0 s ahead predicted better than a copy and better than ego motion alone. Stage 1 on the pod: 4 arms (grid state, and a mean state of the same width as the control), read against the six-seed baseline of addendum 11.
 * Addendum 13, DATAEFF: the same model on 1/2, 1/4 and 1/8 of the clips at fixed steps (is it limited by data: this decides whether the scaling step is more clips), flat against hierarchy at 1/4 (does the margin of the hierarchy grow when data is scarce), and clips chosen by their share of selection-critical windows against random clips. 10 arms on the pod after addendum 12.
