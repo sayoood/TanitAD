@@ -1,0 +1,36 @@
+diff --git a/a/refe/launch_gate.py b/b/refe/launch_gate.py
+index 2b8dd78..0775df5 100644
+--- a/a/refe/launch_gate.py
++++ b/b/refe/launch_gate.py
+@@ -908,14 +908,17 @@ VDAC_ARMS = {"HA-s0": {"seed": 0, "updates": 10000, "eval_every": 5000, "shuffle
+              "HB-s0": {"seed": 0, "updates": 10000, "eval_every": 5000, "shuffle": None, "class": "H1hb", "extra": "hb", "batch": 4, "accum": 2},
+              "HB-SHUF": {"seed": 0, "updates": 2000, "eval_every": 1000, "shuffle": 0, "class": "H1hbshuf", "extra": "hb", "batch": 4, "accum": 2},
+              "HC-s0": {"seed": 0, "updates": 10000, "eval_every": 5000, "shuffle": None, "class": "H1hc", "extra": "hc"},
+-             "HC-SHUF": {"seed": 0, "updates": 2000, "eval_every": 1000, "shuffle": 0, "class": "H1hcshuf", "extra": "hc"}}
++             "HC-SHUF": {"seed": 0, "updates": 2000, "eval_every": 1000, "shuffle": 0, "class": "H1hcshuf", "extra": "hc"},
++             # VDAC A6 (PREREG_VDAC_P6_A6_HBC_DRAFT; DRAFT, not frozen): HBC = HB's LoRA trunk copy + HC's 1 m cells and boundary-weighted Huber, in ONE arm (the committed successor of the A5 row X-BOUND).  It runs the HB memory fallback (--batch 4 --accum 2, effective batch 8) from the first step: HB-s0 at batch 8 OOMed on the L40, and HBC's head holds 4x the queries of HB's.
++             "HBC-s0": {"seed": 0, "updates": 10000, "eval_every": 5000, "shuffle": None, "class": "H1hbc", "extra": "hbc", "batch": 4, "accum": 2},
++             "HBC-SHUF": {"seed": 0, "updates": 2000, "eval_every": 1000, "shuffle": 0, "class": "H1hbcshuf", "extra": "hbc", "batch": 4, "accum": 2}}
+ VDAC_HB_LORA_LR = "0.0002"          # P6's OWN LoRA lr: train.py puts the model's trainable parameters (LoRA included) in ONE AdamW group at --lr, and P6 ran --lr 2e-4 (p6_pod.sh:487, train.py:1462, 1469); the draft's 5e-5 was a HYPOTHESIS
+ VDAC_HB_LORA_PARAMS = 3145728          # 24 blocks x {q, v} x 32 x (1,024 + 1,024): the registered built count of the copy's trainable tensors (G-DVB aux_drv_trunk_lora, G21)
+ VDAC_HC_FLAGS = ["--aux-drv-cell", "1.0", "--aux-drv-bw", "3.0", "--aux-drv-bw-band-m", "3.0"]          # HC: 1 m cells, boundary band 3 m, weight 3 (HYPOTHESIS, fixed, not tuned)
+ VDAC_ARM_CLASS = {a: sp["class"] for a, sp in VDAC_ARMS.items()}
+ VDAC_ARM_SEED = {a: sp["seed"] for a, sp in VDAC_ARMS.items()}
+ VDAC_ARM_RECIPE = {c: {**AUXS1_RECIPE, "max_updates": next(sp["updates"] for sp in VDAC_ARMS.values() if sp["class"] == c), "batch": next(sp.get("batch", 8) for sp in VDAC_ARMS.values() if sp["class"] == c), "accum": next(sp.get("accum", 1) for sp in VDAC_ARMS.values() if sp["class"] == c),
+-                       "eval_every": next(sp["eval_every"] for sp in VDAC_ARMS.values() if sp["class"] == c)} for c in ("H1ha", "H1shuf", "H1hb", "H1hbshuf", "H1hc", "H1hcshuf")}
++                       "eval_every": next(sp["eval_every"] for sp in VDAC_ARMS.values() if sp["class"] == c)} for c in ("H1ha", "H1shuf", "H1hb", "H1hbshuf", "H1hc", "H1hcshuf", "H1hbc", "H1hbcshuf")}
+ VDAC_EPOCHS = 2
+ VDAC_FORBIDDEN = tuple(f for f in AUXS1_FORBIDDEN if f != "--aux-drv-shuffle-seed") + ("--lane-head", "--lane-weight", "--teacher-lane-train", "--teacher-lane-heldout", "--lane-labels-heldout", "--pair-w", "--pair-heads",
+                                                                                       "--pair-calibrate", "--twin-w", "--split-half", "--aux-drv-feed")
+@@ -934,9 +937,9 @@ def vdac_argv(arm: str) -> list:
+     toks += ["--max-updates", str(sp["updates"]), "--batch", str(sp.get("batch", 8)), "--accum", str(sp.get("accum", 1)), "--epochs", str(VDAC_EPOCHS), "--eval-every", str(sp["eval_every"]), "--seed", str(sp["seed"]),
+              "--aux-drv", "--w-aux-drv", "0.1", "--aux-drv-lr", "0.0002", "--aux-drv-tap", "visual", "--aux-drv-depth", "2", "--aux-drv-labels", VDAC_LABELS,
+              "--aux-drv-exclude-logs", VDAC_H48_PATH, "--aux-drv-exclude-sha256", VDAC_H48_SHA256]
+-    if sp.get("extra") == "hb":                                            # HB: BOTH levers NAMED (the defaults `off` / None disable them: a flag whose default disables the mechanism must be in the argv)
++    if sp.get("extra") in ("hb", "hbc"):                                   # HB: BOTH levers NAMED (the defaults `off` / None disable them: a flag whose default disables the mechanism must be in the argv)
+         toks += ["--aux-drv-trunk-lora", "on", "--aux-drv-lora-lr", VDAC_HB_LORA_LR]
+-    elif sp.get("extra") == "hc":                                          # HC: the cell and the boundary weight NAMED (the default bw 0.0 disables the weighting)
++    if sp.get("extra") in ("hc", "hbc"):                                   # HC: the cell and the boundary weight NAMED (the default bw 0.0 disables the weighting).  HBC names BOTH sets, HB's first
+         toks += list(VDAC_HC_FLAGS)
+     if sp["shuffle"] is not None:
+         toks += ["--aux-drv-shuffle-seed", str(sp["shuffle"])]

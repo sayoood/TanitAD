@@ -14,15 +14,18 @@
 # Markers: $ROOT/stage_<arm>/<name>.ok = date + tree sha.  VDAC_STOP_AFTER=<stage> ends the chain after that stage (a dry run).
 set -u
 ARMN=${1:-}
+HEADN=2440450          # the head's BUILT parameter count the post-training gate must find in Adam state: 2,440,450 at cell 2.0, 3,423,490 at cell 1.0 (80 x 64 queries; gate_checks.AUX_HEAD_PARAMS_BY_CELL).  vdac_postgate.py's own default is the 2 m count, so every 1 m arm MUST pass it (A6: HC-s0 / HC-SHUF would have failed the post-training gate on it)
 case "$ARMN" in
   HA-s0)   HAUPD=10000; SHUFSEED=none ;;
   HA-s1)   HAUPD=10000; SHUFSEED=none ;;
   HA-SHUF) HAUPD=2000;  SHUFSEED=0 ;;
   HB-s0)   HAUPD=10000; SHUFSEED=none ;;          # VDAC A5 (DRAFT): the LoRA trunk copy; aux_drv.pt is aux_drv/2 (vdac_postgate.py judges the LoRA Adam state too)
   HB-SHUF) HAUPD=2000;  SHUFSEED=0 ;;
-  HC-s0)   HAUPD=10000; SHUFSEED=none ;;          # 1 m cells + boundary weight
-  HC-SHUF) HAUPD=2000;  SHUFSEED=0 ;;
-  *) echo "REFUSED: stage=start: unknown arm '$ARMN' (usage: vdac_chain.sh HA-s0 | HA-s1 | HA-SHUF | HB-s0 | HB-SHUF | HC-s0 | HC-SHUF)"; exit 2 ;;
+  HC-s0)   HAUPD=10000; SHUFSEED=none; HEADN=3423490 ;;          # 1 m cells + boundary weight
+  HC-SHUF) HAUPD=2000;  SHUFSEED=0; HEADN=3423490 ;;
+  HBC-s0)  HAUPD=10000; SHUFSEED=none; HEADN=3423490 ;;          # VDAC A6 (DRAFT): HB's copy + HC's 1 m head and boundary weight; aux_drv.pt is aux_drv/2 (LoRA 3,145,728 + head 3,423,490 both judged)
+  HBC-SHUF) HAUPD=2000;  SHUFSEED=0; HEADN=3423490 ;;
+  *) echo "REFUSED: stage=start: unknown arm '$ARMN' (usage: vdac_chain.sh HA-s0 | HA-s1 | HA-SHUF | HB-s0 | HB-SHUF | HC-s0 | HC-SHUF | HBC-s0 | HBC-SHUF)"; exit 2 ;;
 esac
 PROFILE=refe_vdac_p6
 PCARD_NAME=PREREG_VDAC_P6.md;    PCARD_SHA=5594c2ae777a53ed4a8a873ca374c12943eadc74385cb07671c2ac90a3292ae4
@@ -347,7 +350,7 @@ PYEOF
   log "run check $ARMN: $(tail -n 1 $OUT/run_check.log | cut -c1-300)"
   [ $RRC -eq 0 ] && [ $RCC -eq 0 ] || { log "ZZVDAC_CHAIN_FAIL $ARMN (run rc $RRC, run check rc $RCC)"; exit 1; }
   # the post-training gate: every head parameter holds Adam state and a non-zero first moment, at the arm's step count
-  env -u HF_TOKEN "$PY_C" $RUN/vdac_postgate.py "$OUT" --updates $HAUPD > "$OUT/postgate.log" 2>&1 200>&-
+  env -u HF_TOKEN "$PY_C" $RUN/vdac_postgate.py "$OUT" --updates $HAUPD --n-params $HEADN > "$OUT/postgate.log" 2>&1 200>&-
   PGRC=$?
   log "post-training gate $ARMN rc $PGRC: $(tail -n 1 $OUT/postgate.log | cut -c1-300)"
   [ $PGRC -eq 0 ] && grep -q "^ZZVDAC_POSTGATE_OK" $OUT/postgate.log || { log "ZZVDAC_CHAIN_FAIL $ARMN (post-training gate)"; exit 1; }

@@ -25,7 +25,9 @@ case "$ARM" in
   HB-SHUF) SEED=0; UPD=2000; EVAL=1000; SHUF="--aux-drv-shuffle-seed 0"; EXTRA="$HBX"; BATCH=4; ACCUM=2; ALLOC="expandable_segments:True" ;;
   HC-s0) SEED=0; UPD=10000; EVAL=5000; SHUF=""; EXTRA="$HCX" ;;
   HC-SHUF) SEED=0; UPD=2000; EVAL=1000; SHUF="--aux-drv-shuffle-seed 0"; EXTRA="$HCX" ;;
-  *) echo "unknown ARM=$ARM (HA-s0 | HA-s1 | HA-SHUF | HB-s0 | HB-SHUF | HC-s0 | HC-SHUF)" >&2; exit 2 ;;
+  HBC-s0) SEED=0; UPD=10000; EVAL=5000; SHUF=""; EXTRA="$HBX $HCX"; BATCH=4; ACCUM=2; ALLOC="expandable_segments:True" ;;          # VDAC A6 (DRAFT): HB's copy + HC's head and loss in ONE arm; HB's memory fallback and allocator setting from step 0
+  HBC-SHUF) SEED=0; UPD=2000; EVAL=1000; SHUF="--aux-drv-shuffle-seed 0"; EXTRA="$HBX $HCX"; BATCH=4; ACCUM=2; ALLOC="expandable_segments:True" ;;
+  *) echo "unknown ARM=$ARM (HA-s0 | HA-s1 | HA-SHUF | HB-s0 | HB-SHUF | HC-s0 | HC-SHUF | HBC-s0 | HBC-SHUF)" >&2; exit 2 ;;
 esac
 LARM=$(echo "$ARM" | tr 'A-Z' 'a-z')
 OUT=$ROOT/$LARM

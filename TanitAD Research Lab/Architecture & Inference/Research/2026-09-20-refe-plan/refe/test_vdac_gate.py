@@ -463,7 +463,7 @@ for bad in ("C0", "HA-s2", "ha-s0", ""):
         pass
     else:
         raise AssertionError("an unknown arm %r was accepted" % bad)
-assert L.VDAC_H48_SHA256 == PV["required_flags"]["--aux-drv-exclude-sha256"] and set(PV["vdac_arms"]) == set(ARMS) | {"HB-s0", "HB-SHUF", "HC-s0", "HC-SHUF"} and {k: v for k, v in PV["arm_class"].items() if k in ARMS} == {"HA-s0": "H1ha", "HA-s1": "H1ha", "HA-SHUF": "H1shuf"}
+assert L.VDAC_H48_SHA256 == PV["required_flags"]["--aux-drv-exclude-sha256"] and set(PV["vdac_arms"]) == set(ARMS) | {"HB-s0", "HB-SHUF", "HC-s0", "HC-SHUF", "HBC-s0", "HBC-SHUF"} and {k: v for k, v in PV["arm_class"].items() if k in ARMS} == {"HA-s0": "H1ha", "HA-s1": "H1ha", "HA-SHUF": "H1shuf"}
 assert PV["data_expect"] == L.PROFILES["refe_scorer1p6"]["data_expect"] and PV["data_expect_updates"] is None and PV["schedule_reach"] is True
 assert "--aux-drv-exclude-logs" in PV["data_flags"] and "--aux-drv-labels" in PV["data_flags"] and "--ckpt" in PV["data_flags"] and "--aux-drv-shuffle-seed" not in PV["forbidden_flags"]
 assert PV["suite"][:-1] == L.AUXS1C_SUITE and PV["suite"][-1] == {"script": "test_vdac_gate.py", "token": "ZZTEST_PASS"}

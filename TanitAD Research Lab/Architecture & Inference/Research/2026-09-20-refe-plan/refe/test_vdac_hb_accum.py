@@ -89,7 +89,7 @@ def argv_layer():
     parser = __import__("scorer_finetune").build_parser()
     for arm in LG.VDAC_ARMS:
         ns = C.parse_scorer_argv(parser, LG.vdac_argv(arm))[0]
-        want = (4, 2) if arm in ("HB-s0", "HB-SHUF") else (8, 1)
+        want = (4, 2) if arm in ("HB-s0", "HB-SHUF", "HBC-s0", "HBC-SHUF") else (8, 1)
         ok((ns.batch, ns.accum) == want, f"{arm}: the trainer's parser resolves --batch/--accum to {(ns.batch, ns.accum)}, want {want}")
         ok(ns.batch * ns.accum == 8, f"{arm}: effective batch stays 8")
         rec = LG.PROFILES["refe_vdac_p6"]["arm_recipe"][LG.VDAC_ARM_CLASS[arm]]
@@ -99,10 +99,10 @@ def argv_layer():
         ok(t81 == t42 and min(t42, 10000) == 10000, f"schedule at {n} sets: 8x1 -> {t81}, 4x2 -> {t42}, --max-updates 10000 binds")
     bash = shutil.which("bash")
     if bash:
-        for arm, want in (("HB-s0", "--batch 4 --accum 2"), ("HB-SHUF", "--batch 4 --accum 2"), ("HC-s0", "--batch 8 --accum 1"), ("HA-s0", "--batch 8 --accum 1")):
+        for arm, want in (("HB-s0", "--batch 4 --accum 2"), ("HB-SHUF", "--batch 4 --accum 2"), ("HBC-s0", "--batch 4 --accum 2"), ("HBC-SHUF", "--batch 4 --accum 2"), ("HC-s0", "--batch 8 --accum 1"), ("HA-s0", "--batch 8 --accum 1")):
             r = subprocess.run([bash, str(HERE / "vdac_pod.sh")], env={**os.environ, "ARM": arm, "MODE": "argv"}, capture_output=True, encoding="utf-8")
             ok(r.returncode == 0 and want in r.stdout, f"vdac_pod.sh MODE=argv ARM={arm} prints '{want}' (rc {r.returncode})")
-    TABLE.append(("argv: every arm's (batch, accum): parser + recipe + schedule + pod script", "OK", "HB 4x2, the rest 8x1"))
+    TABLE.append(("argv: every arm's (batch, accum): parser + recipe + schedule + pod script", "OK", "HB and HBC 4x2, the rest 8x1"))
 
 
 def module_layer():
