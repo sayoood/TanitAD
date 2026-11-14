@@ -4,7 +4,7 @@
 # Deletes nothing. Last line: ZZ WAITPULL DONE <ARM> or ZZ WAITPULL FAIL <ARM> <reason>.
 Q=${1:?queue}; A=${2:?arm}; MAXM=${3:-180}
 P=/c/Users/Admin/v8pod/pssh.sh; C=/c/Users/Admin/v8pod/pcat.sh
-W=/f/TanitAD-scratch/v8proof; D=$W/spatial/ckpt/$A; RR=/workspace/v8proof/runs/$Q
+W=/f/TanitAD-scratch/v8proof; D=${CK_ROOT:-$W/spatial/ckpt}/$A; PULL=${PULL_ROOT:-$W/hiergap/pull}; RR=/workspace/v8proof/runs/$Q
 n=0
 while true; do
   k=$(timeout 60 bash "$P" "grep -c -- \"ARM DONE $A\" /workspace/v8proof/chains/$Q/chain.log" 2>/dev/null | tr -cd "0-9")
@@ -25,5 +25,5 @@ echo "$want  ckpt_last.pt" > "$D/ckpt_last.sha256"
 for f in argv.json selfcheck.json; do timeout 60 bash "$C" "$RR/$A/$f" "$D/$f" > /dev/null 2>&1; done
 echo "$A ckpt ok sha256=$want"
 Q=$Q bash "$W/spatial/q3/pull_spatial_t1.sh" "$A" | tail -n 2
-[ -f "$W/hiergap/pull/$A/PULLED.txt" ] || { echo "ZZ WAITPULL FAIL $A dump"; exit 1; }
+[ -f "$PULL/$A/PULLED.txt" ] || { echo "ZZ WAITPULL FAIL $A dump"; exit 1; }
 echo "ZZ WAITPULL DONE $A"

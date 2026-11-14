@@ -4,7 +4,7 @@
 # unpacked to hiergap/pull/<ARM>/ (the layout hierrep_read.py and hierrep_gaps.py read); the run's small records to hiergap/runs/<ARM>/.
 # Deletes nothing. Never prints the address. One line per arm; last line ZZ PULL-SPATIAL DONE or ZZ PULL-SPATIAL FAIL <arms>.
 P=/c/Users/Admin/v8pod/pssh.sh; C=/c/Users/Admin/v8pod/pcat.sh
-W=/f/TanitAD-scratch/v8proof; PULL=$W/hiergap/pull; RUNS=$W/hiergap/runs
+W=/f/TanitAD-scratch/v8proof; PULL=${PULL_ROOT:-$W/hiergap/pull}; RUNS=${RUNS_ROOT:-$W/hiergap/runs}
 TARS=/c/Users/Admin/AppData/Local/Temp/claude/4ac3a056b343bb35/d1b9de00-7d76-4030-8bc5-507afd36195b/scratchpad/q3tars
 RR=/workspace/v8proof/runs/${Q:-spatial}; PB=/workspace/v8proof/probe
 mkdir -p "$PULL" "$RUNS" "$TARS"

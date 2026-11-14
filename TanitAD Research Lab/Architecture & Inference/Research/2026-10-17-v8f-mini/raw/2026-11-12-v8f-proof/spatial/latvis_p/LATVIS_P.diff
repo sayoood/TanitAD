@@ -1,0 +1,36 @@
+--- /dev/fd/63	2026-11-14 01:54:02.000000000 +0100
++++ /dev/fd/62	2026-11-14 01:54:02.000000000 +0100
+@@ -27,7 +27,8 @@
+ ROOT = "F:/TanitAD-scratch/v8proof"
+ TREE = f"{HERE}/tree/stack"
+ BASE = f"{ROOT}/latvis"
+-PINS = {"v8f_mini.py": "687a41030e8dc193d9669866d15b37b46bc5d8f90b711db4328d4d479e3c1102",
++PINS = {"v8f_mini.py": "f5f0633b5cd67014a4b9aef76fbf45a3b59dffbc7d4f7441949494de78f37c97",
++        "hjepa.py": "bd695c723f65f39e81e986517cdb7ca67fd413e667b4c9ac5fd9b358cd8da53c",
+         "v8f_beta.py": "d30fbdc30d9d20c360c93970b47121a2efaed5c829f18b6fa323410c94716dab"}
+ sys.path.insert(0, f"{HERE}/tree/taniteval")   # taniteval (floors_kin), copied from res/tree
+ sys.path.insert(0, TREE)                       # the patched tree FIRST: tanitad must come from here
+@@ -36,8 +37,8 @@
+ import latvis as LV  # noqa: E402  (baseline tool: pure helpers, decoders, fit, bootstrap; adds res/ wm/ full/ to sys.path)
+ 
+ RP, W = LV.RP, LV.W
+-FR_PATH = f"{HERE}/frames64.u8"
+-PREP_DONE = f"{HERE}/prep_done_gw.json"
++FR_PATH = "C:/Users/Admin/v8proof_c/latvis_gw/frames64.u8"   # P variant: the frames of the stage-1 run folder, read only
++PREP_DONE = "C:/Users/Admin/v8proof_c/latvis_gw/prep_done_gw.json"
+ LAT_DIR = f"{HERE}/latents"
+ RAW = ("E:/Projects/TanitAD-artifacts/sfresh_inputs/code/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw")
+ SF = "E:/Projects/TanitAD-artifacts/sfresh_inputs"
+@@ -114,8 +115,11 @@
+     assert cfg.wm_state == kind and int(cfg.wm_l1_dim) == width, (cfg.wm_state, cfg.wm_l1_dim)
+     assert int(model.wm.stack.cfg[0].latent_dim) == width, model.wm.stack.cfg[0].latent_dim
+     assert [int(c.latent_dim) for c in model.wm.stack.cfg[1:]] == [128, 128]
++    exp_pred = os.environ.get("LATVIS_EXPECT_PRED")   # P variant (card ADD16): the BUILT level-1 predictor kind must be the declared one
++    built_pred = str(getattr(model.wm.stack.cfg[0], "pred_kind", "flat"))
++    assert exp_pred is None or built_pred == exp_pred, ("built level-1 predictor kind", built_pred, "expected", exp_pred)
+     info = {"step": int(ck.get("step", -1)), "wm_state": cfg.wm_state, "wm_l1_dim": int(cfg.wm_l1_dim), "wm_l1_pred_width": int(cfg.wm_l1_pred_width),
+-            "wm_cell_dim": int(cfg.wm_cell_dim), "wm_dim": int(cfg.wm_dim), "argv_sha": ck.get("argv_sha"), "n_tok": int(cfg.n_tok), "built_probe": pr}
++            "wm_cell_dim": int(cfg.wm_cell_dim), "l1_pred_kind": built_pred, "wm_dim": int(cfg.wm_dim), "argv_sha": ck.get("argv_sha"), "n_tok": int(cfg.n_tok), "built_probe": pr}
+     return model, info
+ 
+ 
