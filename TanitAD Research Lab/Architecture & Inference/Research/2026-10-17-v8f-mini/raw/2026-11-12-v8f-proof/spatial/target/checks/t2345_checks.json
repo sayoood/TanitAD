@@ -1,0 +1,153 @@
+{
+ "tanitad_file": "C:\\Users\\Admin\\v8proof_c\\target\\tree_patch\\stack\\tanitad\\__init__.py",
+ "t2": {
+  "flat": {
+   "embed_weight_shape": [
+    32,
+    3
+   ],
+   "grad_abs_sum_speed_column": 0.000864839123096317,
+   "grad_abs_sum_accel_column": 0.0002350505965296179,
+   "control_levels_2_3_grad": [
+    0.0,
+    0.0
+   ],
+   "control_zero_speed_column_grad": 0.0,
+   "pred_L1": {
+    "speed": 0.4088777005672455,
+    "speed_flipped_over_batch": 0.4088961184024811,
+    "speed_shuffled_over_frames": 0.4088519215583801
+   },
+   "lever_off_loss_with_other_speed_equal": true,
+   "PASS": true
+  },
+  "cell": {
+   "embed_weight_shape": [
+    32,
+    3
+   ],
+   "grad_abs_sum_speed_column": 0.0033076161053031683,
+   "grad_abs_sum_accel_column": 0.0004156559007242322,
+   "control_levels_2_3_grad": [
+    0.0,
+    0.0
+   ],
+   "control_zero_speed_column_grad": 0.0,
+   "pred_L1": {
+    "speed": 0.40317994356155396,
+    "speed_flipped_over_batch": 0.4031152129173279,
+    "speed_shuffled_over_frames": 0.4032275378704071
+   },
+   "lever_off_loss_with_other_speed_equal": true,
+   "PASS": true
+  }
+ },
+ "t3": {
+  "flat": {
+   "tok_head": 0.46294209361076355,
+   "level1_predictor_groups": {
+    "in_proj": 23.233538776636124,
+    "blocks": 79.71957985684276,
+    "final_ln": 0.07281193509697914,
+    "out": 20.13231222704053,
+    "pos": 0.3127465844154358
+   },
+   "action_embedding": 0.027987183741061017,
+   "state_projection": 0.14993972051888704,
+   "levels_2_3_modules": [
+    0.0,
+    0.0
+   ],
+   "control_total_reaches_levels_2_3": [
+    2913.7588114105165,
+    2363.4134645750746
+   ],
+   "PASS": true
+  },
+  "cell": {
+   "tok_head": 0.9373564124107361,
+   "level1_predictor_groups": {
+    "in_proj": 0.9349910616874695,
+    "act_tok": 0.05726829823106527,
+    "spatial": 67.71705283410847,
+    "temporal": 55.23973932489753,
+    "final_ln": 0.11538459360599518,
+    "out": 12.774338945746422,
+    "cell_pos": 0.2979891300201416,
+    "time_pos": 0.36644044518470764
+   },
+   "action_embedding": 0.0497408997034654,
+   "state_projection": 0.03414961131056771,
+   "levels_2_3_modules": [
+    0.0,
+    0.0
+   ],
+   "control_total_reaches_levels_2_3": [
+    2881.328588731587,
+    2354.078490115702
+   ],
+   "PASS": true
+  }
+ },
+ "t4": {
+  "flat": {
+   "context": 3,
+   "starts": [
+    0,
+    2,
+    4
+   ],
+   "max_abs_diff_per_start": [
+    5.066394805908203e-07,
+    4.246830940246582e-07,
+    4.023313522338867e-07
+   ],
+   "max_abs_diff": 5.066394805908203e-07,
+   "bar": 1e-06,
+   "control_rollout_vs_true_future_states": 2.548621892929077,
+   "PASS": true
+  },
+  "cell": {
+   "context": 3,
+   "starts": [
+    0,
+    2,
+    4
+   ],
+   "max_abs_diff_per_start": [
+    3.91155481338501e-07,
+    2.7567148208618164e-07,
+    2.682209014892578e-07
+   ],
+   "max_abs_diff": 3.91155481338501e-07,
+   "bar": 1e-06,
+   "control_rollout_vs_true_future_states": 2.465212345123291,
+   "PASS": true
+  }
+ },
+ "t5": {
+  "flat": {
+   "real": {
+    "delta_total": 0.7197364430053881,
+    "W_x_term": 0.719736443005367,
+    "abs_err": 2.1094237467877974e-14
+   },
+   "mutant_line_deleted": "level_loss = level_loss + c.futtok_weight * futt",
+   "mutant_goes_red": true,
+   "mutant_assertion": "total(W) - total(0) = 0.0 but W x futtok/L1 = 0.719736443005367",
+   "PASS": true
+  },
+  "cell": {
+   "real": {
+    "delta_total": 0.716156970528516,
+    "W_x_term": 0.7161569705285395,
+    "abs_err": 2.353672812205332e-14
+   },
+   "mutant_line_deleted": "level_loss = level_loss + c.futtok_weight * futt",
+   "mutant_goes_red": true,
+   "mutant_assertion": "total(W) - total(0) = 0.0 but W x futtok/L1 = 0.7161569705285395",
+   "PASS": true
+  }
+ },
+ "PASS": true
+}

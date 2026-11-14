@@ -12,7 +12,7 @@
 # This script chooses nothing: tools and rules are fixed (S1_DEFS.md, note N8). The lead reads the controls block of every verdict first.
 A=${1:?arm}; MAXH=${2:-30}
 Q=${GW_QUEUE:-spatial}; TREE=${GW_TREE:-tree_spatial}
-case "$A" in G_s[0-9]|P_s[0-9]|PR_s[0-9]|RR_s[0-9]|RES_s[0-9]|ROLL_s[0-9]) KIND=grid;; W_s[0-9]) KIND=mean;; *) echo "GW-FAIL $A: not an arm of stage 1"; exit 2;; esac
+case "$A" in G_s[0-9]|P_s[0-9]|PR_s[0-9]|RR_s[0-9]|RES_s[0-9]|ROLL_s[0-9]|PE_s[0-9]|PF_s[0-9]|PEF_s[0-9]) KIND=grid;; W_s[0-9]) KIND=mean;; *) echo "GW-FAIL $A: not an arm of stage 1"; exit 2;; esac
 P=/c/Users/Admin/v8pod/pssh.sh; C=/c/Users/Admin/v8pod/pcat.sh
 W=/f/TanitAD-scratch/v8proof/spatial; S1=$W/s1; ST=${GW_ST:-$W/s1states}
 RR=/workspace/v8proof/runs/$Q; PB=/workspace/v8proof/probe; CH=/workspace/v8proof/chains

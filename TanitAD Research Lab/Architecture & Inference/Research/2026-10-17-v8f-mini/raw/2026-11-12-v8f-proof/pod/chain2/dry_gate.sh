@@ -20,6 +20,12 @@ for w in "${TA[@]}"; do
   if [ $skip = 1 ]; then GA+=("$OUT/out"); skip=0; continue; fi
   GA+=("$w"); [ "$w" = "--out" ] && skip=1
 done
+# memory guard (2026-11-14: a dry gate beside three training jobs took the container over its 50 GB limit and the kernel killed the trainer of PR_s1):
+# refuse unless at least DRY_FREE_GB (default 20) of the container limit are not held by anonymous memory.
+MAXB=$(cat /sys/fs/cgroup/memory.max 2>/dev/null); ANON=$(awk '$1=="anon"{print $2}' /sys/fs/cgroup/memory.stat 2>/dev/null)
+case "$MAXB" in ''|max) echo "ZZ DRY $ARM REFUSED: the container memory limit cannot be read"; exit 1;; esac
+FREEG=$(( (MAXB - ${ANON:-0}) / 1073741824 ))
+[ "$FREEG" -ge "${DRY_FREE_GB:-20}" ] || { echo "ZZ DRY $ARM REFUSED: only $FREEG GB of the container limit are free (need ${DRY_FREE_GB:-20}); run it when a slot is empty"; exit 1; }
 export PYTHONPATH=$tree/stack:$tree/taniteval TREE=$tree PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 echo "[$(ts)] dry gate $ARM start"
 flock -w 5400 "$W/chains/heavy.lock" timeout 900 "${GA[@]}" --selfcheck-only > "$OUT/gate.log" 2>&1; rc=$?
