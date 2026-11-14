@@ -28,6 +28,7 @@ import numpy as np  # noqa: E402
 
 S0, K, FRAMES = 4, 10, 16
 TIER = "T0 (a world-model diagnostic on logged frames, never driving performance)"
+SPEED_CORR_BAR = 0.9   # x5: the change of the logged speed between two frames against the logged acceleration of that transition (alignment of the speed file)
 FAMILIES = "LONGITUDINAL, LATERAL, TACTICAL: not measured by this read; STRATEGIC: PAUSED (PI item 25)"
 TOL = {"x1": 4e-3, "x2": 4e-3, "x3": 1e-5, "x4": 4e-3, "x4i": 1e-4}   # note ADD17_N1: the banked latents file stores float16, so every comparison against it carries its rounding
 MATCH_TOL, MATCH_GAP = 4e-3, 0.1
@@ -68,6 +69,8 @@ def load_stack(tree, ckpt, width):
     pred = st.predictors[0]
     info = {"ckpt_sha256": have, "step": int(ck.get("step", -1)), "tanitad_file": got, "wm_state": str(cfg.wm_state), "l1_width": int(st.cfg[0].latent_dim),
             "l1_pred_kind": str(getattr(st.cfg[0], "pred_kind", "flat")), "l1_pred_class": type(pred).__name__, "l1_pred_context": int(getattr(pred, "context", 0) or 0)}
+    info["l1_action_dim"] = int(st.cfg[0].action_dim)
+    info["wm_speed_scale"] = float(getattr(M, "WM_SPEED_SCALE", 0.0))
     return torch, st, info
 
 
@@ -130,6 +133,7 @@ def main(argv=None):
     ap.add_argument("--emit-frame0", action="store_true")
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--width", type=int, default=640)
+    ap.add_argument("--speed-npz", default=None, help="EGOV arms (card ADD19): SPEED_WINDOWS.npz of collect_speed.py, the logged speed of every frame")
     a = ap.parse_args(argv)
     mapped = a.map_latents is not None
     if mapped != (a.map_states_pt is not None) or (not mapped and a.latents is None):
@@ -165,6 +169,29 @@ def main(argv=None):
     Z = Zall[rows]                                                         # [n, 16, D] in the order of the window list
     A = torch.as_tensor(np.asarray(Lw["act_scaled"], np.float32))          # [n, 15, 2]; the scaling does not depend on the arm
     assert A.shape[1] == FRAMES - 1, tuple(A.shape)
+    egov = None
+    if info["l1_action_dim"] == 3:      # EGOV arm (card ADD19, note N1): third action channel = the logged speed of the START frame of each transition over the scale
+        if not a.speed_npz:
+            print("REFUSED: the level-1 predictor of this arm takes three action channels; give --speed-npz")
+            return 3
+        Sp = np.load(a.speed_npz, allow_pickle=True)
+        rws = np.asarray(rows, np.int64)
+        if Sp["V"].shape[0] != Zall.shape[0]:
+            print("REFUSED: the speed file holds %d windows, the state file %d" % (Sp["V"].shape[0], Zall.shape[0]))
+            return 3
+        same = bool(np.array_equal(Sp["eid"].astype(str)[rws], np.asarray(Lw["eid"]).astype(str)) and np.array_equal(np.asarray(Sp["t"])[rws], np.asarray(Lw["t"])))
+        Vw = torch.as_tensor(np.asarray(Sp["V"], np.float32)[rws][:, :FRAMES - 1]) / float(info["wm_speed_scale"])
+        acc = np.asarray(Sp["A_raw"], np.float64)[rws][:, :FRAMES - 1, 0]
+        dv = np.diff(np.asarray(Sp["V"], np.float64)[rws], axis=1)
+        corr = float(np.corrcoef(dv.ravel(), acc.ravel())[0, 1])
+        corr_shift = float(np.corrcoef(dv[:, 1:].ravel(), acc[:, :-1].ravel())[0, 1])
+        egov = {"windows_identical": same, "scale": float(info["wm_speed_scale"]), "corr_speed_change_with_logged_acceleration": corr,
+                "same_with_a_one_frame_shift": corr_shift, "corr_bar": SPEED_CORR_BAR,
+                "pass": bool(same and float(info["wm_speed_scale"]) == 10.0 and corr >= SPEED_CORR_BAR and corr > corr_shift)}
+        A = torch.cat([A, Vw[..., None]], -1)                               # [n, 15, 3]
+    elif info["l1_action_dim"] != 2:
+        print("REFUSED: level-1 action width %d" % info["l1_action_dim"])
+        return 3
     with torch.no_grad():
         r0 = torch.cat(chunked(lambda sl: st.rollout(1, Z[sl, 0], A[sl, :K], context=1)[:, K - 1], n))
         r1 = torch.cat(chunked(lambda sl: st.rollout(1, Z[sl, S0], A[sl, S0:S0 + K], context=1)[:, K - 1], n))
@@ -177,18 +204,30 @@ def main(argv=None):
         e = st.act_embed(A)
         o1 = torch.cat(chunked(lambda sl: pred(Z[sl, S0:S0 + 1], e[sl, S0:S0 + 1])[:, -1], n))
         o3 = torch.cat(chunked(lambda sl: pred(Z[sl, S0 - ctx + 1:S0 + 1], e[sl, S0 - ctx + 1:S0 + 1])[:, -1], n))
+        o1s = None
+        if egov is not None:               # control e2 of card ADD19: the speed channel shuffled across windows (fixed seed) must raise the one-step error
+            pm = torch.randperm(n, generator=torch.Generator().manual_seed(11))
+            As = A.clone()
+            As[:, :, 2] = A[pm][:, :, 2]
+            es = st.act_embed(As)
+            o1s = torch.cat(chunked(lambda sl: pred(Z[sl, S0:S0 + 1], es[sl, S0:S0 + 1])[:, -1], n))
     nxt, cur, tgt = Z[:, S0 + 1], Z[:, S0], Z[:, S0 + K]
     mse = lambda u, v: float(((u - v) ** 2).mean())                       # noqa: E731
     one = {"copy": mse(cur, nxt), "context_1": mse(o1, nxt), "context_%d" % ctx: mse(o3, nxt)}
     one["ratio_context_1_over_copy"] = one["context_1"] / one["copy"]
     one["ratio_context_%d_over_copy" % ctx] = one["context_%d" % ctx] / one["copy"]
+    if egov is not None:
+        e2 = mse(o1s, nxt)
+        egov["e2_one_step_mse_speed_shuffled"] = e2
+        egov["e2_ratio_shuffled_over_true_speed"] = e2 / one["context_1"]
+        egov["e2_pass"] = bool(e2 > one["context_1"])
     lat = {"copy": mse(cur, tgt), "R1": mse(r1, tgt), "R3h": mse(r3h, tgt), "R3g": mse(r3g, tgt)}
     lat["skill_over_copy"] = {k: 1.0 - lat[k] / lat["copy"] for k in ("R1", "R3h", "R3g")}
     lat["frame0"] = {"copy": mse(Z[:, 0], Z[:, K]), "R1": mse(r0, Z[:, K])}
     # per-window errors (mean over the width) for the episode-cluster bootstrap of the one-step and the +2.0 s latent errors (ctx_verdict.py, step_boot)
     pw = lambda u, v: ((u - v) ** 2).mean(1).numpy().astype(np.float64)   # noqa: E731
     np.savez(os.path.join(a.out_dir, "DIAG_CTX_%s.npz" % a.arm), eid=np.asarray(Lw["eid"]).astype(str), step_copy=pw(cur, nxt), step_c1=pw(o1, nxt), step_c3=pw(o3, nxt),
-             lat_copy=pw(cur, tgt), lat_R1=pw(r1, tgt), lat_R3h=pw(r3h, tgt), lat_R3g=pw(r3g, tgt), f0_copy=pw(Z[:, 0], Z[:, K]), f0_R1=pw(r0, Z[:, K]))
+             lat_copy=pw(cur, tgt), lat_R1=pw(r1, tgt), lat_R3h=pw(r3h, tgt), lat_R3g=pw(r3g, tgt), f0_copy=pw(Z[:, 0], Z[:, K]), f0_R1=pw(r0, Z[:, K]), **({"step_c1_shuf": pw(o1s, nxt)} if egov is not None else {}))
     # ---- controls
     if own is not None:
         x1 = float(np.abs(r0.numpy() - np.asarray(own["pred_2s"], np.float32)).max())
@@ -220,6 +259,8 @@ def main(argv=None):
                                "frame10_vs_banked_true_2s_max_abs_diff": x2, "frame0_vs_banked_z0_max_abs_diff": x2z, "tol": TOL["x2"], "pass": c2p},
                 "x3_seeded_loop_context_1_equals_R1": {"max_abs_diff": x3, "tol": TOL["x3"], "pass": bool(x3 <= TOL["x3"])},
                 "x4_overlap": c4}
+    if egov is not None:
+        controls["x5_speed_file"] = egov
     ok = all(v["pass"] for v in controls.values())
     res = {"arm": a.arm, "tier": TIER, "families": FAMILIES, "card": "PREREG_V8F_PROOF_ADD17", "start_frame": S0, "steps": K, "context": ctx, "model": info,
            "controls": controls, "controls_pass": bool(ok), "one_step_mse": one, "latent_mse_at_2s": lat,
@@ -232,11 +273,11 @@ def main(argv=None):
         print("ZZ CTXROLL CONTROL-FAILED %s" % a.arm)
         return 2
     ident = {"eid": Lw["eid"], "t": np.asarray(Lw["t"]), "w_fold": np.asarray(Lw["w_fold"])}
-    common = dict(ident, z0=cur.numpy(), true_2s=tgt.numpy(), g0=g0 + S0, act_scaled=A[:, S0:S0 + K].numpy())
+    common = dict(ident, z0=cur.numpy(), true_2s=tgt.numpy(), g0=g0 + S0, act_scaled=A[:, S0:S0 + K, :2].numpy())
     for name, r in (("R1", r1), ("R3h", r3h), ("R3g", r3g)):
         np.savez(os.path.join(a.out_dir, "LATENTS_CTX_%s_%s.npz" % (a.arm, name)), pred_2s=r.numpy(), **common)
     if a.emit_frame0:
-        np.savez(os.path.join(a.out_dir, "LATENTS_F0_%s.npz" % a.arm), z0=Z[:, 0].numpy(), pred_2s=r0.numpy(), true_2s=Z[:, K].numpy(), g0=g0, act_scaled=A.numpy(), **ident)
+        np.savez(os.path.join(a.out_dir, "LATENTS_F0_%s.npz" % a.arm), z0=Z[:, 0].numpy(), pred_2s=r0.numpy(), true_2s=Z[:, K].numpy(), g0=g0, act_scaled=A[..., :2].numpy(), **ident)
     print("ZZ CTXROLL DONE %s" % a.arm)
     return 0
 
