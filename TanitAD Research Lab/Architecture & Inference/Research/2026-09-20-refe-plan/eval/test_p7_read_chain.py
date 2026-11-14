@@ -435,6 +435,18 @@ def t_detach():
     assert "--detach" not in d
 
 
+def _case_detach_flags(mod):
+    import subprocess as sp
+    fl = mod.detach_flags()
+    assert fl & sp.CREATE_NEW_PROCESS_GROUP and fl & sp.CREATE_NO_WINDOW, fl
+    assert not fl & getattr(sp, "DETACHED_PROCESS", 0x00000008), f"DETACHED_PROCESS set: {fl:#x}"
+
+
+@check("C10b --detach flags: own process group + hidden console the children inherit; never DETACHED_PROCESS (its console children die, 0xC000013A)")
+def t_detach_flags():
+    _case_detach_flags(C)
+
+
 @check("C9 plans8 converter: tokens + plans8 equal the seam's; duplicate tokens and non-finite poses are refused; transp_score.load_plans reads the file")
 def t_plans8():
     with tempfile.TemporaryDirectory() as td:
@@ -529,7 +541,7 @@ def _case_marker_skip(mod):
         C = old
 
 
-@check("M1 mutation arms: each weakened chain (yaw-prefix check off / any stage-2 rc accepted / pick20 control off / determinism compare off / markers ignored) FAILS the case that guards it; the unmutated chain passes all five")
+@check("M1 mutation arms: each weakened chain (yaw-prefix check off / any stage-2 rc accepted / pick20 control off / determinism compare off / markers ignored / DETACHED_PROCESS restored) FAILS the case that guards it; the unmutated chain passes all six")
 def t_mutations():
     src = CHAIN_PY.read_text(encoding="utf-8")
     muts = [
@@ -538,6 +550,7 @@ def t_mutations():
         (_case_bad_pick20_caught, 'if not sm.pick20_equals_seam(pick20, poses):', 'if False:'),
         (_case_rep_differs_caught, "if not same_tok or n_diff != 0:", "if False:"),
         (_case_marker_skip, "if self.done(step):", "if False:"),
+        (_case_detach_flags, "    return subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW\n", "    return subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS\n"),
     ]
     for case, old, new_ in muts:
         case(C)                                                             # the real chain passes the case

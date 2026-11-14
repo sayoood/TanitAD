@@ -592,6 +592,15 @@ def make_cfg(argv=None) -> Cfg:
     return c
 
 
+def detach_flags() -> int:
+    """creation flags for --detach: own process group and a HIDDEN console that the children inherit.
+    NOT DETACHED_PROCESS: a parent with no console makes every console child (transp_score, families_run) open its own
+    console, which Windows Terminal takes over and kills (rc 3221225786 = 0xC000013A). MEASURED 2026-11-14: the P7
+    rehearsal's transp_s0/s1 died that way at launch with 0-byte logs; probe 2026-11-15 (raw/2026-11-15-detach-probe):
+    with DETACHED_PROCESS the child tree died, without it the child survived (rc 0)."""
+    return subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW
+
+
 def detach_argv(argv: list) -> list:
     """the child's argv for --detach: this script with every original argument except --detach"""
     return [PY_T, Path(__file__).resolve().as_posix(), *[a for a in argv if a != "--detach"]]
@@ -605,7 +614,7 @@ def main(argv=None) -> int:
     c = make_cfg(argv)
     if "--detach" in argv and not c.dry_run:
         Path(c.work).mkdir(parents=True, exist_ok=True)
-        flags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW | getattr(subprocess, "DETACHED_PROCESS", 0)
+        flags = detach_flags()
         p = subprocess.Popen(detach_argv(argv), cwd=c.work, stdin=subprocess.DEVNULL, stdout=open(f"{c.work}/chain_stdout.log", "a", encoding="utf-8"), stderr=subprocess.STDOUT, creationflags=flags)
         print(f"detached pid {p.pid}; progress: {c.work}/CHAIN.log, markers: {c.markers}")
         return 0
