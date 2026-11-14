@@ -1,0 +1,16 @@
+00:37:42 windows a
+Traceback (most recent call last):
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\hwm_plan\run_hwm.py", line 225, in <module>
+    {"windows": cmd_windows, "plan": cmd_plan, "report": cmd_report}[a.cmd](a)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\hwm_plan\run_hwm.py", line 88, in cmd_windows
+    m, wm, st, geom = prepare_geometry(a)
+                      ~~~~~~~~~~~~~~~~^^^
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\hwm_plan\run_hwm.py", line 111, in prepare_geometry
+    return m, wm, st, H.Geometry.from_stack(st, wm, goal_steps=a.goal_steps, stitch=a.stitch)
+                      ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\hwm_plan\hwm_plan.py", line 66, in from_stack
+    assert st.n_levels == 3 and all(st.cfg[i].window == 1 for i in range(3)), "HWM needs three levels with window 1"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: HWM needs three levels with window 1
+FAIL windows
