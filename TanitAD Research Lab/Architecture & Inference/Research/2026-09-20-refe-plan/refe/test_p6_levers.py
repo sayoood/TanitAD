@@ -11,8 +11,10 @@ Prints `ZZP6_PASS <n>`.  A skip is not a pass: nothing here skips.
 """
 from __future__ import annotations
 
+import atexit
 import copy
 import hashlib
+import gc
 import json
 import math
 import os
@@ -20,6 +22,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -34,6 +37,52 @@ def ok(cond, msg=""):
     global N
     assert cond, msg
     N += 1
+
+
+# ------------------------------------------------------------------------------------------------ temp dirs that cannot leak (MM 2026-11-13)
+# Every check used `td = Path(tempfile.mkdtemp())` ... `shutil.rmtree(td, ignore_errors=True)`.  An assert between the two skips the rmtree, and on Windows
+# rmtree(ignore_errors=True) gives up SILENTLY on a file the failing frame still holds open.  MEASURED 2026-11-13: 102 leaked dirs = 37.8 GB on the dev box C:
+# (bank/o_*/w_* checkpoints), which ENOSPC-failed another session's pinned run.  Now every dir is registered here and removed at interpreter exit whatever
+# ended the run; anything that still cannot be removed is NAMED on stderr (ZZTMP_LEFT), never dropped silently.
+_TMP_DIRS: list = []
+
+
+def _mkdtemp(prefix: str = "p6lev_") -> Path:
+    td = Path(tempfile.mkdtemp(prefix=prefix))
+    _TMP_DIRS.append(td)
+    return td
+
+
+def _cleanup_tmp() -> list:
+    for k in ("last_exc", "last_value", "last_traceback", "last_type"):     # the failed run's traceback keeps its frames, and their open files, alive
+        if hasattr(sys, k):
+            setattr(sys, k, None)
+    left = []
+    for td in _TMP_DIRS:
+        for i in range(4):
+            if not td.exists():
+                break
+            gc.collect()
+            shutil.rmtree(td, ignore_errors=True)
+            if td.exists():
+                time.sleep(0.5 * (i + 1))
+        if td.exists():
+            left.append(str(td))
+    if left:
+        print(f"ZZTMP_LEFT {len(left)} temp dir(s) NOT removed (delete them by hand): {' '.join(left)}", file=sys.stderr, flush=True)
+    return left
+
+
+atexit.register(_cleanup_tmp)
+
+
+def _tmp_leak_probe(marker: Path) -> None:
+    """child of chk_tmp_cleanup: a run that ends on an assert while a file in its temp dir is still open in the failing frame (the Windows case)"""
+    td = _mkdtemp()
+    marker.write_text(str(td), encoding="utf-8")
+    fh = open(td / "held.bin", "wb")
+    fh.write(b"x" * 4096)
+    ok(False, "TMPPROBE: the run ends on an assert with a file still open in its temp dir")
 
 
 # ------------------------------------------------------------------------------------------------ a self-made tiny bank (no dev-box data needed)
@@ -191,7 +240,7 @@ def chk_command_model_reach():
 def chk_ckpt_meta_nav_mode():
     import ckpt_io
     from model import REFe, REFeConfig
-    td = Path(tempfile.mkdtemp())
+    td = _mkdtemp()
     m = _tiny_model("command")
     p = td / "m.pt"
     ckpt_io.atomic_save({"format": ckpt_io.FORMAT_FULL, "model": ckpt_io.full_state(m), "meta": {"backbone": "vits16", "nav_mode": "command"}}, p)
@@ -253,7 +302,7 @@ def chk_trainer_reach_online():
     """flag -> built object -> loss -> backward, observed IN the real train.run: yaw_wrap reaches the loss, the labeller is built, every P6 term is logged and finite,
     every trainable group (incl. cmd_embed) has a non-zero gradient, lag is 0, the step-0 bank event is written, and the tuple the loader serves carries the command."""
     import gate_checks as C
-    td = Path(tempfile.mkdtemp())
+    td = _mkdtemp()
     bank = make_bank(td)
     for yaw, want in (("off", False), ("on", True)):
         cap = C.instrumented_run(argv_p6(bank, str(td / f"o_{yaw}"), yaw=yaw), mode="smoke", work=td / f"w_{yaw}")
@@ -316,7 +365,7 @@ def chk_score_only_grad():
     """D1 (b) / D2 / D3 from the TRAINER: with the trajectory term's gradient removed, the score loss alone gives a non-zero gradient on the scorer heads (and cmd_embed's
     consumers via the context) and on the backbone LoRA when the context is un-detached; `traj_head` reads EXACTLY 0.0 (candidates detached); the LoRA reads
     EXACTLY 0.0 when the context is detached; with the labeller OFF (no labels) the scorer reads EXACTLY 0.0."""
-    td = Path(tempfile.mkdtemp())
+    td = _mkdtemp()
     bank = make_bank(td)
     on = _score_only_grads(td, bank, "on")
     for g in ("score_dec", "score_q_mlp", "score_head", "backbone.lora"):
@@ -338,7 +387,7 @@ def chk_deferred_bit_identity():
     import online_labeller as OLm
     import train as T
     from model import REFe, wta_loss
-    td = Path(tempfile.mkdtemp())
+    td = _mkdtemp()
     bank = make_bank(td)
     rec = {"inputs": [], "tgts": [], "labels": [], "props": []}
     first = {}
@@ -423,7 +472,7 @@ def chk_deferred_bit_identity():
 
 def chk_stale_label_refused():
     """D1 (c): feeding one-step-stale proposals to the labeller must be REFUSED (proposal identity), not silently trained on."""
-    td = Path(tempfile.mkdtemp())
+    td = _mkdtemp()
     bank = make_bank(td)
     good = run_sub(argv_p6(bank, str(td / "g"), steps=2, accum=2))
     ok(good.returncode == 0, good.stdout[-600:] + good.stderr[-600:])
@@ -479,7 +528,7 @@ def chk_label_chunks():
 
 def chk_online_conflicts():
     import train as T
-    td = Path(tempfile.mkdtemp())
+    td = _mkdtemp()
     bank = make_bank(td)
     for extra in (["--grow"], ["--pdm-only"], ["--scorer-mode", "onpolicy"]):
         a = T.build_parser().parse_args(argv_p6(bank, str(td / "x"), extra=extra))
@@ -491,7 +540,7 @@ def chk_online_conflicts():
 
 def chk_default_flags_inert():
     """The new flags at their defaults are inert: a default-argv run == a run that names every new flag at its default value (losses AND the final model, bit for bit)."""
-    td = Path(tempfile.mkdtemp())
+    td = _mkdtemp()
     bank = make_bank(td)
     a = run_sub(argv_default(bank, str(td / "a")))
     b = run_sub(argv_default(bank, str(td / "b"), extra=["--yaw-wrap", "on", "--nav-mode", "goal", "--labeller", "bank"]))
@@ -569,7 +618,7 @@ def chk_gate_p6_rows():
     """The P6 levers' G-DVB rows, G-CLOCK bank check and G-LIVE terms/groups, read off the REAL built objects (BUILD + SMOKE captures), with regression arms."""
     import gate_checks as C
     import launch_gate as L
-    td = Path(tempfile.mkdtemp())
+    td = _mkdtemp()
     bank = make_bank(td)
     base = argv_p6(bank, str(td / "o"), steps=2, accum=1, extra=("--label-chunks", "2"))
     b_argv = C._set(C._drop(base, "--steps", 1), "--epochs", "1")
@@ -608,12 +657,26 @@ def chk_gate_p6_rows():
     shutil.rmtree(td, ignore_errors=True)
 
 
+def chk_tmp_cleanup():
+    """the temp-dir guarantee: a run that ends on an assert, with a file still open in its temp dir, leaves NO temp dir behind and names none as left"""
+    md = _mkdtemp(prefix="p6lev_marker_")
+    m = md / "probe.txt"
+    r = subprocess.run([sys.executable, str(Path(__file__).resolve()), "--tmp-leak-probe", str(m)], cwd=str(HERE), capture_output=True, text=True,
+                       encoding="utf-8", errors="replace", env=dict(os.environ, PYTHONIOENCODING="utf-8", TMPDIR=str(md), TEMP=str(md), TMP=str(md)))
+    ok(r.returncode != 0 and "TMPPROBE" in r.stderr, f"the probe must end on its own assert: rc {r.returncode}, stderr {r.stderr[-300:]!r}")
+    probe = Path(m.read_text(encoding="utf-8").strip())
+    ok(probe.name.startswith("p6lev_"), f"the probe's dir is a tracked one: {probe}")
+    ok(not probe.exists(), f"the probe's temp dir SURVIVED its failed run: {probe} (stderr {r.stderr[-300:]!r})")
+    ok("ZZTMP_LEFT" not in r.stderr, f"the cleanup named a dir it could not remove: {r.stderr[-300:]!r}")
+
+
 # ------------------------------------------------------------------------------------------------ the mutation harness
 CHECKS = {"wta_default_identity": chk_wta_default_identity, "yaw_analytic": chk_yaw_analytic, "nav_rule": chk_nav_rule,
           "command_model_reach": chk_command_model_reach, "ckpt_meta_nav_mode": chk_ckpt_meta_nav_mode, "identity_resume": chk_identity_resume,
           "profile_p6": chk_profile_p6, "online_conflicts": chk_online_conflicts, "default_flags_inert": chk_default_flags_inert,
           "trainer_reach_online": chk_trainer_reach_online, "score_only_grad": chk_score_only_grad, "deferred_bit_identity": chk_deferred_bit_identity,
-          "stale_label_refused": chk_stale_label_refused, "gate_judges": chk_gate_judges, "gate_p6_rows": chk_gate_p6_rows, "label_chunks": chk_label_chunks}
+          "stale_label_refused": chk_stale_label_refused, "gate_judges": chk_gate_judges, "gate_p6_rows": chk_gate_p6_rows, "label_chunks": chk_label_chunks,
+          "tmp_cleanup": chk_tmp_cleanup}
 
 # (file, old, new, the check that must go RED).  Each deletes/neutralises ONE emitting line.
 MUTATIONS = [
@@ -638,18 +701,20 @@ MUTATIONS = [
     ("online_labeller.py", 'labels[i, h["cuts"][c]] = r["labels"]', 'labels[i, h["cuts"][0]] = r["labels"]', "label_chunks"),
     ("gate_checks.py", 'if lab.get("chunks", 1) != chunks_launch:', 'if False:', "gate_judges"),
     ("launch_gate.py", '"--score-w": "0.1", "--label-chunks": "2"},', '"--score-w": "0.1"},', "profile_p6"),
+    # temp dirs (2026-11-13): without the exit hook a failed run's temp dir survives, so the probe check must go RED
+    ("test_p6_levers.py", "\natexit.register(_cleanup_tmp)\n", "\n", "tmp_cleanup"),
 ]
 
 
 def run_mutations() -> None:
     for fn, old, new, check in MUTATIONS:
-        td = Path(tempfile.mkdtemp(prefix="p6mut_"))
+        td = _mkdtemp(prefix="p6mut_")
         for f in HERE.glob("*.py"):
             shutil.copyfile(f, td / f.name)
         src = (td / fn).read_text(encoding="utf-8")
         ok(src.count(old) == 1, f"mutation target not found exactly once in {fn}: {old[:60]!r}")
         (td / fn).write_text(src.replace(old, new), encoding="utf-8", newline="\n")
-        env = dict(os.environ, PYTHONIOENCODING="utf-8")
+        env = dict(os.environ, PYTHONIOENCODING="utf-8", TMPDIR=str(td), TEMP=str(td), TMP=str(td))
         r = subprocess.run([sys.executable, str(td / "test_p6_levers.py"), "--check", check], cwd=str(td), env=env, capture_output=True, text=True,
                            encoding="utf-8", errors="replace")
         ok(r.returncode != 0, f"MUTATION SURVIVED: {fn}: {old[:60]!r} -> check {check} still passed")
@@ -658,6 +723,9 @@ def run_mutations() -> None:
 
 
 def main() -> int:
+    if "--tmp-leak-probe" in sys.argv:
+        _tmp_leak_probe(Path(sys.argv[sys.argv.index("--tmp-leak-probe") + 1]))
+        return 0
     if "--check" in sys.argv:
         name = sys.argv[sys.argv.index("--check") + 1]
         CHECKS[name]()
