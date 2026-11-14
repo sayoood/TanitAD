@@ -87,22 +87,40 @@ Pause timeouts (`vdac_pause_p7.sh`): HBC-s0 50,400 s (14 h, against ~11.1 h esti
 ## 8. The four metric families and the tier
 Tier: **T0-like perception** on banked navtrain H48 frames; never driving performance. LONGITUDINAL, LATERAL, TACTICAL: not computable at S1 (a mask head; n = 0); STRATEGIC: **PAUSED** (PI 2026-09-19, `PI_DECISION_QUEUE.md` item 25), not a pass, not omitted. The perception line reports IoU, near-boundary SDF MAE (HB-s0 1.436 m, HA-s0 1.630 m: the quantity the boundary weight targets), per city and per band, S1-P1 / S1-Q / S1-F, the paired deltas. The four families apply at S2. Information-disjointness is the A5 card's section 12 (vision only at inference; G19 through the copy).
 
-## 9. HC-s0 row (to be filled from the HC read before freeze)
-**PLACEHOLDER. Do not freeze with this section empty.** HC-s0 is training on the pod when this draft is written; its row is read under the A5 card with `manifest_a5_hc.json`. Fill, from `READ_HC.md` / `s1_read_v2.json`, and from nothing else:
+## 9. HC-s0 row (FILLED 2026-11-14 by the MM from the HC read and the HC-s0 chain logs)
+**Filled.** HC-s0 was read under the A5 card with `manifest_a5_hc.json` (filled manifest sha256 `cb147151…`, filled before any array was opened), using the frozen reader (`s1_read_v2.py` `796aea21…`).
+Sources:
+- `PK/raw/2026-11-09-scorer1p6-prereg/vdac/a5_read/hc_read/READ_HC.md` and its `out/s1_read_v2.json`, `out/hc_s1f_subset.json` (landed `33900a9f`);
+- for the cost and gate rows only, the chain logs banked on HF `vdac/hc-s0/` (`chain_hc-s0.log`, `sft.log`, `preflight.log`, `postgate.log`, `postgate_a2.log`).
+
+Evidence class MEASURED; single head seed; log-cluster bootstrap (n_boot 10,000, seed 20260927), 3,207 H48 frames over 45 log groups.
 
 | field | value |
 |---|---|
-| HC-s0 S1-P1 (2 m reference grid) [CI] | _ |
-| HC-s0 S1-Q (1 m mask) [CI] | _ |
-| HC-s0 S1-F lower bounds (on 1,705 frames? y/n) | _ |
-| C-SHUF (HC-SHUF) / C-FLIP | _ / _ |
-| paired HC-s0 minus HA-s0: P1, Q, X-LIFT | _ |
-| near-boundary SDF MAE, per band 0-20 / 20-40 / 40-72 m | _ |
-| A5 row HC-s0 read (X-GO / X-COMP / X-BOUND / X-LIFT / X-NULL / INVALID / NOT RUN) | _ |
-| HC-s0 measured cost (`s_per_microbatch`, wall L40-h) and `preflight_mem` peak | _ |
-| the post-training gate result for HC-s0 (the `--n-params` defect of section 3) | _ |
+| HC-s0 S1-P1 (2 m reference grid) [CI] | **0.7757** [0.7528, 0.7932]: fails 0.80 |
+| HC-s0 S1-Q (1 m mask) [CI] | **0.8346** [0.7919, 0.8751]: fails 0.90 |
+| HC-s0 S1-F lower bounds (on 1,705 frames? y/n) | P1 0.485, Q 0.164: both > 0, holds. **y**: the SFT-held-out subset (1,705 frames, 24 groups, the PREREG 7.5 fallback). The P1 term had 3,787 of 10,000 resamples undefined, which the wrapper reports. |
+| C-SHUF (HC-SHUF) / C-FLIP | 0.4447 (< 0.50, valid) / 0.7064 (< 0.80, valid) |
+| paired HC-s0 minus HA-s0: P1, Q, X-LIFT | P1 **−0.0045** [−0.0121, −0.0008] (separated, WRONG direction); Q +0.0013 [−0.0086, +0.0114] (not separated); X-LIFT **False** |
+| near-boundary SDF MAE | **1.241 m** overall (HA-s0 1.630, HB-s0 1.436). IoU per band 0–20 / 20–40 / 40–72 m: 0.811 / 0.740 / 0.649. READ_HC.md does not publish a per-band SDF MAE, so it is not quoted here. |
+| A5 row HC-s0 read | **X-NULL** |
+| HC-s0 measured cost | 10,000 updates, `s_per_update` **1.0630** (sft.log, last train event; batch 8 × accum 1, so this is also the per-microbatch figure). Train wall 17:59:27 → 21:10:06Z = **3.18 h**. Chain arm 17:30:07Z → chain end 21:10:08Z = 3.67 h (before the A2 completion). Preflight `gpu_mem_gb` 6.29 (preflight.log). |
+| post-training gate result (the `--n-params` defect of section 3) | The chain gate FAILED exactly as predicted: `ZZVDAC_POSTGATE_FAIL the Adam state covers 3423490 head parameters, the card's built head has 2440450` (21:10:08Z). It was completed WITHOUT retraining under amendment A2 (`422541f5…`, landed `45c5331f`): `postgate_a2` `ZZVDAC_POSTGATE_OK` at 3,423,490 head parameters, 10,000 steps. HC-SHUF then ran on the FIXED chain (`a469d4a5`) and its own post-gate passed at 3,423,490. |
 
-How the filled row enters, **committed now so it cannot be chosen after the data**: (1) if HC-s0 is X-GO, the S1b of HC-s0 takes priority over HBC in the pod queue and HBC stays a named successor (the A5 branch read: "only that arm continues"); (2) if HC-s0 is X-LIFT or X-BOUND, HBC runs as drafted; (3) if HC-s0 is X-NULL (no separated lift on either delta), the head-precision lever has no measured effect alone: HBC then tests the copy plus an inert lever, and the MM decides with the PI whether the pod time is better spent on HB at 20,000 updates (A5 X-LIFT row b) or on the agent check; this draft does not pre-decide that; (4) if HC-s0 is NOT RUN or INVALID, HBC's section 4 reference to HC-s0 is dropped and the contrast list reads HB-s0 and HA-s0 only, stated in the verdict row.
+How the filled row enters, **committed now so it cannot be chosen after the data**:
+1. If HC-s0 is X-GO, the S1b of HC-s0 takes priority over HBC in the pod queue, and HBC stays a named successor (the A5 branch read: "only that arm continues").
+2. If HC-s0 is X-LIFT or X-BOUND, HBC runs as drafted.
+3. If HC-s0 is X-NULL (no separated lift on either delta), the head-precision lever has no measured effect alone. HBC then tests the copy plus an inert lever, and the MM decides with the PI whether the pod time is better spent on HB at 20,000 updates (A5 X-LIFT row b) or on the agent check. This draft does not pre-decide that.
+4. If HC-s0 is NOT RUN or INVALID, HBC's section 4 reference to HC-s0 is dropped, and the contrast list reads HB-s0 and HA-s0 only, as stated in the verdict row.
+
+**Branch taken: (3).** HC-s0 is X-NULL. The decision therefore goes to the PI.
+
+**The MM's recommendation (a recommendation, not a ruling; the PI decides the pod time):** the agent check first, with the DAC pod line (HBC, or HB at 20,000 updates) held. Three MEASURED facts support it:
+- **S1-Q is flat across all three levers:** HA-s0 0.8332, HB-s0 0.8376, HC-s0 0.8346. No paired S1-Q delta is separated, and the true-field ceiling of the same metric is 0.9408. HBC combines one lever that did not move S1-Q with another that did not move S1-Q.
+- **On P6's navtrain held-out fit pack (1,705 sets, TRUE sub-scores, P6's own ranking), the oracle agent veto is worth +1.666 PDMS (NC+TTC) and the oracle DAC veto +0.636** (`PK/raw/2026-11-14-agent-check-feas/ceiling_fitpack.json`, re-computed by the MM with the canonical `sel_common.agg_torch` pick, `MM_VERIFY.md`). The agent term is the larger lever by 2.6×.
+- The agent check's first gate (S0-B, `PREREG_AGENT_CHECK_DRAFT.md` section 3) needs **no GPU and no pod time**, and is being built now.
+
+If the PI prefers to keep the DAC line moving in parallel, HBC as drafted (pair total about 13.4 L40-h, range 12.5 to 15.3, ESTIMATED, section 7) is the committed arm. The prior that it clears S1-Q is low, for the reason above, and that is disclosed here before any HBC data exists.
 
 ## 10. Freeze checklist (for the MM; nothing here is done)
-1. Fill section 9 and re-read sections 5 and 7 against it. 2. Pin the code by git blob (the A5 card's section 3 form) for every file in the hold's MANIFEST: `refe/launch_gate.py`, `refe/vdac_pod.sh`, `refe/vdac_chain.sh`, `refe/vdac_pause_p7.sh`, `refe/test_vdac_gate.py`, `refe/test_vdac_hbc.py`. 3. Run the tests of the MANIFEST on a clean export of the landed tree and the ~69 launch_gate-reading tests under `stack/tests` and `refe/` (a launch_gate edit moves profile fingerprints pinned elsewhere; the build agent ran the `refe/` set and could NOT run `test_launch_gate.py` past its data dependency, see the MANIFEST). 4. Ship the tree as a FRESH `/workspace/refe-plan-vdac` tree (A5 section 9.6) and the card's bytes into the data root (A5 section 9.7: the chain verifies the P6 card, A1 and A2 only). 5. Read HB-s0's batch-4 `preflight_mem` peak (section 6). 6. The PI's pod-time decision (section 7). 7. The reader manifest `manifest_a5_hbc.json` with the three ordered pairs, filled by `fill_manifest_sha.py` before any array is opened.
+1. ~~Fill section 9~~ DONE 2026-11-14 (branch (3), PI decision); re-read sections 5 and 7 against it. 2. Pin the code by git blob (the A5 card's section 3 form) for every file in the hold's MANIFEST: `refe/launch_gate.py`, `refe/vdac_pod.sh`, `refe/vdac_chain.sh`, `refe/vdac_pause_p7.sh`, `refe/test_vdac_gate.py`, `refe/test_vdac_hbc.py`. 3. Run the tests of the MANIFEST on a clean export of the landed tree and the ~69 launch_gate-reading tests under `stack/tests` and `refe/` (a launch_gate edit moves profile fingerprints pinned elsewhere; the build agent ran the `refe/` set and could NOT run `test_launch_gate.py` past its data dependency, see the MANIFEST). 4. Ship the tree as a FRESH `/workspace/refe-plan-vdac` tree (A5 section 9.6) and the card's bytes into the data root (A5 section 9.7: the chain verifies the P6 card, A1 and A2 only). 5. Read HB-s0's batch-4 `preflight_mem` peak (section 6). 6. The PI's pod-time decision (section 7). 7. The reader manifest `manifest_a5_hbc.json` with the three ordered pairs, filled by `fill_manifest_sha.py` before any array is opened.
