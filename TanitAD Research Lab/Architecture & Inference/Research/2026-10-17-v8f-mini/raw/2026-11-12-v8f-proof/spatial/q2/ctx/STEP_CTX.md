@@ -9,6 +9,7 @@ Ratio of summed squared errors over the held-out windows, predictor over copy; b
 * G_s1: {"s1_copy_over_copy_is_1": true, "s2_shuffle_keeps_point": true}
 * W_s0: {"s1_copy_over_copy_is_1": true, "s2_shuffle_keeps_point": true}
 * P_s0: {"s1_copy_over_copy_is_1": true, "s2_shuffle_keeps_point": true}
+* P_s1: {"s1_copy_over_copy_is_1": true, "s2_shuffle_keeps_point": true}
 * ALL_PASS: True
 
 | arm | windows | one step, context 1 | one step, context 3 | +2.0 s from frame 0, context 1 | +2.0 s from frame 4, context 1 | +2.0 s from frame 4, true history |
@@ -17,5 +18,6 @@ Ratio of summed squared errors over the held-out windows, predictor over copy; b
 | G_s1 | 1948 | 1.254 [1.197, 1.317] | 1.238 [1.181, 1.302] | 0.951 [0.895, 1.013] | 0.945 [0.889, 1.007] | 0.900 [0.850, 0.956] |
 | W_s0 | 1948 | 1.026 [1.013, 1.042] | 0.974 [0.956, 0.992] | 1.156 [1.084, 1.230] | 1.166 [1.092, 1.243] | 1.031 [0.975, 1.090] |
 | P_s0 | 1948 | 0.788 [0.770, 0.807] | 0.720 [0.705, 0.737] | 0.782 [0.745, 0.821] | 0.780 [0.742, 0.819] | 0.695 [0.667, 0.724] |
+| P_s1 | 1948 | 0.796 [0.779, 0.814] | 0.731 [0.717, 0.746] | 0.775 [0.739, 0.812] | 0.772 [0.736, 0.810] | 0.702 [0.675, 0.731] |
 
 Limits: held-out windows only; a ratio below 1 at +2.0 s is also what a shrinkage toward the mean state gives; one checkpoint per arm and seed.
