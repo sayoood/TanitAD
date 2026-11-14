@@ -1,0 +1,878 @@
+diff --git a/stack/tanitad/models/hjepa.py b/stack/tanitad/models/hjepa.py
+--- a/stack/tanitad/models/hjepa.py
++++ b/stack/tanitad/models/hjepa.py
+@@ -26,6 +26,7 @@
+                                teacher-forced one-step loss (Eq. 2).
+ * :class:`CellCausalPredictor` -- PREREG_V8F_PROOF_ADD16: the same interface as CausalPredictor, but the state is a grid
+                                of cells; attention across the cells of one step, then causal attention across time per cell.
++* :class:`ResidualPredictor` -- MOTION lever A: a thin wrapper that makes a level-1 predictor return ``z_ctx + f(z_ctx, a_ctx)`` for every caller.
+ * :class:`HJEPAStack`       -- the levels, the end-to-end loss (Eq. 3 + Eq. 8), autoregressive
+                                rollout, goal cost, candidate scoring (Eq. 5), the top-down
+                                gradient planner (Eqs. 4-6, K_{l+1} = 1) and two diagnostics:
+@@ -58,7 +59,7 @@
+ from torch import Tensor, nn
+ 
+ __all__ = [
+-    "SIGReg", "IDMHead", "LevelEncoder", "MacroActionEncoder", "CausalPredictor", "CellCausalPredictor",
++    "SIGReg", "IDMHead", "LevelEncoder", "MacroActionEncoder", "CausalPredictor", "CellCausalPredictor", "ResidualPredictor",
+     "LevelConfig", "HJEPAEncoding", "PlanResult", "HJEPAStack",
+     "rho_within_episode", "donor_indices", "monotonicity", "param_grad_report",
+     "dead_parameters",
+@@ -503,6 +504,41 @@
+         return y.reshape(b, L, n * self.cell_dim)
+ 
+ 
++class ResidualPredictor(nn.Module):
++    """MOTION lever A (``--wm-l1-residual on``): ``forward(z_ctx, a_ctx) = z_ctx + f(z_ctx, a_ctx)`` at EVERY position, for either predictor kind.
++
++    ``f`` is the wrapped predictor (``self.inner``); its LAST output layer is zero-initialised here, so at initialisation the predictor equals
++    the copy of the input state exactly (``z + 0.0 == z``). Every caller that reads ``stack.predictors[0]`` (``_pred_loss``, ``rollout``, the planner,
++    readers outside this file) gets the skip without knowing: the wrapper exposes ``context``, ``latent_dim``, ``action_dim`` and, by fall-through,
++    every other attribute of the wrapped module (``in_proj``, ``n_cells``, ``cell_dim``, ...). It is built ONLY when the lever is on: with the lever off
++    there is no wrapper and the state-dict keys are those of the tree before this lever.
++    """
++
++    def __init__(self, inner: nn.Module):
++        super().__init__()
++        out = getattr(inner, "out", None)
++        if not (isinstance(out, nn.Sequential) and isinstance(out[-1], nn.Linear)):
++            raise ValueError("ResidualPredictor needs a predictor whose last output layer is out[-1] (nn.Linear)")
++        if getattr(inner, "residual", False):
++            raise ValueError("the wrapped predictor already has its own skip (residual=True)")
++        self.inner = inner
++        self.latent_dim, self.action_dim, self.context = inner.latent_dim, inner.action_dim, inner.context
++        nn.init.zeros_(out[-1].weight)
++        nn.init.zeros_(out[-1].bias)
++
++    def __getattr__(self, name):
++        try:
++            return super().__getattr__(name)
++        except AttributeError:
++            inner = self.__dict__.get("_modules", {}).get("inner")
++            if inner is None:
++                raise
++            return getattr(inner, name)
++
++    def forward(self, z_ctx: Tensor, a_ctx: Tensor) -> Tensor:
++        return z_ctx + self.inner(z_ctx, a_ctx)
++
++
+ # =============================================================================================
+ # The stack
+ # =============================================================================================
+@@ -540,6 +576,9 @@
+     pred_kind: str = "flat"          # PREREG_V8F_PROOF_ADD16: flat (CausalPredictor, every earlier arm) | cell (CellCausalPredictor: latent_dim = pred_cells x pred_cell_dim)
+     pred_cells: int = 0              # cell kind only: number of cells of the state
+     pred_cell_dim: int = 0           # cell kind only: numbers per cell
++    pred_residual: bool = False      # MOTION lever A, LEVEL 1 ONLY: the predictor returns z_ctx + f(z_ctx, a_ctx) (ResidualPredictor, last layer zero-initialised); False = no wrapper = every earlier arm
++    roll_k: int = 0                  # MOTION lever B, LEVEL 1 ONLY: K, the rollout length of the multi-step term roll/L1; 0 = off (the term is not built, not in the loss, no key). Otherwise K >= 2 and roll_weight > 0
++    roll_weight: float = 0.0         # MOTION lever B: W, the weight of roll/L1 in the level-1 loss (0.0 exactly when roll_k is 0)
+     context: int = 3
+     adaln_init: str = "identity_gate"
+     idm_hidden: int = 256
+@@ -590,6 +629,11 @@
+         self.cfg: list[LevelConfig] = list(levels)
+         self.pred_reduction = pred_reduction
+         L = len(self.cfg)
++        for lv, c in enumerate(self.cfg, start=1):          # MOTION: the two levers live at level 1 and only there
++            if lv >= 2 and (c.pred_residual or c.roll_k or c.roll_weight):
++                raise ValueError(f"level {lv}: pred_residual / roll_k / roll_weight are level-1 levers")
++            if not ((c.roll_k == 0 and c.roll_weight == 0.0) or (c.roll_k >= 2 and c.roll_weight > 0.0 and math.isfinite(c.roll_weight))):
++                raise ValueError(f"level {lv}: roll_k {c.roll_k} / roll_weight {c.roll_weight}: need (0, 0.0) or (K >= 2, W > 0)")
+         for lv, c in enumerate(self.cfg[1:], start=2):
+             if c.stride < 1 or c.window < 1:
+                 raise ValueError(f"level {lv}: stride/window must be >= 1")
+@@ -628,6 +672,10 @@
+                                              c.pred_dropout, c.adaln_init))
+             else:
+                 raise ValueError(f"level {lv}: pred_kind must be flat|cell, got {c.pred_kind!r}")
++        if c1.pred_residual:                                                  # MOTION lever A: wrap AFTER the predictor's own draws (the RNG stream is the unwrapped model's), zero the last layer
++            if predictor_overrides and 1 in predictor_overrides:
++                raise ValueError("pred_residual with a predictor override at level 1 is not supported")
++            preds[0] = ResidualPredictor(preds[0])
+         self.predictors = nn.ModuleList(preds)
+         self.idm_heads = nn.ModuleList([
+             IDMHead(c.latent_dim, c.action_dim, c.idm_hidden) for c in self.cfg])
+@@ -794,7 +842,7 @@
+         return total / max(count, 1)
+ 
+     def loss(self, z1_seq: Tensor, a_seq: Tensor, *, generator: Optional[torch.Generator] = None,
+-             detach_target: bool = False) -> dict:
++             detach_target: bool = False, diag: bool = False) -> dict:
+         """End-to-end objective ``sum_l [ L_pred + beta_l SIGReg(Z^l) + gamma_l L_idm ]`` (Eq. 3
+         and Eq. 8) plus ``act_sigreg_l SIGReg(A^l)`` for l >= 2.
+ 
+@@ -815,6 +863,19 @@
+             idm = self.idm_heads[lv - 1].loss(z, enc.idm_target[lv - 1])
+             level_loss = pred + c.beta * sg + c.gamma * idm
+             out[f"pred/L{lv}"], out[f"sigreg/L{lv}"], out[f"idm/L{lv}"] = pred, sg, idm
++            if lv == 1 and c.roll_k > 0:                                    # MOTION lever B: the K-step rollout term, targets detached, the start state keeps its graph
++                roll = self._roll_loss(z, a, c.roll_k)
++                out["roll/L1"] = roll
++                level_loss = level_loss + c.roll_weight * roll              # <- the line the m5 mutation test guards: deleting it makes total(W) - total(0) read 0.0
++            if lv == 1 and diag:                                            # MOTION diagnostics: no graph, no effect on the loss
++                with torch.no_grad():
++                    cp = (z[:, :-1] - z[:, 1:]).pow(2)
++                    out["diag/copy_L1"] = (cp.mean(dim=-1) if self.pred_reduction == "mean" else cp.sum(dim=-1)).mean()
++                    if c.roll_k > 0:
++                        rp, rt, rs = self.roll_pairs(z.detach(), a.detach(), c.roll_k)
++                        z0 = torch.stack([z.detach()[:, s] for s in rs], dim=0)[:, :, None]
++                        rc = (z0 - rt).pow(2)
++                        out["diag/roll_copy_L1"] = (rc.mean(dim=-1) if self.pred_reduction == "mean" else rc.sum(dim=-1)).mean()
+             if lv >= 2:
+                 asg = self.sigreg(a.transpose(0, 1), generator=generator)
+                 out[f"act_sigreg/L{lv}"] = asg
+@@ -850,14 +911,42 @@
+                 raise ValueError(f"z0 {tuple(z0.shape)} must be (D,) or match actions' leading dims {tuple(lead)}")
+             z = z0.reshape(n, -1)
+         e = self.act_embed(a) if level == 1 else a
++        out = self._roll_embedded(pred, z, e, context)
++        return out.reshape(*lead, h_, out.shape[-1])
++
++    @staticmethod
++    def _roll_embedded(pred: nn.Module, z: Tensor, e: Tensor, context: int) -> Tensor:
++        """The autoregressive core of :meth:`rollout`: ``z`` ``(n, D)``, ``e`` ``(n, H, E)`` EMBEDDED actions -> ``(n, H, D)``. ONE function for the read-time rollout and
++        the MOTION roll loss (the context grows from one state up to ``context``, then slides)."""
+         zs = [z]
+-        for h in range(h_):
++        for h in range(e.shape[1]):
+             lo = max(0, h + 1 - context)
+             zc = torch.stack(zs[lo:h + 1], dim=1)
+             nxt = pred(zc, e[:, lo:h + 1])[:, -1]
+             zs.append(nxt)
+-        out = torch.stack(zs[1:], dim=1)
+-        return out.reshape(*lead, h_, out.shape[-1])
++        return torch.stack(zs[1:], dim=1)
++
++    def roll_pairs(self, z: Tensor, a: Tensor, k: int):
++        """MOTION lever B: roll the level-1 predictor ``k`` steps from the single state ``z[:, s]`` for every start ``s in range(0, T - k, 2)``.
++        ``z`` ``(B, T, D)`` states, ``a`` ``(B, T-1, E)`` EMBEDDED level-1 actions (what :meth:`_pred_loss` receives). Each start is its own call of the shared
++        rollout core (the shapes :meth:`rollout` sees), the context is the predictor's own (what ``rollout(1, ..., context=<predictor context>)`` uses at read time).
++        Returns ``(pred, tgt, starts)``: ``pred`` ``(S, B, k, D)`` keeps the graph (the start state too), ``tgt = z[:, s+1 : s+k+1]`` is DETACHED."""
++        t_ = z.shape[1]
++        if k < 2 or k > t_ - 1:
++            raise ValueError(f"roll_k {k} does not fit a sequence of {t_} states (need 2 <= K <= T - 1)")
++        pred = self.predictors[0]
++        ctx = getattr(pred, "context", None) or k
++        starts = list(range(0, t_ - k, 2))
++        out = torch.stack([self._roll_embedded(pred, z[:, s], a[:, s:s + k], ctx) for s in starts], dim=0)     # one call per start, exactly the shapes rollout() sees (stacking the starts on the batch axis moves the result by ~2e-6)
++        tgt = torch.stack([z[:, s + 1:s + k + 1] for s in starts], dim=0).detach()
++        return out, tgt, starts
++
++    def _roll_loss(self, z: Tensor, a: Tensor, k: int) -> Tensor:
++        """``roll/L1``: mean over starts, steps and batch of the squared error of the K-step rollout, the width reduced as in :meth:`_pred_loss`."""
++        out, tgt, _ = self.roll_pairs(z, a, k)
++        sq = (out - tgt).pow(2)
++        per = sq.mean(dim=-1) if self.pred_reduction == "mean" else sq.sum(dim=-1)
++        return per.mean()
+ 
+     def goal_cost(self, z_pred: Tensor, goal: Tensor, level: int, last_k: Optional[int] = None) -> Tensor:
+         """Squared Euclidean distance of the final predicted state(s) to ``goal`` (Eq. 4).
+diff --git a/stack/tanitad/models/v8f_mini.py b/stack/tanitad/models/v8f_mini.py
+--- a/stack/tanitad/models/v8f_mini.py
++++ b/stack/tanitad/models/v8f_mini.py
+@@ -159,6 +159,10 @@
+ STOPAUX_KEY_PREFIXES = ("stop_head.", "stop_pres_head.")
+ WM_STATE_MODES = ("mean", "grid")                        # PREREG_V8F_PROOF_ADD12 (SPATIAL): the level-1 state of the world-model auxiliary: mean = the mean of the adapter tokens (today), grid = one projection per cell, concatenated
+ WM_L1_PRED_MODES = ("flat", "cell")                      # PREREG_V8F_PROOF_ADD16 (CELLPRED): the level-1 predictor of the WM stack: flat (CausalPredictor, every earlier arm) | cell (CellCausalPredictor: attention across cells and time; needs wm_state grid)
++WM_RESIDUAL_MODES = ("off", "on")                         # MOTION lever A (--wm-l1-residual): the level-1 predictor returns z + f(z, a) (ResidualPredictor, last layer zero-initialised)
++WM_DIAG_MODES = ("off", "on")                             # MOTION diagnostics (--wm-l1-diag): extra train-log keys, no effect on the loss
++#: MOTION config fields and their defaults: a checkpoint records one ONLY when it differs from the default (every earlier checkpoint keeps its key set and loads bit for bit; an absent key = the default)
++MOTION_CFG_DEFAULTS = {"wm_l1_residual": "off", "wm_l1_roll_k": 0, "w_wm_roll": 0.0, "wm_l1_diag": "off"}
+ WM_CELL_PRED_WIDTH = 128                                  # the cell predictor's token width (depth 2, 4 heads; PREREG_V8F_PROOF_ADD16 section 3)
+ L1PRED_CFG_FIELDS = ("wm_l1_pred",)                       # recorded in a checkpoint's cfg ONLY when wm_l1_pred is cell (every earlier checkpoint keeps its key set and loads bit for bit)
+ WM_UPPER_DIM = 128                                        # levels 2 and 3 of the WM stack keep this width whatever the level-1 state width is
+@@ -212,6 +216,10 @@
+     wm_state: str = "mean"             # PREREG_V8F_PROOF_ADD12: mean | grid
+     wm_cell_dim: int = 16              # grid state: numbers per cell (level-1 state width = n_tok x wm_cell_dim)
+     wm_l1_pred: str = "flat"           # PREREG_V8F_PROOF_ADD16: flat | cell (level-1 predictor attends across the cells of the grid state and across time; needs wm_state grid)
++    wm_l1_residual: str = "off"        # MOTION lever A: off | on (level-1 predictor = z + f(z, a), last layer zero-initialised: at init it equals the copy exactly)
++    wm_l1_roll_k: int = 0              # MOTION lever B: K, rollout length of the multi-step level-1 term (0 = off; else K >= 2 and K <= hmax - 1)
++    w_wm_roll: float = 0.0             # MOTION lever B: W, the weight of roll/L1 in the level-1 loss (0.0 exactly when K is 0; > 0 when K >= 2)
++    wm_l1_diag: str = "off"            # MOTION diagnostics: on = the train-log record gains wm_pred_l1, wm_copy_l1 (+ wm_roll_l1, wm_roll_copy_l1 when K > 0); the loss is unchanged
+     wm_strides: tuple = (2, 2)
+     w_ckpt: float = 1.0
+     w_tac: float = 1.0
+@@ -288,6 +296,20 @@
+             raise ValueError("wm_l1_pred cell needs the world-model auxiliary (wm a or b): with wm off there is no level-1 predictor")
+         if self.wm_l1_pred == "cell" and self.wm_state != "grid":
+             raise ValueError("wm_l1_pred cell needs wm_state grid: a mean state has no cells for the predictor to attend across")
++        if self.wm_l1_residual not in WM_RESIDUAL_MODES:
++            raise ValueError(f"wm_l1_residual must be one of {WM_RESIDUAL_MODES}, got {self.wm_l1_residual!r}")
++        if self.wm_l1_diag not in WM_DIAG_MODES:
++            raise ValueError(f"wm_l1_diag must be one of {WM_DIAG_MODES}, got {self.wm_l1_diag!r}")
++        if not (isinstance(self.wm_l1_roll_k, int) and not isinstance(self.wm_l1_roll_k, bool) and self.wm_l1_roll_k >= 0):
++            raise ValueError(f"wm_l1_roll_k must be an integer >= 0, got {self.wm_l1_roll_k!r}")
++        if not (math.isfinite(self.w_wm_roll) and self.w_wm_roll >= 0.0):
++            raise ValueError(f"w_wm_roll must be a finite number >= 0, got {self.w_wm_roll!r}")
++        if not ((self.wm_l1_roll_k == 0 and self.w_wm_roll == 0.0) or (self.wm_l1_roll_k >= 2 and self.w_wm_roll > 0.0)):
++            raise ValueError(f"wm_l1_roll_k {self.wm_l1_roll_k} and w_wm_roll {self.w_wm_roll}: need K = 0 with W = 0.0 (off) or K >= 2 with W > 0 (a rollout term with no weight, or a weight with no rollout, is a lever that does nothing)")
++        if self.wm == "off" and (self.wm_l1_residual != "off" or self.wm_l1_roll_k != 0 or self.wm_l1_diag != "off"):
++            raise ValueError("wm_l1_residual / wm_l1_roll_k / wm_l1_diag need the world-model auxiliary (wm a or b): with wm off there is no level-1 predictor")
++        if self.wm_l1_roll_k > self.hmax - 1:
++            raise ValueError(f"wm_l1_roll_k {self.wm_l1_roll_k} does not fit the training sequence: the WM sees hmax = {self.hmax} frames, so K <= {self.hmax - 1}")
+         if self.cons_absent not in ("mask", "zero"):
+             raise ValueError(f"cons_absent must be mask|zero, got {self.cons_absent!r}")
+         if self.code_mix not in CODE_MIX_MODES:
+@@ -717,10 +739,15 @@
+         # PREREG_V8F_PROOF_ADD12: level 1 has the state width cfg.wm_l1_dim (128 today) and its own predictor width; levels 2 and 3 keep WM_UPPER_DIM / 128. At the defaults every number is the tip's.
+         up = WM_UPPER_DIM
+         kind = dict(pred_kind="cell", pred_cells=cfg.n_tok, pred_cell_dim=cfg.wm_cell_dim) if cfg.wm_l1_pred == "cell" else {}     # PREREG_V8F_PROOF_ADD16: flat = no extra argument = today's LevelConfig
++        if cfg.wm_l1_residual == "on":                                  # MOTION lever A: absent argument = today's LevelConfig
++            kind["pred_residual"] = True
++        if cfg.wm_l1_roll_k > 0:                                        # MOTION lever B
++            kind["roll_k"], kind["roll_weight"] = cfg.wm_l1_roll_k, cfg.w_wm_roll
+         lv = [mk(latent_dim=cfg.wm_l1_dim, pred_width=cfg.wm_l1_pred_width, action_dim=2, act_embed_dim=32, **kind),
+               mk(latent_dim=up, pred_width=128, action_dim=32, stride=cfg.wm_strides[0]),
+               mk(latent_dim=up, pred_width=128, action_dim=32, stride=cfg.wm_strides[1])]
+         self.stack = HJEPAStack(lv, sigreg_projections=256)
++        self.diag = cfg.wm_l1_diag == "on"                                # MOTION diagnostics: read by forward
+         self.state_mode = cfg.wm_state
+         self.n_tok = cfg.n_tok
+         # mean: LayerNorm + Linear(d, wm_dim) on the mean token (today); grid: the SAME shape of module with the output width wm_cell_dim, applied to EVERY cell
+@@ -760,10 +787,20 @@
+         (cell: ``in_proj`` takes ``latent_dim / n_cells`` numbers), never from the config; ``cross_cell`` is behavioural (changing ONE cell of the input
+         moves the prediction of the other cells; a dense flat map moves them too, so it does not by itself tell the kinds apart). ``params_flat_ref`` = the
+         parameter count of the flat predictor that this state width would get today (the c2 bound). Fixed generator: the global RNG stream is not touched."""
+-        from tanitad.models.hjepa import CausalPredictor, CellCausalPredictor
+-        pred = self.stack.predictors[0]
++        import copy
++        from tanitad.models.hjepa import CausalPredictor, CellCausalPredictor, ResidualPredictor
++        top = self.stack.predictors[0]
++        wrapped = isinstance(top, ResidualPredictor)                  # MOTION lever A: the kind is read from the wrapped module; the wrapper adds no parameters
++        pred = top.inner if wrapped else top
+         n = lambda m: int(sum(p.numel() for p in m.parameters()))   # noqa: E731
+         dev = next(pred.parameters()).device
++        probe = pred
++        if wrapped:                                                  # the last layer of a residual predictor is ZERO at init: probe a copy whose last layer is a fixed non-zero map, so cross_cell reads the trunk
++            probe = copy.deepcopy(pred)
++            gg = torch.Generator().manual_seed(99)
++            last = probe.out[-1]
++            with torch.no_grad():
++                last.weight.copy_(torch.randn(last.weight.shape, generator=gg).to(dev) * 0.5)
+         g = torch.Generator().manual_seed(4321)
+         z = torch.randn(1, 1, pred.latent_dim, generator=g).to(dev)
+         a = torch.randn(1, 1, pred.action_dim, generator=g).to(dev)
+@@ -773,7 +810,7 @@
+         was = self.training
+         self.eval()
+         try:
+-            d = (pred(z, a) - pred(z2, a))[..., cw:].abs().max()
++            d = (probe(z, a) - probe(z2, a))[..., cw:].abs().max()
+         finally:
+             self.train(was)
+         in_f = int(pred.in_proj.weight.shape[1])
+@@ -785,7 +822,7 @@
+             kind = f"other:{type(pred).__name__}"
+         w_flat = 128 if pred.latent_dim == 128 else 256
+         ref = CausalPredictor(pred.latent_dim, pred.action_dim, w_flat, 2, 4, None, pred.context)
+-        return {"kind": kind, "cross_cell": bool(d > 1e-7), "params": n(pred), "params_flat_ref": n(ref)}
++        return {"kind": kind, "cross_cell": bool(d > 1e-7), "params": n(pred), "params_flat_ref": n(ref), "residual": "on" if wrapped else "off"}
+ 
+     def scale_actions(self, act: Tensor) -> Tensor:
+         """Raw action channels ``act`` [..., 2] = (a [m/s^2], ch1) -> the WM's action units. ch1 = the recorded steer (kin_mode steer) or
+@@ -795,6 +832,8 @@
+     def forward(self, adapt: Tensor, act: Tensor) -> dict:
+         z1 = self.z1(adapt)                                                     # [B, F, D]
+         a = self.scale_actions(act)[:, :-1]                                     # action of the transition j -> j+1
++        if self.diag:                                                           # MOTION diagnostics: extra no-grad keys only, the terms and the total are the same
++            return self.stack.loss(z1, a, diag=True)
+         return self.stack.loss(z1, a)
+ 
+ 
+@@ -1191,6 +1230,12 @@
+         if self.wm is not None:
+             wm = self.wm(out["adapt"], batch["act"])
+             T["wm"] = wm["total"]
++            if cfg.wm_l1_roll_k > 0:
++                T["wm_roll"] = wm["roll/L1"].detach()                       # MOTION lever B: the rollout term, logged (and required by G-LIVE) whenever it is declared; it is inside T["wm"] already
++            if cfg.wm_l1_diag == "on":                                      # MOTION diagnostics: logged only, detached, not in the total
++                T["wm_pred_l1"], T["wm_copy_l1"] = wm["pred/L1"].detach(), wm["diag/copy_L1"]
++                if cfg.wm_l1_roll_k > 0:
++                    T["wm_roll_l1"], T["wm_roll_copy_l1"] = wm["roll/L1"].detach(), wm["diag/roll_copy_L1"]
+         total = (cfg.w_ckpt * T["ckpt"] + cfg.w_tac * (T["goal"] + 0.5 * (T["lat"] + T["lon"]) + cfg.w_cons * T["cons"])
+                  + cfg.w_traj * (T["ade"] / 3.0 + 0.5 * T["fde"] / 6.0))
+         total = total + cfg.w_acc * T["acc"] if cfg.w_acc > 0.0 else total          # PREREG_V8F_OACC: ONE line (a mutation deletes it); w_acc 0 adds nothing: B's total, bit for bit
+@@ -1265,12 +1310,17 @@
+             lv["wm_l1_dim"] = int(self.wm.stack.cfg[0].latent_dim)
+             lv["wm_l1_pred_width"] = int(self.wm.stack.predictors[0].in_proj.weight.shape[0])
+             lv["wm_upper_dims"] = [int(c.latent_dim) for c in self.wm.stack.cfg[1:]]
++            from tanitad.models import hjepa as _hj
+             pp = self.wm.probe_pred()                                  # PREREG_V8F_PROOF_ADD16: read from the BUILT level-1 predictor (class, per-cell embedding, behaviour), not from the flag
+             lv["wm_l1_pred"] = pp["kind"]
+             lv["wm_l1_pred_params"] = pp["params"]
+             lv["wm_l1_pred_params_flat_ref"] = pp["params_flat_ref"]
+             lv["wm_l1_pred_params_le_flat"] = bool(pp["params"] <= pp["params_flat_ref"])
+             lv["wm_l1_pred_cross_cell"] = pp["cross_cell"]
++            lv["wm_l1_residual"] = "on" if isinstance(self.wm.stack.predictors[0], _hj.ResidualPredictor) else "off"      # MOTION lever A: read from the BUILT predictor module (is it the residual wrapper?)
++            lv["wm_l1_roll_k"] = int(self.wm.stack.cfg[0].roll_k)       # MOTION lever B: the K and the W the stack's loss reads (HJEPAStack.loss reads cfg[0].roll_k / .roll_weight)
++            lv["w_wm_roll"] = float(self.wm.stack.cfg[0].roll_weight)
++            lv["wm_l1_diag"] = "on" if self.wm.diag else "off"
+             lv["wm_cell_dim"] = int(self.wm.proj[1].out_features) if pr["location_sensitive"] else None
+             lv["wm_dim"] = int(self.wm.proj[1].out_features) if not pr["location_sensitive"] else None
+         if self.lvl_head is not None:                                      # PREREG_V8F_LEVEL: present ONLY with the head built (a flag-off model keeps its key set); the gate reads built.get("level_head", "off")
+diff --git a/stack/scripts/v8f_mini_train.py b/stack/scripts/v8f_mini_train.py
+--- a/stack/scripts/v8f_mini_train.py
++++ b/stack/scripts/v8f_mini_train.py
+@@ -69,6 +69,7 @@
+     "arm": "lever:arm", "navonly": "lever:navonly", "no_consistency": "lever:consistency", "wm": "lever:wm",
+     # PREREG_V8F_PROOF_ADD12 (SPATIAL): argv -> make_config -> the BUILT config AND the BUILT model (built_levers: z1's measured width and location sensitivity, the stack's level-1 width and predictor width) -> declared_vs_built (bad_wm_state)
+     "wm_state": "lever:wm_state", "wm_cell_dim": "cfg:wm_cell_dim", "wm_dim": "cfg:wm_dim",
++    "wm_l1_residual": "lever:wm_l1_residual", "wm_l1_roll_k": "lever:wm_l1_roll_k", "w_wm_roll": "lever:w_wm_roll", "wm_l1_diag": "lever:wm_l1_diag",   # MOTION: read back from the BUILT predictor module / the stack's loss config, see bad_wm_state
+     "wm_l1_pred": "lever:wm_l1_pred",         # PREREG_V8F_PROOF_ADD16 (CELLPRED): read back from the BUILT level-1 predictor (class + per-cell embedding), see bad_wm_state
+     "cache_dir": "path", "out": "path", "v9_train": "path", "v9_train_md5": "data:v9_md5", "speed_train": "path",
+     "lead_train": "path", "join_train": "path", "p10": "path", "grid": "cfg:grid",
+@@ -138,6 +139,13 @@
+     ap.add_argument("--wm-cell-dim", dest="wm_cell_dim", type=int, default=16, help="grid state: numbers per cell (default 16: 40 cells -> 640)")
+     ap.add_argument("--wm-l1-pred", dest="wm_l1_pred", choices=M.WM_L1_PRED_MODES, default="flat",
+                     help="PREREG_V8F_PROOF_ADD16: level-1 predictor of the WM auxiliary. flat (default, every earlier arm bit for bit) = one linear map takes the whole state into one token; cell = attention across the cells of one step and across time (needs --wm-state grid)")
++    ap.add_argument("--wm-l1-residual", dest="wm_l1_residual", choices=M.WM_RESIDUAL_MODES, default="off",
++                    help="MOTION lever A: level-1 predictor of the WM auxiliary returns z + f(z, a) (last output layer zero-initialised, so at init it equals the copy of the state). off (default) = every earlier arm bit for bit")
++    ap.add_argument("--wm-l1-roll-k", dest="wm_l1_roll_k", type=int, default=0,
++                    help="MOTION lever B: K, the rollout length of the multi-step level-1 term (rolled from one state under the level-1 actions, context growing to the predictor context, targets detached). 0 (default) = off; else K >= 2, K <= hmax - 1, with --w-wm-roll > 0")
++    ap.add_argument("--w-wm-roll", dest="w_wm_roll", type=float, default=0.0, help="MOTION lever B: W, the weight of roll/L1 in the level-1 loss (0.0 exactly when --wm-l1-roll-k is 0)")
++    ap.add_argument("--wm-l1-diag", dest="wm_l1_diag", choices=M.WM_DIAG_MODES, default="off",
++                    help="MOTION diagnostics: on = the train log gains wm_pred_l1, wm_copy_l1 (+ wm_roll_l1, wm_roll_copy_l1 when K > 0), computed without a graph; the loss is unchanged. off (default) adds no key")
+     ap.add_argument("--wm-dim", dest="wm_dim", type=int, default=128, help="mean state: level-1 state width (default 128; 640 = the capacity control of PREREG_V8F_PROOF_ADD12)")
+     ap.add_argument("--cons-absent", choices=("mask", "zero"), default=None,
+                     help="override (PREREG_V8F_CZ): mask = an absent constraint is out of T's loss (every arm but M2b-cz); zero = T's "
+@@ -342,7 +350,7 @@
+     lv = declared_levers(a)
+     hmax = a.hmax or (16 if lv["wm"] != "off" else 10)
+     return M.V8FMiniConfig(d=a.d, ff=2 * a.d, hist=a.hist, hmax=hmax, window_start=a.window_start, n_q=a.n_q, nb=a.nb, navonly=lv["navonly"],
+-                           consistency=lv["consistency"], wm=lv["wm"], wm_state=a.wm_state, wm_cell_dim=a.wm_cell_dim, wm_l1_pred=a.wm_l1_pred, wm_dim=a.wm_dim, n_tok=40 if a.grid == "pool4x10" else 160,
++                           consistency=lv["consistency"], wm=lv["wm"], wm_state=a.wm_state, wm_cell_dim=a.wm_cell_dim, wm_l1_pred=a.wm_l1_pred, wm_l1_residual=a.wm_l1_residual, wm_l1_roll_k=a.wm_l1_roll_k, w_wm_roll=a.w_wm_roll, wm_l1_diag=a.wm_l1_diag, wm_dim=a.wm_dim, n_tok=40 if a.grid == "pool4x10" else 160,
+                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
+                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm,
+                            detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, launch_intent_w=a.launch_intent_w, goal_pos_weight_stop=a.goal_pos_weight_stop, lon_class_weight_stop=a.lon_class_weight_stop,
+@@ -683,7 +691,7 @@
+ #: the architecture-defining fields of V8FMiniConfig: a checkpoint may start a fine-tune only for a model of THIS shape and wiring (the training levers -- w_*, p_gt_*, code_mix, o_interface, cons_absent,
+ #: consistency, detach_upper -- may differ: a fine-tune moves them on purpose)
+ INIT_CKPT_MATCH = ("d", "heads", "ff", "d_feat", "n_tok", "hist", "hmax", "n_q", "depth_s", "depth_t", "depth_o", "nb", "res_scale_m", "navonly", "wm", "wm_dim", "wm_strides", "wm_beta", "wm_gamma",
+-                   "wm_state", "wm_cell_dim", "wm_l1_pred",        # PREREG_V8F_PROOF_ADD12 / ADD16 (an absent wm_l1_pred is flat): a checkpoint without the keys is a mean-state one (defaults supplied below), so a grid argv cannot start from it nor the reverse
++                   "wm_state", "wm_cell_dim", "wm_l1_pred", "wm_l1_residual", "wm_l1_roll_k", "w_wm_roll",        # MOTION: an absent key = the default (off / 0 / 0.0); # PREREG_V8F_PROOF_ADD12 / ADD16 (an absent wm_l1_pred is flat): a checkpoint without the keys is a mean-state one (defaults supplied below), so a grid argv cannot start from it nor the reverse
+                    "kin_mode", "max_age_t", "max_age_s",
+                    "o_interface")                      # PREREG_V8F_FLATDAG: a checkpoint trained under the cut must be fine-tuned under the cut (and a full one under full). The key is read only when the checkpoint HAS it:
+                                                        # checkpoints written before --o-interface existed (every M2b) carry none and load exactly as before. Without it a FLAT-DAG argv that forgets `--o-interface cut`
+@@ -703,7 +711,7 @@
+         raise ValueError("not a v8f_mini_train checkpoint (no 'model' / 'cfg')")
+     norm = lambda v: tuple(v) if isinstance(v, (list, tuple)) else v          # noqa: E731
+     ck_cfg = dict(ck["cfg"])
+-    for k_, d_ in (("wm_state", "mean"), ("wm_cell_dim", 16), ("wm_l1_pred", "flat")):                 # PREREG_V8F_PROOF_ADD12: an absent key is the default (a mean checkpoint is written without them)
++    for k_, d_ in (("wm_state", "mean"), ("wm_cell_dim", 16), ("wm_l1_pred", "flat"), *M.MOTION_CFG_DEFAULTS.items()):                 # PREREG_V8F_PROOF_ADD12: an absent key is the default (a mean checkpoint is written without them)
+         ck_cfg.setdefault(k_, d_)
+     if ck_cfg["wm_state"] == "mean":
+         ck_cfg["wm_cell_dim"] = getattr(cfg, "wm_cell_dim") if getattr(cfg, "wm_state") == "mean" else ck_cfg["wm_cell_dim"]     # the cell width of a mean state is unused: not a mismatch
+@@ -1024,7 +1032,7 @@
+     built = model.built_levers()
+     if model.wm is None:
+         d = build_parser()
+-        for f in ("wm_state", "wm_cell_dim", "wm_dim", "wm_l1_pred"):
++        for f in ("wm_state", "wm_cell_dim", "wm_dim", "wm_l1_pred", "wm_l1_residual", "wm_l1_roll_k", "w_wm_roll", "wm_l1_diag"):
+             if getattr(a, f) != d.get_default(f):
+                 bad.append(f"--{f.replace('_', '-')} {getattr(a, f)!r} declared but no WM auxiliary was built (wm off): a lever that is declared and builds nothing")
+         return bad
+@@ -1040,6 +1048,17 @@
+         bad.append(f"lever wm_l1_pred: declared {a.wm_l1_pred} but built {built.get('wm_l1_pred')} (read from the level-1 predictor module: its class and its per-cell embedding)")
+     if a.wm_l1_pred == "cell" and (built.get("wm_l1_pred_params_le_flat") is not True or not built.get("wm_l1_pred_cross_cell")):
+         bad.append(f"wm_l1_pred cell: built params {built.get('wm_l1_pred_params')} vs the flat predictor of the grid arm {built.get('wm_l1_pred_params_flat_ref')} (c2: at or below), cross-cell coupling live: {built.get('wm_l1_pred_cross_cell')} (c4)")
++    # MOTION levers, each read back from the BUILT model: A from the class of the level-1 predictor, B from the K and W the stack's loss reads; a declared one that was not built (or a built one nobody declared) is refused
++    if built.get("wm_l1_residual") != a.wm_l1_residual:
++        bad.append(f"lever wm_l1_residual: declared {a.wm_l1_residual} but built {built.get('wm_l1_residual')} (read from the level-1 predictor module: is it the residual wrapper)")
++    if built.get("wm_l1_roll_k") != a.wm_l1_roll_k:
++        bad.append(f"lever wm_l1_roll_k: declared {a.wm_l1_roll_k} but the built stack's loss reads {built.get('wm_l1_roll_k')}")
++    if built.get("w_wm_roll") != a.w_wm_roll:
++        bad.append(f"lever w_wm_roll: declared {a.w_wm_roll} but the built stack's loss reads {built.get('w_wm_roll')}")
++    if built.get("wm_l1_diag") != a.wm_l1_diag:
++        bad.append(f"lever wm_l1_diag: declared {a.wm_l1_diag} but built {built.get('wm_l1_diag')}")
++    if not ((a.wm_l1_roll_k == 0 and a.w_wm_roll == 0.0) or (a.wm_l1_roll_k >= 2 and a.w_wm_roll > 0.0 and math.isfinite(a.w_wm_roll))):
++        bad.append(f"wm_l1_roll_k {a.wm_l1_roll_k} with w_wm_roll {a.w_wm_roll}: need (0, 0.0) or (K >= 2, W > 0): a lever that is declared and does nothing")
+     if built.get("wm_upper_dims") != [M.WM_UPPER_DIM] * 2:
+         bad.append(f"wm levels 2 and 3 width: expected {M.WM_UPPER_DIM} but built {built.get('wm_upper_dims')}")
+     if a.wm_state == "grid" and built.get("wm_cell_dim") != a.wm_cell_dim:
+@@ -1199,6 +1218,8 @@
+         expect |= {f"pen_{r}" for r in M.RULES} | {f"pens_{r}" for r in M.RULES}
+     if cfg.wm != "off":
+         expect.add("wm")
++    if cfg.wm_l1_roll_k > 0:
++        expect.add("wm_roll")                                            # MOTION lever B: a declared rollout term that never appears is a launch blocker
+     if cfg.level_head == "on":
+         expect.add("level")                                              # PREREG_V8F_LEVEL
+     if cfg.lead_head == "on":
+@@ -2564,6 +2585,8 @@
+         expect |= {f"pen_{r}" for r in M.RULES} | {f"pens_{r}" for r in M.RULES}
+     if cfg.wm != "off":
+         expect.add("wm")
++    if cfg.wm_l1_roll_k > 0:
++        expect.add("wm_roll")                                            # MOTION lever B: a declared rollout term that never appears is a launch blocker
+     if cfg.level_head == "on":
+         expect.add("level")                                              # PREREG_V8F_LEVEL
+     if cfg.lead_head == "on":
+@@ -2908,7 +2931,7 @@
+ 
+     def save(final=False):
+         blob = {"model": model.state_dict(), "opt": opt.state_dict(), "step": step, "epoch": ep, "batch_in_epoch": bi,
+-                "argv_sha": argv_sha(argv), "cfg": {k: v for k, v in cfg.__dict__.items() if (cfg.stop_aux == "on" or k not in M.STOPAUX_CFG_FIELDS) and (cfg.wm_state == "grid" or k not in M.SPATIAL_CFG_FIELDS) and (cfg.wm_l1_pred == "cell" or k not in M.L1PRED_CFG_FIELDS)}, "p10_path": os.path.abspath(a.p10) if not a.synthetic else "",
++                "argv_sha": argv_sha(argv), "cfg": {k: v for k, v in cfg.__dict__.items() if (cfg.stop_aux == "on" or k not in M.STOPAUX_CFG_FIELDS) and (cfg.wm_state == "grid" or k not in M.SPATIAL_CFG_FIELDS) and (cfg.wm_l1_pred == "cell" or k not in M.L1PRED_CFG_FIELDS) and (k not in M.MOTION_CFG_DEFAULTS or v != M.MOTION_CFG_DEFAULTS[k])}, "p10_path": os.path.abspath(a.p10) if not a.synthetic else "",
+                 "grid": a.grid, "arm": a.arm, "seed": a.seed, "cons_mu": mu, "cons_sd": sd,
+                 "cfg_tuple_fields": {"wm_strides": list(cfg.wm_strides)},
+                 "ego_perturb": ego.built_levers(), "init_ckpt": info.get("init_ckpt"), "ego_totals": dict(ego_tot),
+diff --git a/stack/tests/test_v8f_motion_levers.py b/stack/tests/test_v8f_motion_levers.py
+new file mode 100644
+--- /dev/null
++++ b/stack/tests/test_v8f_motion_levers.py
+@@ -0,0 +1,454 @@
++"""MOTION levers of the level-1 world-model predictor. CPU only.
++
++Run: CUDA_VISIBLE_DEVICES=-1 PYTHONPATH=<repo>/stack;<repo>/taniteval pytest -q stack/tests/test_v8f_motion_levers.py
++
++  lever A  --wm-l1-residual {off,on}: level 1 returns z_ctx + f(z_ctx, a_ctx), last layer of f zero-initialised, flat and cell predictor, seen by every caller.
++  lever B  --wm-l1-roll-k K with --w-wm-roll W: a K-step rollout term roll/L1 in the level-1 loss, targets detached, the start state keeps its graph.
++  diag     --wm-l1-diag {off,on}: extra train-log keys, no effect on the loss.
++
++Controls (each reads a known value):
++  m2  at init the residual predictor equals its input exactly (0.0); a non-residual predictor does not.
++  m3  roll/L1 alone: predictor parameters and the state path get a non-zero gradient; a frame that is only ever a target gets EXACTLY 0.0;
++      control: the one-step loss reads non-zero on that same frame.
++  m4  the rollout inside the loss equals HJEPAStack.rollout(1, ..., context=<predictor context>) (max abs difference reported, bar 1e-6).
++  m5  total(W) - total(0) == W x roll/L1; the SAME assertion is run on a copy of hjepa.py with the line that adds the term deleted and must go red.
++"""
++from __future__ import annotations
++
++import inspect
++import sys
++import types
++from pathlib import Path
++
++import numpy as np
++import pytest
++import torch
++
++REPO = Path(__file__).resolve().parents[2]
++for p in (REPO / "stack", REPO / "taniteval", REPO / "stack" / "scripts"):
++    if str(p) not in sys.path:
++        sys.path.insert(0, str(p))
++
++from tanitad.data import v8f_mini_data as D  # noqa: E402
++from tanitad.models import hjepa as H  # noqa: E402
++from tanitad.models import v8f_mini as M  # noqa: E402
++import v8f_mini_train as TR  # noqa: E402
++
++TINY = dict(d=32, ff=64, heads=4, n_q=2, depth_s=1, depth_t=1, depth_o=1, nb=6)
++GRID = ["--wm-state", "grid", "--wm-cell-dim", "16"]
++CELL = GRID + ["--wm-l1-pred", "cell"]
++KINDS = ("flat", "cell")
++
++
++# ------------------------------------------------------------------------------------------------ small stacks (stack level)
++def _stack(kind="flat", residual=False, k=0, w=0.0, seed=0, d1=64, width=32):
++    kw = dict(pred_kind="cell", pred_cells=8, pred_cell_dim=d1 // 8) if kind == "cell" else {}
++    mk = lambda **x: H.LevelConfig(pred_width=width, pred_depth=1, pred_heads=4, enc_hidden=32, macro_hidden=16, beta=0.08, gamma=10.0, **x)   # noqa: E731
++    lv = [mk(latent_dim=d1, action_dim=2, act_embed_dim=16, pred_residual=residual, roll_k=k, roll_weight=w, **kw),
++          mk(latent_dim=32, action_dim=16, stride=2), mk(latent_dim=32, action_dim=32, stride=2)]
++    torch.manual_seed(seed)
++    return H.HJEPAStack(lv, sigreg_projections=32).eval()
++
++
++def _nonzero_last(st, scale=0.3):
++    """Give the zero-initialised last layer of a residual predictor a non-zero value (so that every trunk parameter is live)."""
++    g = torch.Generator().manual_seed(5)
++    last = st.predictors[0].inner.out[-1]
++    with torch.no_grad():
++        last.weight.copy_(torch.randn(last.weight.shape, generator=g) * scale)
++        last.bias.copy_(torch.randn(last.bias.shape, generator=g) * scale)
++
++
++def _seq(b=3, t=12, d=64, seed=1):
++    g = torch.Generator().manual_seed(seed)
++    return torch.randn(b, t, d, generator=g), torch.randn(b, t - 1, 2, generator=g)
++
++
++def _groups(pred):
++    inner = pred.inner if isinstance(pred, H.ResidualPredictor) else pred
++    out = {}
++    for n, c in inner.named_children():
++        out[n] = list(c.parameters())
++    for n, p in inner.named_parameters(recurse=False):
++        out[n] = [p]
++    return out
++
++
++def _gsum(ps):
++    return float(sum(float(p.grad.abs().sum()) for p in ps if p.grad is not None))
++
++
++# ------------------------------------------------------------------------------------------------ defaults: nothing built, nothing added
++@pytest.mark.parametrize("kind", KINDS)
++def test_defaults_build_no_wrapper_no_new_key_and_no_new_loss_term(kind):
++    st = _stack(kind)
++    assert type(st.predictors[0]) in (H.CausalPredictor, H.CellCausalPredictor)
++    assert not any(".inner." in k or k.startswith("predictors.0.inner") for k in st.state_dict())
++    z, a = _seq()
++    out = st.loss(z, a)
++    assert sorted(out) == sorted(["total", *[f"{p}/L{i}" for i in (1, 2, 3) for p in ("pred", "sigreg", "idm", "level")], "act_sigreg/L2", "act_sigreg/L3"])
++    assert not [k for k in out if k.startswith(("roll", "diag"))]
++
++
++# ------------------------------------------------------------------------------------------------ lever A, m2
++@pytest.mark.parametrize("kind", KINDS)
++def test_m2_residual_at_init_equals_the_copy_exactly_and_the_control_does_not(kind):
++    st = _stack(kind, residual=True)
++    assert isinstance(st.predictors[0], H.ResidualPredictor)
++    pred = st.predictors[0]
++    assert (pred.context, pred.latent_dim, pred.action_dim) == (3, 64, 16)
++    assert pred.in_proj is pred.inner.in_proj and (kind == "flat" or (pred.n_cells, pred.cell_dim) == (8, 8))      # fall-through attributes
++    g = torch.Generator().manual_seed(3)
++    for L in (1, 2, 3):
++        z, a = torch.randn(4, L, 64, generator=g), torch.randn(4, L, 16, generator=g)
++        assert float((pred(z, a) - z).abs().max()) == 0.0                                    # m2
++    ctl = _stack(kind, residual=False).predictors[0]
++    assert float((ctl(z, a) - z).abs().max()) > 1e-3                                         # control: the plain predictor is not the copy
++    roll = st.rollout(1, z[:, 0], torch.randn(4, 5, 2, generator=g), context=3)
++    assert float((roll - z[:, 0][:, None]).abs().max()) == 0.0                                # every caller sees it: the rollout of a copy is the start state
++    assert sorted(k for k in st.state_dict() if k.startswith("predictors.0.")) == sorted(
++        "predictors.0.inner." + k[len("predictors.0."):] for k in _stack(kind).state_dict() if k.startswith("predictors.0."))
++
++
++@pytest.mark.parametrize("kind", KINDS)
++def test_residual_is_the_same_trunk_plus_the_skip_and_uses_no_extra_random_draw(kind):
++    a, b = _stack(kind, residual=False), _stack(kind, residual=True)
++    sa, sb = a.state_dict(), b.state_dict()
++    for k, v in sa.items():                                     # the RNG stream is the unwrapped model's: every tensor but the zeroed last layer is identical
++        kb = k.replace("predictors.0.", "predictors.0.inner.", 1) if k.startswith("predictors.0.") else k
++        if kb.startswith("predictors.0.inner.out.2."):
++            assert float(sb[kb].abs().sum()) == 0.0
++        else:
++            assert torch.equal(v, sb[kb]), k
++    _nonzero_last(b)
++    pa, pb = a.predictors[0], b.predictors[0]
++    z, ac = torch.randn(2, 3, 64), torch.randn(2, 3, 16)
++    inner_out = pb.inner(z, ac)
++    assert torch.equal(pb(z, ac), z + inner_out)
++
++
++def test_residual_refused_where_it_cannot_be_built():
++    with pytest.raises(ValueError, match="level-1"):
++        H.HJEPAStack([H.LevelConfig(latent_dim=32, action_dim=2), H.LevelConfig(latent_dim=32, action_dim=32, stride=2, pred_residual=True)])
++    with pytest.raises(ValueError, match="override"):
++        H.HJEPAStack([H.LevelConfig(latent_dim=32, action_dim=2, pred_residual=True)], predictor_overrides={1: torch.nn.Identity()})
++    with pytest.raises(ValueError, match="last output layer"):
++        H.ResidualPredictor(torch.nn.Identity())
++
++
++# ------------------------------------------------------------------------------------------------ lever B, m4
++@pytest.mark.parametrize("kind", KINDS)
++@pytest.mark.parametrize("residual", [False, True])
++def test_m4_the_rollout_in_the_loss_equals_the_stack_rollout_with_the_predictor_context(kind, residual):
++    K = 5
++    st = _stack(kind, residual=residual, k=K, w=0.5)
++    if residual:
++        _nonzero_last(st)
++    z, raw = _seq(t=12)
++    a = st.act_embed(raw)
++    pr, tgt, starts = st.roll_pairs(z, a, K)
++    assert starts == list(range(0, 12 - K, 2)) and pr.shape == (len(starts), 3, K, 64) and not tgt.requires_grad
++    ctx = st.predictors[0].context
++    assert ctx == 3 and K > ctx                                          # the context grows 1 -> 3 and then slides
++    worst = 0.0
++    for i, s in enumerate(starts):
++        ref = st.rollout(1, z[:, s], raw[:, s:s + K], context=ctx)
++        worst = max(worst, float((pr[i] - ref).abs().max()))
++        assert torch.equal(tgt[i], z[:, s + 1:s + K + 1])
++    assert worst <= 1e-6, worst
++    assert float((pr - tgt).abs().max()) > 1e-3                          # control: the rollout is not trivially the target
++
++
++def test_roll_loss_is_the_mean_squared_error_over_starts_steps_and_batch():
++    K = 4
++    st = _stack("flat", k=K, w=1.0)
++    z, raw = _seq(t=10)
++    a = st.act_embed(raw)
++    got = float(st._roll_loss(z, a, K))
++    ref = []
++    for s in range(0, 10 - K, 2):
++        r = st.rollout(1, z[:, s], raw[:, s:s + K], context=3)
++        ref.append((r - z[:, s + 1:s + K + 1]).pow(2).mean(-1))            # [B, K]
++    want = float(torch.stack(ref).mean())
++    assert abs(got - want) < 1e-6
++    st.pred_reduction = "sum"
++    assert abs(float(st._roll_loss(z, a, K)) - float(torch.stack([(st.rollout(1, z[:, s], raw[:, s:s + K], context=3) - z[:, s + 1:s + K + 1]).pow(2).sum(-1)
++                                                                  for s in range(0, 10 - K, 2)]).mean())) < 1e-4
++
++
++# ------------------------------------------------------------------------------------------------ lever B, m3
++@pytest.mark.parametrize("kind", KINDS)
++def test_m3_roll_loss_alone_reaches_the_predictor_and_the_start_state_and_never_a_target_only_frame(kind):
++    K = 4
++    st = _stack(kind, k=K, w=1.0).train()
++    z, raw = _seq(t=11)
++    zl = z.clone().requires_grad_(True)                                  # a leaf: its grad IS the state path
++    a = st.act_embed(raw)
++    st._roll_loss(zl, a, K).backward()
++    dead = {n: _gsum(v) for n, v in _groups(st.predictors[0]).items() if not _gsum(v) > 0.0}
++    assert not dead, dead                                                # every group of the level-1 predictor
++    g = zl.grad.abs().sum(dim=(0, 2))                                    # per frame
++    starts = list(range(0, 11 - K, 2))
++    assert all(float(g[s]) > 0.0 for s in starts)                         # a start state keeps its graph
++    assert float(g[10]) == 0.0                                           # the last frame is only ever a target: EXACTLY 0.0
++    assert all(float(g[t]) == 0.0 for t in range(11) if t not in starts)  # so is every frame that is not a start
++    assert _gsum(st.act_embed.parameters()) > 0.0                        # the action embedding is trained through it too
++    # control: the one-step loss (not detached) reads NON-ZERO on the last frame, so the probe can see a gradient there
++    st.zero_grad()
++    zc = z.clone().requires_grad_(True)
++    st._pred_loss(1, zc, st.act_embed(raw), detach_target=False).backward()
++    assert float(zc.grad[:, 10].abs().sum()) > 0.0
++
++
++def test_m3_state_projection_gets_the_gradient_through_the_start_state():
++    cfg = M.V8FMiniConfig(wm="b", hmax=16, wm_state="grid", wm_l1_roll_k=6, w_wm_roll=1.0, d=32, ff=64, **{k: v for k, v in TINY.items() if k in ("heads", "n_q", "depth_s", "depth_t", "depth_o", "nb")})
++    torch.manual_seed(0)
++    wm = M.WMAux(cfg)
++    g = torch.Generator().manual_seed(2)
++    adapt, act = torch.randn(2, 16, cfg.n_tok, 32, generator=g), torch.randn(2, 16, 2, generator=g)
++    z1 = wm.z1(adapt)
++    a = wm.scale_actions(act)[:, :-1]
++    out = wm.stack.loss(z1, a)
++    out["roll/L1"].backward()                                            # roll/L1 ALONE
++    assert _gsum(wm.proj.parameters()) > 0.0                             # the state projection, through the start state
++    assert _gsum(wm.stack.predictors[0].parameters()) > 0.0
++    wm.zero_grad()
++    z1b = wm.z1(adapt)
++    out2 = wm.stack.loss(z1b, a)
++    out2["pred/L1"].backward()
++    assert _gsum(wm.proj.parameters()) > 0.0                             # control: the one-step term reaches it too (reads non-zero)
++
++
++# ------------------------------------------------------------------------------------------------ lever B, m5
++def _check_total_delta(Hm, kind="flat"):
++    """total(W) - total(0) == W x roll/L1 (W changed in the built stack's config, everything else equal), and it is not trivially 0."""
++    K, W = 4, 0.7
++    mk = lambda w: Hm.HJEPAStack([Hm.LevelConfig(latent_dim=64, action_dim=2, act_embed_dim=16, pred_width=32, pred_depth=1, pred_heads=4, enc_hidden=32, macro_hidden=16,
++                                                 roll_k=K, roll_weight=w, **(dict(pred_kind="cell", pred_cells=8, pred_cell_dim=8) if kind == "cell" else {})),
++                                  Hm.LevelConfig(latent_dim=32, action_dim=16, stride=2, pred_width=32, pred_depth=1, pred_heads=4, enc_hidden=32, macro_hidden=16),
++                                  Hm.LevelConfig(latent_dim=32, action_dim=32, stride=2, pred_width=32, pred_depth=1, pred_heads=4, enc_hidden=32, macro_hidden=16)],
++                                 sigreg_projections=32).eval()
++    torch.manual_seed(0)
++    s1 = mk(W)
++    torch.manual_seed(0)
++    s0 = mk(W)
++    s0.cfg[0].roll_weight = 0.0                                          # the same model, the weight set to 0 after the build
++    z, a = _seq(t=11)
++    g = torch.Generator().manual_seed(9)
++    o1, o0 = s1.loss(z, a, generator=g), s0.loss(z, a, generator=torch.Generator().manual_seed(9))
++    delta = float(o1["total"] - o0["total"])
++    assert float(o1["roll/L1"]) > 1e-3
++    assert abs(delta - W * float(o1["roll/L1"])) < 1e-5, (delta, W * float(o1["roll/L1"]))
++
++
++@pytest.mark.parametrize("kind", KINDS)
++def test_m5_total_moves_by_w_times_the_roll_term_and_a_mutation_of_the_adding_line_goes_red(kind):
++    """GUARDS the line in ``HJEPAStack.loss`` that reads ``level_loss = level_loss + c.roll_weight * roll``: the same assertion is run on a copy of hjepa.py
++    with that line deleted, and it must fail (the term would be logged and never trained)."""
++    _check_total_delta(H, kind)
++    src = inspect.getsource(H)
++    marker = "level_loss = level_loss + c.roll_weight * roll"
++    lines = src.split("\n")
++    idx = [i for i, l in enumerate(lines) if l.strip().startswith(marker)]
++    assert len(idx) == 1, idx
++    mut_src = "\n".join(lines[:idx[0]] + lines[idx[0] + 1:])
++    mut = types.ModuleType("hjepa_mutant")
++    mut.__dict__["__file__"] = "hjepa_mutant.py"
++    sys.modules["hjepa_mutant"] = mut                                    # dataclasses resolve annotations through sys.modules
++    try:
++        exec(compile(mut_src, "hjepa_mutant.py", "exec"), mut.__dict__)
++        with pytest.raises(AssertionError):
++            _check_total_delta(mut, kind)
++    finally:
++        sys.modules.pop("hjepa_mutant", None)
++
++
++@pytest.mark.parametrize("kind", KINDS)
++def test_both_levers_together_run_finite_and_roll_term_matters(kind):
++    st = _stack(kind, residual=True, k=6, w=0.3).train()
++    z, a = _seq(t=12)
++    z.requires_grad_(True)
++    out = st.loss(z, a)
++    assert all(torch.isfinite(v) for v in out.values())
++    out["total"].backward()
++    assert _gsum(st.predictors[0].parameters()) > 0.0
++    with pytest.raises(ValueError, match="does not fit"):
++        st.loss(z[:, :6], a[:, :5])                                      # K 6 needs T >= 7
++
++
++# ------------------------------------------------------------------------------------------------ config refusals
++def test_config_refuses_what_it_cannot_build():
++    mk = lambda **kw: M.V8FMiniConfig(wm="b", hmax=16, **kw)             # noqa: E731
++    mk()
++    mk(wm_l1_residual="on")
++    mk(wm_l1_roll_k=2, w_wm_roll=0.1)
++    mk(wm_l1_roll_k=15, w_wm_roll=0.1)
++    for kw, pat in (({"wm_l1_roll_k": 1, "w_wm_roll": 0.1}, "need K = 0"), ({"wm_l1_roll_k": 4, "w_wm_roll": 0.0}, "need K = 0"),
++                    ({"wm_l1_roll_k": 0, "w_wm_roll": 0.2}, "need K = 0"), ({"wm_l1_roll_k": 16, "w_wm_roll": 0.1}, "does not fit"),
++                    ({"wm_l1_roll_k": 4, "w_wm_roll": float("nan")}, "finite"), ({"wm_l1_roll_k": -2, "w_wm_roll": 0.1}, ">= 0"),
++                    ({"wm_l1_residual": "maybe"}, "wm_l1_residual"), ({"wm_l1_diag": "x"}, "wm_l1_diag")):
++        with pytest.raises(ValueError, match=pat):
++            mk(**kw)
++    for kw in ({"wm_l1_residual": "on"}, {"wm_l1_roll_k": 4, "w_wm_roll": 0.1}, {"wm_l1_diag": "on"}):
++        with pytest.raises(ValueError, match="world-model"):
++            M.V8FMiniConfig(wm="off", **kw)
++
++
++# ------------------------------------------------------------------------------------------------ the trainer: flags, gate, checkpoints
++@pytest.fixture(scope="module")
++def world(tmp_path_factory):
++    root = tmp_path_factory.mktemp("motion")
++    w = D.make_synthetic_world(root, n_train=6, n_eval=2, T=60, seed=0)
++    J = D.load_join(Path(root) / "join_train.npz")
++    store = D.ClipStore(root, "train", lru=8)
++    wins = D.train_windows(store, J, w["names"]["train"])
++    ds = D.V8FMiniWindows(store, J, wins, hmax=16)
++    idx = np.random.default_rng(0).choice(len(wins), 8, replace=False)
++    batch = D.collate([ds.item(wins[i][0], wins[i][1], 1, 3) for i in idx])
++    return {"batch": batch, "J": J}
++
++
++def _args(extra=()):
++    return TR.build_parser().parse_args(["--out", "x", "--d", "32", "--n-q", "2", "--arm", "M2b", *extra])
++
++
++def _built(world, extra=(), **over):
++    a = _args(extra)
++    c0 = TR.make_config(a)
++    keep = {k: v for k, v in TINY.items() if k not in ("nb", "n_q", "d", "ff")}
++    cfg = M.V8FMiniConfig(**{**c0.__dict__, **keep, "d": 32, "ff": 64, **over})
++    mu, sd = M.cons_stats(world["J"])
++    torch.manual_seed(0)
++    model = M.V8FMini(cfg, M.P10Prior.synthetic(0), mu, sd)
++    opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=a.lr, weight_decay=a.wd)
++    info = {"n_clips": 6, "n_clips_expected": 6, "batch": a.batch, "md5_overridden": True, "kin_mode": a.kin_mode, "p10_units": None}
++    return a, cfg, model, opt, info
++
++
++A_ON, B_ON, AB_CELL = ["--wm-l1-residual", "on"], ["--wm-l1-roll-k", "6", "--w-wm-roll", "0.3"], GRID + ["--wm-l1-pred", "cell", "--wm-l1-residual", "on", "--wm-l1-roll-k", "6", "--w-wm-roll", "0.3"]
++
++
++def test_flags_have_entries_defaults_and_ckpt_match():
++    d = {act.dest for act in TR.build_parser()._actions}
++    p = TR.build_parser()
++    for f, dflt in (("wm_l1_residual", "off"), ("wm_l1_roll_k", 0), ("w_wm_roll", 0.0), ("wm_l1_diag", "off")):
++        assert f in d and f in TR.FLAG_CHECKS and p.get_default(f) == dflt
++    for f in ("wm_l1_residual", "wm_l1_roll_k", "w_wm_roll"):
++        assert f in TR.INIT_CKPT_MATCH
++    with pytest.raises(ValueError):
++        TR.make_config(_args(["--wm-l1-roll-k", "6"]))                    # K with no weight
++    with pytest.raises(ValueError):
++        TR.make_config(_args(["--w-wm-roll", "0.3"]))                     # a weight with no K
++    with pytest.raises(ValueError):
++        TR.make_config(_args(["--wm-l1-roll-k", "16", "--w-wm-roll", "0.3"]))   # K does not fit hmax 16
++
++
++@pytest.mark.parametrize("extra", [GRID + A_ON, GRID + B_ON, AB_CELL, A_ON, B_ON], ids=["A_grid", "B_grid", "AB_cell", "A_mean", "B_mean"])
++def test_declared_vs_built_passes_when_built_and_refuses_every_lie(world, extra):
++    a, cfg, model, opt, info = _built(world, extra)
++    assert TR.declared_vs_built(a, cfg, model, opt, info) == []
++    lv = model.built_levers()
++    assert lv["wm_l1_residual"] == ("on" if "--wm-l1-residual" in extra else "off")
++    assert lv["wm_l1_roll_k"] == (6 if "--wm-l1-roll-k" in extra else 0) and lv["w_wm_roll"] == (0.3 if "--w-wm-roll" in extra else 0.0)
++    base = GRID if "--wm-state" in extra else []
++    ab, cb, mb, ob, ib = _built(world, base)                                # everything default: the same argv minus the levers
++    assert TR.declared_vs_built(ab, cb, mb, ob, ib) == []
++    for f, v in (("wm_l1_residual", "on" if lv["wm_l1_residual"] == "off" else "off"), ("wm_l1_roll_k", 8), ("w_wm_roll", 0.9)):
++        wrong = _args(extra)
++        setattr(wrong, f, v)
++        assert any(f in m for m in TR.declared_vs_built(wrong, cfg, model, opt, info)), f          # a deliberately wrong expectation is refused
++
++
++def test_declared_but_not_built_is_refused_in_both_directions(world):
++    a, cfg, m_on, opt, info = _built(world, GRID + A_ON + B_ON)
++    ad, cd, m_off, od, idf = _built(world, GRID)
++    assert any("wm_l1_residual" in m for m in TR.declared_vs_built(a, cd, m_off, od, idf))          # declared on, built off
++    assert any("wm_l1_roll_k" in m for m in TR.declared_vs_built(a, cd, m_off, od, idf))
++    assert any("wm_l1_residual" in m for m in TR.declared_vs_built(ad, cfg, m_on, opt, info))       # declared off, built on
++    assert any("w_wm_roll" in m for m in TR.declared_vs_built(ad, cfg, m_on, opt, info))
++    m_on.wm.stack.predictors[0] = m_on.wm.stack.predictors[0].inner                                 # the wrapper removed from the built model under an 'on' argv
++    assert any("wm_l1_residual" in m for m in TR.declared_vs_built(a, cfg, m_on, opt, info))
++    a2, cfg2, m2, o2, i2 = _built(world, GRID + B_ON)
++    m2.wm.stack.cfg[0].roll_weight = 0.0                                                            # the loss's own weight changed under an argv that declares 0.3
++    assert any("w_wm_roll" in m for m in TR.declared_vs_built(a2, cfg2, m2, o2, i2))
++
++
++def test_wm_off_with_a_motion_lever_is_refused(world):
++    with pytest.raises(ValueError):
++        TR.make_config(_args(["--arm", "M1", "--wm-l1-residual", "on"]))
++    a1, c1, m1, o1, i1 = _built(world, ["--arm", "M1"])
++    assert TR.declared_vs_built(a1, c1, m1, o1, i1) == []
++    wrong = _args(["--arm", "M1"])
++    wrong.wm_l1_roll_k = 4
++    assert any("wm-l1-roll-k" in m for m in TR.declared_vs_built(wrong, c1, m1, o1, i1))
++
++
++def _loss(world, extra, **over):
++    a, cfg, model, opt, info = _built(world, extra, **over)
++    model.train()
++    out = model.loss(dict(world["batch"]), p_gt=0.5, gen=torch.Generator().manual_seed(11))
++    return model, out
++
++
++def test_diag_off_adds_no_key_on_adds_four_and_the_loss_is_unchanged(world):
++    _, off = _loss(world, GRID + B_ON)
++    _, on = _loss(world, GRID + B_ON + ["--wm-l1-diag", "on"])
++    new = sorted(set(on["terms"]) - set(off["terms"]))
++    assert new == ["wm_copy_l1", "wm_pred_l1", "wm_roll_copy_l1", "wm_roll_l1"]
++    assert float(on["terms"]["total"]) == float(off["terms"]["total"]) and float(on["terms"]["wm"]) == float(off["terms"]["wm"])
++    assert not [k for k in off["terms"] if k.startswith(("wm_pred", "wm_copy", "wm_roll_"))]      # with K > 0 the plain rollout term wm_roll is logged (G-LIVE requires it); the diagnostics are not
++    assert "wm_roll" in off["terms"] and abs(float(off["terms"]["wm_roll"]) - float(on["terms"]["wm_roll_l1"])) < 1e-6
++    assert not any(v.requires_grad for k, v in on["terms"].items() if k in new)                     # no graph
++    _, on0 = _loss(world, GRID + ["--wm-l1-diag", "on"])
++    assert sorted(set(on0["terms"]) - set(_loss(world, GRID)[1]["terms"])) == ["wm_copy_l1", "wm_pred_l1"]   # K = 0: no roll keys
++    t = on["terms"]
++    assert all(np.isfinite(float(t[k])) and float(t[k]) > 0 for k in new)
++
++
++def test_diag_copy_values_equal_a_hand_computation(world):
++    model, out = _loss(world, GRID + B_ON + ["--wm-l1-diag", "on"])
++    with torch.no_grad():
++        z1 = model.wm.z1(out["adapt"])
++        want_copy = float((z1[:, :-1] - z1[:, 1:]).pow(2).mean(-1).mean())
++        K = 6
++        rc = torch.stack([(z1[:, s][:, None] - z1[:, s + 1:s + K + 1]).pow(2).mean(-1) for s in range(0, z1.shape[1] - K, 2)]).mean()
++    assert abs(float(out["terms"]["wm_copy_l1"]) - want_copy) < 1e-6
++    assert abs(float(out["terms"]["wm_roll_copy_l1"]) - float(rc)) < 1e-6
++
++
++def test_the_trainer_runs_both_levers_and_checkpoint_cfg_keys_follow_the_defaults(world, tmp_path):
++    base = ["--synthetic", "--arm", "M2b", "--batch", "8", "--d", "32", "--n-q", "2", "--threads", "1", "--steps", "3", "--log-every", "1"]
++    assert TR.main([*base, "--out", str(tmp_path / "grid")] + GRID) == 0
++    assert TR.main([*base, "--out", str(tmp_path / "ab")] + AB_CELL + ["--wm-l1-diag", "on"]) == 0
++    ld = lambda n: torch.load(tmp_path / n / "ckpt_last.pt", map_location="cpu", weights_only=False)   # noqa: E731
++    cg, cb = ld("grid"), ld("ab")
++    assert not (set(M.MOTION_CFG_DEFAULTS) & set(cg["cfg"]))                                     # a default checkpoint keeps its key set
++    assert set(cb["cfg"]) - set(cg["cfg"]) == set(M.MOTION_CFG_DEFAULTS) | set(M.L1PRED_CFG_FIELDS)
++    cfg = M.V8FMiniConfig(**cb["cfg"])                                                           # the T1 eval builder
++    model = M.V8FMini(cfg, M.P10Prior(torch.zeros(8), torch.ones(8), torch.zeros(2 * M.K30)))
++    model.load_state_dict(cb["model"])                                                           # strict
++    assert model.built_levers()["wm_l1_residual"] == "on" and model.built_levers()["wm_l1_roll_k"] == 6
++    rows = [__import__("json").loads(l) for l in open(tmp_path / "ab" / "train_log.jsonl", encoding="utf-8")]
++    assert all(k in rows[-1] for k in ("wm_pred_l1", "wm_copy_l1", "wm_roll_l1", "wm_roll_copy_l1"))
++    rows_g = [__import__("json").loads(l) for l in open(tmp_path / "grid" / "train_log.jsonl", encoding="utf-8")]
++    assert not [k for k in rows_g[-1] if k.startswith(("wm_pred", "wm_copy", "wm_roll"))]
++    # fine-tune start: an argv with a different residual lever must not start from this checkpoint, nor the reverse; an absent key = the default
++    ov = {k: cb["cfg"][k] for k in ("d", "ff", "heads", "n_q", "depth_s", "depth_t", "depth_o", "nb", "hmax", "hist")}
++    _, c_plain, m_plain, _, _ = _built(world, GRID + ["--wm-l1-pred", "cell"], **ov)
++    with pytest.raises(ValueError, match="wm_l1_residual"):
++        TR.load_init_ckpt(str(tmp_path / "ab" / "ckpt_last.pt"), m_plain, c_plain)
++    _, c_a, m_a, _, _ = _built(world, GRID + A_ON, **ov)
++    with pytest.raises(ValueError, match=r"wm_l1_residual: 'off' != 'on'"):
++        TR.load_init_ckpt(str(tmp_path / "grid" / "ckpt_last.pt"), m_a, c_a)                    # an older checkpoint (key absent = off) is refused by an 'on' argv
++    _, c_ab, m_ab, _, _ = _built(world, AB_CELL, **ov)
++    assert TR.load_init_ckpt(str(tmp_path / "ab" / "ckpt_last.pt"), m_ab, c_ab)["n_mismatch_after_load"] == 0
++
++
++def test_g_live_requires_and_sees_the_roll_term_and_every_group_trains(world):
++    for extra in (GRID + B_ON, AB_CELL):
++        a, cfg, model, opt, info = _built(world, extra)
++        res = TR.live_check(model, dict(world["batch"]), cfg)
++        assert "wm_roll" in res["terms"] and res["terms"]["wm_roll"] > 0.0 and res["missing_terms"] == [] and res["unexpected_dead"] == [], (res["missing_terms"], res["unexpected_dead"])
++    a, cfg, model, opt, info = _built(world, GRID)
++    res = TR.live_check(model, dict(world["batch"]), cfg)
++    assert "wm_roll" not in res["terms"] and res["missing_terms"] == []         # no lever, no key
