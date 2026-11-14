@@ -6298,6 +6298,43 @@ def dc_reading_rows(argv: list[str], steps: int | None = None) -> list[int]:
     return list(range(every, n + 1, every)) if every > 0 else []
 
 
+
+def dose_ctl_amortized(launch_argv: list[str], smoke_rows: list[dict]) -> dict | None:
+    """K2DC, the G-LIVE cost (MM 4a3d05, 2026-11-14): the controller's reading is part of the arm's TRAINING METHOD -- the run cannot
+    train as declared without it -- so, unlike a gradient-share reading (an optional instrument whose wall-clock SPEC_REFCV8 3.2 item 5
+    keeps out of the judged s/step), its wall-clock belongs to the arm's cost. The smoke fires the controller at the smoke's cadence; the
+    RUN fires it on `dc_reading_rows(launch argv)`. -> the s/step those readings add, amortized over the run (mean measured reading seconds
+    x readings in the run / run steps), or None when the controller is off.
+    MEASURED 2026-11-14 (Thor, final gate K2DC at 68bda0d5, smoke 20261114T024837): one reading = 583.76 s (fp32 replay: 204.14 s
+    forward + 379.59 s measure) against a steady 8.62 s/step; 24 readings in 6,000 steps add 2.335 s/step. Without this term the cost
+    read 8.62 (reading dropped: under-states the run by ~3.9 h) or 15.41 (one reading averaged into an 86-interval smoke: describes neither
+    the smoke nor the run) -- the second refused the arm as PI-DECISION on a number that was not its cost."""
+    run = dc_reading_rows(launch_argv)
+    if not run:
+        return None
+    try:
+        steps = int((flag_values(launch_argv, "--steps") or ["0"])[0])
+    except ValueError:
+        steps = 0
+    secs: list[float] = []
+    at: list[int] = []
+    for r in smoke_rows:
+        if "dc_w_eff" not in r:
+            continue
+        v = r.get("dcp_fp32_replay_s", r.get("dcp_measure_s"))
+        if isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) and v >= 0:
+            secs.append(float(v))
+            at.append(int(r.get("step", -1)))
+    out: dict[str, Any] = {"n_readings": len(run), "run_steps": steps, "smoke_reading_rows": at,
+                           "smoke_reading_s": [round(s, 2) for s in secs]}
+    if not secs or steps <= 0:
+        return {**out, "reading_s_mean": None, "s_per_step": None,
+                "why": ("no controller firing in the smoke carries dcp_fp32_replay_s / dcp_measure_s" if not secs
+                        else "the launch argv carries no --steps")}
+    m = sum(secs) / len(secs)
+    return {**out, "reading_s_mean": round(m, 2), "s_per_step": round(len(run) * m / steps, 4)}
+
+
 def dose_controller_live_reasons(launch_argv: list[str], rows: list[dict]) -> tuple[list[str], dict]:
     """K2DC, G-LIVE (the SMOKE's rows): inert when the launch argv carries none of the four flags. Controller ON with NO `dc_w_eff` row
     is a FAIL (a controller that never fired is declared and untested -- never a pass); every `dc_w_eff` row must carry a finite weight
@@ -6457,8 +6494,10 @@ def judge_b1_reach(argv: list[str], rows: list[dict]) -> tuple[list[str], dict]:
 
 
 def judge_new2_live(prof: dict, run1: dict, config: dict | None, argv_local: list[str],
-                    grads: dict, *, cuda: bool, approval: dict | None) -> tuple[list[str], bool, dict]:
-    """-> (reasons, needs_pi, details) for NEW-2 in the smoke. Inert (no reasons) when off."""
+                    grads: dict, *, cuda: bool, approval: dict | None,
+                    ctl_cost: dict | None = None) -> tuple[list[str], bool, dict]:
+    """-> (reasons, needs_pi, details) for NEW-2 in the smoke. Inert (no reasons) when off. `ctl_cost` = `dose_ctl_amortized(...)`
+    (K2DC): its s/step is ADDED to the steady s/step before the cost rule and the PI approval read it; None keeps the old judgement."""
     h = prof["map_hires"]
     reasons: list[str] = []
     det: dict[str, Any] = {}
@@ -6502,7 +6541,8 @@ def judge_new2_live(prof: dict, run1: dict, config: dict | None, argv_local: lis
     else:
         reasons.append(f"NEW-2: {h['class_weights_flag']} {cw} is not a readable file")
     cost = step_cost(run1.get("step_times") or [], int(h["cost_warmup_steps"]),
-                     exclude_rows=gs_reading_rows(argv_local), nontrain_rows=nontrain_rows(argv_local))
+                     exclude_rows=sorted(set(gs_reading_rows(argv_local)) | set(dc_reading_rows(argv_local))),
+                     nontrain_rows=nontrain_rows(argv_local))
     cost["cuda_max_mem_gb"] = run1.get("cuda_max_mem_gb")
     cost["ref_s_per_step"] = h["cost_ref_s_per_step"]
     cost["max_ratio"] = h["cost_max_ratio"]
@@ -6512,18 +6552,30 @@ def judge_new2_live(prof: dict, run1: dict, config: dict | None, argv_local: lis
         reasons.append("NEW-2: the cost gate needs the Thor smoke (CUDA); this host cannot answer it")
     elif cost.get("s_per_step_mean") is None:
         reasons.append("NEW-2: too few steps after warm-up to measure s/step")
+    elif ctl_cost is not None and ctl_cost.get("s_per_step") is None:
+        cost["dose_ctl"] = ctl_cost
+        reasons.append(f"NEW-2: the dose controller is on but its reading cost was not measured ({ctl_cost.get('why')}) -- the "
+                       f"arm's s/step cannot be judged")
     else:
-        ratio = cost["s_per_step_mean"] / float(h["cost_ref_s_per_step"])
+        judged = cost["s_per_step_mean"]
+        what = f"{judged} s/step"
+        if ctl_cost is not None:
+            cost["dose_ctl"] = ctl_cost
+            judged = round(judged + ctl_cost["s_per_step"], 4)
+            cost["s_per_step_judged"] = judged
+            what = (f"{judged} s/step (steady {cost['s_per_step_mean']} + the dose controller's {ctl_cost['n_readings']} readings "
+                    f"x {ctl_cost['reading_s_mean']} s over {ctl_cost['run_steps']} steps = {ctl_cost['s_per_step']})")
+        ratio = judged / float(h["cost_ref_s_per_step"])
         cost["ratio"] = round(ratio, 4)
         if ratio > float(h["cost_max_ratio"]):
             ok_pi = (approval is not None
-                     and cost["s_per_step_mean"] <= float(approval.get("max_s_per_step", -1)))
+                     and judged <= float(approval.get("max_s_per_step", -1)))
             cost["pi_approval"] = approval
             if ok_pi:
                 cost["verdict"] = "above +25 % but within the PI's recorded approval"
             else:
                 needs_pi = True
-                cost["verdict"] = (f"PI-DECISION: {cost['s_per_step_mean']} s/step is "
+                cost["verdict"] = (f"PI-DECISION: {what} is "
                                    f"{ratio:.2f}x refcv6's {h['cost_ref_s_per_step']} "
                                    f"(> {h['cost_max_ratio']}x) -- SPEC 6.2 item 5")
         else:
@@ -9598,7 +9650,8 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
                 appr = {**appr, "_file_sha256": sha256_file(ap)}
             r2, needs_pi, d2 = judge_new2_live(ctx.prof, run1, cfg1, argv1, gt,
                                                cuda=bool(torch.cuda.is_available()),
-                                               approval=appr)
+                                               approval=appr,
+                                               ctl_cost=dose_ctl_amortized(ctx.argv, train_rows(rows1)))
             det["map_hires"].update(d2)
             reasons += r2
         ev["details"].update(det)
