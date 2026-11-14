@@ -185,6 +185,10 @@ def main(argv=None):
     lat = {"copy": mse(cur, tgt), "R1": mse(r1, tgt), "R3h": mse(r3h, tgt), "R3g": mse(r3g, tgt)}
     lat["skill_over_copy"] = {k: 1.0 - lat[k] / lat["copy"] for k in ("R1", "R3h", "R3g")}
     lat["frame0"] = {"copy": mse(Z[:, 0], Z[:, K]), "R1": mse(r0, Z[:, K])}
+    # per-window errors (mean over the width) for the episode-cluster bootstrap of the one-step and the +2.0 s latent errors (ctx_verdict.py, step_boot)
+    pw = lambda u, v: ((u - v) ** 2).mean(1).numpy().astype(np.float64)   # noqa: E731
+    np.savez(os.path.join(a.out_dir, "DIAG_CTX_%s.npz" % a.arm), eid=np.asarray(Lw["eid"]).astype(str), step_copy=pw(cur, nxt), step_c1=pw(o1, nxt), step_c3=pw(o3, nxt),
+             lat_copy=pw(cur, tgt), lat_R1=pw(r1, tgt), lat_R3h=pw(r3h, tgt), lat_R3g=pw(r3g, tgt), f0_copy=pw(Z[:, 0], Z[:, K]), f0_R1=pw(r0, Z[:, K]))
     # ---- controls
     if own is not None:
         x1 = float(np.abs(r0.numpy() - np.asarray(own["pred_2s"], np.float32)).max())
