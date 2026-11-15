@@ -19,7 +19,7 @@
 # environment cannot cross is the WMI launch (the provider's environment, not the caller's), so r9gate3_launch_pinned.ps1 writes it into the command line.
 #
 # VARIABLES (set by r9_study_load; never edit a script's copy of a value -- change it HERE):
-#   R9_STUDY R9_ROOT R9_PREFIX R9_PROFILE R9_EXPLORE_ARM R9_DEFAULT_ARMS R9_DEFAULT_REC12 R9_DEVSTAGE R9_SHIP_STAGE R9_STUDY_NOTE
+#   R9_STUDY R9_ROOT R9_PREFIX R9_PROFILE R9_EXPLORE_ARM R9_DEFAULT_ARMS R9_DEFAULT_REC12 R9_DEVSTAGE R9_SHIP_STAGE R9_STUDY_NOTE R9_GATE_WORKERS
 #   FUNCTIONS: r9_profile_of_arm <arm> (the gate profile of ONE arm: the study's, except an e3 `*_d1` arm -> refcv9-full-d1);
 #              r9_resolve_explore_arm "<ARMS>" (fills an EMPTY R9_EXPLORE_ARM with the first non-D1 arm; a no-op for e1 / e2).
 #   R9_STUDY_NOTE is "" for e1 and " study=e2 ..." for the others: it is appended to a status line so an e1 line stays what it was.
@@ -34,16 +34,18 @@ R9_LOCK_WAIT_S="${R9_LOCK_WAIT_S-43200}"      # UNSET = 12 h; an EMPTY value is 
 case "$R9_LOCK_WAIT_S" in
   ""|*[!0-9]*) echo "REFUSED: R9_LOCK_WAIT_S '$R9_LOCK_WAIT_S' is not a whole number of seconds"; echo "ZZR9LOCKWAIT-REFUSEDZZ"; return 10 2>/dev/null || exit 10;;
 esac
+# R9_GATE_WORKERS (MM 2026-11-15): pytest processes the Thor suite runs at once WITHIN each stage (thor_gate_runner2.py THOR_GATE_WORKERS; 1 =
+#   the serial order). e3 runs 3 (ESTIMATED CAND ~35-40 min vs ~100): same files, same junit, same verdict, only the wall clock differs.
 r9_study_load() {   # r9_study_load <name>: set the R9_* variables of a study (and export R9_STUDY); return 1, setting NOTHING, on an unknown name
   case "${1-}" in
     e1) R9_ROOT=/home/nvidia/r8ns/r9e1; R9_PREFIX=r9e1; R9_PROFILE=refcv9-e1rig; R9_EXPLORE_ARM=C0; R9_DEFAULT_ARMS="C0 C1"
-        R9_DEFAULT_REC12=d297ba563d8f; R9_DEVSTAGE=F:/refcv9_e1/gate; R9_SHIP_STAGE=/f/c_overflow_2026-10-26/tmp/r9gate3_ship; R9_STUDY_NOTE="";;
+        R9_DEFAULT_REC12=d297ba563d8f; R9_DEVSTAGE=F:/refcv9_e1/gate; R9_SHIP_STAGE=/f/c_overflow_2026-10-26/tmp/r9gate3_ship; R9_STUDY_NOTE=""; R9_GATE_WORKERS=1;;
     e2) R9_ROOT=/home/nvidia/r8ns/r9e2; R9_PREFIX=r9e2; R9_PROFILE=refcv9-e2; R9_EXPLORE_ARM=K0; R9_DEFAULT_ARMS="K0"
         R9_DEFAULT_REC12=""; R9_DEVSTAGE=F:/refcv9_e2/gate; R9_SHIP_STAGE=/f/c_overflow_2026-10-26/tmp/r9gate3_ship_e2
-        R9_STUDY_NOTE=" study=e2 profile=refcv9-e2 root=/home/nvidia/r8ns/r9e2";;
+        R9_STUDY_NOTE=" study=e2 profile=refcv9-e2 root=/home/nvidia/r8ns/r9e2"; R9_GATE_WORKERS=1;;
     e3) R9_ROOT=/home/nvidia/r8ns/r9e3; R9_PREFIX=r9e3; R9_PROFILE=refcv9-full; R9_EXPLORE_ARM=""; R9_DEFAULT_ARMS=""
         R9_DEFAULT_REC12=""; R9_DEVSTAGE=F:/refcv9_e3/gate; R9_SHIP_STAGE=/f/c_overflow_2026-10-26/tmp/r9gate3_ship_e3
-        R9_STUDY_NOTE=" study=e3 profile=refcv9-full root=/home/nvidia/r8ns/r9e3";;
+        R9_STUDY_NOTE=" study=e3 profile=refcv9-full root=/home/nvidia/r8ns/r9e3"; R9_GATE_WORKERS=3;;
     *) return 1;;
   esac
   R9_STUDY="$1"; export R9_STUDY

@@ -45,8 +45,10 @@ grep -q "ZZR9E1G3-${R9_EXPLORE_ARM}-explore-REFUSEDZZ" $R/logs/r9gate3_explore_$
 # ---- B: start the commit-bound Thor suite (CPU only, lowest priority) ----------------------------------------------------------
 if [ ! -e "$G/results/ALLDONE" ] && [ ! -s "$G/runner.pid" ]; then
   [ -s "$G/plan_thor.json" ] && [ -s "$G/tree_tip.tar" ] && [ -s "$G/overlay.tar" ] || stop NO-SUITE-PLAN "$G"
-  cp -p /home/nvidia/gate_fb47a583763f/thor_gate_runner2.py /home/nvidia/gate_fb47a583763f/gate_verdict.py $G/ || stop NO-RUNNER "runner files"
-  ( cd $G; nohup setsid nice -n 19 env CUDA_VISIBLE_DEVICES= $PY $G/thor_gate_runner2.py $G /home/nvidia/refcv8_audit/pyt > $G/runner.out 2> $G/runner.err < /dev/null 9>&- 200>&- & echo $! > $G/runner.pid )
+  # the suite runner + verdict come from THIS commit's launch tree (MM 2026-11-15), not the fixed 2026-10-15 copy in /home/nvidia/gate_fb47a583763f:
+  # the two were byte-identical when this changed (runner md5 4ef75118, verdict d8897a80), and a runner change now ships with the commit that tests it.
+  cp -p $T/stack/ops/gate/thor_gate_runner2.py $T/stack/ops/gate/gate_verdict.py $G/ || stop NO-RUNNER "runner files from $T/stack/ops/gate"
+  ( cd $G; nohup setsid nice -n 19 env CUDA_VISIBLE_DEVICES= THOR_GATE_WORKERS=${R9_GATE_WORKERS:-1} $PY $G/thor_gate_runner2.py $G /home/nvidia/refcv8_audit/pyt > $G/runner.out 2> $G/runner.err < /dev/null 9>&- 200>&- & echo $! > $G/runner.pid )
   sleep 5; ev SUITE-STARTED "runner pid $(cat $G/runner.pid 2>/dev/null)"
 fi
 
