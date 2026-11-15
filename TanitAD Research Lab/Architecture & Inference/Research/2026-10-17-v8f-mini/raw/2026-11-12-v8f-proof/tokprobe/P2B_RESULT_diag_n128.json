@@ -1,0 +1,43 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD27_N1 section 2 (p2b)",
+ "tier": "T0 (a diagnostic on logged frames, never driving performance)",
+ "evidence_class": "MEASURED (synthetic)",
+ "world": "tokens = noise + 6*(gap-30)/10 * U[k]; no closing-speed direction; gap = g0 + c*0.2*frame (the gap moves with the closing speed); 128 train / 8 held-out clips of 24 frames",
+ "bar": 0.9,
+ "runs": [
+  {
+   "arm": "TK16_s0",
+   "steps": 500,
+   "heldout_r2_gap": 0.9148562178015709,
+   "heldout_r2_closing": -0.005694270133972168,
+   "both_above_0_9": false,
+   "seconds": 10.6
+  },
+  {
+   "arm": "TK16_s0",
+   "steps": 2000,
+   "heldout_r2_gap": 0.7673052698373795,
+   "heldout_r2_closing": 0.0054280757904052734,
+   "both_above_0_9": false,
+   "seconds": 44.8
+  },
+  {
+   "arm": "TK16_s0",
+   "steps": 5000,
+   "heldout_r2_gap": 0.4893918037414551,
+   "heldout_r2_closing": -0.5631704330444336,
+   "both_above_0_9": false,
+   "seconds": 122.9
+  }
+ ],
+ "p2b_pass_per_arm": {
+  "TK16_s0": false
+ },
+ "p2b_pass": false,
+ "oracle_readability": {
+  "note": "per-frame gap estimate = mean over the 40 tokens of <token, U_k> (U known), closing = slope of that estimate over 5 frames; an upper-reference read of what the plant allows, not the probe",
+  "r2_gap": 0.998905322432987,
+  "r2_closing": 0.9360507341561101,
+  "n": 60
+ }
+}
