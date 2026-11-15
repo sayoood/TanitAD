@@ -479,6 +479,33 @@ class ClipStore:
         del o                                           # release the mapping (a held mapping blocks deleting the file on Windows)
         return {"pose": pg, "kin3": kin3}
 
+    def get_act(self, clip: str) -> tuple:
+        """PREREG_V8F_DIVRS: ``(a [T], ch1 [T])`` of ``clip`` -- EXACTLY ``get(clip)["a"]`` and ``get(clip)["ch1"]`` (the two action channels the world model reads) and nothing else, in the ``yaw`` kin mode: the cache file is memory-mapped and
+        only ``a`` and ``pose_grid`` are touched (the feature grid, the bulk of the file, is never read: the sampler's cell table covers every train clip once at start-up), ``ch1`` is the native track's measured yaw rate with the
+        undefined step set to 0.0, the track is checked against the pose grid as ``get`` does. A clip already in the LRU is answered from it. (``stack/tests/test_v8f_divrs.py`` compares both arrays with ``get``'s.)"""
+        if clip in self._c:
+            d = self._c[clip]
+            return d["a"], d["ch1"]
+        if self.kin_mode != "yaw":
+            raise ValueError("get_act is the yaw-mode reader (the DIVRS bins are in rad/s)")
+        import torch
+        path = self.dir / f"{clip}.pt"
+        try:
+            o = torch.load(path, map_location="cpu", weights_only=True, mmap=True)
+        except (RuntimeError, TypeError):
+            self.kin_fallbacks += 1
+            o = torch.load(path, map_location="cpu", weights_only=True)
+        pg = o["pose_grid"].numpy().astype(np.float64)
+        a = np.array(o["a"].numpy())                    # a copy: the mapping is released below
+        del o
+        if clip not in self.tracks:
+            raise KeyError(f"{clip}: no native pose track in the sidecar")
+        check_track_matches_grid(self.tracks[clip], pg, clip)
+        _, omega = yaw_kin_from_track(self.tracks[clip])
+        ch1 = np.nan_to_num(omega, nan=0.0).astype(np.float32)
+        assert len(a) == len(ch1) == len(pg), f"{clip}: a {len(a)}, ch1 {len(ch1)}, pose {len(pg)}"
+        return a, ch1
+
     def get(self, clip: str) -> dict:
         if clip in self._c:
             self._c[clip] = self._c.pop(clip)
@@ -991,6 +1018,157 @@ class ChunkedSampler:
 
     def n_batches(self):
         return math.ceil(len(self.windows) / self.batch)
+
+
+# ------------------------------------------------------------------------------------------------ PREREG_V8F_DIVRS: the action-diverse window sampler
+#: the card's cell grid: mean |yaw rate| over a window's transitions (rad/s) x mean longitudinal acceleration over them (m/s^2), 5 x 5. ``np.digitize`` puts a value on an edge into the UPPER bin.
+DIVRS_YAW_EDGES = (0.02, 0.05, 0.10, 0.20)        # bins [0, .02) [.02, .05) [.05, .10) [.10, .20) [.20, inf)
+DIVRS_ACC_EDGES = (-1.0, -0.3, 0.3, 1.0)          # bins (-inf, -1) [-1, -.3) [-.3, .3) [.3, 1) [1, inf)
+DIVRS_N_CELLS = (len(DIVRS_YAW_EDGES) + 1) * (len(DIVRS_ACC_EDGES) + 1)
+DIVRS_CAP_MULT = 10.0                              # a window's weight is capped at this x the median window weight
+DIVRS_CHECK_BATCHES = 2000                         # card control 1: the first 2,000 batches
+DIVRS_SHARE_TOL = 0.20                             # card control 1: realised share within +-20 % (relative) of the target share
+DIVRS_MIN_EXPECTED = 225                           # a cell is RESOLVED by control 1 when its expected draw count is >= this: at 225, three binomial standard deviations are 20 % of the target (3 sqrt((1-p)/(n p)) <= 0.20)
+
+
+def window_act_means(store: ClipStore, J: dict, windows, hmax: int) -> np.ndarray:
+    """``[n, 2]`` float64: for every window the mean |yaw rate| (``ch1``, rad/s, the ``yaw`` kin mode) and the mean longitudinal acceleration (``a``, m/s^2) over its TRANSITIONS, i.e. over ``act[:-1]`` of the ``hmax`` frames
+    ``t - hmax + 1 .. t`` the world model reads (indices clamped to the clip, ``a`` NaN set to 0 -- exactly what ``V8FMiniWindows.item`` returns, float32 values averaged in float64). Reads the two channels only
+    (``ClipStore.get_act``), clip by clip."""
+    clip_of = J["clip"]
+    out = np.zeros((len(windows), 2), np.float64)
+    by_clip: dict = {}
+    for i, w in enumerate(windows):
+        by_clip.setdefault(int(w[0]), []).append(i)
+    off = np.arange(-int(hmax) + 1, 0)
+    for ci, rows in by_clip.items():
+        a_c, ch_c = store.get_act(str(clip_of[ci]))
+        a32, c32 = np.nan_to_num(a_c).astype(np.float32), np.asarray(ch_c, np.float32)
+        T = len(a32)
+        t = np.array([windows[i][1] for i in rows], np.int64)
+        idc = np.clip(t[:, None] + off[None, :], 0, T - 1)
+        out[rows, 0] = np.abs(c32[idc].astype(np.float64)).mean(1)
+        out[rows, 1] = a32[idc].astype(np.float64).mean(1)
+    return out
+
+
+def divrs_cells(feats: np.ndarray, yaw_edges=DIVRS_YAW_EDGES, acc_edges=DIVRS_ACC_EDGES) -> np.ndarray:
+    """Cell id (0 .. 24) per window: ``yaw bin x 5 + acceleration bin``."""
+    feats = np.asarray(feats, np.float64)
+    return (np.digitize(feats[:, 0], yaw_edges) * (len(acc_edges) + 1) + np.digitize(feats[:, 1], acc_edges)).astype(np.int64)
+
+
+def divrs_weights(cells: np.ndarray, cap_mult: float = DIVRS_CAP_MULT) -> dict:
+    """The card's rule: a window's weight is 1 / (its cell's count over the training windows); an empty cell has no windows and so no weight; weights are capped at ``cap_mult`` x the MEDIAN window weight (the median over
+    all windows). ``target_share[c]`` = the cell's share of the total (capped) weight = the share of draws the sampler must realise."""
+    cells = np.asarray(cells, np.int64)
+    counts = np.bincount(cells, minlength=DIVRS_N_CELLS).astype(np.int64)
+    raw = np.zeros(DIVRS_N_CELLS, np.float64)
+    nz = counts > 0
+    raw[nz] = 1.0 / counts[nz]
+    med = float(np.median(raw[cells])) if len(cells) else 0.0
+    cap = float(cap_mult) * med
+    cell_w = np.minimum(raw, cap)
+    mass = counts * cell_w
+    return {"counts": counts, "weight": cell_w[cells], "cell_weight": cell_w, "raw_cell_weight": raw, "median_weight": med, "cap": cap,
+            "n_capped_cells": int(((raw > cap) & nz).sum()), "n_empty_cells": int((~nz).sum()), "target_share": mass / mass.sum()}
+
+
+class DiversitySampler(ChunkedSampler):
+    """``--wm-sampler divrs`` (PREREG_V8F_DIVRS): the SAME windows, the same chunked clip order (I/O locality: ``chunk`` clips at a time), the same age draws, the same epoch length (``len(windows)`` draws) -- only WHICH windows are
+    drawn changes. Every window is in one cell of the 5 x 5 grid (``window_act_means`` binned by ``divrs_cells``); a window is drawn with probability proportional to its capped weight (``divrs_weights``), with replacement.
+
+    Exactness: a chunk gets ``n_epoch x (its weight mass) / (total weight mass)`` draws, rounded SYSTEMATICALLY (one uniform per epoch; the draw counts sum to ``n_epoch`` exactly), and within a chunk the draw is proportional to the
+    GLOBAL weights. So over an epoch every window's expected draw count is ``n_epoch x w_i / sum(w)`` exactly, whatever the chunk composition -- a per-chunk renormalisation would give a rare cell that sits in few chunks far
+    more than its share. The stream is seeded by ``(seed, epoch, 0xD1D5)``: resumable, and domain-separated from the uniform sampler's ``(seed, epoch)``."""
+
+    kind = "divrs"
+
+    def __init__(self, windows, batch: int, feats: np.ndarray, seed: int = 0, chunk: int = 48, max_age_t: int = 2, max_age_s: int = 6, cap_mult: float | None = None):
+        super().__init__(windows, batch, seed, chunk, max_age_t, max_age_s)
+        self.feats = np.asarray(feats, np.float64)
+        if self.feats.shape != (len(self.windows), 2):
+            raise ValueError(f"feats must be [n_windows, 2] = {(len(self.windows), 2)}, got {self.feats.shape}")
+        self.yaw_edges, self.acc_edges, self.cap_mult = tuple(DIVRS_YAW_EDGES), tuple(DIVRS_ACC_EDGES), float(DIVRS_CAP_MULT if cap_mult is None else cap_mult)
+        self.cells = divrs_cells(self.feats, self.yaw_edges, self.acc_edges)
+        self.W = divrs_weights(self.cells, self.cap_mult)
+        self.p = self.W["weight"]
+
+    def epoch(self, ep: int):
+        rng = np.random.default_rng((self.seed, ep, 0xD1D5))
+        by_clip: dict = {}
+        for i, w in enumerate(self.windows):
+            by_clip.setdefault(w[0], []).append(i)
+        order = rng.permutation(sorted(by_clip))
+        chunks = [np.array([i for c in order[c0:c0 + self.chunk] for i in by_clip[int(c)]], np.int64) for c0 in range(0, len(order), self.chunk)]
+        mass = np.array([self.p[ch].sum() for ch in chunks], np.float64)
+        n_epoch = len(self.windows)
+        cum = np.cumsum(mass) / mass.sum() * n_epoch
+        cum[-1] = float(n_epoch)
+        u = float(rng.random())
+        n_draw = np.diff(np.floor(np.concatenate([[0.0], cum]) + u).astype(np.int64))
+        for ch, n_c, m_c in zip(chunks, n_draw, mass):
+            if n_c <= 0:
+                continue
+            pool = rng.choice(ch, size=int(n_c), replace=True, p=self.p[ch] / m_c)
+            for b0 in range(0, len(pool), self.batch):
+                batch = []
+                for i in pool[b0:b0 + self.batch]:
+                    ci, t, _, _ = self.windows[int(i)]
+                    a_t = int(rng.integers(0, self.max_age_t + 1))
+                    batch.append((ci, t, a_t, a_t + int(rng.integers(0, self.max_age_s - self.max_age_t + 1))))
+                yield batch
+
+    def built_levers(self) -> dict:
+        """What the BUILT sampler does (the G-DVB 'built' side for ``--wm-sampler``): the edges, cap and cell table it actually uses."""
+        W = self.W
+        return {"kind": self.kind, "n_cells": DIVRS_N_CELLS, "yaw_edges": list(self.yaw_edges), "acc_edges": list(self.acc_edges), "cap_mult": self.cap_mult, "n_windows": len(self.windows),
+                "cell_counts": W["counts"].tolist(), "cell_weight": W["cell_weight"].tolist(), "median_weight": W["median_weight"], "cap": W["cap"], "n_capped_cells": W["n_capped_cells"],
+                "n_empty_cells": W["n_empty_cells"], "target_share": W["target_share"].tolist(), "max_window_weight": float(self.p.max()) if len(self.p) else 0.0}
+
+
+def check_cell_shares(epoch_fn, windows, feats, *, n_batches: int = DIVRS_CHECK_BATCHES, tol: float = DIVRS_SHARE_TOL, min_expected: int = DIVRS_MIN_EXPECTED, yaw_edges=DIVRS_YAW_EDGES,
+                      acc_edges=DIVRS_ACC_EDGES, cap_mult: float = DIVRS_CAP_MULT) -> dict:
+    """PREREG_V8F_DIVRS control 1 (sampler read-back): over the first ``n_batches`` batches ``epoch_fn(0), epoch_fn(1), ..`` yield, the realised share of draws in each cell vs the card's TARGET share. The target is computed HERE, from the
+    cell table and the card's rule (``divrs_weights``), never read from the sampler under test -- a uniform draw therefore fails. ``feats`` is ``window_act_means`` of ``windows``.
+
+    A cell is RESOLVED when its expected draw count (target share x draws) is >= ``min_expected``; below that, binomial sampling alone moves its share by more than ``tol`` and no sampler could be held to the rule (those cells are
+    listed in ``unresolved`` with their expected counts, never dropped silently). ``pass``: every resolved cell within ``tol`` (relative), no draw in a cell whose target is 0, and at least one resolved cell."""
+    cells = divrs_cells(feats, yaw_edges, acc_edges)
+    tgt = divrs_weights(cells, cap_mult)["target_share"]
+    row = {(int(w[0]), int(w[1])): i for i, w in enumerate(windows)}
+    if len(row) != len(windows):
+        raise ValueError("windows are not unique on (clip, t)")
+    cnt = np.zeros(DIVRS_N_CELLS, np.int64)
+    seen, ep = 0, 0
+    while seen < n_batches:
+        got = 0
+        for batch in epoch_fn(ep):
+            for ci, t, _, _ in batch:
+                cnt[cells[row[(int(ci), int(t))]]] += 1
+            seen += 1
+            got += 1
+            if seen >= n_batches:
+                break
+        if got == 0:
+            raise ValueError("the sampler yielded no batch")
+        ep += 1
+    n_draws = int(cnt.sum())
+    rows, unresolved, worst = [], [], 0.0
+    for c in range(DIVRS_N_CELLS):
+        exp = float(tgt[c] * n_draws)
+        real = cnt[c] / n_draws
+        rel = None if tgt[c] == 0 else float(real / tgt[c] - 1.0)
+        resolved = tgt[c] > 0 and exp >= min_expected
+        rows.append({"cell": c, "target_share": float(tgt[c]), "realised_share": float(real), "rel_err": rel, "expected_draws": exp, "resolved": bool(resolved)})
+        if resolved:
+            worst = max(worst, abs(rel))
+        elif tgt[c] > 0:
+            unresolved.append({"cell": c, "expected_draws": exp, "rel_err": rel})
+    off_cell = int(sum(cnt[c] for c in range(DIVRS_N_CELLS) if tgt[c] == 0))
+    n_res = sum(r["resolved"] for r in rows)
+    return {"n_batches": seen, "n_draws": n_draws, "epochs_used": ep, "tol": tol, "min_expected": min_expected, "n_resolved": n_res, "worst_rel_err_resolved": worst, "draws_in_zero_target_cells": off_cell,
+            "unresolved": unresolved, "cells": rows, "pass": bool(n_res >= 1 and worst <= tol and off_cell == 0)}
 
 
 def eval_context(grid: dict, kin_npz, J: dict, units: str | None = None, kin_mode: str = "steer") -> dict:

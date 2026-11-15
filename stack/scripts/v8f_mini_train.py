@@ -121,12 +121,17 @@ FLAG_CHECKS = {
     # PREREG_V8F_LFS: `lever:wm_strides` = equals built_levers().get("wm_strides", [2, 2]) AND the BUILT modules (WMAux.built_strides: the LevelConfig strides the loss reads, the macro encoders' stride and the stride their parameter SHAPES carry) -> bad_wm_strides
     # (the gate also refuses a stride that leaves a level fewer than 2 transitions: the arm is NOT RUN, with the count) -> `selfcheck.json levers.wm_strides_readback` (written when the argv NAMES the flag).
     "wm_strides": "lever:wm_strides",
+    # PREREG_V8F_ACTSENS: `lever:wm_idm_gamma` = equals the gamma of the BUILT LevelConfigs the loss multiplies by (HJEPAStack.built_levers()[lv]["gamma"], never WMAux.gamma) -> bad_wm_idm_gamma
+    # -> `selfcheck.json levers.wm_idm_gamma_readback` (written when the argv NAMES the flag).
+    "wm_idm_gamma": "lever:wm_idm_gamma",
     # PREREG_V8F_LADDER: `lever:wm_rollout_k` = the predictor calls the BUILT loss makes inside HJEPAStack.rollout, per level (WMAux.built_ladder: a forward-hook count while the loss runs, never the config that built it);
     # `lever:wm_rollout_stride` = the free run's anchor count the built loss produces; `lever:wm_rollout_w` = (level loss - its other terms) / the k-step term; `lever:wm_ctx` = the predictor's parameter-shape context (pos.shape[0])
     # AND the context the free run is handed; `data:wm_windows` = the kind, F, first t and pooled flag READ BACK from the BUILT dataset (data_info["wm_windows"]) -> bad_wm_ladder.
     "wm_rollout_k": "lever:wm_rollout_k", "wm_rollout_stride": "lever:wm_rollout_stride", "wm_rollout_w": "lever:wm_rollout_w", "wm_ctx": "lever:wm_ctx",
     "wm_windows": "data:wm_windows", "wm_win_stride": "data:wm_windows", "wm_pooled": "data:wm_windows", "wm_zcache": "data:wm_windows",
-    "init_ckpt": "data:init_ckpt",           # O-RECOVER's start state: the MODEL weights of an earlier checkpoint, config-checked, loaded strictly and READ BACK (load_init_ckpt) -> declared_vs_built (bad_init_ckpt)
+    # PREREG_V8F_DIVRS: `data:wm_sampler` = the BUILT sampler's record (info["wm_sampler"]: kind, the sampler's own bin edges, cap multiple, cell counts and weights) -> bad_wm_sampler; divrs adds wm_sampler_probe (control 1: realised cell shares over the first 2,000 batches).
+    "wm_sampler": "data:wm_sampler",
+    "init_ckpt": "data:init_ckpt",          # O-RECOVER's start state: the MODEL weights of an earlier checkpoint, config-checked, loaded strictly and READ BACK (load_init_ckpt) -> declared_vs_built (bad_init_ckpt)
     # PREREG_V8F_LORA: the encoder lever. `enc:<k>` = equals the BUILT encoder's lever (enc.built_levers()); with --encoder cache there is no encoder and every
     # one of these must be at its default (a declared flag that builds nothing is REFUSED, not ignored)
     "encoder": "enc:encoder", "lora_r": "enc:lora_r", "lora_alpha": "enc:lora_alpha", "lora_targets": "enc:lora_targets",
@@ -319,7 +324,14 @@ def build_parser():
                     help="PREREG_V8F_LFS: the world model's level steps, in states of the level below: S2 = L1 states per L2 step, S3 = L2 states per L3 step. Absent (default) = the arm config's (2, 2) = every earlier arm, bit for bit "
                          "(0.2 / 0.4 / 0.8 s on the cache grid). (2, 3) = steps 0.2 / 0.4 / 1.2 s; (3, 3) = 0.2 / 0.6 / 1.8 s. Needs --wm a|b. A flag whose value leaves the strides unchanged must still be NAMED in an LFS argv "
                          "(its selfcheck then records the BUILT strides). Every level must keep >= 2 training transitions at --hmax, else the gate refuses (NOT RUN, with the count)")
+    ap.add_argument("--wm-sampler", dest="wm_sampler", choices=("uniform", "divrs"), default="uniform",
+                    help="PREREG_V8F_DIVRS: which training windows are drawn. uniform (default) = every earlier arm, bit for bit (D.ChunkedSampler). divrs = the SAME windows drawn with probability proportional to 1 / (the count of their cell) in a 5 x 5 grid "
+                         "of mean |yaw rate| (0, .02, .05, .10, .20 rad/s) x mean longitudinal acceleration (-1, -.3, .3, 1 m/s^2) over the window's transitions, capped at 10 x the median window weight, empty cells no weight; same chunked clip order, "
+                         "ages and epoch length. Needs --kin-mode yaw and a world model (--wm a|b)")
     # ---- PREREG_V8F_LADDER: the world-model ladder levers. Every flag defaults to the earlier behaviour and has its G-DVB entry in FLAG_CHECKS and its clause in bad_wm_ladder.
+    ap.add_argument("--wm-idm-gamma", dest="wm_idm_gamma", type=float, nargs=3, default=None, metavar=("G1", "G2", "G3"),
+                    help="PREREG_V8F_ACTSENS: the world model's IDM loss weight per level (gamma, levels 1 / 2 / 3). Absent (default) = the arm config's wm_gamma (100) at every level = every earlier arm, bit for bit. "
+                         "Needs --wm b; every G must be > 0. Read back from the BUILT LevelConfigs (HJEPAStack.built_levers), not from WMAux.gamma")
     ap.add_argument("--wm-rollout-k", dest="wm_rollout_k", type=int, nargs=3, default=None, metavar=("K1", "K2", "K3"),
                     help="PREREG_V8F_LADDER: free-run steps of the k-step loss per WM level (through HJEPAStack.rollout, on top of the teacher-forced one-step loss). Absent = (1, 1, 1) = every earlier arm, bit for bit. "
                          "A level with k > 1 needs hmax >= k x (its cumulative stride) + 1 frames. Needs --wm a|b")
@@ -377,6 +389,11 @@ def declared_levers(a) -> dict:
 WM_STRIDES_DEFAULT = tuple(M.V8FMiniConfig.__dataclass_fields__["wm_strides"].default)       # PREREG_V8F_LFS: the arm config's strides, (2, 2): what an argv that does not name --wm-strides builds
 
 
+def declared_wm_idm_gamma(a) -> tuple:
+    """PREREG_V8F_ACTSENS: the per-level IDM weights the argv DECLARES: ``--wm-idm-gamma G1 G2 G3``, or () (= the config's wm_gamma at every level) when the flag is absent."""
+    return () if a.wm_idm_gamma is None else tuple(float(g) for g in a.wm_idm_gamma)
+
+
 def declared_wm_strides(a) -> tuple:
     """PREREG_V8F_LFS: the strides the argv DECLARES: ``--wm-strides S2 S3``, or the arm config's (2, 2) when the flag is absent."""
     return WM_STRIDES_DEFAULT if a.wm_strides is None else tuple(int(s) for s in a.wm_strides)
@@ -404,6 +421,7 @@ def make_config(a) -> M.V8FMiniConfig:
     hmax = a.hmax or (16 if lv["wm"] != "off" else 10)
     return M.V8FMiniConfig(d=a.d, ff=2 * a.d, hist=a.hist, hmax=hmax, window_start=a.window_start, n_q=a.n_q, nb=a.nb, navonly=lv["navonly"],
                            wm_strides=declared_wm_strides(a),                                             # PREREG_V8F_LFS: the ONE line that applies --wm-strides (a mutation deletes it)
+                           wm_gamma_levels=declared_wm_idm_gamma(a),                                      # PREREG_V8F_ACTSENS: the ONE line that applies --wm-idm-gamma (mutation M1 deletes it)
                            consistency=lv["consistency"], wm=lv["wm"], n_tok=40 if a.grid == "pool4x10" else 160,
                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm, wm_k=a.wm_k,
@@ -897,6 +915,68 @@ def bad_wm_only(a, cfg, model, data_info) -> list:
         if rec.get("mode") != "wm_only":
             bad.append(f"wm_only: the start state was loaded in mode {rec.get('mode')!r}")
     return bad
+
+
+#: PREREG_V8F_DIVRS: the card's cell grid, as the GATE holds it (a second spelling of ``D.DIVRS_*``: the built sampler's own edges are compared with these, so a drifted constant in the data module is refused)
+DIVRS_CARD = {"yaw_edges": [0.02, 0.05, 0.10, 0.20], "acc_edges": [-1.0, -0.3, 0.3, 1.0], "cap_mult": 10.0, "n_cells": 25}
+
+
+def make_sampler(a, cfg, wins, store, J, info):
+    """The window sampler. ``--wm-sampler uniform`` (the default) is ``D.ChunkedSampler`` called exactly as it was before the flag existed (same arguments, so the epoch order is bit for bit the earlier one). ``divrs``
+    (PREREG_V8F_DIVRS) is ``D.DiversitySampler`` over the same windows, same chunking and ages, with the cell table of ``D.window_act_means`` (the ``yaw`` kin mode only: the card's bins are rad/s)."""
+    kw = dict(seed=a.seed, chunk=max(4, min(48, info["lru"] - 2)), max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
+    if a.wm_sampler == "uniform":
+        return D.ChunkedSampler(wins, a.batch, **kw)
+    if a.kin_mode != "yaw":
+        raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: --wm-sampler divrs needs --kin-mode yaw (its yaw-rate bins are in rad/s); --kin-mode is {a.kin_mode!r}")
+    return D.DiversitySampler(wins, a.batch, D.window_act_means(store, J, wins, cfg.hmax), **kw)
+
+
+def built_sampler_record(sampler) -> dict:
+    """What the BUILT sampler is: the diversity sampler reports its own edges, cap and cell table; any other sampler is the uniform one."""
+    f = getattr(sampler, "built_levers", None)
+    return f() if callable(f) else {"kind": "uniform", "class": type(sampler).__name__, "n_windows": len(sampler.windows)}
+
+
+def bad_wm_sampler(a, cfg, model, data_info) -> list:
+    """G-DVB for ``--wm-sampler`` (PREREG_V8F_DIVRS). Empty = pass. The declared kind is read back from the BUILT sampler's record (``built_sampler_record``); for ``divrs`` the sampler's own edges, cap multiple and cell count must
+    equal the card's (``DIVRS_CARD``), its cell table must account for every training window, its weights must obey the cap (no window above ``cap_mult`` x the median) and give empty cells nothing, and the world model must exist (the
+    lever resamples the windows the WM loss sees; with no WM it would only reshuffle the planner's, which the card does not test)."""
+    bad = []
+    rec = data_info.get("wm_sampler")
+    if rec is None:
+        return bad if a.wm_sampler == "uniform" else [f"lever wm_sampler: {a.wm_sampler} declared but no sampler record was built"]
+    if rec.get("kind") != a.wm_sampler:
+        bad.append(f"lever wm_sampler: declared {a.wm_sampler} but built {rec.get('kind')}")
+    if a.wm_sampler == "uniform":
+        return bad
+    if model.wm is None:
+        bad.append("lever wm_sampler divrs declared but no world model was built (--wm off): the lever resamples the windows the WM loss sees")
+    if a.kin_mode != "yaw":
+        bad.append(f"lever wm_sampler divrs: --kin-mode is {a.kin_mode!r}, the bins are in rad/s (yaw)")
+    for k in ("yaw_edges", "acc_edges", "cap_mult", "n_cells"):
+        if rec.get(k) != DIVRS_CARD[k]:
+            bad.append(f"lever wm_sampler divrs: built {k} {rec.get(k)} != the card's {DIVRS_CARD[k]}")
+    n_win = (data_info or {}).get("n_windows")
+    if rec.get("n_windows") != n_win or sum(rec.get("cell_counts", [])) != n_win:
+        bad.append(f"lever wm_sampler divrs: the cell table counts {sum(rec.get('cell_counts', []))} windows, the sampler holds {rec.get('n_windows')}, the training set has {n_win}")
+    cw, cnt = rec.get("cell_weight", []), rec.get("cell_counts", [])
+    if len(cw) != 25 or any((c == 0) != (w == 0.0) for c, w in zip(cnt, cw)):
+        bad.append("lever wm_sampler divrs: an empty cell has weight or a non-empty cell has none")
+    if rec.get("max_window_weight", 0.0) > rec.get("cap", 0.0) * (1.0 + 1e-12):
+        bad.append(f"lever wm_sampler divrs: a window weight {rec.get('max_window_weight')} exceeds the cap {rec.get('cap')}")
+    if abs(rec.get("cap", 0.0) - rec.get("cap_mult", 0.0) * rec.get("median_weight", 0.0)) > 1e-12:
+        bad.append("lever wm_sampler divrs: the cap is not cap_mult x the median window weight")
+    return bad
+
+
+def wm_sampler_probe(sampler, windows) -> dict:
+    """Card control 1 on the BUILT sampler (G-LIVE of the lever): ``D.check_cell_shares`` over the first 2,000 batches, the target computed from the cell table and the card's rule, not from the sampler. Any violation is a refusal."""
+    res = D.check_cell_shares(sampler.epoch, windows, sampler.feats)
+    if not res["pass"]:
+        bad = [r for r in res["cells"] if r["resolved"] and abs(r["rel_err"]) > res["tol"]]
+        raise AssertionError("wm-sampler control 1 failed: " + json.dumps({k: v for k, v in res.items() if k != "cells"}, default=str)[:600] + " worst cells " + json.dumps(bad[:4], default=str)[:600])
+    return {k: v for k, v in res.items() if k != "cells"} | {"cells": [r for r in res["cells"] if r["target_share"] > 0]}
 
 
 LFS_MIN_TRANSITIONS = 2        # PREREG_V8F_LFS: a level with fewer than this many training transitions per window is NOT RUN (reported with the count), never run at a different hmax
@@ -1411,6 +1491,33 @@ def bad_lead(a, model, data_info=None) -> list:
     return bad
 
 
+def wm_idm_gamma_readback(a, cfg, model) -> dict:
+    """PREREG_V8F_ACTSENS: the record ``selfcheck.json`` carries (``levers.wm_idm_gamma_readback``): the weights the argv DECLARED and the gamma of the BUILT LevelConfigs the loss multiplies by (``HJEPAStack.built_levers``)."""
+    built = [float(r["gamma"]) for r in model.wm.stack.built_levers().values()] if model.wm is not None else []
+    return {"declared": list(declared_wm_idm_gamma(a)), "built": built, "wm_aux_gamma": None if model.wm is None else float(model.wm.gamma)}
+
+
+def bad_wm_idm_gamma(a, cfg, model) -> list:
+    """PREREG_V8F_ACTSENS, G-DVB for ``--wm-idm-gamma``: the weights the loss will multiply the IDM term by, read from the BUILT LevelConfigs (``HJEPAStack.built_levers()``), NEVER ``WMAux.gamma``
+    (MEASURED: a builder that ignores the config field leaves WMAux.gamma at 100 and passes the older check). Absent flag: every level must read cfg.wm_gamma (wm b) or 0 (wm a)."""
+    bad = []
+    lv = declared_levers(a)
+    if a.wm_idm_gamma is not None:
+        if lv["wm"] != "b":
+            bad.append(f"lever wm_idm_gamma: --wm-idm-gamma {list(a.wm_idm_gamma)} needs --wm b (got --wm {lv['wm']}): a lever that is declared and builds nothing")
+        if any(not (g > 0.0 and g == g and g != float("inf")) for g in a.wm_idm_gamma):
+            bad.append(f"lever wm_idm_gamma: every gamma must be a finite number > 0, got {list(a.wm_idm_gamma)}")
+    if lv["wm"] == "off" or model.wm is None:
+        return bad
+    decl = declared_wm_idm_gamma(a) or ((float(cfg.wm_gamma) if lv["wm"] == "b" else 0.0),) * 3
+    got = [float(r["gamma"]) for r in model.wm.stack.built_levers().values()]
+    if len(got) != 3 or any(abs(g - d) > 1e-9 * max(1.0, abs(d)) for g, d in zip(got, decl)):
+        bad.append(f"lever wm_idm_gamma: declared {list(decl)} but the BUILT LevelConfigs (the weights the loss multiplies by) hold {got}")
+    if tuple(float(g) for g in cfg.wm_gamma_levels) != declared_wm_idm_gamma(a):
+        bad.append(f"lever wm_idm_gamma: declared {list(declared_wm_idm_gamma(a))} but the built config holds {list(cfg.wm_gamma_levels)}")
+    return bad
+
+
 def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None, rec=None, t2b=None) -> list:
     """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
     bad = bad_encoder(a, enc, data_info)
@@ -1421,6 +1528,8 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
     bad += bad_wm_only(a, cfg, model, data_info)                                                 # PREREG_V8F_MRATE: --wm-k read back from the BUILT WM modules, --wm-only from the loader's record and the frozen set
     bad += bad_wm_ladder(a, cfg, model, data_info)                                               # PREREG_V8F_LADDER: the seven ladder flags read back from the BUILT loss / predictor shapes / dataset
     bad += bad_wm_strides(a, cfg, model)                                                         # PREREG_V8F_LFS: --wm-strides read back from the BUILT WM modules (and the >= 2 transitions per level rule)
+    bad += bad_wm_idm_gamma(a, cfg, model)                                                       # PREREG_V8F_ACTSENS: --wm-idm-gamma read back from the BUILT LevelConfigs (HJEPAStack.built_levers)
+    bad += bad_wm_sampler(a, cfg, model, data_info)                                              # PREREG_V8F_DIVRS: --wm-sampler read back from the BUILT sampler (edges, cap, cell table)
     bad += bad_lead(a, model, data_info)                                                         # PREREG_LEVELHEAD_A2: --lead-head / --w-lead / --aux-cond read back from the BUILT model and the built label arrays
     bad += bad_dagger(a, dag, model.cfg, data_info)                                              # PREREG_V8F_DAGGER: --dagger-p / --dagger-bank / --dagger-seed read back from the BUILT swap
     bad += bad_ego_dagger(a, comp, ego, dag)                                                     # AMEND1 section 1: --ego-perturb-with-dagger read back from the BUILT stage
@@ -3078,14 +3187,20 @@ def main(argv=None):
     opt = torch.optim.AdamW(groups, lr=a.lr)
     S = math.ceil(info["n_windows_all_clips"] / a.batch)
     total = a.steps or S * a.steps_mult
-    sampler = D.ChunkedSampler(wins, a.batch, seed=a.seed, chunk=max(4, min(48, info["lru"] - 2)),
-                               max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
+    sampler = make_sampler(a, cfg, wins, store, J, info)             # PREREG_V8F_DIVRS: --wm-sampler uniform (default) = the line that stood here, argument for argument; divrs = the action-diverse sampler
+    info["wm_sampler"] = built_sampler_record(sampler)               # what was BUILT, read back by bad_wm_sampler (G-DVB) and recorded in selfcheck.json
     # ---- the launch gate
     lr_at = LRSchedule(a.lr, a.warmup, total)                        # the loop's schedule, built BEFORE the gate so that G-DVB can read --warmup back from it
     bad = declared_vs_built(a, cfg, model, opt, info, enc, ego, lr_at, dag, comp, rcv, t2b)
     bad += bad_perf_resume(a, argv)                                  # AMENDMENT_V8F_LORA_5: --resume-perf-levers read back (the named previous argv differs from this one in --accum / --enc-ckpt only)
     if bad:
         raise SystemExit("ZZDVB-REFUSEDZZ declared-vs-built: " + "; ".join(bad))
+    smp_probe = None
+    if a.wm_sampler == "divrs":                                      # PREREG_V8F_DIVRS control 1: the realised cell shares over the first 2,000 batches of the BUILT sampler (lever-ON launches only)
+        try:
+            smp_probe = wm_sampler_probe(sampler, wins)
+        except AssertionError as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ wm-sampler: {e}")
     chunk = enc_chunk(a, cfg)
     ident = None
     probe_wm = None
@@ -3187,6 +3302,8 @@ def main(argv=None):
     levers["recover_table"] = (info.get("recover") or {}).get("table")  # ... and the deviation table's build summary (n, content sha256, means, share of records with logged v in [3, 8]); None when the lever is off (the card's KR3 reads it)
     levers["ego_perturb_with_dagger"] = comp.on                        # AMEND1 section 1: what was BUILT (False unless --ego-perturb-with-dagger) ...
     levers["ego_perturb_stream"] = comp.ego.stream                     # ... and the perturbation's generator stream: 0 = the original, D.EGO_PERTURB_COMPOSED_STREAM = domain-separated from the swap's (composed arms only)
+    if a.wm_sampler == "divrs":                                          # PREREG_V8F_DIVRS: lever-ON launches only: the BUILT sampler's edges, cap and cell table (counts, weights, target shares)
+        levers["wm_sampler"] = info["wm_sampler"]
     levers["ego_dagger_overlap_n"] = cmpp["overlap"]                   # ... and the composed probe's measured overlap on the probe batch (0 when off; the run total is summary.json's ego_dagger_overlap_n)
     levers["launch_intent"] = {"launch_intent_w": cfg.launch_intent_w, "v0_max": M.LAUNCH_V0_MAX, "dv": M.LAUNCH_DV, "dt": M.LAUNCH_DT, "knots": [M.LAUNCH_KNOT_LO, M.LAUNCH_KNOT_HI], "axis": "along (x of the ego frame at NOW)",
                                "mask_from": "the LOGGED kin3[:, 0] and the GT future, taken before any ego stage"}   # PREREG_V8F_LAUNCH_INTENT: what was BUILT (the definition the mask uses) ...
@@ -3194,6 +3311,8 @@ def main(argv=None):
     levers["init_ckpt"] = info.get("init_ckpt")
     if a.wm_strides is not None:                                         # PREREG_V8F_LFS: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT strides and the transitions per level
         levers["wm_strides_readback"] = wm_strides_readback(a, cfg, model)
+    if a.wm_idm_gamma is not None:                                       # PREREG_V8F_ACTSENS: lever-NAMED launches only: declared vs the BUILT per-level IDM weights
+        levers["wm_idm_gamma_readback"] = wm_idm_gamma_readback(a, cfg, model)
     if wm_ladder_named(a):                                              # PREREG_V8F_LADDER: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT measurements
         levers["wm_ladder_readback"] = wm_ladder_readback(a, cfg, model, info)
     if a.wm_only:                                                      # WM-only arms only (a flag-off run record keeps its key set)
@@ -3215,6 +3334,8 @@ def main(argv=None):
     sc["recover_probe"] = recp
     sc["t2bank_probe"] = t2p
     sc["launch_intent_probe"] = lip
+    if a.wm_sampler == "divrs":                                         # PREREG_V8F_DIVRS: lever-ON arms only: control 1 on the built sampler
+        sc["wm_sampler_probe"] = smp_probe
     if a.wm_only:                                                       # WM-only arms only: a flag-off selfcheck.json keeps its key set
         sc["planner_identity_probe"] = pid
     if cfg.level_head == "on":                                          # lever-ON arms only: a flag-off selfcheck.json keeps its key set

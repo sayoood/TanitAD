@@ -208,6 +208,7 @@ class V8FMiniConfig:
     w_wm: float = 0.1
     wm_beta: float = 0.08
     wm_gamma: float = 100.0
+    wm_gamma_levels: tuple = ()        # PREREG_V8F_ACTSENS (`--wm-idm-gamma G1 G2 G3`): the IDM weight of each WM level. () = (wm_gamma,) x 3 = every earlier arm, bit for bit (changes the loss weight only, never a parameter shape)
     p_gt_start: float = 1.0
     p_gt_end: float = 0.2
     max_age_t: int = 2
@@ -277,6 +278,11 @@ class V8FMiniConfig:
             raise ValueError(f"wm_k must be an int >= 1, got {self.wm_k!r}")
         if self.wm_k > 1 and self.wm == "off":
             raise ValueError("wm_k > 1 needs a world model (wm a or b): a lever that is declared and builds nothing")
+        wgl = self.wm_gamma_levels                                                # PREREG_V8F_ACTSENS: () or three finite floats > 0, and only with wm b
+        if not (isinstance(wgl, (tuple, list)) and (len(wgl) == 0 or (len(wgl) == 3 and all(isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) and x > 0.0 for x in wgl)))):
+            raise ValueError(f"wm_gamma_levels must be () or three finite numbers > 0 (levels 1, 2, 3), got {wgl!r}")
+        if len(wgl) > 0 and self.wm != "b":
+            raise ValueError("wm_gamma_levels needs wm b (the IDM runs only at b): a lever that is declared and builds nothing")
         for nm in ("wm_rollout_k", "wm_rollout_stride", "wm_ctx"):               # PREREG_V8F_LADDER: three ints >= 1 (one per WM level)
             v = getattr(self, nm)
             if not (isinstance(v, (tuple, list)) and len(v) == 3 and all(isinstance(x, int) and not isinstance(x, bool) and x >= 1 for x in v)):
@@ -685,13 +691,14 @@ class WMAux(nn.Module):
         super().__init__()
         from tanitad.models.hjepa import HJEPAStack, LevelConfig, LevelEncoder   # S3's module; absent => this arm cannot be built
         gamma = cfg.wm_gamma if cfg.wm == "b" else 0.0
-        mk = lambda **kw: LevelConfig(latent_dim=cfg.wm_dim, beta=cfg.wm_beta, gamma=gamma, pred_width=128,
-                                      pred_depth=2, pred_heads=4, enc_hidden=128, macro_hidden=32, **kw)
+        gl = tuple(float(g) for g in cfg.wm_gamma_levels) if (cfg.wm == "b" and len(tuple(cfg.wm_gamma_levels)) > 0) else (gamma,) * 3     # PREREG_V8F_ACTSENS: per-level IDM weight; absent = the one gamma at every level
+        mk = lambda g, **kw: LevelConfig(latent_dim=cfg.wm_dim, beta=cfg.wm_beta, gamma=g, pred_width=128,
+                                         pred_depth=2, pred_heads=4, enc_hidden=128, macro_hidden=32, **kw)
         K = int(cfg.wm_k)
         up = lambda i: dict(window=K, dilation=cfg.wm_strides[i], causal_pad=True) if K > 1 else {}      # K = 1: LevelConfig's defaults, i.e. the earlier build
         lad = lambda i: dict(context=int(cfg.wm_ctx[i]), rollout_k=int(cfg.wm_rollout_k[i]), rollout_stride=int(cfg.wm_rollout_stride[i]), rollout_w=float(cfg.wm_rollout_w))   # noqa: E731  PREREG_V8F_LADDER: (3, 3, 3) / (1, 1, 1) = LevelConfig's defaults, i.e. the earlier build
-        lv = [mk(action_dim=2, act_embed_dim=32, **lad(0)),
-              mk(action_dim=32, stride=cfg.wm_strides[0], **up(0), **lad(1)), mk(action_dim=32, stride=cfg.wm_strides[1], **up(1), **lad(2))]
+        lv = [mk(gl[0], action_dim=2, act_embed_dim=32, **lad(0)),
+              mk(gl[1], action_dim=32, stride=cfg.wm_strides[0], **up(0), **lad(1)), mk(gl[2], action_dim=32, stride=cfg.wm_strides[1], **up(1), **lad(2))]
         self.stack = HJEPAStack(lv, sigreg_projections=256)
         self.proj = nn.Sequential(nn.LayerNorm(cfg.d), nn.Linear(cfg.d, cfg.wm_dim))
         self.gamma = gamma
