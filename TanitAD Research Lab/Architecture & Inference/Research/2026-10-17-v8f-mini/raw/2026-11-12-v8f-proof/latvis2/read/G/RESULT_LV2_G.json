@@ -1,0 +1,457 @@
+{
+ "arm": "G",
+ "seeds": [
+  0,
+  1
+ ],
+ "tier": "T0 (a world-model diagnostic on logged frames, never driving performance)",
+ "families": "LONGITUDINAL, LATERAL, TACTICAL: not measured by this read",
+ "strategic": "STRATEGIC: PAUSED (PI item 25)",
+ "card": "PREREG_V8F_PROOF_ADD38",
+ "B": 2000,
+ "bootstrap": "per seed: episode-cluster; pooled: two-level (seeds, then episodes), rng seed 0",
+ "n_windows": 1948,
+ "n_episodes": 139,
+ "moving_cells_per_window": 10,
+ "controls": [
+  {
+   "name": "k1",
+   "rule": "held-out skill of the token map with the states permuted across frames <= 0.02",
+   "value_max_per_seed": [
+    -0.07089386655921803,
+    -0.06950485472676116
+   ],
+   "pass": true
+  },
+  {
+   "name": "k2",
+   "rule": "training-fold skill > held-out skill in every fold, and held-out skill of the true present state on the present tokens > 0 in every fold",
+   "train_gt_heldout": [
+    true,
+    true
+   ],
+   "present_heldout_gt0": [
+    true,
+    true
+   ],
+   "skill_train": [
+    [
+     0.8897588799824092,
+     0.8954321687109026,
+     0.8945824310257837,
+     0.8946707009364439,
+     0.8943620208267493
+    ],
+    [
+     0.8863791907065637,
+     0.891397350560961,
+     0.8900169467006073,
+     0.8908093655523932,
+     0.8894100643184126
+    ]
+   ],
+   "skill_heldout": [
+    [
+     0.5727303417360969,
+     0.5908740283487375,
+     0.553675960494328,
+     0.5960071774867217,
+     0.5636256530282744
+    ],
+    [
+     0.5470011348543913,
+     0.5749458867845058,
+     0.5297835255429825,
+     0.5639342088836958,
+     0.5475414883730818
+    ]
+   ],
+   "skill_heldout_present": [
+    [
+     0.5717582958542947,
+     0.5941085535626125,
+     0.5539150595736414,
+     0.5966132366297316,
+     0.5639993547948646
+    ],
+    [
+     0.54745460847816,
+     0.575196583804678,
+     0.5320220187002398,
+     0.5648053314030796,
+     0.5480596804997543
+    ]
+   ],
+   "pass": true
+  },
+  {
+   "name": "k3",
+   "rule": "with the present state given as the imagined state D is exactly 0",
+   "max_abs_episode_sum_of_D": [
+    0.0,
+    0.0
+   ],
+   "pass": true
+  },
+  {
+   "name": "k4",
+   "rule": "with the true future state given as the imagined state D equals the headroom and its two-level interval lies above 0",
+   "D_equals_headroom": [
+    true,
+    true
+   ],
+   "pooled": {
+    "D_all": 3.8103178260551513,
+    "D_mov": 9.265064837493659
+   },
+   "pooled_ci": {
+    "D_all": [
+     3.6012542906960396,
+     4.0143538779906205
+    ],
+    "D_mov": [
+     8.761988801758491,
+     9.759587947613937
+    ]
+   },
+   "pass": true
+  },
+  {
+   "name": "k5",
+   "rule": "the rollout of the tool equals the banked rollout (pred_2s) of the same checkpoint to 0.0001",
+   "max_abs_per_seed": [
+    0.2008550763130188,
+    0.16961811482906342
+   ],
+   "run": [
+    true,
+    true
+   ],
+   "files": [
+    "/workspace/v8proof/probe/lv2/banked/LATENTS_CTX_G_s0_R3g.npz",
+    "/workspace/v8proof/probe/lv2/banked/LATENTS_CTX_G_s1_R3g.npz"
+   ],
+   "pass": false
+  },
+  {
+   "name": "k6",
+   "rule": "the windows, folds and episodes equal those of the r-b read (same ids, same count)",
+   "ref": "C:/Users/Admin/v8proof_c/ctxroll/LATENTS_CTX_G_s0_R1.npz",
+   "per_seed": [
+    {
+     "n": 1948,
+     "ref_n": 1948,
+     "same_ids_and_order": true,
+     "same_folds": true,
+     "same_episodes": true,
+     "n_episodes": 139
+    },
+    {
+     "n": 1948,
+     "ref_n": 1948,
+     "same_ids_and_order": true,
+     "same_folds": true,
+     "same_episodes": true,
+     "n_episodes": 139
+    }
+   ],
+   "pass": true
+  }
+ ],
+ "controls_pass": false,
+ "controls_pass_as_written": false,
+ "k5_form": "as written",
+ "stats": {
+  "D_all": {
+   "per_seed": [
+    1.2297425699345692,
+    1.3117127975284502
+   ],
+   "per_seed_ci": [
+    [
+     0.9819747229131944,
+     1.4790431996579385
+    ],
+    [
+     1.0761782181325235,
+     1.5472761605799323
+    ]
+   ],
+   "pooled": 1.2707276837315096,
+   "pooled_ci": [
+    1.0887360181031986,
+    1.4517599635847669
+   ]
+  },
+  "D_mov": {
+   "per_seed": [
+    4.783210304449838,
+    4.866135047773929
+   ],
+   "per_seed_ci": [
+    [
+     4.2996545013566525,
+     5.29204051981691
+    ],
+    [
+     4.378147263709587,
+     5.347175377404324
+    ]
+   ],
+   "pooled": 4.824672676111883,
+   "pooled_ci": [
+    4.465507532727031,
+    5.169356681017139
+   ]
+  },
+  "H_all": {
+   "per_seed": [
+    3.8752077248731527,
+    3.74542792723715
+   ],
+   "per_seed_ci": [
+    [
+     3.601224242958835,
+     4.143132839147631
+    ],
+    [
+     3.4809165768122416,
+     4.007959506546816
+    ]
+   ],
+   "pooled": 3.8103178260551513,
+   "pooled_ci": [
+    3.6012542906960396,
+    4.0143538779906205
+   ]
+  },
+  "H_mov": {
+   "per_seed": [
+    9.45157579520155,
+    9.078553879785769
+   ],
+   "per_seed_ci": [
+    [
+     8.8182409122624,
+     10.061452838185774
+    ],
+    [
+     8.494312445614728,
+     9.664908936407762
+    ]
+   ],
+   "pooled": 9.265064837493659,
+   "pooled_ci": [
+    8.761988801758491,
+    9.759587947613937
+   ]
+  },
+  "D_row0": {
+   "per_seed": [
+    2.2862033536271396,
+    2.3963111409661217
+   ],
+   "per_seed_ci": [
+    [
+     1.847115307976689,
+     2.727378547028142
+    ],
+    [
+     1.9499696384064904,
+     2.8178006077897004
+    ]
+   ],
+   "pooled": 2.341257247296631,
+   "pooled_ci": [
+    2.0248476099479045,
+    2.6393383031545805
+   ]
+  },
+  "D_row1": {
+   "per_seed": [
+    1.8351607541773598,
+    2.0091113292828235
+   ],
+   "per_seed_ci": [
+    [
+     1.5395595157308706,
+     2.1328398199859784
+    ],
+    [
+     1.7203871417086924,
+     2.2884034824729187
+    ]
+   ],
+   "pooled": 1.9221360417300917,
+   "pooled_ci": [
+    1.6791851552504016,
+    2.1520148450295653
+   ]
+  },
+  "D_row2": {
+   "per_seed": [
+    1.156610983711126,
+    1.2505676335898024
+   ],
+   "per_seed_ci": [
+    [
+     0.8624900915643329,
+     1.4754641707024672
+    ],
+    [
+     0.9691476880224088,
+     1.5392083111149664
+    ]
+   ],
+   "pooled": 1.2035893086504643,
+   "pooled_ci": [
+    0.9939516334470114,
+    1.4342414971089787
+   ]
+  },
+  "D_row3": {
+   "per_seed": [
+    -0.35900481177734883,
+    -0.40913891372494626
+   ],
+   "per_seed_ci": [
+    [
+     -0.5330875781316293,
+     -0.18953393306009472
+    ],
+    [
+     -0.6056666118373188,
+     -0.19546925615826072
+    ]
+   ],
+   "pooled": -0.3840718627511476,
+   "pooled_ci": [
+    -0.5203045265112457,
+    -0.24758144611478852
+   ]
+  },
+  "share_all": {
+   "per_seed": [
+    0.317335910031719,
+    0.3502170707890373
+   ],
+   "pooled": 0.3334965065229487,
+   "pooled_ci": [
+    0.292255643521567,
+    0.37306899209941036
+   ]
+  },
+  "share_mov": {
+   "per_seed": [
+    0.5060754320859614,
+    0.5360033230191896
+   ],
+   "pooled": 0.5207381449277618,
+   "pooled_ci": [
+    0.49313009167615746,
+    0.5493401828707332
+   ]
+  }
+ },
+ "D_per_row": {
+  "sky": {
+   "per_seed": [
+    2.2862033536271396,
+    2.3963111409661217
+   ],
+   "per_seed_ci": [
+    [
+     1.847115307976689,
+     2.727378547028142
+    ],
+    [
+     1.9499696384064904,
+     2.8178006077897004
+    ]
+   ],
+   "pooled": 2.341257247296631,
+   "pooled_ci": [
+    2.0248476099479045,
+    2.6393383031545805
+   ]
+  },
+  "far": {
+   "per_seed": [
+    1.8351607541773598,
+    2.0091113292828235
+   ],
+   "per_seed_ci": [
+    [
+     1.5395595157308706,
+     2.1328398199859784
+    ],
+    [
+     1.7203871417086924,
+     2.2884034824729187
+    ]
+   ],
+   "pooled": 1.9221360417300917,
+   "pooled_ci": [
+    1.6791851552504016,
+    2.1520148450295653
+   ]
+  },
+  "near": {
+   "per_seed": [
+    1.156610983711126,
+    1.2505676335898024
+   ],
+   "per_seed_ci": [
+    [
+     0.8624900915643329,
+     1.4754641707024672
+    ],
+    [
+     0.9691476880224088,
+     1.5392083111149664
+    ]
+   ],
+   "pooled": 1.2035893086504643,
+   "pooled_ci": [
+    0.9939516334470114,
+    1.4342414971089787
+   ]
+  },
+  "hood": {
+   "per_seed": [
+    -0.35900481177734883,
+    -0.40913891372494626
+   ],
+   "per_seed_ci": [
+    [
+     -0.5330875781316293,
+     -0.18953393306009472
+    ],
+    [
+     -0.6056666118373188,
+     -0.19546925615826072
+    ]
+   ],
+   "pooled": -0.3840718627511476,
+   "pooled_ci": [
+    -0.5203045265112457,
+    -0.24758144611478852
+   ]
+  }
+ },
+ "name": null,
+ "name_rule": "D on the moving cells above 0 at both seeds and the two-level interval above 0",
+ "name_withheld_reason": "a control failed: k5",
+ "dumps": [
+  {
+   "path": "F:/TanitAD-scratch/v8proof/latvis2/dump/DUMP_LV2_G_s0.npz",
+   "ckpt_sha256": "40481794b113835f747eb2c2263a0ff2a2689d1de55ce9c627ae77c8ccec31b1",
+   "sha256": "01dbfd0672d6ec66d7f3bbd75af6bd68f77c3e276e5838a4ca04df117743b95d"
+  },
+  {
+   "path": "F:/TanitAD-scratch/v8proof/latvis2/dump/DUMP_LV2_G_s1.npz",
+   "ckpt_sha256": "9ee4b8394501c9a6c84c2c48d05158340cb3e12c876bc82fad68eaf49800d3bb",
+   "sha256": "4555a06db63e91a80c791282543dc386ff7f3614d9b1126efe9cb943c94619eb"
+  }
+ ]
+}
