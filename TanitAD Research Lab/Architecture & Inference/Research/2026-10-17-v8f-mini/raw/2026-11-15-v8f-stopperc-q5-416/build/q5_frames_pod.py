@@ -231,6 +231,15 @@ def load_need(root, samples, eval_only_n):
 
 
 # ------------------------------------------------------------------------------------------------------------ run
+def clip_done(led, c, root, need):
+    """A clip is done iff its last ledger line is OK and, when it has windows, its rows file exists.
+    MM 2026-11-15: 2 of the 141 eval clips have no eval window, so they write no rows file; the old predicate (OK AND rows file) never held for them
+    and the run loop rebuilt both 80 times (pod ledger 4,757 lines over 4,599 clips). A zero-window clip is done on its OK ledger line alone."""
+    if led.get(c, {}).get("status") != "OK":
+        return False
+    return len(need[c][1]) == 0 or os.path.exists(f"{root}/rows/{c}.npz")
+
+
 def cmd_run(a):
     root = a.root
     for d in ("code", "rows", "v2ep416", "hf_pin", "hf_dl"):
@@ -270,7 +279,7 @@ def cmd_run(a):
         n_done = 0
         while True:
             led = jsonl_last(led_p)
-            todo = [c for c in order if not (led.get(c, {}).get("status") == "OK" and os.path.exists(f"{root}/rows/{c}.npz")) and att.get(c, 0) < 2]
+            todo = [c for c in order if not clip_done(led, c, root, need) and att.get(c, 0) < 2]
             if not todo:
                 break
             part = todo[:a.chunk]
@@ -315,7 +324,7 @@ def cmd_run(a):
                     att[c] = att.get(c, 0) + 1
                 log(root, f"BrokenProcessPool: {e}")
         led = jsonl_last(led_p)
-        bad = [c for c in order if not (led.get(c, {}).get("status") == "OK" and os.path.exists(f"{root}/rows/{c}.npz"))]
+        bad = [c for c in order if not clip_done(led, c, root, need)]
         if bad:
             raise RuntimeError(f"{len(bad)} clips not done: {[c[:8] for c in bad[:10]]}")
         agg = aggregate(root)
