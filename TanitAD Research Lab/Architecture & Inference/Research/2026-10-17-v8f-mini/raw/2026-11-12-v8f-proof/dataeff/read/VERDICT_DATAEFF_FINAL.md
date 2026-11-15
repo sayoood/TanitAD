@@ -54,3 +54,13 @@ Outcome: **`SELECT-EQUAL`**. The chosen quarter is not better on the primary cel
 ## Limits
 
 Two training runs per reduced arm; the interval over two seeds is wide by construction. One corpus (4,512 clips at full), one evaluation set of 141 episodes. A subset arm trains for the same number of steps as the full arm, so a smaller subset is seen more often per clip; the read answers how many distinct clips the recipe needs, at a fixed step budget. The planner is deterministic, so inference variance is not sampled.
+
+## Addendum 2026-11-15T00:56Z: the one-eighth choice at both seeds (section 8 of the card moves Q2 and Q3 to one eighth with the same rules)
+
+Source: `out_final_eighth_choice_s01/VERDICT_Q3.md` (reader controls all PASS; S1_8_s1 finished on the pod at 00:27Z, pulled with equal sha256). T1-kin, two seeds, six baseline seeds for the spread.
+
+* Q2 at one eighth: d(1/8) = R-1/8 minus F-1/8 on the primary cell -0.1717 m [-0.3466, +0.0027] (seeds -0.2084 / -0.1349); d(1/8) minus d(1) per seed -0.3169 / +0.0514: the seeds differ in sign, **`HIER-GAP-EQUAL`** at one eighth as at one quarter. Beside the name: the hierarchy is ahead of its flat control on the primary cell in both seeds at one quarter and at one eighth (four of four), each time with an interval that includes 0.
+* Q3 at one eighth: S-1/8 minus R-1/8 on the primary cell -0.1722 m [-0.3719, +0.0245] (seeds -0.1966 / -0.1479), OPEN; common-case windows +0.6681 m [+0.4101, +0.9193], WORSE; all windows +0.2110 m [+0.0334, +0.3795], inside the spread: **`SELECT-EQUAL`** at one eighth as at one quarter, with the same cost on common-case driving.
+* S-1/8 against the full corpus: all windows +0.4910 m [+0.2804, +0.6879] WORSE; tactical-band ADE +0.7369 m [+0.4282, +1.0278] WORSE.
+
+The names of the first section stand. STRATEGIC: PAUSED (PI item 25).
