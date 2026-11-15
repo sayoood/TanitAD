@@ -1,0 +1,277 @@
+{
+ "controls": {
+  "t1": {
+   "clips_equal": true,
+   "n_rows_state": 121166,
+   "n_rows_probe": 121166,
+   "rows_equal": true,
+   "clip_idx_equal": true,
+   "t_equal": true,
+   "z_is_2d": true,
+   "z_finite": true,
+   "pass": true,
+   "bar": "clips, clip_idx and t equal the probe set exactly; state finite"
+  },
+  "t4": {
+   "declared_dim": 640,
+   "declared_state": "grid",
+   "array_dim": 640,
+   "record_present": true,
+   "dim_array": true,
+   "dim_record": true,
+   "state_mode_record": true,
+   "mode_width_consistent": true,
+   "record_wm_state": "grid",
+   "record_ckpt_sha256": "b607d00db18db5feec598c86d9b7739015c278e755bcb4c1440106c145ea05c1",
+   "record_counts_equal": true,
+   "record_split_range": true,
+   "state_file_sha256_equals_record": true,
+   "ckpt_sha256": "equal to the record",
+   "pass": true,
+   "bar": "array width, record width, state mode, counts and the state file's own sha256 equal the record; checkpoint sha256 equal to the one given"
+  },
+  "t2": {
+   "state_mode_values": {
+    "gap_r2": 0.28432310888356316,
+    "pres_auc": 0.7621820704144355,
+    "n_gap_rows": 33114,
+    "n_rows": 121166,
+    "n_clips": 1200,
+    "seconds": 161.39209008216858
+   },
+   "tol": 0.005,
+   "reference_file": "F:/TanitAD-scratch/v8proof/spatial/s0e/RESULT_S0E.json",
+   "reference_values_read_at_run_time": {
+    "gap_r2": 0.2843231104806241,
+    "pres_auc": 0.76218207500181
+   },
+   "abs_diff_gap_r2": 1.597060927949201e-09,
+   "abs_diff_pres_auc": 4.5873744802804595e-09,
+   "pass": true,
+   "bar": "both within 0.005 of the stage 0e mean state",
+   "from_cache": true
+  },
+  "t3": {
+   "pass": true,
+   "max_value": 0.00037218157237861593,
+   "bar": 0.02,
+   "values": {
+    "ra gap R2 s": 0.00037218157237861593,
+    "ra gap R2 ego": -0.00153088578968541,
+    "change skill H": -0.0023303936133936,
+    "change skill N": -0.0017831749901229266,
+    "change skill E": -0.002793257512844205
+   },
+   "presence_auc_printed": {
+    "presence AUROC s (printed, no bar)": 0.49304480324546424,
+    "presence AUROC ego (printed, no bar)": 0.4870690108064423
+   },
+   "n_gap_rows": 33114,
+   "n_pairs": 24206,
+   "n_clips": 1200
+  }
+ },
+ "meta": {
+  "tag": "ROLL_s1",
+  "note": "PREREG_V8F_PROOF_ADD12_N8.md",
+  "defs": "S1_DEFS.md",
+  "tier": "T0",
+  "statement": "a world-model diagnostic, never driving performance",
+  "estimator": "paired episode-cluster bootstrap, clips as clusters",
+  "B": 2000,
+  "n_clips": 1200,
+  "dim": 640,
+  "expect_state": "grid",
+  "states_file_name": "ROLL_s1_train.npz",
+  "ckpt_sha256_record": "b607d00db18db5feec598c86d9b7739015c278e755bcb4c1440106c145ea05c1",
+  "in_sample": "in-sample for the model (train probe clips)",
+  "counts": {
+   "pairs_with_three_rows": 103166,
+   "pairs_used": 24206,
+   "pair_rule": "continuous",
+   "pairs_removed_by_the_continuity_rule": 1740,
+   "step_max_m": 3.0,
+   "bank_rows": 121166,
+   "gap_rows": 33114,
+   "rows_dropped_nonfinite_kin": 0,
+   "pairs_per_fold": [
+    4596,
+    4249,
+    5618,
+    4815,
+    4928
+   ]
+  },
+  "stage_seconds": {
+   "fold0": {
+    "r_a": 31.756008863449097,
+    "change": 29.22921848297119,
+    "fold_total": 60.98544931411743
+   },
+   "fold1": {
+    "r_a": 38.419461250305176,
+    "change": 34.14455485343933,
+    "fold_total": 72.56425762176514
+   },
+   "fold2": {
+    "r_a": 34.60816931724548,
+    "change": 28.963003158569336,
+    "fold_total": 63.571351766586304
+   },
+   "fold3": {
+    "r_a": 35.146488666534424,
+    "change": 33.01060628890991,
+    "fold_total": 68.15771722793579
+   },
+   "fold4": {
+    "r_a": 29.942456483840942,
+    "change": 25.82925772666931,
+    "fold_total": 55.77182340621948
+   }
+  },
+  "t2_seconds": 1.5882322788238525,
+  "load_seconds": 14.883807897567749,
+  "total_seconds": 359.4,
+  "peak_ram_gb": 2.34
+ },
+ "controls_pass": true,
+ "main": {
+  "r_a": {
+   "estimates": {
+    "gap|s": {
+     "r2": 0.545325026428657,
+     "ci95": [
+      0.5080248715663626,
+      0.5800250002120492
+     ],
+     "n": 33114,
+     "n_clips": 552
+    },
+    "pres|s": {
+     "auc": 0.8059710651495846,
+     "ci95": [
+      0.7896635682183768,
+      0.8214906511192466
+     ],
+     "n": 121166,
+     "n_clips": 1200
+    },
+    "gap|ego": {
+     "r2": 0.18719134857334185,
+     "ci95": [
+      0.134156217531878,
+      0.2375082723404074
+     ],
+     "n": 33114,
+     "n_clips": 552
+    },
+    "pres|ego": {
+     "auc": 0.5591013843671293,
+     "ci95": [
+      0.5378179814283108,
+      0.5801734885845302
+     ],
+     "n": 121166,
+     "n_clips": 1200
+    }
+   },
+   "diffs_gap_r2": {
+    "state minus ego": {
+     "diff": 0.35813367785531514,
+     "ci95": [
+      0.3105298852835769,
+      0.4084915516164907
+     ],
+     "separated_pos": true,
+     "separated_neg": false
+    }
+   },
+   "diffs_presence_auc": {
+    "state minus ego": {
+     "diff": 0.2468696807824553,
+     "ci95": [
+      0.22290552041520412,
+      0.26929203398040286
+     ],
+     "separated_pos": true,
+     "separated_neg": false
+    }
+   }
+  },
+  "change": {
+   "arms": {
+    "H": {
+     "skill": 0.24271827428366421,
+     "ci95": [
+      0.19742666548777543,
+      0.2852872102435215
+     ],
+     "r2": 0.24164673945580517,
+     "r2_ci95": [
+      0.1963095974433179,
+      0.2828423381000425
+     ],
+     "n_pairs": 24206,
+     "n_episodes": 484
+    },
+    "N": {
+     "skill": 0.23233985471289265,
+     "ci95": [
+      0.18867010560405828,
+      0.2714043545872391
+     ],
+     "r2": 0.23125363467918403,
+     "r2_ci95": [
+      0.187481261643048,
+      0.2689483766402321
+     ],
+     "n_pairs": 24206,
+     "n_episodes": 484
+    },
+    "E": {
+     "skill": 0.2911234712364884,
+     "ci95": [
+      0.24267114439583543,
+      0.33403976752258463
+     ],
+     "r2": 0.2901204285597311,
+     "r2_ci95": [
+      0.24210714875452016,
+      0.3315338679083402
+     ],
+     "n_pairs": 24206,
+     "n_episodes": 484
+    }
+   },
+   "diffs": {
+    "H minus E": {
+     "diff": -0.04840519695282419,
+     "ci95": [
+      -0.08843861771403295,
+      -0.006628458927779406
+     ],
+     "separated_pos": false,
+     "separated_neg": true
+    },
+    "H minus N": {
+     "diff": 0.010378419570771569,
+     "ci95": [
+      -0.0016957449718398574,
+      0.02230573733959704
+     ],
+     "separated_pos": false,
+     "separated_neg": false
+    }
+   },
+   "d_stats": {
+    "n_pairs": 24206,
+    "n_pair_clips": 484,
+    "std_d_m": 5.1951828745410635,
+    "mean_d_m": -0.1954228069451952,
+    "share_abs_d_above_2m": 0.5322234156820623
+   }
+  }
+ },
+ "oof_file": "OOF_S1_ROLL_s1.npz",
+ "label": "trained state, ROLL_s1"
+}
