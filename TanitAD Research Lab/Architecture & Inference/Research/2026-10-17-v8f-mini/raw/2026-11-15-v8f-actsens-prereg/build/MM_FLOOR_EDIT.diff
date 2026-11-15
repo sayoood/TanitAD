@@ -1,0 +1,48 @@
+--- a/stages/actsens_common.sh
++++ b/stages/actsens_common.sh
+@@ -12,7 +12,7 @@
+ PKG="${ACTSENS_PKG:-$ACTSENS_HOME_DIR}"; PULLS="${ACTSENS_PULLS:-C:/Users/Admin/t2v8f_pulls}"
+ B2_ROOT="${B2_ROOT:-D:/tanitad/actsens}"; ACTSENS_COMMIT="${ACTSENS_COMMIT:-}"
+ B2_WIN_ROOT="${ACTSENS_B2_WIN_ROOT:-D:\\tanitad}"       # what @ROOT@ means in the job templates (the dry run points it at a fake box folder)
+-NEED_GB_RUN=5; NEED_GB_SHIP=1                          # DISK REQUIREMENT: constants, not measured (box 2's D: read 11 GB free recently; a run writes one checkpoint + gate output, ESTIMATED <= 1.5 GB); same values as actsens_check.py
++NEED_GB_RUN=2; NEED_GB_SHIP=1                          # DISK REQUIREMENT (MM 2026-11-15): one run writes ckpt_last.pt, MEASURED 46,847,094 B on box 2 for this model class (R35H_s0, SLOW_s0), plus gate output (< 0.1 GB); box 2's D: read 5,338,267,648 B free before launch; 2 GB keeps > 40 x one run; same values as actsens_check.py
+ GPU_IDLE_MIB="${ACTSENS_GPU_IDLE_MIB:-3500}"            # the GPU counts as idle below this used memory (MiB) with no python.exe process; 3,500 because the desktop apps on box 2 hold about 2,700 MiB with no job running
+ NOISE='post-quantum|store now|upgraded|pq.html'
+ say() { echo "[$(date '+%F %T')] ${ACTSENS_STAGE:-stage}: $*"; }
+--- a/actsens_check.py
++++ b/actsens_check.py
+@@ -36,9 +36,9 @@
+ DATA = {"train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1", "excluded_sha256": "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9", "n_clips": 4512, "n_excluded": 60}
+ #: the full length of every run is the argv's own --steps (19,164 = 4 x 4791, the ladder's length); the pilot appends --steps 200.
+ RUN_STEPS, PILOT_STEPS, LIMIT_H = 19164, 200, 72.0
+-#: DISK REQUIREMENT (a stated constant, nothing measured): box 2's D: read 11 GB free recently. One run writes ckpt_last.pt (model + AdamW state, ESTIMATED <= 1.5 GB for a sub-300M model) plus gate outputs (< 0.1 GB);
++#: DISK REQUIREMENT (MM 2026-11-15): one run writes ckpt_last.pt, MEASURED 46,847,094 B on box 2 for this model class (R35H_s0, SLOW_s0), plus gate outputs (< 0.1 GB); box 2's D: read 5,338,267,648 B free before launch;
+ #: five checkpoints stay on box 2 after banking. A run starts only with NEED_GB_RUN free; the tree ship needs NEED_GB_SHIP. Below it the chain stops with exit 6 (stage rc 13).
+-NEED_GB_RUN, NEED_GB_SHIP = 5, 1
++NEED_GB_RUN, NEED_GB_SHIP = 2, 1
+ DECL_D = r"D:\tanitad"
+ HOME_DECL, REPO_DECL, M2B_DECL = DECL_D + r"\actsens", DECL_D + r"\actsens\repo", DECL_D + r"\runs\v8f_mini_full"
+ ZC_DECL = DECL_D + r"\zcache"
+@@ -525,7 +525,7 @@
+ 
+ def disk_floor_problems():
+     free = shutil.disk_usage(loc(DECL_D) if fake() else "D:\\").free
+-    floor = int(float(os.environ.get("ACTSENS_FLOOR_BYTES", "4e9"))) if fake() else int(4e9)
++    floor = int(float(os.environ.get("ACTSENS_FLOOR_BYTES", "2e9"))) if fake() else int(2e9)
+     return [f"disk floor: {free} bytes free < {floor}"] if free < floor else []
+ 
+ 
+--- a/tests/test_actsens_dryrun.sh
++++ b/tests/test_actsens_dryrun.sh
+@@ -108,9 +108,9 @@
+ ok "no breach through PATH after the wait tests" '[ ! -e "$T/BREACH" ]'
+ 
+ echo "== 4 disk gate"
+-newbox disk 0; control '{"sps": 1.0}'; echo 3 > "$B/free_gb.txt"
++newbox disk 0; control '{"sps": 1.0}'; echo 1 > "$B/free_gb.txt"
+ bash "$PKG/actsens_chain.sh" > "$T/d1.out" 2>&1; rc=$?
+-ok "3 GB free: ship passes (1 GB), the pilot stops with the disk-low code (rc 6)" '[ $rc -eq 6 ] && stoptxt | grep -q "disk-low" && [ ! -e "$B/D/tanitad/actsens/runs/PILOT_DIV_s0/gate" ]'
++ok "1 GB free: ship passes (1 GB), the pilot stops with the disk-low code (rc 6)" '[ $rc -eq 6 ] && stoptxt | grep -q "disk-low" && [ ! -e "$B/D/tanitad/actsens/runs/PILOT_DIV_s0/gate" ]'
+ newbox disk0 0; echo 0 > "$B/free_gb.txt"
+ bash "$PKG/actsens_chain.sh" > "$T/d2.out" 2>&1; rc=$?
+ ok "0 GB free: the ship stage stops with rc 6" '[ $rc -eq 6 ] && [ ! -e "$B/D/tanitad/actsens/ship/actsens_tree.tar" ]'
