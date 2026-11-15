@@ -1,0 +1,584 @@
+{
+ "declared_vs_built": "PASS",
+ "live": {
+  "terms": {
+   "wm": 300.56683349609375,
+   "wm/pred/L1": 0.2695418894290924,
+   "wm/sigreg/L1": 3.7005255222320557,
+   "wm/idm/L1": 0.11278461664915085,
+   "wm/rollout/L1": 0.27718520164489746,
+   "wm/rollout_valid/L1": 1400.0,
+   "wm/rollout_masked/L1": 40.0,
+   "wm/level/L1": 113.62738037109375,
+   "wm/pred/L2": 0.026964111253619194,
+   "wm/sigreg/L2": 3.319474935531616,
+   "wm/idm/L2": 0.8912208080291748,
+   "wm/act_sigreg/L2": 8.970781326293945,
+   "wm/rollout/L2": 0.029075514525175095,
+   "wm/rollout_valid/L2": 440.0,
+   "wm/rollout_masked/L2": 40.0,
+   "wm/level/L2": 89.488525390625,
+   "wm/pred/L3": 0.010499252937734127,
+   "wm/sigreg/L3": 3.249290943145752,
+   "wm/idm/L3": 0.9713020324707031,
+   "wm/act_sigreg/L3": 7.620876312255859,
+   "wm/rollout/L3": 0.012199336662888527,
+   "wm/rollout_valid/L3": 168.0,
+   "wm/rollout_masked/L3": 120.0,
+   "wm/level/L3": 97.45094299316406,
+   "total": 30.056684494018555
+  },
+  "missing_terms": [],
+  "wm_groups_grad": {
+   "wm.stack.act_embed": 0.11234662239439785,
+   "wm.stack.encoders.0": 313.8001883327961,
+   "wm.stack.encoders.1": 69.34210723638535,
+   "wm.stack.macro_encoders.0": 0.4759878749027848,
+   "wm.stack.macro_encoders.1": 1.3816075255163014,
+   "wm.stack.predictors.0": 102.09740159288049,
+   "wm.stack.predictors.1": 75.62964366003871,
+   "wm.stack.predictors.2": 68.21358291339129,
+   "wm.stack.idm_heads.0": 4957.232039690018,
+   "wm.stack.idm_heads.1": 1193.2239513397217,
+   "wm.stack.idm_heads.2": 714.946578502655,
+   "wm.proj": 1425.6216255426407
+  },
+  "dead_wm_groups": [],
+  "dead_params": [],
+  "declared_dead": [],
+  "unexpected_dead": [],
+  "n_wm_params": 133,
+  "control_nonwm_grad_sum": 0.0,
+  "control_adapter_grad_sum": 0.0,
+  "nonwm_with_grad": [],
+  "n_nonwm_params": 123,
+  "pass": true
+ },
+ "code_mix_probe": {
+  "skipped": "wm_only"
+ },
+ "o_interface_probe": {
+  "skipped": "wm_only"
+ },
+ "acc_probe": {
+  "skipped": "wm_only"
+ },
+ "admissibility": {
+  "allowed": [
+   "a_s",
+   "a_t",
+   "act",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ],
+  "read": [
+   "a_s",
+   "a_t",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ]
+ },
+ "levers": {
+  "navonly": false,
+  "consistency": true,
+  "wm": "b",
+  "cons_absent": "mask",
+  "code_mix": "whole",
+  "o_interface": "full",
+  "w_acc": 0.0,
+  "launch_intent_w": 0.0,
+  "wm_idm_gamma": 100.0,
+  "kin_mode": "yaw",
+  "wm_ch1_scale": 0.4,
+  "p_gt_start": 1.0,
+  "p_gt_end": 0.2,
+  "hist": 4,
+  "hmax": 91,
+  "window_start": 3,
+  "prior_frozen": true,
+  "residual_zero_init": false,
+  "params": {
+   "adapter": 0,
+   "cond": 0,
+   "S": 0,
+   "T": 0,
+   "O": 0,
+   "WM": 2011970
+  },
+  "n_params_trainable": 2011970,
+  "w": {
+   "w_pen": 0.5,
+   "w_pen_self": 0.25,
+   "w_wm": 0.1,
+   "w_tac": 1.0,
+   "w_cons": 0.5
+  },
+  "wm_strides": [
+   3,
+   5
+  ],
+  "wm_rollout_k": [
+   10,
+   10,
+   6
+  ],
+  "wm_rollout_stride": [
+   5,
+   5,
+   1
+  ],
+  "wm_rollout_w": 1.0,
+  "ego_perturb": {
+   "ego_perturb_p": 0.0,
+   "ego_perturb_vscale": [
+    0.5,
+    1.0
+   ],
+   "ego_perturb_vmax": 8.0,
+   "ego_perturb_adrop": 1.5,
+   "ego_perturb_yawrate_std": 0.0,
+   "ego_perturb_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ]
+  },
+  "dagger": {
+   "dagger_p": 0.0,
+   "dagger_seed": 0,
+   "dagger_bank": null,
+   "dagger_bank_sha256": null,
+   "kin_mode": "yaw",
+   "bank_hmax": null,
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ],
+   "labels_re_expressed": [
+    "lab_s.rc"
+   ],
+   "nav_rebuild_invalid": false,
+   "constants_sha256": "8f94b3b5e35f4457be51d695842457a340d1228ab48c5862f4db1e5063f3ffaf"
+  },
+  "dagger_p": 0.0,
+  "dagger_bank_sha256": null,
+  "dagger_bank_sha256_declared": null,
+  "recover": {
+   "recover_p": 0.0,
+   "recover_dev_law": "empirical",
+   "recover_dev_shape": "constant",
+   "recover_dev_bank": null,
+   "recover_dev_bank_sha256": null,
+   "recover_target": "rejoin",
+   "recover_rejoin_steps": 10,
+   "recover_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav",
+    "pose_now"
+   ],
+   "retargeted": [
+    "gt",
+    "lab_s.rc"
+   ]
+  },
+  "recover_table": null,
+  "ego_perturb_with_dagger": false,
+  "ego_perturb_stream": 0,
+  "ego_dagger_overlap_n": 0,
+  "launch_intent": {
+   "launch_intent_w": 0.0,
+   "v0_max": 6.0,
+   "dv": 1.0,
+   "dt": 0.2,
+   "knots": [
+    1,
+    12
+   ],
+   "axis": "along (x of the ego frame at NOW)",
+   "mask_from": "the LOGGED kin3[:, 0] and the GT future, taken before any ego stage"
+  },
+  "launch_n": 0,
+  "launch_eligible": 0,
+  "init_ckpt": {
+   "path": "D:\\tanitad\\runs\\v8f_mini_full\\M2b_s0\\ckpt_last.pt",
+   "sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 19164,
+   "source_arm": "M2b",
+   "source_seed": 0,
+   "source_argv_sha": "1225d98ff87cbe17",
+   "mode": "wm_only",
+   "hmax_ckpt": 16,
+   "hmax_built": 91,
+   "wm_strides_ckpt": [
+    2,
+    2
+   ],
+   "wm_strides_built": [
+    3,
+    5
+   ],
+   "wm_loaded_from_ckpt": 0,
+   "wm_reinit_seed": 0,
+   "wm_params_equal_to_ckpt": 0
+  },
+  "wm_strides_readback": {
+   "declared": [
+    3,
+    5
+   ],
+   "built": {
+    "stride": [
+     3,
+     5
+    ],
+    "macro_stride": [
+     3,
+     5
+    ],
+    "macro_shape_stride": [
+     3,
+     5
+    ],
+    "dilation": [
+     1,
+     1
+    ]
+   },
+   "hmax": 91,
+   "wm_k": 1,
+   "states_per_level": [
+    91,
+    31,
+    7
+   ],
+   "transitions_per_level": [
+    90,
+    30,
+    6
+   ]
+  },
+  "wm_idm_gamma_readback": {
+   "declared": [
+    1000.0,
+    100.0,
+    100.0
+   ],
+   "built": [
+    1000.0,
+    100.0,
+    100.0
+   ],
+   "wm_aux_gamma": 100.0
+  },
+  "wm_ladder_readback": {
+   "declared": {
+    "wm_rollout_k": [
+     10,
+     10,
+     6
+    ],
+    "wm_rollout_stride": [
+     5,
+     5,
+     1
+    ],
+    "wm_ctx": [
+     3,
+     3,
+     3
+    ],
+    "wm_rollout_w": 1.0
+   },
+   "named": [
+    "wm_rollout_k",
+    "wm_rollout_stride",
+    "wm_ctx",
+    "wm_windows",
+    "wm_pooled",
+    "wm_zcache"
+   ],
+   "windows_declared": {
+    "kind": "wmonly",
+    "stride": 1,
+    "pooled": "on"
+   },
+   "built": {
+    "k": [
+     10,
+     10,
+     6
+    ],
+    "anchors": [
+     18,
+     6,
+     6
+    ],
+    "ctx_passed": [
+     3,
+     3,
+     3
+    ],
+    "ctx_built": [
+     3,
+     3,
+     3
+    ],
+    "w_in_loss": [
+     1.0000282526016235,
+     1.0000364780426025,
+     0.9999514222145081
+    ],
+    "states": [
+     91,
+     31,
+     7
+    ],
+    "cum_stride": [
+     1,
+     3,
+     15
+    ]
+   },
+   "windows_built": {
+    "kind": "wmonly",
+    "F": 91,
+    "stride": 1,
+    "n_windows": 40358,
+    "n_windows_all_clips": 49382,
+    "t_min": 90,
+    "t_max": 104,
+    "pooled": true,
+    "zcache": "D:\\tanitad\\zcache\\M2b_s0\\train",
+    "zcache_missing": 0,
+    "n_windows_before_ok": 49382,
+    "n_windows_not_ok": 9024
+   },
+   "hmax": 91
+  },
+  "wm_only": {
+   "wm_only": true,
+   "wm_k": 1,
+   "n_trainable": 2011970,
+   "n_wm": 2011970,
+   "init": {
+    "path": "D:\\tanitad\\runs\\v8f_mini_full\\M2b_s0\\ckpt_last.pt",
+    "sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+    "applied": true,
+    "skipped": null,
+    "n_tensors": 276,
+    "n_mismatch_after_load": 0,
+    "source_step": 19164,
+    "source_arm": "M2b",
+    "source_seed": 0,
+    "source_argv_sha": "1225d98ff87cbe17",
+    "mode": "wm_only",
+    "hmax_ckpt": 16,
+    "hmax_built": 91,
+    "wm_strides_ckpt": [
+     2,
+     2
+    ],
+    "wm_strides_built": [
+     3,
+     5
+    ],
+    "wm_loaded_from_ckpt": 0,
+    "wm_reinit_seed": 0,
+    "wm_params_equal_to_ckpt": 0
+   }
+  },
+  "lr_schedule": {
+   "lr": 0.0003,
+   "warmup": 200,
+   "total": 19164
+  }
+ },
+ "steps_total": 19164,
+ "S_steps_per_epoch_100pct": 772,
+ "info": {
+  "batch": 64,
+  "md5_overridden": false,
+  "n_clips": 4512,
+  "n_clips_expected": 4512,
+  "n_clips_all": 4512,
+  "n_excluded": 60,
+  "n_excluded_declared": 60,
+  "excluded_in_train": 0,
+  "excluded_sha256": "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9",
+  "train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+  "lru": 174,
+  "kin_mode": "yaw",
+  "n_windows_all_clips": 49382,
+  "n_windows": 40358,
+  "wm_windows": {
+   "kind": "wmonly",
+   "F": 91,
+   "stride": 1,
+   "n_windows": 40358,
+   "n_windows_all_clips": 49382,
+   "t_min": 90,
+   "t_max": 104,
+   "pooled": true,
+   "zcache": "D:\\tanitad\\zcache\\M2b_s0\\train",
+   "zcache_missing": 0,
+   "n_windows_before_ok": 49382,
+   "n_windows_not_ok": 9024
+  },
+  "train_window_list_sha256": "1e4fc4c4401f89dcb94d7981bfb4907ac18f87e82b77ebd1d3783e080ebf6e2c",
+  "p10_units": "pose_kappa",
+  "init_ckpt": {
+   "path": "D:\\tanitad\\runs\\v8f_mini_full\\M2b_s0\\ckpt_last.pt",
+   "sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 19164,
+   "source_arm": "M2b",
+   "source_seed": 0,
+   "source_argv_sha": "1225d98ff87cbe17",
+   "mode": "wm_only",
+   "hmax_ckpt": 16,
+   "hmax_built": 91,
+   "wm_strides_ckpt": [
+    2,
+    2
+   ],
+   "wm_strides_built": [
+    3,
+    5
+   ],
+   "wm_loaded_from_ckpt": 0,
+   "wm_reinit_seed": 0,
+   "wm_params_equal_to_ckpt": 0
+  },
+  "wm_only": {
+   "path": "D:\\tanitad\\runs\\v8f_mini_full\\M2b_s0\\ckpt_last.pt",
+   "sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 19164,
+   "source_arm": "M2b",
+   "source_seed": 0,
+   "source_argv_sha": "1225d98ff87cbe17",
+   "mode": "wm_only",
+   "hmax_ckpt": 16,
+   "hmax_built": 91,
+   "wm_strides_ckpt": [
+    2,
+    2
+   ],
+   "wm_strides_built": [
+    3,
+    5
+   ],
+   "wm_loaded_from_ckpt": 0,
+   "wm_reinit_seed": 0,
+   "wm_params_equal_to_ckpt": 0
+  },
+  "wm_sampler": {
+   "kind": "uniform",
+   "class": "ChunkedSampler",
+   "n_windows": 40358
+  }
+ },
+ "argv_sha": "1d0db4e1a4a739fb",
+ "ego_perturb_probe": {
+  "skipped": "wm_only"
+ },
+ "dagger_probe": {
+  "skipped": "wm_only"
+ },
+ "ego_dagger_compose_probe": {
+  "skipped": "wm_only",
+  "overlap": 0
+ },
+ "recover_probe": {
+  "skipped": "wm_only"
+ },
+ "t2bank_probe": {
+  "skipped": "wm_only"
+ },
+ "launch_intent_probe": {
+  "skipped": "wm_only",
+  "launch_n": 0,
+  "launch_eligible": 0
+ },
+ "planner_identity_probe": {
+  "n_tensors": 12,
+  "n_equal": 12,
+  "differing": [],
+  "wm_params_moved": 133,
+  "n_wm_params": 133,
+  "steps": 3,
+  "pass": true
+ }
+}
