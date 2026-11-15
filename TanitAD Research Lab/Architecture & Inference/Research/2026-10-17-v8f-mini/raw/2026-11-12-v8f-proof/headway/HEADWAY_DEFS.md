@@ -1,0 +1,57 @@
+# HEADWAY_DEFS (card PREREG_V8F_PROOF_ADD25). What the card leaves open, fixed BEFORE any arm comparison is computed.
+
+Tier T1-kin (kinematic rollout on the model's own actions, logged frames; a diagnostic, never driving performance). Evidence class of every result: MEASURED once run, with its file. CPU only, no training, no new rollout. Code: `headway_read.py` (it imports `spatial/q3/q3_read.py` and, through it, `pod/stageB/hierrep_read.py`: dump loader, episode units, two-level bootstrap, `cell_rule`). The card is not edited.
+
+Before this file was written only structure and key layouts were inspected (npz keys, shapes, which label file covers which frames, row semantics). No gap, no rate, no count of lead windows and no arm number was computed.
+
+## D1 Dump layout (MEASURED, structure only)
+One folder per arm and seed: `<root>/<ARM>_s<S>/dump_<ARM>_s<S>_m10_causal_heads/ep*.npz`, 141 files. Keys per file, N windows of one episode: `g` [N,30,2] the logged future positions at steps k = 1..30 (0.2 s apart) in the ego frame of the window start, `cl` [N,30,2] the rolled (T1-kin) positions of the model in the same frame and steps, `ws` [N] the window start = cache step t0, `eid` and `clip_index` [N] the index ci of the clip in the label join (`J["clip"][ci]`), `v0` [N] the logged ego speed at t0. (`ol`, `fl`, `ha0` are other arms of the same dump and are not read.) The origin (0,0) is the ego position at t0 for both trajectories. Writer: `v8f_t1_eval.py` (`write_dumps`, `g = d["gt"][t0]`, `v0 = d["kin3"][t0][0]`). K = 30 steps = 6.0 s: the dump holds the full 6.0 s.
+
+## D2 Label source and the frame map
+Source: the label join `join_eval141.npz` (path in `LABEL_JOIN` of the reader: `.../2026-10-17-v8f-mini/raw/join_eval141.npz`), arrays `lead_valid` (int8 validity flag), `lead_gap` (float32 m), `off` (clip offsets), `n` (steps per clip), `clip` (141 ids). It is the validity flag and gap of the lead from the offline obstacle tracks the card names. The bank `res/cache/frames.npz` used by ADD20 is NOT the gap source here: it holds only the rows of steps 0 to 67 and the lead of `lead_near` (at most 40 m), while the windows reach step 97 (t0 up to 67 plus K = 30); the join covers all 101 cache steps of every clip. The two files are compared on their common rows and the comparison is printed (it decides nothing).
+Frame map: window frame S0 + k (k = 0..30) is cache step t0 + k, which is the join row `off[ci] + ws + k`. The cache step is 0.2 s (raw frame 2j), which is the step of the dump. The check of this map is control h4 (logged ego speed of the dump `v0` against the ego speed `E[:,0]` of the bank row (clip, step ws), the only label-side file that holds an ego speed).
+
+## D3 Lead track and lead window
+Frame k is VALID if `lead_valid == 1`, `lead_gap` is finite and 0 <= `lead_gap` <= 60 m. Track of a window: frames k = 0, 1, 2, ... while valid and while the step to the previous frame is at most 3.0 m in absolute value (`STEP_MAX_M`, continuity rule of ADD20 D2); the first frame that fails ends the track (that frame and all later ones are not scored). A lead window has frame 0 valid and frames 1 to 10 in the track (at least 10 scored steps). Scored steps k = 1..n_s with n_s = min(30, last frame of the track). Windows that are not lead windows carry NaN in every cell and are excluded by the estimator.
+
+## D4 Progress along the logged path
+Path = the polyline P0 = (0,0), P1..P30 = `g`. It is extended by a straight ray of 1,000 m backwards from P0 (direction of the first non-degenerate segment, reversed) and forwards from P30 (direction of the last non-degenerate segment); a path with no non-degenerate segment gets the ego x axis. Arc coordinate: 0 at P0, cumulative length along the polyline (negative on the back ray, above the path length on the forward ray). The progress a(q) of a point q = the arc coordinate of its orthogonal projection onto the nearest non-degenerate segment of the extended polyline (projection clamped to its segment; the extension makes the clamp at the two ends irrelevant for any rolled point within the dump). a_l(k) = arc coordinate of P_k (the logged ego lies on its own path, its projection is itself: the cumulative length); a_m(k) = progress of the rolled point `cl[k]`. a_l(0) = a_m(0) = 0.
+Model gap g_m(k) = gap_l(k) + a_l(k) - a_m(k) (k = 1..n_s). The logged driver's own gap is gap_l(k).
+
+## D5 Speeds and time gap
+Speed of trajectory step k = |p_k - p_{k-1}| / 0.2 with p_0 = (0,0) (the same step speed as `hierrep_read.kinematics`). Model speed v_m(k) from `cl`, logged speed v_l(k) from `g`. tau_m(k) = g_m(k) / max(v_m(k), 0.5), tau_l(k) = gap_l(k) / max(v_l(k), 0.5).
+
+## D6 Unsafe, contact, cells (per lead window, over its scored steps k = 1..n_s)
+Unsafe step: g < 2.0 m or tau < 1.0 s (strict). Contact step: g <= 0 m (inclusive). Logged unsafe/contact: the same rule with gap_l and tau_l.
+* U (primary): 1 if the model has at least one unsafe step, 0 if not, defined only on lead windows where the logged driver has NO unsafe step; NaN elsewhere. The share is the mean over the defined windows.
+* C: 1 if the model has a contact step, on every lead window.
+* F: 1 if g_m(n_s) - gap_l(n_s) > +10 m, on every lead window.
+* gap bias at 2.0 / 4.0 / 6.0 s: g_m(k) - gap_l(k) at k = 10 / 20 / 30, defined on the lead windows with n_s >= k (so the 4.0 s and 6.0 s cells use fewer windows; n printed); gap error = its absolute value.
+* time-gap error: |tau_m - tau_l| at k = 10 (every lead window) and the mean over the scored steps (per window, then over windows).
+* logged driver, reference rows: share of lead windows with an unsafe step and with a contact step by the same rule (unrestricted).
+Cell values are per window; arm-level mean = mean over the windows where the cell is defined.
+
+## D7 Estimator and rule
+Paired window differences A minus B of the cell, windows where both are finite, then `hierrep_read.seed_arrays` / `read_cell`: two-level bootstrap (seeds, then episodes), B = 2,000, rng 0, 141 episode units. Rule = `q3_read.cell_rule` with `same_sign = True`: an effect needs every seed read on the side of D, an interval wholly on one side of 0, and |D| above the six-seed spread of the baseline for the cell. Spread of a cell = the largest absolute difference of the arm-level mean between two of the six seeds of `--spread-arm` (HIER, for Q1 and Q2 as the run is commanded; the card says "the baseline for the cell"; for Q1 the other arm's spread, FLAT, is printed beside as a sensitivity and names nothing). Lower U is better; every cell is read "below 0 is the first arm better" for U, C, F, gap error, time-gap error. For the signed gap bias the rule is applied as for any cell and the sign is stated in the table (a negative D = the first arm closes in more); the names are only on U.
+Level statement: per arm the cell mean over seeds with an interval (the same engine on the per-window values against zero: two-level, seeds then episodes), beside the logged driver.
+
+## D8 Outcome naming (section 3 of the card, exact names)
+Q1 pair HIER:FLAT (D = HIER - FLAT), seeds 0 to 5, cell U: rule verdict BETTER -> `HIER-KEEPS-DISTANCE`; WORSE -> `FLAT-KEEPS-DISTANCE`; anything else (OPEN, INSIDE-SPREAD, MIXED-SIGN, NON-FINITE) -> `DISTANCE-EQUAL`.
+Q2 pair G:HIER (D = G - HIER), cell U: BETTER -> `GRID-DISTANCE-BETTER`; WORSE -> `GRID-DISTANCE-WORSE`; else `GRID-DISTANCE-EQUAL`.
+Q3 pairs LS:G, LSH:G, LSD:G on seeds 0 and 1, spread of G over seeds 0 to 5: BETTER -> `SUP-DISTANCE-BETTER`, WORSE -> `SUP-DISTANCE-WORSE`, else `SUP-DISTANCE-EQUAL`. A name is FINAL only with all seeds requested read for both arms and six spread seeds; otherwise it is written PRELIMINARY and decides nothing (the rule of Q3-4 of `q3_read.py`).
+No name is given if any control h1 to h6 fails, if h5 gives fewer than 200 lead windows or fewer than 20 episodes with a lead window, or if the pair is incomplete.
+
+## D9 Controls (card section 4), each with its deliberate-regression form
+* h1 identity: `cl := g` for the real lead windows. g_m equals gap_l (max abs <= 1e-6 m), U 0 (and exactly 0 windows unsafe by the model that the logged has not), gap bias 0 at 2, 4, 6 s. Regression form: `cl` advanced along the path by 0.1 m/s times the elapsed time must make the check FAIL.
+* h2 planted regression: the point at arc coordinate a_l(k) + 0.5 * 0.2 k on the extended path replaces the rolled point. Gap bias at 2.0 s = -1.0 m and at 6.0 s = -3.0 m within 1e-3 m (each on its windows), and the pair (planted against logged, every requested seed the same planted arm, logged arm U = 0 by construction) is named worse on U by `cell_rule` with the spread of the baseline from the commanded spread arm. Needing that spread, h2 computes the six per-seed arm-level U of the spread arm; this is the spread of the rule machinery, not a comparison between two arms. Regression form: planted advance 0.0 m/s (identity) must NOT read -1.0 / -3.0, so the check FAILS.
+* h3 swap and self: for every pair, the self difference is exactly 0 in every cell and the swapped pair is exactly minus D (max abs deviation < 1e-12). Regression form: a swap that adds 1e-6 to one cell must make the check FAIL.
+* h4 alignment: for every lead window, |`v0` of the dump - `E[:,0]` of the bank row (clip, step ws)| <= 0.05 m/s. With the mapping shifted by 5 frames (row ws + 5) the maximum must exceed 0.05, so the check FAILS (that failing is the required form and is the control's PASS condition). Lead windows whose clip has no bank row are counted and listed; if any lead window cannot be checked, h4 reads FAIL with the count (a window that cannot be checked is not an aligned one).
+* h5 counts: lead windows and episodes with at least one lead window, printed first. Below 200 windows or below 20 episodes: the read names nothing (reported only). Regression form: an all-NaN label set must read below the thresholds.
+* h6 same windows: `g`, `ws`, `eid`, `clip_index`, `v0` equal in every dump read (the control of `q3_read.py`). Regression form: one `ws` altered makes it FAIL.
+Control order: h5 counts, h4, h6, h1, h2, h3. A failing control blocks every name; the failure is reported with its numbers and the arm comparison tables are not written.
+
+## D10 Four-family line and limits
+LONGITUDINAL: this read (distance keeping, T1-kin); LATERAL and TACTICAL: not measured by this read; STRATEGIC: PAUSED (PI item 25). Limits as the card: the lead does not react (log replay); labels from offline obstacle tracks through the label join, windows without a labelled lead say nothing; one corpus, one evaluation set, a deterministic planner. Additional limits fixed here: the join's lead gap beyond 40 m exists (up to 60 m admitted by the card); a track ends at the first invalid frame or jump, so 4.0 s and 6.0 s cells use only the windows whose track lasts that long.
+
+## D11 Order of computation (added before any arm comparison)
+h3 needs the pair differences of the real pairs (self and swap). They are computed in memory by the same engine; their values are written to the verdict only if all six controls pass. If a control fails, `RESULT_HEADWAY.json` and `VERDICT_HEADWAY.md` carry the controls block (with every control's numbers), the counts, and the statement that no outcome is named; no arm table is written. The six per-seed arm-level U values of the spread arm, needed by h2 for the spread, are computed for the same purpose and are likewise not written when a control fails.
