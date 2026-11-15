@@ -562,6 +562,6 @@ def test_I_full_profile_live_reasons_carries_the_dose_check_and_the_share_alarm_
     assert [x for x in reasons if x.startswith("SHARE-ALARM")] == [] and any(x.startswith("DOSE-CTL") and "never fired" in x for x in reasons)   # FIRING LINE DELETED
     reasons, det = LG.full_profile_live_reasons(dict(prof, lr_schedule_rule=None), A, A, rows + [_good_row()], None)
     assert reasons == [] and det["dose_controller"]["n_firings"] == 1
-    low = [{"step": 50, "loss": 1.0, "lr": 1e-4, "gs_trunk_proj_map_hires": 0.04}, _good_row()]
+    low = [{"step": 50, "loss": 1.0, "lr": 1e-4, "gs_trunk_proj_map_hires": 0.04}, dict(_good_row(), dc_share_read=0.02)]
     reasons, _ = LG.full_profile_live_reasons(dict(prof, lr_schedule_rule=None), A, A, low, None)
-    assert len(reasons) == 1 and reasons[0].startswith("SHARE-ALARM")                    # K2's own floor, UNCHANGED, reads step 50 at w 25
+    assert len(reasons) == 1 and reasons[0].startswith("SHARE-ALARM")                    # the floor is UNCHANGED; option A judges the MEAN of gs@50 and dc_share_read@100 (0.03)

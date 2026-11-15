@@ -3701,6 +3701,22 @@ def wcost_reasons(prof: dict, launch_argv: list[str], lines: list[str] | None) -
     return [], det
 
 
+def _finite_reading(v: Any) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
+def share_alarm_readings(sh: dict, launch_argv: list[str], rows: list[dict]) -> list[dict]:
+    """Every map-share reading of a smoke, as `{step, src, value}`: the `row_key` rows (the trainer's `--grad-share-at` readings) plus, when the
+    K2DC dose controller is ON, each firing's `dc_share_read` (the controller's own reading of the SAME term on the SAME group, taken at the
+    weight in force). Non-finite values are not readings."""
+    out = [{"step": r.get("step"), "src": sh["row_key"], "value": float(r[sh["row_key"]])}
+           for r in rows if _finite_reading(r.get(sh["row_key"]))]
+    if has_flag(launch_argv, _DC_TARGET):
+        out += [{"step": r.get("step"), "src": "dc_share_read", "value": float(r["dc_share_read"])}
+                for r in rows if "dc_w_eff" in r and _finite_reading(r.get("dc_share_read"))]
+    return out
+
+
 def full_profile_live_reasons(prof: dict, launch_argv: list[str], run_argv: list[str], rows: list[dict], cfg: dict | None,
                               run_dir: Path | None = None) -> tuple[list[str], dict]:
     """The refcv9-full family's rows on the SMOKE (inert for a profile with neither key):
@@ -3762,16 +3778,21 @@ def full_profile_live_reasons(prof: dict, launch_argv: list[str], run_argv: list
                 d["save_at"] = _save_at_check(Path(run_dir), [int(x) for x in str(sa[0]).split(",") if x.strip()], reasons)
     sh = prof.get("map_share_alarm")
     if sh and has_flag(launch_argv, sh["flag"]):
-        vals = [float(r[sh["row_key"]]) for r in rows if isinstance(r.get(sh["row_key"]), (int, float))]
-        det["share_alarm"] = {"row_key": sh["row_key"], "floor": sh["floor"], "readings": vals}
+        rd = share_alarm_readings(sh, launch_argv, rows)
+        vals = [x["value"] for x in rd]
+        stat = sum(vals) / len(vals) if vals else None
+        det["share_alarm"] = {"row_key": sh["row_key"], "floor": sh["floor"], "readings": vals, "reading_rows": rd,
+                              "statistic": "mean of every map-share reading in the smoke (row_key rows + dc_share_read when the controller is on)",
+                              "n": len(vals), "mean": stat}
         terms = flag_values(launch_argv, sh["terms_flag"])
         if terms and sh["term"] not in str(terms[0]).split(","):
             reasons.append(f"SHARE-ALARM: {sh['terms_flag']} {terms[0]} does not separate `{sh['term']}`: the banded map's share cannot be read")
         elif not vals:
             reasons.append(f"SHARE-ALARM: the smoke carries no `{sh['row_key']}` reading although the banded map head is ON "
                            f"({sh['flag']}) -- the alarm cannot be read (a missing alarm is a FAIL, never a pass)")
-        elif min(vals) < float(sh["floor"]):
-            reasons.append(f"SHARE-ALARM: the banded map takes {min(vals):.4f} of the trunk gradient (`{sh['row_key']}`), below the floor "
+        elif stat < float(sh["floor"]):
+            reasons.append(f"SHARE-ALARM: the banded map takes {stat:.4f} of the trunk gradient (mean of {len(vals)} reading(s) "
+                           f"{[round(v, 4) for v in vals]} of `{sh['row_key']}`), below the floor "
                            f"{sh['floor']} (E0j: {sh['e0j']}) -- the map weight is too small to shape layer2")
     dcr, dcd = dose_controller_live_reasons(launch_argv, rows)            # K2DC (inert without the four --map-hires-share-* flags)
     if dcd.get("on"):
@@ -6402,7 +6423,7 @@ def dose_ctl_for_dvb(T, model, args):
                 pass
 
 
-def smoke_argv(base: list[str], steps: int, log_every: int) -> tuple[list[str], dict]:
+def smoke_argv(base: list[str], steps: int, log_every: int, alarm_flag: str | None = None) -> tuple[list[str], dict]:
     """The G-LIVE smoke's argv from the LAUNCH argv: `--steps` -> the smoke length, and every flag whose value is a
     STEP of the launch (a number the trainer's own pins compare with `--steps`) re-expressed inside the smoke.
 
@@ -6416,7 +6437,13 @@ def smoke_argv(base: list[str], steps: int, log_every: int) -> tuple[list[str], 
         instrument ON (`--grad-share-every` > 0).
       * `--b1-guard-step` above the smoke -> the smoke's last step (the one step an in-run eval is guaranteed:
         `step == args.steps`), so the guard is ARMED and DECIDES in the smoke and reads its EMA metric for real.
-    Everything rewritten is returned in the second value (it goes into the G-LIVE evidence as a departure)."""
+    Everything rewritten is returned in the second value (it goes into the G-LIVE evidence as a departure).
+
+    SHARE-ALARM CADENCE (MM 2026-11-15, K2DC final gate 11-15 09:04Z: one reading at step 50 read 0.0170 on a config whose two earlier
+    smokes read 0.0854 / 0.0817 -- the single-reading estimator is noisy near its floor): when `alarm_flag` (the profile's
+    `map_share_alarm["flag"]`) is in the launch argv AND the instrument is on, the smoke takes THREE readings, at q, 2q, 3q with
+    q = steps // 4 (25 / 50 / 75 for the 100-step smoke), and logs every q steps so each reading lands on a logged row
+    (`--grad-share-every` and the controller's `--map-hires-share-every` stay multiples of `--log-every`). The alarm judges their MEAN."""
     out = set_flag(list(base), "--steps", [str(steps)])
     dep: dict[str, Any] = {"--steps": steps}
     L = max(1, int(log_every))
@@ -6425,7 +6452,16 @@ def smoke_argv(base: list[str], steps: int, log_every: int) -> tuple[list[str], 
         on = bool(ev) and int(ev[0]) > 0
     except ValueError:
         on = False
-    if on:
+    if on and alarm_flag and has_flag(base, alarm_flag) and int(steps) >= 4:
+        q = max(1, int(steps) // 4)
+        was = {"--grad-share-every": ev[0], "--grad-share-at": (flag_values(base, "--grad-share-at") or [None])[0], "--log-every": str(L)}
+        L = q
+        out = set_flag(out, "--log-every", [str(q)])
+        out = set_flag(set_flag(out, "--grad-share-every", [str(q)]), "--grad-share-at", [f"{q},{2 * q},{3 * q}"])
+        dep["--grad-share-every/--grad-share-at/--log-every"] = (
+            f"{was} -> every {q} at {q},{2 * q},{3 * q} log-every {q} (THREE readings inside the smoke, the share alarm judges their mean; "
+            f"their cost is excluded from s/step)")
+    elif on:
         was = {"--grad-share-every": ev[0], "--grad-share-at": (flag_values(base, "--grad-share-at") or [None])[0]}
         out = set_flag(set_flag(out, "--grad-share-every", [str(L)]), "--grad-share-at", [str(L)])
         dep["--grad-share-every/--grad-share-at"] = (f"{was} -> every {L} at {L} (one reading inside the smoke, "
@@ -9100,7 +9136,7 @@ def _argv_model_view(argv: list[str]) -> list[tuple[str, list[str]]]:
 
 
 def stamps_written_for(stamps_argv: list[str], launch_argv: list[str], smoke_steps: int | None,
-                       log_every: int) -> tuple[bool, dict]:
+                       log_every: int, alarm_flag: str | None = None) -> tuple[bool, dict]:
     """Is a run record (`config.json`'s argv) written for THIS launch, model-wise? A record from THIS gate's G-LIVE
     smoke (`smoke_steps` = the smoke length, from `smoke_step_count` exactly as `job_smoke` derives it) is compared with
     the launch argv put through the smoke's ONE declared rule (`smoke_argv`: `--steps` and the step-valued schedule
@@ -9114,7 +9150,7 @@ def stamps_written_for(stamps_argv: list[str], launch_argv: list[str], smoke_ste
     rule at 102 moves the guard step and the emission start, and the gate's own record would still be refused."""
     want, dep = list(launch_argv), {}
     if smoke_steps is not None:
-        want, dep = smoke_argv(list(launch_argv), int(smoke_steps), log_every)
+        want, dep = smoke_argv(list(launch_argv), int(smoke_steps), log_every, alarm_flag=alarm_flag)
     same = _argv_model_view(stamps_argv) == _argv_model_view(want)
     return same, {"rule": "smoke_argv" if smoke_steps is not None else "identity", "smoke_steps": smoke_steps,
                   "smoke_departures": dep}
@@ -9295,7 +9331,7 @@ def eval_identity(ctx: Ctx, T, model_t, args_t, scratch: Path,
                                      int(ctx.options.get("smoke_steps") or ctx.prof["smoke_steps"]))
     same_argv, rule = stamps_written_for(
         list(stamps.get("argv") or []), ctx.local_argv() if smoke_cfg else list(ctx.argv),
-        s_steps if smoke_cfg else None, s_le)
+        s_steps if smoke_cfg else None, s_le, alarm_flag=(ctx.prof.get("map_share_alarm") or {}).get("flag"))
     det["eval_stamps"] = {"path": stamps_path, "sha256": sha256_file(stamps_path)
                           if stamps_path else None,
                           "source": ("this gate's smoke (the trainer's own config.json for THIS "
@@ -9476,7 +9512,13 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         base = set_flag(base, "--trunk-compile", None)
     steps, log_every = smoke_step_count(
         T, base, int(ctx.options.get("smoke_steps") or ctx.prof["smoke_steps"]))
-    argv1, smoke_dep = smoke_argv(base, steps, log_every)
+    argv1, smoke_dep = smoke_argv(base, steps, log_every, alarm_flag=(ctx.prof.get("map_share_alarm") or {}).get("flag"))
+    _sle = flag_values(argv1, "--log-every")                 # the smoke's own logging cadence (q = steps // 4 when the share alarm reads three times)
+    if _sle:
+        try:
+            log_every = int(_sle[0])
+        except ValueError:
+            pass
     argv1 = set_flag(argv1, "--out", [str(run_dir)])
     all_inputs = _inputs_read(ctx, [f for f, _ in data_inputs(ctx.argv, ctx.prof)])
     for k, fp in implicit_inputs(ctx.argv):
