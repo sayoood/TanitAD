@@ -1,0 +1,22 @@
+SETUP-RAN 2026-11-15T16:56:14Z with 2 GPU jobs before, free 40 GB
+arms file: PIN 12 (12), ARM 2 (2), flag 2 (2), expectation 2 (2); sha256 9ef1799465ed083712c602f02a6488bb28c720ce7ceedecb2c352a7657e093e2
+ARM|LCS_s0|/workspace/v8proof/tree_leadcond|HIER|0|540:600|/workspace/v8proof/data/cache_pod|--wm-state grid --wm-cell-dim 16 --lead-sup on --w-lead-sup 1.0 --lead-cond on|levers.wm_state=grid levers.wm_z1_width=640 levers.wm_cell_dim=16 levers.wm_l1_pred=flat levers.wm_l1_pred_width=256 levers.wm_l1_act=acc_yaw levers.wm_l1_futtok_k=0 levers.w_wm_futtok=0 levers.lead_sup=on levers.w_lead_sup=1 levers.lead_hist=5 levers.lead_sup_detach=off levers.lead_cond=on info.n_clips=4512
+ARM|LCS_s1|/workspace/v8proof/tree_leadcond|HIER|1|540:600|/workspace/v8proof/data/cache_pod|--wm-state grid --wm-cell-dim 16 --lead-sup on --w-lead-sup 1.0 --lead-cond on|levers.wm_state=grid levers.wm_z1_width=640 levers.wm_cell_dim=16 levers.wm_l1_pred=flat levers.wm_l1_pred_width=256 levers.wm_l1_act=acc_yaw levers.wm_l1_futtok_k=0 levers.w_wm_futtok=0 levers.lead_sup=on levers.w_lead_sup=1 levers.lead_hist=5 levers.lead_sup_detach=off levers.lead_cond=on info.n_clips=4512
+S2 argv tokens: LS_s0 44, LCS_s0 46
+S2 flag pair in LCS argv: ['--lead-cond', 'on'] | length equal after removing it: True | differing tokens: 2
+    ('/workspace/v8proof/tree_leadsup/stack/scripts/v8f_mini_train.py', '/workspace/v8proof/tree_leadcond/stack/scripts/v8f_mini_train.py')
+    ('/workspace/v8proof/runs/dryrun_LS_s0/LS_s0', '/workspace/v8proof/runs/dryrun_LCS_s0/LCS_s0')
+dry gate LCS_s0 rc 0
+[2026-11-15T16:56:14Z] dry gate LCS_s0 start
+ZZ DRY LCS_s0 PASS (2026-11-15T16:57:14Z): selfcheck and every expectation string of the arms file
+SELFCHECK LCS_s0 dvb PASS live True steps_total 19164 init null lead_sup on lead_cond on
+   lead_cond probe {"lead_cond": "on", "n_rows": 63, "n_batch": 64, "p_mean": 0.4891450107097626, "p_std": 0.008540136739611626, "g_mean": 0.0020250745583325624, "g_std": 0.00551197212189436, "u_abs_max": 0.5108601450920105, "grad_norm_weight": 0.12727612257003784, "grad_norm_bias": 0.26442328095436096, "control_zero_u_grad_norm_weight": 0.0, "control_zero_u_grad_norm_bias": 0.26442328095436096, "grad_lead_head_through_u_max_abs_diff": 0.0, "pass": true}
+   live {"terms": {"ckpt": 3.0166962146759033, "goal": 0.5712651610374451, "lat": 0.6532895565032959, "lon": 1.3778027296066284, "cons": 0.4287109375, "ade": 2.962963342666626, "fde": 9.207390785217285, "acc": 0.0432223305106163, "pen_SPEED": 1.0291521549224854, "pens_SPEED": 2.7552080154418945, "pen_STOP": 0.3843265771865845, "pens_STOP": 0.0, "pen_TURN": 0.3955090343952179, "pens_TURN": 0.0, "pen_LEAD": 0.42157864570617676, "pens_LEAD": 0.0, "wm": 237.264892578125, "lead_sup": 0.7056390047073364, "lea
+--- how the chain makes its token
+8:# Reuses, unchanged, from the HIERREP chain: gate_token.py (kinds HIER / FLAT: built o_interface, 19,164 steps, live check, frozen-prior control), the eval pins and inputs.
+85:[ -f "$C2/gate_token2.py" ] && [ -f "$C2/gate_extra.py" ] || stop TOOLS "gate_token2.py or gate_extra.py absent"
+115:     && "$PY" "$C2/gate_token2.py" verify-run --token "$g/token.json" --argv-json "$out/argv.json" >/dev/null 2>&1; then
+130:    "$PY" "$C2/gate_token2.py" make --selfcheck "$g/out/selfcheck.json" --argv-file "$g/gate_argv.txt" --out "$g/token.json" --kind "$kind" --commit "$COMMIT" --commit-verified true --expect-clips "$ec" --expect-excluded "$ee" >> "$g/gate.log" 2>&1 \
+132:    "$PY" "$C2/gate_token2.py" verify --token "$g/token.json" --argv-file "$g/train_argv.txt" >> "$g/gate.log" 2>&1 || stop "GATE-$name" "training argv differs from the gated argv"
+145:    "$PY" "$C2/gate_token2.py" verify-run --token "$g/token.json" --argv-json "$out/argv.json" >> "$g/gate.log" 2>&1 || stop "TRAIN-$name" "the trainer argv.json differs from the gated argv"
+SETUP-END 2026-11-15T16:57:14Z
