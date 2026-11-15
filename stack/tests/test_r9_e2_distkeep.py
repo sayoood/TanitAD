@@ -20,7 +20,7 @@ import pytest
 
 import tanitad
 
-_ROOT = Path(tanitad.__file__).resolve().parents[2]           # <tree>/stack
+_ROOT = Path(tanitad.__file__).resolve().parents[1]           # <tree>/stack (parents[2] is the tree root)
 sys.path.insert(0, str(_ROOT / "scripts"))
 import r9_e2_distkeep as D                                      # noqa: E402
 import r9_e2_verdict as V                                       # noqa: E402
