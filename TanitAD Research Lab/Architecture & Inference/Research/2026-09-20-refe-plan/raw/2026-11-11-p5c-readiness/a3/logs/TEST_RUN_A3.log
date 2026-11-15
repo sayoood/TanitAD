@@ -1,0 +1,39 @@
+# A3 label-path tests, 2026-11-15T00:33:30Z, dev box, CPU, CUDA_VISIBLE_DEVICES=-1, TMP under F:/tanitad_scratch/p5c_a3_tmp
+# blobs: p5c_rj5_path.py 409f448152b4d51ee4ffc571c9bdf499e0ecc93d test c3cc16a361d96d36762032ddc24fe45c7c60d215 run_mut.py 3dd4c96c0786b4cb0545cfa0bfdfb93a3c175ad4; pinned imports: traj_label_table.py d65e01c43ab3145a093a85ac101f740c7d4ed839 (A2 d65e01c4) p5c_table_gates.py 5c2f49cf485241df4d7e7949ed629a04fd324d5c (A1 5c2f49cf)
+collecting ... collected 23 items
+
+test_p5c_rj5_path.py::test_feed_happy_path_provenance_and_determinism PASSED [  4%]
+test_p5c_rj5_path.py::test_red_wrong_key_override_refused PASSED         [  8%]
+test_p5c_rj5_path.py::test_red_join_integrity_refused[rank1] PASSED      [ 13%]
+test_p5c_rj5_path.py::test_red_join_integrity_refused[duplicate] PASSED  [ 17%]
+test_p5c_rj5_path.py::test_red_join_integrity_refused[conflict] PASSED   [ 21%]
+test_p5c_rj5_path.py::test_red_join_integrity_refused[bad_rj5_sha] PASSED [ 26%]
+test_p5c_rj5_path.py::test_red_join_integrity_refused[yaw_wrap] PASSED   [ 30%]
+test_p5c_rj5_path.py::test_red_join_integrity_refused[short] PASSED      [ 34%]
+test_p5c_rj5_path.py::test_red_join_integrity_refused[nan] PASSED        [ 39%]
+test_p5c_rj5_path.py::test_red_join_integrity_refused[status] PASSED     [ 43%]
+test_p5c_rj5_path.py::test_red_absent_key_refused_missing_status_falls_back PASSED [ 47%]
+test_p5c_rj5_path.py::test_red_pins_platform_and_r0_required PASSED      [ 52%]
+test_p5c_rj5_path.py::test_coverage_bar_refuses_with_code_3_and_writes_no_feed_bank PASSED [ 56%]
+test_p5c_rj5_path.py::test_torn_join_line_refused PASSED                 [ 60%]
+test_p5c_rj5_path.py::test_rekey_keys_to_bank_and_passes_unchanged_gates PASSED [ 65%]
+test_p5c_rj5_path.py::test_red_rekey_skipped_makes_unchanged_gates_drop_the_rj5_rows PASSED [ 69%]
+test_p5c_rj5_path.py::test_red_rekey_refusals PASSED                     [ 73%]
+test_p5c_rj5_path.py::test_a3_table_differs_from_a2_exactly_where_rj5_differs PASSED [ 78%]
+test_p5c_rj5_path.py::test_red_override_that_never_reaches_the_labeller_gives_zero_differences PASSED [ 82%]
+test_p5c_rj5_path.py::test_repair_combine_uses_bank_raw_and_rj5_labels PASSED [ 86%]
+test_p5c_rj5_path.py::test_provenance_sidecar_and_sha_bound_meta PASSED  [ 91%]
+test_p5c_rj5_path.py::test_tb0r_pass_and_red_arms PASSED                 [ 95%]
+test_p5c_rj5_path.py::test_cli_exit_codes PASSED                         [100%]
+
+============================= 23 passed in 3.22s ==============================
+# mutation arms (run_mut.py: one-line edits of p5c_rj5_path.py), each must be RED:
+no_wrong_key_check RED ['1 failed, 22 passed in 4.38s']
+override_never_fed RED ['9 failed, 14 passed in 3.24s']
+rekey_no_sha_check RED ['1 failed, 22 passed in 4.22s']
+rekey_keeps_fed_sha RED ['2 failed, 21 passed in 3.30s']
+missing_filled_silently RED ['1 failed, 22 passed in 4.18s']
+absent_key_falls_back RED ['1 failed, 22 passed in 3.73s']
+repair_raw_from_feed RED ['1 failed, 22 passed in 4.20s']
+platform_guessed RED ['1 failed, 22 passed in 4.51s']
+ALL_RED
