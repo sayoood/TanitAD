@@ -1,0 +1,102 @@
+{
+ "tanitad_file": "F:\\TanitAD-scratch\\v8proof\\ruletrain2\\work\\tree_patch\\stack\\tanitad\\__init__.py",
+ "rule_own_file": "F:\\TanitAD-scratch\\v8proof\\ruletrain2\\work\\tree_patch\\stack\\tanitad\\data\\rule_own.py",
+ "o2": {
+  "n_rows": 64,
+  "n_masked": 49,
+  "n_masked_hand": 49,
+  "mask_equal": true,
+  "a": [
+   {
+    "name": "own_prediction",
+    "n": 49,
+    "n_changed_by_hand": 49,
+    "rows_not_equal": []
+   },
+   {
+    "name": "planted_fast_plan",
+    "n": 49,
+    "n_changed_by_hand": 39,
+    "rows_not_equal": []
+   }
+  ],
+  "b": {
+   "max_abs_diff_twice_vs_once_float64_plan": 0.0,
+   "max_abs_diff_twice_vs_once_float32_call_for_the_record": 6.103515625e-05,
+   "float32_note": "for the record: the rule called on float32 plans; each pass rounds to float32 and the rule recursion amplifies it. The term calls the rule in float64 and casts the cap back",
+   "n_changed_by_first_pass": 39
+  },
+  "c_no_lead_rows": {
+   "n_rows_without_mask": 15,
+   "max_abs_grad_on_them": 0.0,
+   "term_with_all_rows_planted": 6.182906150817871,
+   "n_lead": 49,
+   "n_active": 39,
+   "n_masked_rows_with_grad_gt0": 39,
+   "masked_rows_with_grad_equal_n_active": true
+  },
+  "c_nan_speed": {
+   "v": {
+    "row": 5,
+    "in_mask": false,
+    "n_lead": 48,
+    "n_lead_before": 49,
+    "grad_on_row": 0.0,
+    "term_equals_term_without_that_row_exactly": true
+   },
+   "p10f": {
+    "row": 5,
+    "in_mask": false,
+    "n_lead": 48,
+    "n_lead_before": 49,
+    "grad_on_row": 0.0,
+    "term_equals_term_without_that_row_exactly": true
+   }
+  },
+  "PASS": true
+ },
+ "o3": {
+  "part1_into_the_lead": {
+   "term": 857.7516479492188,
+   "n_active": 4,
+   "grad_abs_sum": 48.32533264160156
+  },
+  "part2_inside_the_rule": {
+   "term": 0.0,
+   "n_lead": 4,
+   "n_active": 0,
+   "grad_abs_sum": 0.0
+  },
+  "part3_no_lead": {
+   "term": 0.0,
+   "n_lead": 0,
+   "requires_grad": false
+  },
+  "part3b_real_batch_without_lead": {
+   "n_rows": 16,
+   "n_lead": 0,
+   "term": 0.0
+  },
+  "part4_partial_planted_half": {
+   "n_rows": 64,
+   "n_lead": 49,
+   "n_active": 24,
+   "term": 700.6643676757812
+  },
+  "part4_model_own_prediction": {
+   "n_lead": 49,
+   "n_active": 49,
+   "term": 702.3895874023438,
+   "note": "the untrained tiny model plans a crawl, so the rule rarely binds on its own plan"
+  },
+  "part4_model_gradient": {
+   "total_without": 123.4354248046875,
+   "total_with": 824.0997924804688,
+   "total_delta": 700.6643676757812,
+   "planted_term_value": 700.6643676757812,
+   "grad_diff_abs_sum": 1512.64111328125
+  },
+  "PASS": true
+ },
+ "PASS": true
+}

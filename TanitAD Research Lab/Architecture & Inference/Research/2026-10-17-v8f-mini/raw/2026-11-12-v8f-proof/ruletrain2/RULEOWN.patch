@@ -1,0 +1,792 @@
+--- a/stack/scripts/v8f_mini_train.py
++++ b/stack/scripts/v8f_mini_train.py
+@@ -46,6 +46,7 @@
+ from tanitad.data import v8f_mini_data as D  # noqa: E402
+ from tanitad.data import v8f_recover as R  # noqa: E402      PREREG_RECOVER_FT: the recovery perturbation + its TRAIN-bank deviation table (`--recover-p 0` = nothing is built and nothing is applied)
+ from tanitad.models import v8f_mini as M  # noqa: E402
++from tanitad.data import rule_own as ROW  # noqa: E402      PREREG_V8F_PROOF_ADD34 RULEOWN: `--w-rule-own` (the distance rule on the model's own plan as a loss term) and `--rule-relabel-weight` (weight of the changed samples); both off = nothing built
+ from tanitad.data import rule_relabel as RRL  # noqa: E402      PREREG_V8F_PROOF_ADD32 RULETRAIN: the label-fed distance rule applied to the training target (`--rule-relabel off` = nothing is built and nothing is applied)
+ 
+ PKG = os.path.join(REPO, "TanitAD Research Lab", "Architecture & Inference", "Research", "2026-10-17-v8f-mini")
+@@ -122,6 +123,8 @@
+     # per-clip sensor_extrinsics table (its coverage of the TRAIN clips is read back from the built arrays). argv -> make_config -> the BUILT model -> declared_vs_built (bad_stop_aux) -> stop_aux_probe (G-LIVE) -> `stop_aux_stage(b, SA)` BEFORE the ego stages.
+     "stop_aux": "lever:stop_aux", "w_stop_aux": "cfg:w_stop_aux", "stop_aux_extr": "path",
+     "rule_relabel": "data:rule_relabel",      # RULETRAIN: argv -> RuleRelabel (built from the join) -> info["rule_relabel"] (bad_rule_relabel) -> rule_relabel_probe (G-LIVE: count > 0, the relabelled target reaches the loss and gradient, all-False mask reads EXACTLY 0.0) -> `b["gt"] = rr_gt` in the loop
++    "w_rule_own": "data:rule_own",            # RULEOWN: argv -> RuleOwn (built from the join) -> info["rule_own"] (bad_rule_own) -> rule_own_probe (G-LIVE: term finite, n_lead > 0, n_active, gradient norms, zero controls) -> `ROW.add_own_term` in the loop
++    "rule_relabel_weight": "data:rule_relabel_weight",      # RULEOWN stage 2: argv -> RuleOwn.w_weight -> info["rule_relabel_weight"] (bad_rule_relabel_weight) -> `ROW.add_weight_extra` in the loop
+     "init_ckpt": "data:init_ckpt",            # O-RECOVER's start state: the MODEL weights of an earlier checkpoint, config-checked, loaded strictly and READ BACK (load_init_ckpt) -> declared_vs_built (bad_init_ckpt)
+     # PREREG_V8F_LORA: the encoder lever. `enc:<k>` = equals the BUILT encoder's lever (enc.built_levers()); with --encoder cache there is no encoder and every
+     # one of these must be at its default (a declared flag that builds nothing is REFUSED, not ignored)
+@@ -280,6 +283,13 @@
+                     help="RULETRAIN (PREREG_V8F_PROOF_ADD32): on = the 30-knot target of the executed plan (batch gt) of every sample whose CURRENT frame has a label lead (presence, finite gap, finite closing-speed label) is replaced by "
+                          "dist_rule.distance_rule(gt, v0, present, gap, gap, v_L, cap-only) with v_L = max(0, v_logged + closing). Samples without a label lead keep their target. Labels from the label join (--join-train); "
+                          "training only, nothing at inference. Refused with --encoder lora, --ego-perturb-p, --dagger-p, --recover-p. Default off = every earlier arm, bit for bit")
++    ap.add_argument("--w-rule-own", dest="w_rule_own", type=float, default=0.0,
++                    help="RULEOWN (PREREG_V8F_PROOF_ADD34): W > 0 adds W x term to the loss. term = mean over the samples with a label lead (the mask and inputs of --rule-relabel) of the mean over the 30 knots of the squared distance (m^2) between the "
++                         "model own predicted trajectory (out traj30, the output the loss trains against batch gt and the T1-kin tool rolls out) and its cap dist_rule.distance_rule(plan.detach(), v0, present, gap, gap, v_L, m=10, floor_lifts=False). "
++                         "A plan that already keeps the rule gives exactly 0. Training only, nothing at inference. Refused with --encoder lora, --ego-perturb-p, --dagger-p, --recover-p; may be combined with --rule-relabel on. Default 0.0 = every earlier arm, bit for bit")
++    ap.add_argument("--rule-relabel-weight", dest="rule_relabel_weight", type=float, default=1.0,
++                    help="RULEOWN stage 2 (note PREREG_V8F_PROOF_ADD32_N1): the weight, in the trajectory loss terms that read batch gt (ade, fde, and acc / launch_along when on), of the samples whose target --rule-relabel CHANGED. Not renormalised "
++                         "(4 = those samples count four times). Needs --rule-relabel on when != 1. Default 1.0 = every earlier arm, bit for bit")
+     ap.add_argument("--cache-dir", default="C:/Users/Admin/refav1_hj_cache")
+     ap.add_argument("--out", required=True)
+     ap.add_argument("--v9-train", default="C:/Users/Admin/qland/work/refcv8_hf_v9/release/v9_labels_train.npz")
+@@ -1161,6 +1171,47 @@
+     return bad
+ 
+ 
++def bad_rule_own(a, data_info) -> list:
++    """RULEOWN (G-DVB): ``--w-rule-own`` and ``--rule-relabel-weight`` read back from the BUILT stage record ``info["rule_own"]`` (the weights RuleOwn holds, the rule file sha256, the label rows). W = 0 (off): no record may exist. W > 0: the record
++    equals the declared value, the label arrays have lead rows, and the stages that rewrite the logged state (ego perturbation, DAgger swap, recovery, LoRA frames) are off. ``--rule-relabel-weight`` != 1 needs ``--rule-relabel on`` and the same built value."""
++    rec = (data_info or {}).get("rule_own")
++    bad = []
++    if not (a.w_rule_own >= 0.0 and a.w_rule_own == a.w_rule_own and a.w_rule_own != float("inf")):
++        bad.append(f"w_rule_own {a.w_rule_own!r} must be finite and >= 0")
++    if not (a.rule_relabel_weight >= 0.0 and a.rule_relabel_weight == a.rule_relabel_weight and a.rule_relabel_weight != float("inf")):
++        bad.append(f"rule_relabel_weight {a.rule_relabel_weight!r} must be finite and >= 0")
++    if a.w_rule_own == 0.0:
++        if rec and rec.get("w_rule_own") != 0.0:
++            bad.append("w_rule_own 0 declared but a rule-own stage with a weight was built")
++    else:
++        if not rec:
++            return bad + ["w_rule_own > 0 declared but no rule-own stage was built"]
++        if rec.get("w_rule_own") != a.w_rule_own:
++            bad.append(f"w_rule_own: declared {a.w_rule_own} but built {rec.get('w_rule_own')}")
++        for k in ("n_pres", "n_gap", "n_clos"):
++            if not (isinstance(rec.get(k), int) and rec[k] > 0):
++                bad.append(f"rule_own labels: {k} = {rec.get(k)!r}: no label lead rows (a lever that is declared and does nothing)")
++        if not rec.get("labels_sha256") or not rec.get("dist_rule_sha256"):
++            bad.append("rule_own: the label arrays' or the rule file's sha256 is not recorded")
++        for flag, val in (("ego_perturb_p", a.ego_perturb_p), ("dagger_p", a.dagger_p), ("recover_p", a.recover_p)):
++            if val != 0.0:
++                bad.append(f"w_rule_own > 0 with --{flag.replace('_', '-')} {val}: the rule is applied to the LOGGED frame, which that stage rewrites")
++        if a.encoder != "cache":
++            bad.append("w_rule_own is not built for --encoder lora (the loop's batch path differs)")
++    wrec = (data_info or {}).get("rule_relabel_weight")
++    if a.rule_relabel_weight == 1.0:
++        if wrec:
++            bad.append("rule_relabel_weight 1 declared but a weight stage was built")
++    else:
++        if a.rule_relabel != "on":
++            bad.append(f"rule_relabel_weight {a.rule_relabel_weight} needs --rule-relabel on (the weight is on the samples the relabel changed)")
++        if not wrec:
++            bad.append("rule_relabel_weight != 1 declared but no weight stage was built")
++        elif wrec.get("w") != a.rule_relabel_weight:
++            bad.append(f"rule_relabel_weight: declared {a.rule_relabel_weight} but built {wrec.get('w')}")
++    return bad
++
++
+ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None, rec=None) -> list:
+     """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
+     bad = bad_encoder(a, enc, data_info)
+@@ -1168,6 +1219,7 @@
+     bad += bad_ego_perturb(a, ego) + bad_init_ckpt(a, data_info) + bad_schedule(a, sched)          # O-RECOVER (PREREG_V8F_HACC_MC section 7); bad_schedule: --warmup read back from the built schedule
+     bad += bad_wm_state(a, cfg, model)                                                           # PREREG_V8F_PROOF_ADD12: --wm-state / --wm-cell-dim / --wm-dim read back from the BUILT model
+     bad += bad_level(a, model, data_info)                                                        # PREREG_V8F_LEVEL: --level-head / --w-level read back from the BUILT model
++    bad += bad_rule_own(a, data_info)                                                            # RULEOWN: --w-rule-own and --rule-relabel-weight read back from the BUILT stage
+     bad += bad_rule_relabel(a, data_info)                                                        # RULETRAIN: --rule-relabel read back from the BUILT stage (labels, rule file sha256) and its refused combinations
+     bad += bad_lead_sup(a, cfg, model, data_info)                                                # LEADSUP: --lead-sup / --w-lead-sup / --lead-hist / --lead-sup-detach read back from the BUILT head and dataset
+     bad += bad_lead(a, model, data_info)                                                         # PREREG_LEVELHEAD_A2: --lead-head / --w-lead / --aux-cond read back from the BUILT model and the built label arrays
+@@ -2726,7 +2778,7 @@
+         root = os.path.join(a.out, "_synthetic")
+         w = D.make_synthetic_world(root, n_train=6, n_eval=2, T=60, seed=a.seed)
+         J = D.load_join(os.path.join(root, "join_train.npz"))
+-        if a.lead_sup == "on" or a.rule_relabel == "on":                                       # LEADSUP: the synthetic join carries no lead track; this opt-in fills one (selfcheck only; a real launch never passes --synthetic)
++        if a.lead_sup == "on" or a.rule_relabel == "on" or a.w_rule_own > 0.0:                                       # LEADSUP: the synthetic join carries no lead track; this opt-in fills one (selfcheck only; a real launch never passes --synthetic)
+             D.synthetic_lead_labels(J, a.seed)
+         cache = root
+         clips_all = w["names"]["train"]
+@@ -2857,6 +2909,49 @@
+     return rec
+ 
+ 
++def rule_own_probe(model, probe_logged, RO, inp, cfg) -> dict:
++    """G-LIVE for RULEOWN flag A, read from the BUILT model on a COPY, on the real probe batch. off: {"rule_own": "off"}. on, with out["traj30"] of the model's own loss call on the probe batch:
++      count     n_lead (samples with a label lead) > 0, else a refusal
++      term      finite, >= 0; n_active (samples with a term above 0); the gradient norm of W x term and of the trajectory loss (w_traj x (ade / 3 + 0.5 fde / 6)) on traj30
++      reach     the loop's own add helper moves the total by W x term; when n_active > 0 the gradient norm of the term on traj30 is above 0
++      controls  an all-False mask gives term exactly 0.0 and gradient norm exactly 0.0; the same call twice gives the same term
++    Any violation is an AssertionError (the caller turns it into a refusal)."""
++    if not RO.own_on:
++        return {"rule_own": "off", "pass": True}
++    if int(inp["mask"].sum()) <= 0:
++        raise AssertionError("rule own probe: no sample of the probe batch has a label lead: the count is 0")
++    m = copy.deepcopy(model).cpu()
++    m.train()
++    torch.manual_seed(20261115)
++    out = m.loss(dict(probe_logged), p_gt=0.5, gen=torch.Generator().manual_seed(11))
++    tr, T = out["traj30"], out["terms"]
++    total0 = T["total"].detach().clone()
++    term, info = ROW.own_term(tr, inp)
++    term2, _ = ROW.own_term(tr, inp)
++    traj_loss = cfg.w_traj * (T["ade"] / 3.0 + 0.5 * T["fde"] / 6.0)
++    gn = lambda y: float(torch.autograd.grad(y, tr, retain_graph=True, allow_unused=True)[0].abs().sum()) if y.requires_grad else 0.0      # noqa: E731
++    g_term, g_traj = gn(RO.w_own * term), gn(traj_loss)
++    Tc = {"total": T["total"]}
++    info2 = ROW.add_own_term(Tc, tr, inp, RO.w_own)
++    none_inp = {**inp, "mask": np.zeros_like(inp["mask"])}
++    term0, info0 = ROW.own_term(tr, none_inp)
++    rec = {"rule_own": "on", "w_rule_own": RO.w_own, "term": float(term.detach()), "n_rows": info["n_rows"], "n_lead": info["n_lead"], "n_active": info["n_active"], "grad_norm_term_on_traj30": g_term,
++           "grad_norm_traj_loss_on_traj30": g_traj, "total_before": float(total0), "total_after": float(Tc["total"].detach()), "total_delta": float(Tc["total"].detach() - total0),
++           "control_same_call_term_diff": abs(float(term.detach()) - float(term2.detach())), "control_all_false_term": float(term0.detach()), "control_all_false_n_lead": info0["n_lead"],
++           "control_all_false_requires_grad": bool(term0.requires_grad)}
++    if not np.isfinite(rec["term"]) or rec["term"] < 0.0 or not np.isfinite(g_term) or not np.isfinite(g_traj):
++        raise AssertionError(f"rule own probe: the term or a gradient norm is not finite / not >= 0: {rec}")
++    if rec["control_same_call_term_diff"] != 0.0 or rec["control_all_false_term"] != 0.0 or rec["control_all_false_n_lead"] != 0 or rec["control_all_false_requires_grad"]:
++        raise AssertionError(f"rule own probe: a control does not read exactly 0.0: {rec}")
++    if info["n_active"] > 0 and not (g_term > 0.0 and abs(rec["total_delta"] - RO.w_own * rec["term"]) <= 1e-5 * (1.0 + abs(rec["total_before"]))):
++        raise AssertionError(f"rule own probe: n_active {info['n_active']} > 0 but the term does not reach the total / the trajectory output: {rec}")
++    if info["n_active"] == 0 and rec["term"] != 0.0:
++        raise AssertionError(f"rule own probe: n_active 0 but the term is {rec['term']}: {rec}")
++    rec["reach_visible"] = bool(info["n_active"] > 0)
++    rec["pass"] = True
++    return rec
++
++
+ def to_dev(b, dev):
+     return {k: ({kk: vv.to(dev) for kk, vv in v.items()} if isinstance(v, dict) else v.to(dev)) for k, v in b.items()}
+ 
+@@ -2885,6 +2980,14 @@
+         info["rule_relabel"] = {"mode": RR.mode, "labels_sha256": RR.labels["sha256"], **{k: RR.labels[k] for k in ("n_rows", "n_pres", "n_gap", "n_clos")},
+                                 "dist_rule_sha256": hashlib.sha256(open(RRL.R.__file__, "rb").read()).hexdigest(), "floor_lifts": False, "m": RRL.RULE_M,
+                                 "constants": {"D_M": RRL.R.D_M, "TAU_S": RRL.R.TAU_S, "B_MAX": RRL.R.B_MAX, "DT": RRL.R.DT}}
++    RO = ROW.RuleOwn(a.w_rule_own, a.rule_relabel_weight, J, store, share=RR)       # RULEOWN: off (0.0 and 1.0) = nothing built; flag A builds from the join (or shares RR's label arrays)
++    if RO.own_on:
++        src = RO.src
++        info["rule_own"] = {"w_rule_own": RO.w_own, "labels_sha256": src.labels["sha256"], **{k: src.labels[k] for k in ("n_rows", "n_pres", "n_gap", "n_clos")},
++                            "dist_rule_sha256": hashlib.sha256(open(RRL.R.__file__, "rb").read()).hexdigest(), "floor_lifts": False, "m": ROW.RULE_M, "output": "traj30",
++                            "constants": {"D_M": RRL.R.D_M, "TAU_S": RRL.R.TAU_S, "B_MAX": RRL.R.B_MAX, "DT": RRL.R.DT}}
++    if RO.weight_on:
++        info["rule_relabel_weight"] = {"w": RO.w_weight, "terms": ["ade", "fde"] + (["acc"] if a.w_acc > 0.0 else []) + (["launch_along"] if a.launch_intent_w > 0.0 else []), "renormalised": False}
+     info["p10_units"] = None if a.synthetic else M.p10_meta(a.p10).get("units", "steer")
+     if not a.synthetic:
+         try:
+@@ -2963,6 +3066,7 @@
+             info["rule_relabel_n"], info["rule_relabel_changed"], info["rule_relabel_rows"] = rr_i["n_relabel"], rr_i["n_changed"], rr_i["n_rows"]
+             if rr_i["n_relabel"] == 0:
+                 raise SystemExit("ZZDVB-REFUSEDZZ rule-relabel: --rule-relabel on but the G-LIVE probe batch has no sample with a label lead (count 0): a lever that is declared and does nothing")
++        ro_in = RO.stage(probe_logged) if RO.own_on else None          # RULEOWN: the inputs of flag A on the LOGGED probe batch (the same mask as the relabel)
+         live = live_check(model.cpu(), probe, cfg)
+     else:
+         ds_probe = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+@@ -3019,6 +3123,10 @@
+     except (AssertionError, ValueError) as e:
+         raise SystemExit(f"ZZDVB-REFUSEDZZ rule-relabel: {e}")
+     try:
++        rop = rule_own_probe(model, probe_logged, RO, ro_in, cfg) if enc is None else {"rule_own": "off", "pass": True}      # RULEOWN: G-LIVE (count, term, gradients, controls); off: nothing runs
++    except (AssertionError, ValueError) as e:
++        raise SystemExit(f"ZZDVB-REFUSEDZZ rule-own: {e}")
++    try:
+         lvp = level_head_probe(model, probe, cfg)         # PREREG_V8F_LEVEL: G-LIVE on the loop's own label call (level_stage); the term reaches the loss with its weight, the head gets its gradient, the detach control reads EXACTLY 0.0, the token reaches O, the head is vision-only (off: nothing runs)
+     except (AssertionError, ValueError) as e:
+         raise SystemExit(f"ZZDVB-REFUSEDZZ level-head: {e}")
+@@ -3047,6 +3155,11 @@
+     if RR.on:                                                         # RULETRAIN: lever-ON arms only (a flag-off selfcheck.json keeps its key set); the mode is read from the BUILT stage
+         levers["rule_relabel"] = RR.mode
+         levers["rule_relabel_rule"] = {k: info["rule_relabel"][k] for k in ("dist_rule_sha256", "floor_lifts", "m", "constants")}
++    if RO.own_on:                                                     # RULEOWN: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
++        levers["w_rule_own"] = RO.w_own
++        levers["rule_own_rule"] = {k: info["rule_own"][k] for k in ("dist_rule_sha256", "floor_lifts", "m", "constants", "output")}
++    if RO.weight_on:
++        levers["rule_relabel_weight"] = RO.w_weight
+     levers["lr_schedule"] = lr_at.built_levers()                       # the built warmup / peak / total the loop calls (G-DVB read --warmup back from it)
+     if enc is not None:
+         levers["encoder"] = enc.built_levers()
+@@ -3060,6 +3173,8 @@
+     sc["launch_intent_probe"] = lip
+     if RR.on:                                                           # RULETRAIN: lever-ON arms only
+         sc["rule_relabel_probe"] = rrp
++    if RO.own_on:                                                       # RULEOWN: lever-ON arms only
++        sc["rule_own_probe"] = rop
+     if cfg.level_head == "on":                                          # lever-ON arms only: a flag-off selfcheck.json keeps its key set
+         sc["level_head_probe"] = lvp
+     if cfg.lead_head == "on":                                           # PREREG_LEVELHEAD_A2: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
+@@ -3095,6 +3210,9 @@
+     launch_int = {"rows": 0, "eligible": 0, "n": 0}                # ... and since the last log line
+     rr_tot = {"rows": 0, "n": 0, "changed": 0}                      # RULETRAIN run totals: samples seen, relabelled (label lead), of those changed by the rule; carried in the checkpoint of a lever-ON arm only
+     rr_int = {"rows": 0, "n": 0, "changed": 0}                      # ... and since the last log line
++    ro_tot = {"rows": 0, "n_lead": 0, "n_active": 0, "term_sum": 0.0, "steps": 0}      # RULEOWN run totals (flag A); carried in the checkpoint of a lever-ON arm only
++    ro_int = {"n_lead": 0, "n_active": 0, "term_sum": 0.0, "steps": 0, "weighted": 0}      # ... and since the last log line (weighted = samples carrying the flag-B weight)
++    rw_tot = {"weighted": 0}                                      # RULEOWN stage 2 run total
+     if os.path.exists(ck_path) and not a.no_resume:
+         ck = torch.load(ck_path, map_location="cpu", weights_only=False)
+         if ck["argv_sha"] != argv_sha(argv):
+@@ -3112,6 +3230,8 @@
+         rec_tot.update(ck.get("recover_totals") or {})
+         launch_tot.update(ck.get("launch_totals") or {})
+         rr_tot.update(ck.get("rule_relabel_totals") or {})
++        ro_tot.update(ck.get("rule_own_totals") or {})
++        rw_tot.update(ck.get("rule_relabel_weight_totals") or {})
+         print(f"[resume] step {step} epoch {ep} batch {bi}", flush=True)
+ 
+     def save(final=False):
+@@ -3127,6 +3247,10 @@
+             blob["recover"], blob["recover_totals"] = rcv.built_levers(), dict(rec_tot)
+         if RR.on:                                                       # RULETRAIN: lever-ON arms only: a flag-off checkpoint keeps its key set
+             blob["rule_relabel_totals"] = dict(rr_tot)
++        if RO.own_on:                                                   # RULEOWN: lever-ON arms only (the model cfg gets NO new key)
++            blob["rule_own_totals"] = dict(ro_tot)
++        if RO.weight_on:
++            blob["rule_relabel_weight_totals"] = dict(rw_tot)
+         if launch_on:                                                   # lever-ON arms only: a flag-off checkpoint keeps its key set
+             blob["launch_totals"] = dict(launch_tot)
+         if enc is not None:             # `model` keeps B's layout (the unchanged v8f_mini_eval.py loads it); the LoRA matrices travel beside it
+@@ -3152,6 +3276,8 @@
+                 lmask = launch_stage(b)
+             if RR.on:                                              # RULETRAIN: the relabelled target of the LOGGED frame (clip index, step, speed, label lead), taken BEFORE any ego stage
+                 rr_gt, rr_i = RR.stage(b)
++            if RO.own_on:                                          # RULEOWN flag A: the mask and the rule inputs of the LOGGED frame, taken BEFORE any ego stage (a swapped sample's ci / t is the own one)
++                ro_in = RO.stage(b)
+             if level_on:                                           # PREREG_V8F_LEVEL: the label is the LOGGED speed at NOW, taken BEFORE any ego stage rebuilds kin3 (the head sees the logged frame)
+                 lvl_lab = level_stage(b)
+             if lead_on:                                            # PREREG_LEVELHEAD_A2: the lead label of the LOGGED frame (clip index and step), taken BEFORE any ego stage (a swapped sample's ci / t is the own one)
+@@ -3217,6 +3343,26 @@
+                 with torch.autocast(device_type=dev.type, dtype=torch.bfloat16, enabled=amp):
+                     out = model.loss(b, p_gt=p_gt, gen=None)
+                 T = out["terms"]
++                ro_i, tot0 = None, T["total"]
++                if RO.own_on:                                       # RULEOWN flag A: ONE call adds W x term to the total (a deleted add line is caught by the guard below)
++                    ro_i = ROW.add_own_term(T, out["traj30"], ro_in, RO.w_own)
++                    if T["total"] is tot0 and ro_i["n_active"] > 0:
++                        raise SystemExit(f"ZZRULE-OWN-NOT-APPLIEDZZ step {step}: --w-rule-own {RO.w_own} but the term did not reach the total (n_lead {ro_i['n_lead']}, n_active {ro_i['n_active']}): a lever that is declared and does nothing")
++                if RO.weight_on:                                    # RULEOWN flag B: the extra loss of the changed samples; the count of weighted samples is the relabel's own changed mask
++                    rw_chg = ROW.changed_vector(rr_i, int(b["gt"].shape[0]))
++                    tot1 = T["total"]
++                    ROW.add_weight_extra(T, out["traj30"], b["gt"], b["gt_ok"], rw_chg, RO.w_weight, cfg.w_traj, cfg.w_acc, b.get("launch"), cfg.launch_intent_w)
++                    if T["total"] is tot1 and int(rw_chg.sum()) > 0:
++                        raise SystemExit(f"ZZRULE-WEIGHT-NOT-APPLIEDZZ step {step}: --rule-relabel-weight {RO.w_weight} but the extra loss did not reach the total ({int(rw_chg.sum())} changed samples): a lever that is declared and does nothing")
++                    ro_int["weighted"] += int(rw_chg.sum())
++                    rw_tot["weighted"] += int(rw_chg.sum())
++                if ro_i is not None:
++                    for c_ in (ro_int, ro_tot):
++                        c_["n_lead"] += ro_i["n_lead"]
++                        c_["n_active"] += ro_i["n_active"]
++                        c_["term_sum"] += ro_i["term"]
++                        c_["steps"] += 1
++                    ro_tot["rows"] += ro_i["n_rows"]
+                 if not torch.isfinite(T["total"]):
+                     raise SystemExit(f"ZZNONFINITE-LOSSZZ at step {step}: {({k: float(v) for k, v in T.items()})}")
+                 opt.zero_grad(set_to_none=True)
+@@ -3250,6 +3396,12 @@
+                 if RR.on:                                                   # RULETRAIN: per log interval (the steps since the last line); a flag-off log line keeps its key set
+                     rec["rule_relabel_n"], rec["rule_relabel_changed"], rec["rule_relabel_rows"] = rr_int["n"], rr_int["changed"], rr_int["rows"]
+                     rr_int.update(rows=0, n=0, changed=0)
++                if RO.own_on:                                               # RULEOWN flag A: per log interval (term = mean over the steps since the last line); a flag-off log line keeps its key set
++                    rec["rule_own_term"] = ro_int["term_sum"] / max(ro_int["steps"], 1)
++                    rec["rule_own_n_lead"], rec["rule_own_n_active"] = ro_int["n_lead"], ro_int["n_active"]
++                if RO.weight_on:                                            # RULEOWN flag B: the samples that carried the weight since the last line
++                    rec["rule_relabel_weighted_n"] = ro_int["weighted"]
++                ro_int.update(n_lead=0, n_active=0, term_sum=0.0, steps=0, weighted=0)
+                 if launch_on:                                               # PREREG_V8F_LAUNCH_INTENT: per log interval (the steps since the last line)
+                     rec["launch_n"], rec["launch_eligible"], rec["launch_rows"] = launch_int["n"], launch_int["eligible"], launch_int["rows"]
+                     launch_int.update(rows=0, eligible=0, n=0)
+@@ -3284,6 +3436,11 @@
+         summary["launch_weight_share"] = launch_weight_share(launch_tot["n"], launch_tot["eligible"], cfg.launch_intent_w)
+     if RR.on:                                                              # RULETRAIN: the lever-ON arm's run record (a flag-off summary.json keeps its key set)
+         summary["rule_relabel"], summary["rule_relabel_n"], summary["rule_relabel_changed"], summary["rule_relabel_rows"] = "on", rr_tot["n"], rr_tot["changed"], rr_tot["rows"]
++    if RO.own_on:                                                          # RULEOWN: the lever-ON arm's run record (a flag-off summary.json keeps its key set)
++        summary["w_rule_own"], summary["rule_own_n_lead"], summary["rule_own_n_active"], summary["rule_own_rows"] = RO.w_own, ro_tot["n_lead"], ro_tot["n_active"], ro_tot["rows"]
++        summary["rule_own_term_mean"] = ro_tot["term_sum"] / max(ro_tot["steps"], 1)
++    if RO.weight_on:
++        summary["rule_relabel_weight"], summary["rule_relabel_weighted_n"] = RO.w_weight, rw_tot["weighted"]
+     if level_on:                                                           # PREREG_V8F_LEVEL: the lever-ON arm's run record (a flag-off summary.json keeps its key set)
+         summary["level_head"], summary["w_level"] = "on", cfg.w_level
+     if lead_on or cfg.aux_cond == "token":                                 # PREREG_LEVELHEAD_A2: the lever-ON arm's run record (a flag-off summary.json keeps its key set)
+--- /dev/null
++++ b/stack/tanitad/data/rule_own.py
+@@ -0,0 +1,136 @@
++"""rule_own.py -- RULEOWN (card PREREG_V8F_PROOF_ADD34 section 2; stage 2 of note PREREG_V8F_PROOF_ADD32_N1): two trainer levers that sit next to ``rule_relabel.py``.
++
++``--w-rule-own W`` (default 0.0 = off): for every training sample with a label lead (the mask and the inputs of ``--rule-relabel``) the model's OWN predicted 30-knot trajectory ``out["traj30"]`` is capped by
++``dist_rule.distance_rule(plan, v0, present, gap, gap, v_L, m=10, floor_lifts=False)`` (plan = the prediction, DETACHED; no gradient through the rule). The per-sample term is the MEAN over the 30 knots of the squared
++Euclidean distance (m^2) between the predicted knot and its cap knot; the batch term is the mean over the masked samples (exactly 0.0 when there are none); the loss gets ``W * term``.
++A plan that already keeps the rule equals its cap bit for bit, so term and gradient are exactly 0 there. Nothing is read at inference.
++
++``--rule-relabel-weight W`` (default 1.0, needs ``--rule-relabel on`` when != 1): the samples whose target the relabel CHANGED carry the weight W in the trajectory loss terms that read ``batch["gt"]``
++(ade, fde, and acc / launch_along when those are on). Not renormalised: a weight of 4 means those samples count four times (the denominator stays the GT-valid count). Done as an EXTRA loss
++``(W - 1) * (the same terms restricted to the changed samples)`` added in the trainer, so the model file and the unweighted terms are untouched.
++
++The module is numpy + torch only. The model code (``v8f_mini.py``) is not changed by either lever.
++"""
++from __future__ import annotations
++
++import numpy as np
++import torch
++
++from tanitad.data import dist_rule as R
++from tanitad.data import rule_relabel as RRL
++from tanitad.models import v8f_mini as M
++
++#: the rule's ``m`` (executed steps): it only feeds the ``n_sat_exec`` log of ``distance_rule`` and does not change a plan (same as rule_relabel.RULE_M)
++RULE_M = RRL.RULE_M
++
++
++class RuleOwn:
++    """The trainer's stage object for both levers. ``w_own`` = --w-rule-own, ``w_weight`` = --rule-relabel-weight. Off (0.0 and 1.0) builds nothing.
++    The label arrays and the raw speeds come from a ``RuleRelabel`` object (``share``: the trainer's own when ``--rule-relabel on``, else one built here from the join)."""
++
++    def __init__(self, w_own: float, w_weight: float, J: dict | None = None, store=None, share: "RRL.RuleRelabel | None" = None):
++        self.w_own, self.w_weight = float(w_own), float(w_weight)
++        if not np.isfinite(self.w_own) or self.w_own < 0.0:
++            raise ValueError(f"w_rule_own must be finite and >= 0, got {w_own!r}")
++        if not np.isfinite(self.w_weight) or self.w_weight < 0.0:
++            raise ValueError(f"rule_relabel_weight must be finite and >= 0, got {w_weight!r}")
++        self.own_on = self.w_own > 0.0
++        self.weight_on = self.w_weight != 1.0
++        self.src = None
++        if self.own_on:
++            self.src = share if (share is not None and share.on) else RRL.RuleRelabel("on", J, store)
++
++    # ---- flag A: the term
++    def stage(self, batch: dict) -> dict:
++        """COLLATED batch (CPU, logged) -> numpy inputs of the term. Must run BEFORE ego.apply / dag.apply / rcv.apply (as RuleRelabel.stage; the combinations are refused anyway)."""
++        ci, t = batch["ci"].cpu().numpy(), batch["t"].cpu().numpy()
++        pres, gap, clos = self.src.label_rows(ci, t)
++        v0, vl = self.src.raw_speeds(ci, t)
++        return own_inputs(batch["gt_ok"], batch["frame_ok"][:, -1], v0, vl, pres, gap, clos)
++
++    def built_levers(self) -> dict:
++        return {"w_rule_own": self.w_own, "rule_relabel_weight": self.w_weight}
++
++
++def own_inputs(gt_ok, frame_ok_last, v0, v_logged, pres, gap, clos) -> dict:
++    """The mask and the rule inputs, the SAME as ``rule_relabel.relabel_gt``: label presence 1, finite gap and closing label, GT-valid, real current frame, finite raw v0 and logged speed.
++    v_L = max(0, v_logged + closing); g0 = gap."""
++    f = lambda x: np.asarray(torch.as_tensor(x).detach().cpu().numpy() if not isinstance(x, np.ndarray) else x, np.float64)      # noqa: E731
++    v0, v_logged, pres, gap, clos = f(v0), f(v_logged), f(pres), f(gap), f(clos)
++    ok = np.asarray(torch.as_tensor(gt_ok).detach().cpu().numpy(), bool) & np.asarray(torch.as_tensor(frame_ok_last).detach().cpu().numpy(), bool)
++    with np.errstate(invalid="ignore"):
++        mask = ok & (pres == 1.0) & np.isfinite(gap) & np.isfinite(clos) & np.isfinite(v0) & np.isfinite(v_logged)
++        v_L = np.maximum(0.0, v_logged + clos)
++    return {"mask": mask, "v0": v0, "gap": gap, "v_L": v_L, "n_rows": int(len(mask))}
++
++
++def cap_of_plan(plan_np: np.ndarray, v0, gap, v_L) -> np.ndarray:
++    """The cap of a batch of plans [n, 30, 2] (any float in, float64 out, the rule called on float64 plan and inputs): ``distance_rule(..., m=10, floor_lifts=False).plan``. Inactive / unchanged windows come back bit for bit."""
++    n = len(plan_np)
++    f64 = lambda x: np.asarray(x, np.float64)      # noqa: E731
++    out = R.distance_rule(f64(plan_np), f64(v0), np.ones(n, bool), f64(gap), f64(gap), f64(v_L), m=RULE_M, floor_lifts=False)      # the rule runs in float64 (idempotent to 1e-5); a plan that keeps the rule comes back equal
++    return np.asarray(out.plan, np.float64)
++
++
++def own_term(traj30: torch.Tensor, inp: dict) -> tuple:
++    """(term, info): ``term`` = mean over the masked samples of (mean over the 30 knots of the squared Euclidean distance between ``traj30`` and its cap). The cap is computed from the DETACHED plan.
++    No masked sample -> a plain zero tensor with no graph (exactly 0.0). info: n_rows, n_lead (masked samples), n_active (samples whose per-sample term is above 0)."""
++    traj30 = traj30.float()
++    mask = inp["mask"]
++    n = int(mask.sum())
++    info = {"n_rows": int(inp["n_rows"]), "n_lead": n, "n_active": 0}
++    if n == 0:
++        return traj30.new_zeros(()), info
++    sel = np.nonzero(mask)[0]
++    idx = torch.as_tensor(sel, device=traj30.device)
++    pl = traj30.index_select(0, idx)
++    plan = pl.detach().double().cpu().numpy()
++    cap = torch.as_tensor(cap_of_plan(plan, inp["v0"][sel], inp["gap"][sel], inp["v_L"][sel]), dtype=pl.dtype, device=pl.device)
++    per = ((pl - cap) ** 2).sum(-1).mean(1)                       # [n] mean over the knots of the squared distance (m^2)
++    info["n_active"] = int((per.detach() > 0).sum())
++    return per.mean(), info
++
++
++# ---- flag B: the weight on the samples the relabel changed
++def weight_extra(traj30: torch.Tensor, gt: torch.Tensor, gt_ok, changed, W: float, w_traj: float, w_acc: float = 0.0, launch=None, launch_w: float = 0.0) -> torch.Tensor:
++    """The EXTRA loss of weight W on the CHANGED samples: ``(W - 1) x`` the ade / fde terms of ``v8f_mini.traj_terms`` (and ``accel_term`` when ``w_acc > 0``, ``launch_along_term`` when ``launch_w > 0``) restricted to those
++    samples, with the SAME denominators (the GT-valid count; not renormalised) and the SAME total weights as ``V8FMini.loss`` (``w_traj * (ade / 3 + 0.5 * fde / 6)``, ``w_acc * acc``, ``w_traj * launch_w * launch_along / 3``).
++    ``gt`` is the target the loss receives (the relabelled one); ``changed`` [B] bool. total_with_weight = total + this."""
++    traj30 = traj30.float()
++    gok = torch.as_tensor(gt_ok).to(traj30.device).float()
++    u = (float(W) - 1.0) * torch.as_tensor(changed).to(traj30.device).float()
++    den = gok.sum().clamp_min(1.0)
++    gt = gt.to(traj30.device).float()
++    d = torch.sqrt(((traj30 - gt) ** 2).sum(-1) + 1e-9)
++    ade_x = (d.mean(1) * gok * u).sum() / den
++    fde_x = (d[:, -1] * gok * u).sum() / den
++    extra = w_traj * (ade_x / 3.0 + 0.5 * fde_x / 6.0)
++    if w_acc > 0.0:
++        d2 = M.second_diff_02(traj30) - M.second_diff_02(gt)
++        extra = extra + w_acc * (((d2 ** 2).sum(-1).mean(1)) * gok * u).sum() / den
++    if launch_w > 0.0 and launch is not None:
++        lo, hi = M.LAUNCH_KNOT_LO - 1, M.LAUNCH_KNOT_HI
++        dx = traj30[:, lo:hi, 0] - gt[:, lo:hi, 0]
++        per = torch.sqrt(dx ** 2 + 1e-9).sum(1) / float(traj30.shape[1])
++        extra = extra + w_traj * launch_w * ((per * gok * torch.as_tensor(launch).to(traj30.device).float() * u).sum() / den) / 3.0
++    return extra
++
++
++def changed_vector(rr_info: dict, n_rows: int) -> np.ndarray:
++    """[B] bool: the samples whose target the relabel changed (``RuleRelabel.stage`` info; the key is absent when no sample was relabelled)."""
++    c = rr_info.get("changed")
++    return np.zeros(n_rows, bool) if c is None else np.asarray(c, bool)
++
++
++def add_own_term(T: dict, traj30: torch.Tensor, inp: dict, W: float) -> dict:
++    """THE line that applies flag A: ``T["total"] = T["total"] + W * term`` (the trainer loop and the G-LIVE probe both call this; a deleted add line is caught by the loop guard ZZRULE-OWN-NOT-APPLIEDZZ).
++    No new key is put into ``T`` (the train log keys of a flag-on arm come from the returned info). Returns info: n_rows, n_lead, n_active, term (float)."""
++    term, info = own_term(traj30, inp)
++    T["total"] = T["total"] + W * term
++    info["term"] = float(term.detach())
++    return info
++
++
++def add_weight_extra(T: dict, traj30: torch.Tensor, gt: torch.Tensor, gt_ok, changed, W: float, w_traj: float, w_acc: float = 0.0, launch=None, launch_w: float = 0.0) -> None:
++    """THE line that applies flag B: ``T["total"] = T["total"] + weight_extra(...)`` (a deleted line is caught by the loop guard ZZRULE-WEIGHT-NOT-APPLIEDZZ)."""
++    T["total"] = T["total"] + weight_extra(traj30, gt, gt_ok, changed, W, w_traj, w_acc, launch, launch_w)
+--- /dev/null
++++ b/stack/tests/test_v8f_rule_own.py
+@@ -0,0 +1,356 @@
++"""RULEOWN (--w-rule-own and --rule-relabel-weight): the distance rule applied to the model's own plan as a loss term, and the weight of the samples the relabel changed
++(card PREREG_V8F_PROOF_ADD34 sections 2 and 5, note PREREG_V8F_PROOF_ADD32_N1 stage 2).
++
++Tiny models (d 32) on CPU. Reach is proved from the flag to the loss and to the gradient on the trajectory output, with controls that must read exactly 0.0, and each line that applies a lever is deleted in a
++mutation test that must go red. The trainer loop lines are pinned by source checks plus the trainer runs in checks/."""
++from __future__ import annotations
++
++import json
++import sys
++import types
++from pathlib import Path
++
++import numpy as np
++import pytest
++import torch
++
++REPO = Path(__file__).resolve().parents[2]
++for p in (REPO / "stack", REPO / "taniteval", REPO / "stack" / "scripts"):
++    if str(p) not in sys.path:
++        sys.path.insert(0, str(p))
++
++from tanitad.data import dist_rule as R  # noqa: E402
++from tanitad.data import rule_own as ROW  # noqa: E402
++from tanitad.data import rule_relabel as RRL  # noqa: E402
++from tanitad.data import v8f_mini_data as D  # noqa: E402
++from tanitad.models import v8f_mini as M  # noqa: E402
++import v8f_mini_train as TR  # noqa: E402
++
++GRID = ["--wm-state", "grid", "--wm-cell-dim", "16"]
++SYN = ["--synthetic", "--arm", "M2b", "--grid", "pool4x10", "--kin-mode", "yaw", *GRID, "--exclude", "1:3", "--threads", "1"]
++TINY = ["--batch", "8", "--d", "32", "--n-q", "2"]
++
++
++@pytest.fixture(scope="module")
++def world(tmp_path_factory):
++    root = tmp_path_factory.mktemp("ruleown")
++    w = D.make_synthetic_world(root, n_train=6, n_eval=2, T=60, seed=0)
++    J = D.load_join(Path(root) / "join_train.npz")
++    D.synthetic_lead_labels(J, 0)
++    store = D.ClipStore(root, "train", lru=8)
++    wins = D.train_windows(store, J, w["names"]["train"])
++    ds = D.V8FMiniWindows(store, J, wins, hmax=16)
++    RR = RRL.RuleRelabel("on", J, store)
++    RO = ROW.RuleOwn(1.0, 4.0, J, store, share=RR)
++    return {"J": J, "ds": ds, "wins": wins, "RR": RR, "RO": RO, "store": store}
++
++
++def _batch(world, idx):
++    return D.collate([world["ds"].item(world["wins"][i][0], world["wins"][i][1], 1, 3) for i in idx])
++
++
++def _model(world):
++    a = TR.build_parser().parse_args(["--out", "x", "--d", "32", "--n-q", "2", "--arm", "M2b", *GRID])
++    cfg = TR.make_config(a)
++    mu, sd = M.cons_stats(world["J"])
++    torch.manual_seed(0)
++    return M.V8FMini(cfg, M.P10Prior.synthetic(0), mu, sd), cfg
++
++
++def _straight(n, speed):
++    g = np.zeros((n, 30, 2), np.float32)
++    g[:, :, 0] = np.arange(1, 31)[None, :] * 0.2 * speed
++    return g
++
++
++def _inp(n, gap, v0=10.0, v_L=0.0, mask=None):
++    return {"mask": np.ones(n, bool) if mask is None else np.asarray(mask, bool), "v0": np.full(n, v0), "gap": np.full(n, float(gap)), "v_L": np.full(n, v_L), "n_rows": n}
++
++
++# ------------------------------------------------------------------------------------------------ flag A: definition
++def test_flags_default_off_and_have_their_gate_entries():
++    a = TR.build_parser().parse_args(["--out", "x"])
++    assert a.w_rule_own == 0.0 and a.rule_relabel_weight == 1.0
++    assert TR.FLAG_CHECKS["w_rule_own"] == "data:rule_own" and TR.FLAG_CHECKS["rule_relabel_weight"] == "data:rule_relabel_weight"
++    ro = ROW.RuleOwn(0.0, 1.0)
++    assert not ro.own_on and not ro.weight_on and ro.src is None
++
++
++def test_mask_and_inputs_equal_the_relabel_mask(world):
++    b = _batch(world, list(range(0, min(64, len(world["wins"])), 2)))
++    _, info = world["RR"].stage(b)
++    inp = world["RO"].stage(b)
++    assert np.array_equal(inp["mask"], info["mask"]) and inp["mask"].any() and not inp["mask"].all()
++
++
++def test_cap_equals_distance_rule_by_hand_on_the_detached_prediction_and_term_is_the_mean_squared_distance():
++    plan = torch.as_tensor(_straight(3, 10.0)) + 0.01 * torch.randn(3, 30, 2)
++    plan.requires_grad_(True)
++    inp = _inp(3, 8.0, v0=10.0, v_L=2.0)
++    term, info = ROW.own_term(plan, inp)
++    by_hand = R.distance_rule(plan.detach().double().numpy(), np.full(3, 10.0), np.ones(3, bool), np.full(3, 8.0), np.full(3, 8.0), np.full(3, 2.0), m=10, floor_lifts=False)
++    cap = torch.as_tensor(by_hand.plan).float()                                                      # the term calls the rule in float64 and casts the cap back to the prediction dtype
++    assert info["n_lead"] == 3 and info["n_active"] == 3
++    assert torch.equal(torch.as_tensor(ROW.cap_of_plan(plan.detach().numpy(), inp["v0"], inp["gap"], inp["v_L"])).float(), cap)               # exact
++    hand = (((plan.detach() - cap) ** 2).sum(-1).mean(1)).mean()
++    assert torch.allclose(term.detach(), hand, rtol=0, atol=1e-7) and float(term) > 0.0
++    term.backward()
++    assert torch.allclose(plan.grad, (2.0 * (plan.detach() - cap)) / (3 * 30), atol=1e-7)          # no gradient through the rule: d term / d plan = 2 (plan - cap) / (n x knots)
++
++
++def test_the_rule_applied_twice_equals_once():
++    plan = _straight(4, 10.0)
++    inp = _inp(4, 8.0, v0=10.0, v_L=2.0)
++    c1 = ROW.cap_of_plan(plan, inp["v0"], inp["gap"], inp["v_L"])
++    c2 = ROW.cap_of_plan(c1, inp["v0"], inp["gap"], inp["v_L"])
++    assert float(np.abs(c1 - c2).max()) <= 1e-5                                                      # the float64 path the term uses
++    assert not np.array_equal(c1, plan)
++
++
++def test_samples_without_a_lead_or_with_a_non_finite_raw_speed_contribute_exactly_zero():
++    n = 5
++    g = _straight(n, 10.0)
++    ok = np.ones(n, bool)
++    pres = np.array([1.0, 0.0, 1.0, 1.0, 1.0])
++    gap = np.array([8.0, 8.0, np.nan, 8.0, 8.0])
++    clos = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
++    v0 = np.array([10.0, 10.0, 10.0, np.nan, 10.0])
++    vl = np.array([10.0, 10.0, 10.0, 10.0, np.nan])
++    inp = ROW.own_inputs(ok, ok, v0, vl, pres, gap, clos)
++    assert inp["mask"].tolist() == [True, False, False, False, False]
++    plan = torch.as_tensor(g, dtype=torch.float32).requires_grad_(True)
++    term, info = ROW.own_term(plan, inp)
++    term.backward()
++    assert info["n_lead"] == 1 and info["n_active"] == 1 and float(term) > 0.0
++    assert float(plan.grad[1:].abs().sum()) == 0.0 and float(plan.grad[0].abs().sum()) > 0.0                           # only the masked row gets a gradient
++    plan2 = torch.as_tensor(g, dtype=torch.float32).requires_grad_(True)
++    inp0 = ROW.own_inputs(ok, ok, v0, vl, pres * 0.0, gap, clos)
++    t0, i0 = ROW.own_term(plan2, inp0)
++    assert i0["n_lead"] == 0 and float(t0) == 0.0 and not t0.requires_grad
++
++
++# ------------------------------------------------------------------------------------------------ flag A: reach (o3)
++def test_reach_a_plan_into_the_lead_a_plan_inside_the_rule_and_a_batch_without_a_lead():
++    W = 2.0
++    run = torch.as_tensor(_straight(4, 10.0)).requires_grad_(True)                          # 10 m/s towards a lead 8 m away
++    T = {"total": (run ** 2).sum() * 0.0 + 1.0}
++    info = ROW.add_own_term(T, run, _inp(4, 8.0, v0=10.0, v_L=0.0), W)
++    T["total"].backward()
++    assert info["term"] > 0.0 and info["n_active"] == 4 and float(run.grad.abs().sum()) > 0.0 and float(T["total"]) == pytest.approx(1.0 + W * info["term"], rel=1e-6)
++    slow = torch.as_tensor(_straight(4, 0.5)).requires_grad_(True)                          # a crawl, lead 40 m away: inside the rule
++    T2 = {"total": (slow ** 2).sum() * 0.0 + 1.0}
++    i2 = ROW.add_own_term(T2, slow, _inp(4, 40.0, v0=0.5, v_L=0.0), W)
++    T2["total"].backward()
++    assert i2["n_lead"] == 4 and i2["n_active"] == 0 and i2["term"] == 0.0 and float(slow.grad.abs().sum()) == 0.0 and float(T2["total"]) == 1.0
++    none = torch.as_tensor(_straight(4, 10.0)).requires_grad_(True)
++    T3 = {"total": (none ** 2).sum() * 0.0 + 1.0}
++    i3 = ROW.add_own_term(T3, none, _inp(4, 8.0, mask=np.zeros(4, bool)), W)
++    T3["total"].backward()
++    assert i3["n_lead"] == 0 and i3["term"] == 0.0 and float(none.grad.abs().sum()) == 0.0 and float(T3["total"]) == 1.0
++
++
++def test_reach_on_a_world_batch_is_partial_and_reaches_the_model_gradient(world):
++    model, cfg = _model(world)
++    model.train()
++    idx = list(range(len(world["wins"])))
++    b = _batch(world, idx[: min(64, len(idx))])
++    inp = world["RO"].stage(b)
++    # the model's own plan is far below the rule's cap for most synthetic rows, so a planted fast plan on half of the lead rows makes the term partial: some lead samples contribute, some do not
++    out = model.loss(dict(b), p_gt=0.5, gen=torch.Generator().manual_seed(11))
++    tr = out["traj30"]
++    n_lead = int(inp["mask"].sum())
++    assert 0 < n_lead < len(inp["mask"])
++    planted = tr.detach().clone()
++    sel = np.nonzero(inp["mask"])[0]
++    h = max(1, len(sel) // 2)
++    planted[sel[:h]] = torch.as_tensor(_straight(h, 12.0))                                  # runs into a lead 8 m away
++    planted[sel[h:]] = torch.as_tensor(_straight(len(sel) - h, 0.5))                         # a crawl with the lead 40 m away: inside the rule
++    planted.requires_grad_(True)
++    gap2 = inp["gap"].copy()
++    gap2[sel[:h]], gap2[sel[h:]] = 8.0, 40.0
++    inp2 = dict(inp, gap=gap2, v_L=np.where(inp["mask"], 0.0, inp["v_L"]))
++    term, info = ROW.own_term(planted, inp2)
++    print("partial reach: n_lead", info["n_lead"], "n_active", info["n_active"])
++    assert info["n_lead"] == n_lead and 0 < info["n_active"] < info["n_lead"] and float(term) > 0.0
++    for p in model.parameters():
++        p.grad = None
++    model.loss(dict(b), p_gt=0.5, gen=torch.Generator().manual_seed(11))
++    o2 = model.loss(dict(b), p_gt=0.5, gen=torch.Generator().manual_seed(11))
++    T = o2["terms"]
++    tot0 = float(T["total"].detach())
++    inf2 = ROW.add_own_term(T, o2["traj30"], inp2, 1.0)
++    T["total"].backward()
++    g = float(sum(float(p.grad.abs().sum()) for p in model.parameters() if p.grad is not None))
++    assert g > 0.0 and np.isfinite(inf2["term"])
++    assert float(T["total"].detach()) == pytest.approx(tot0 + inf2["term"], rel=1e-5, abs=1e-5)
++
++
++def _load_mutated(old, new):
++    src = Path(ROW.__file__).read_text(encoding="utf-8")
++    assert src.count(old) == 1
++    mod = types.ModuleType("rule_own_mut")
++    mod.__file__ = str(ROW.__file__)
++    exec(compile(src.replace(old, new), "rule_own_mut", "exec"), mod.__dict__)
++    return mod
++
++
++def _reach_a(mod):
++    run = torch.as_tensor(_straight(4, 10.0)).requires_grad_(True)
++    T = {"total": (run ** 2).sum() * 0.0 + 1.0}
++    info = mod.add_own_term(T, run, _inp(4, 8.0, v0=10.0, v_L=0.0), 2.0)
++    T["total"].backward()
++    return info["term"] > 0.0 and float(T["total"]) > 1.0 and float(run.grad.abs().sum()) > 0.0
++
++
++def test_mutation_deleting_the_line_that_adds_the_term_goes_red():
++    assert _reach_a(ROW) is True                                                            # the green run
++    red = _load_mutated('    T["total"] = T["total"] + W * term\n', "    pass\n")
++    assert _reach_a(red) is False                                                           # the same check on the mutated copy goes red
++
++
++def test_the_loop_applies_the_term_after_the_loss_and_guards_it():
++    src = Path(TR.__file__).read_text(encoding="utf-8")
++    assert src.count("ROW.add_own_term(T, out[\"traj30\"], ro_in, RO.w_own)") == 1 and src.count("ZZRULE-OWN-NOT-APPLIEDZZ") == 1
++    assert src.index("                ro_in = RO.stage(b)") < src.index("                b = comp.apply(b, step)" + chr(10)) < src.index("ROW.add_own_term(T, out[\"traj30\"]") < src.index("                if not torch.isfinite(T[\"total\"]):")
++    assert src.count("ROW.add_weight_extra(T, out[\"traj30\"]") == 1 and src.count("ZZRULE-WEIGHT-NOT-APPLIEDZZ") == 1
++
++
++# ------------------------------------------------------------------------------------------------ the gate (o4, w4)
++def _args(*extra):
++    return TR.build_parser().parse_args(["--out", "x", *extra])
++
++
++def test_gdvb_declared_equals_built_and_a_wrong_expectation_is_refused():
++    rec = {"w_rule_own": 1.0, "n_pres": 3, "n_gap": 3, "n_clos": 3, "labels_sha256": "a", "dist_rule_sha256": "b"}
++    assert TR.bad_rule_own(_args("--w-rule-own", "1.0"), {"rule_own": rec}) == []
++    assert TR.bad_rule_own(_args("--w-rule-own", "4.0"), {"rule_own": rec})                          # declared 4 but built 1
++    assert TR.bad_rule_own(_args("--w-rule-own", "1.0"), {})                                           # declared but nothing built
++    assert TR.bad_rule_own(_args(), {"rule_own": rec})                                                 # off declared but a stage was built
++    assert TR.bad_rule_own(_args("--w-rule-own", "-1.0"), {"rule_own": {**rec, "w_rule_own": -1.0}})
++    assert TR.bad_rule_own(_args("--w-rule-own", "1.0", "--ego-perturb-p", "0.5"), {"rule_own": rec})
++    assert TR.bad_rule_own(_args("--w-rule-own", "1.0", "--dagger-p", "0.5"), {"rule_own": rec})
++    assert TR.bad_rule_own(_args("--w-rule-own", "1.0", "--recover-p", "0.5"), {"rule_own": rec})
++    assert TR.bad_rule_own(_args("--w-rule-own", "1.0", "--encoder", "lora"), {"rule_own": rec})
++    assert TR.bad_rule_own(_args("--w-rule-own", "1.0", "--rule-relabel", "on"), {"rule_own": rec}) == []          # may be combined with --rule-relabel on
++    wrec = {"w": 4.0}
++    assert TR.bad_rule_own(_args("--rule-relabel", "on", "--rule-relabel-weight", "4"), {"rule_relabel_weight": wrec}) == []
++    assert TR.bad_rule_own(_args("--rule-relabel", "on", "--rule-relabel-weight", "2"), {"rule_relabel_weight": wrec})        # declared 2 but built 4
++    assert TR.bad_rule_own(_args("--rule-relabel-weight", "4"), {"rule_relabel_weight": wrec})                                 # needs --rule-relabel on
++    assert TR.bad_rule_own(_args("--rule-relabel", "on", "--rule-relabel-weight", "4"), {})                                    # declared but nothing built
++    assert TR.bad_rule_own(_args("--rule-relabel", "on"), {"rule_relabel_weight": wrec})                                       # default 1 but a stage was built
++    assert TR.bad_rule_own(_args("--rule-relabel", "on", "--rule-relabel-weight", "-2"), {"rule_relabel_weight": {"w": -2.0}})
++
++
++def test_selfcheck_on_has_the_probe_and_the_strings_and_off_has_no_key(tmp_path):
++    for tag, extra in (("off", []), ("own", ["--w-rule-own", "1.0"]), ("own_rt", ["--w-rule-own", "4.0", "--rule-relabel", "on"]), ("wt", ["--rule-relabel", "on", "--rule-relabel-weight", "4"])):
++        out = tmp_path / tag
++        rc = TR.main([*SYN, *extra, "--selfcheck-only", "--out", str(out)])
++        assert rc == 0
++        sc = json.loads((out / "selfcheck.json").read_text(encoding="utf-8"))
++        assert sc["declared_vs_built"] == "PASS"
++        keys = [k for k in list(sc["levers"]) + list(sc["info"]) + list(sc) if "rule_own" in k or "rule_relabel_weight" in k or k == "w_rule_own"]
++        if tag == "off":
++            assert not keys
++        if tag.startswith("own"):
++            p = sc["rule_own_probe"]
++            assert sc["levers"]["w_rule_own"] == float(extra[1]) and p["pass"] and np.isfinite(p["term"]) and p["n_lead"] > 0 and "n_active" in p
++            assert "grad_norm_term_on_traj30" in p and "grad_norm_traj_loss_on_traj30" in p and p["control_all_false_term"] == 0.0
++        if tag == "wt":
++            assert sc["levers"]["rule_relabel_weight"] == 4.0 and "rule_own_probe" not in sc and "w_rule_own" not in sc["levers"]
++
++
++@pytest.mark.parametrize("extra", [["--ego-perturb-p", "0.5"], ["--recover-p", "0.5"], ["--dagger-p", "0.5"]])
++def test_refused_combinations(tmp_path, extra):
++    with pytest.raises(SystemExit) as e:
++        TR.main([*SYN, "--w-rule-own", "1.0", *extra, "--selfcheck-only", "--out", str(tmp_path / "x")])
++    assert e.value.code not in (0, None)
++
++
++def test_the_weight_without_the_relabel_is_refused(tmp_path):
++    with pytest.raises(SystemExit) as e:
++        TR.main([*SYN, "--rule-relabel-weight", "4", "--selfcheck-only", "--out", str(tmp_path / "x")])
++    assert e.value.code not in (0, None)
++
++
++def test_train_log_keys_only_when_on_and_checkpoint_cfg_equals_its_base(tmp_path):
++    cks = {}
++    for tag, extra in (("off", []), ("own", ["--w-rule-own", "1.0"]), ("wt", ["--rule-relabel", "on", "--rule-relabel-weight", "4"])):
++        out = tmp_path / tag
++        rc = TR.main([*SYN, *TINY, *extra, "--steps", "3", "--log-every", "1", "--ckpt-every", "100", "--out", str(out)])
++        assert rc == 0
++        rows = [json.loads(line) for line in (out / "train_log.jsonl").read_text(encoding="utf-8").splitlines()]
++        keys = {k for r in rows for k in r}
++        if tag == "off":
++            assert not [k for k in keys if "rule_own" in k or "weighted" in k]
++        if tag == "own":
++            assert {"rule_own_term", "rule_own_n_lead", "rule_own_n_active"} <= keys and all(np.isfinite(r["rule_own_term"]) for r in rows)
++            assert any(r["rule_own_n_lead"] > 0 for r in rows)
++        if tag == "wt":
++            assert "rule_relabel_weighted_n" in keys and not [k for k in keys if "rule_own" in k]
++        cks[tag] = torch.load(out / "ckpt_last.pt", map_location="cpu", weights_only=False)
++    for tag in ("own", "wt"):
++        assert cks[tag]["cfg"] == cks["off"]["cfg"] and list(cks[tag]["model"]) == list(cks["off"]["model"])
++    assert "rule_own_totals" in cks["own"] and "rule_own_totals" not in cks["off"]
++    a, cfg = None, M.V8FMiniConfig(**cks["own"]["cfg"])
++    m = M.V8FMini(cfg, M.P10Prior(torch.zeros(8), torch.ones(8), torch.zeros(2 * M.K30)))
++    assert "all keys matched" in str(m.load_state_dict(cks["own"]["model"])).lower()
++
++
++# ------------------------------------------------------------------------------------------------ flag B (w2, w3, w4)
++def _hand_terms(traj, gt):
++    d = np.sqrt(((traj - gt) ** 2).sum(-1) + 1e-9)
++    return d.mean(1), d[:, -1]
++
++
++def test_weighted_loss_equals_a_hand_computation_and_only_changed_samples_carry_the_weight(world):
++    model, cfg = _model(world)
++    model.train()
++    b = _batch(world, list(range(0, min(64, len(world["wins"])), 2)))
++    gt_new, info = world["RR"].stage(b)
++    assert info["n_changed"] > 0 and info["n_relabel"] > info["n_changed"] - 1
++    chg = ROW.changed_vector(info, int(b["gt"].shape[0]))
++    assert chg.sum() == info["n_changed"] and (chg <= info["mask"]).all()
++    b2 = {**b, "gt": gt_new}
++    out = model.loss(b2, p_gt=0.5, gen=torch.Generator().manual_seed(11))
++    T, tr = out["terms"], out["traj30"]
++    base_total = float(T["total"].detach())
++    W = 4.0
++    tr_req = tr.detach().clone().requires_grad_(True)
++    extra = ROW.weight_extra(tr_req, gt_new, b2["gt_ok"], chg, W, cfg.w_traj)
++    ade_i, fde_i = _hand_terms(tr.detach().double().numpy(), gt_new.double().numpy())
++    gok = b2["gt_ok"].numpy().astype(np.float64)
++    den = max(gok.sum(), 1.0)
++    hand = cfg.w_traj * (W - 1.0) * (((ade_i * gok * chg).sum() / den) / 3.0 + 0.5 * ((fde_i * gok * chg).sum() / den) / 6.0)
++    assert float(extra.detach()) == pytest.approx(hand, rel=1e-5, abs=1e-9) and hand > 0.0
++    # the total with the weight = the loss with those samples counted W times, hand-computed from the unweighted terms
++    ade_all = (ade_i * gok).sum() / den
++    fde_all = (fde_i * gok).sum() / den
++    assert float(T["ade"].detach()) == pytest.approx(ade_all, rel=1e-4) and float(T["fde"].detach()) == pytest.approx(fde_all, rel=1e-4)
++    ade_w = (ade_i * gok * (1.0 + (W - 1.0) * chg)).sum() / den
++    fde_w = (fde_i * gok * (1.0 + (W - 1.0) * chg)).sum() / den
++    assert float(extra.detach()) == pytest.approx(cfg.w_traj * ((ade_w - ade_all) / 3.0 + 0.5 * (fde_w - fde_all) / 6.0), rel=1e-4)       # not renormalised: the denominator is the GT-valid count
++    Tc = {"total": T["total"]}
++    ROW.add_weight_extra(Tc, tr.detach(), gt_new, b2["gt_ok"], chg, W, cfg.w_traj)
++    assert float(Tc["total"].detach()) == pytest.approx(base_total + hand, rel=1e-5)
++    extra.backward()
++    g = tr_req.grad.abs().sum(dim=(1, 2)).numpy()
++    assert (g[~chg] == 0.0).all() and (g[chg] > 0.0).all()                                               # only the changed samples carry the weight
++    assert float(ROW.weight_extra(tr.detach(), gt_new, b2["gt_ok"], np.zeros_like(chg), W, cfg.w_traj)) == 0.0         # no changed sample: exactly 0
++    assert float(ROW.weight_extra(tr.detach(), gt_new, b2["gt_ok"], chg, 1.0, cfg.w_traj)) == 0.0                       # weight 1: exactly 0
++    both = ROW.weight_extra(tr.detach(), gt_new, b2["gt_ok"], chg, W, cfg.w_traj, w_acc=2.0)                             # acc enters like in the loss: w_acc x acc over the same samples
++    assert float(both) > float(extra.detach())
++
++
++def test_mutation_deleting_the_line_that_adds_the_weight_goes_red():
++    tr = torch.as_tensor(_straight(4, 10.0)).requires_grad_(True)
++    gt = torch.as_tensor(_straight(4, 9.0))
++    ok, chg = np.ones(4, bool), np.array([True, False, True, False])
++
++    def reach(mod):
++        T = {"total": (tr ** 2).sum() * 0.0 + 1.0}
++        mod.add_weight_extra(T, tr, gt, ok, chg, 4.0, 1.0)
++        return float(T["total"]) > 1.0
++
++    assert reach(ROW) is True
++    red = _load_mutated('    T["total"] = T["total"] + weight_extra(traj30, gt, gt_ok, changed, W, w_traj, w_acc, launch, launch_w)\n', "    pass\n")
++    assert reach(red) is False
