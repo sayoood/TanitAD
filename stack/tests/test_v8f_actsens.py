@@ -235,3 +235,32 @@ def test_ladder_path_uniform_default_reproduces_the_chunked_epoch_order_bit_for_
     got = TR.make_sampler(a, cfg, wins, None, None, {"lru": 10})
     ref = D.ChunkedSampler(wins, a.batch, seed=a.seed, chunk=max(4, min(48, 10 - 2)), max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
     assert type(got) is D.ChunkedSampler and [list(b) for b in got.epoch(0)] == [list(b) for b in ref.epoch(0)]
+
+
+# ------------------------------------------------------------------------------------------------ AMEND_ACTSENS_1: C3's instrument is G-LIVE's FIRST step
+UNW = ["wm", "total"] + [f"wm/{t}/L{l}" for t in ("pred", "sigreg", "idm") for l in (1, 2, 3)] + [f"wm/act_sigreg/L{l}" for l in (2, 3)]
+
+
+def test_amend1_live_first_identity_dose_against_default_same_seed(init):
+    assert lgate(init, "a1_ref", ["--wm-idm-gamma", "100", "100", "100"]) == 0
+    assert lgate(init, "a1_dose", ["--wm-idm-gamma", "1000", "100", "100"]) == 0
+    r, d = sc_of(init, "a1_ref")["live_first"], sc_of(init, "a1_dose")["live_first"]
+    assert set(r) == set(d) and len(r) > 10
+    unw = [k for k in r if k.startswith("wm/") and not k.startswith("wm/level/")]
+    assert unw and "wm/idm/L1" in unw
+    for k in unw:
+        assert r[k] == d[k], k
+    assert r["wm/level/L2"] == d["wm/level/L2"] and r["wm/level/L3"] == d["wm/level/L3"]
+    diff = d["wm/level/L1"] - r["wm/level/L1"]
+    want = 900.0 * r["wm/idm/L1"]
+    assert abs(diff - want) <= 1e-5 * abs(want), (diff, want)
+    # the last step is NOT the first step: the instrument has to be the first (live.terms moved under the update)
+    assert sc_of(init, "a1_dose")["live"]["terms"] != d
+
+
+def test_amend1_flag_absent_has_no_live_first_and_its_live_terms_equal_the_default_named(init):
+    assert lgate(init, "a1_off") == 0
+    off, ref = sc_of(init, "a1_off"), sc_of(init, "a1_ref")
+    assert "live_first" not in off
+    assert "terms_first" not in off["live"] and set(off["live"]) == set(ref["live"])
+    assert off["live"]["terms"] == ref["live"]["terms"]

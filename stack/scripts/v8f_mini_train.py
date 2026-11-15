@@ -1106,6 +1106,7 @@ def wm_only_live_check(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> d
     opt = torch.optim.AdamW(wm_params, lr=lr)
     acc = {n: 0.0 for n, _ in m.named_parameters()}
     terms_seen = None
+    terms_first = None                                                # AMEND_ACTSENS_1: the terms of step 0, taken BEFORE any opt.step() (terms_seen is the LAST step's)
     for s in range(steps):
         opt.zero_grad(set_to_none=False)
         for n, p in m.named_parameters():
@@ -1117,6 +1118,8 @@ def wm_only_live_check(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> d
             if not torch.isfinite(v):
                 raise AssertionError(f"G-LIVE: WM loss term {k} is not finite at step {s}: {float(v)}")
         terms_seen = {k: float(v.detach()) for k, v in T.items()}
+        if s == 0:
+            terms_first = dict(terms_seen)                                # AMEND_ACTSENS_1: step 0 (mutation MA1 records the last step instead)
         T["total"].backward()
         for n, p in m.named_parameters():
             if p.grad is not None:
@@ -1135,7 +1138,7 @@ def wm_only_live_check(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> d
             groups[key] = groups.get(key, 0.0) + g
     dead_groups = sorted(k for k, g in groups.items() if g == 0.0 and not (cfg.wm == "a" and ".idm_heads." in k))
     nonwm = {n: g for n, g in acc.items() if not is_wm_param(n)}
-    res = {"terms": terms_seen, "missing_terms": missing, "wm_groups_grad": groups, "dead_wm_groups": dead_groups, "dead_params": dead, "declared_dead": declared_dead, "unexpected_dead": unexpected_dead,
+    res = {"terms": terms_seen, "terms_first": terms_first, "missing_terms": missing, "wm_groups_grad": groups, "dead_wm_groups": dead_groups, "dead_params": dead, "declared_dead": declared_dead, "unexpected_dead": unexpected_dead,
            "n_wm_params": len(wm_params), "control_nonwm_grad_sum": float(sum(nonwm.values())), "control_adapter_grad_sum": float(sum(g for n, g in nonwm.items() if n.startswith("adapter.") or n == "pos")),
            "nonwm_with_grad": sorted(n for n, g in nonwm.items() if g != 0.0)[:8], "n_nonwm_params": len(nonwm)}
     ok = (not missing and not dead_groups and not unexpected_dead and res["control_nonwm_grad_sum"] == 0.0 and res["n_wm_params"] > 0 and res["n_nonwm_params"] > 0)
@@ -3204,6 +3207,7 @@ def main(argv=None):
     chunk = enc_chunk(a, cfg)
     ident = None
     probe_wm = None
+    live_first = None                                                # AMEND_ACTSENS_1
     if enc is None and a.wm_windows == "wmonly":                      # PREREG_V8F_LADDER: the WM batch for G-LIVE (first 16 windows); the planner identity and the admissibility check need a LABELLED batch, built from the labelled list
         probe_wm = WW.collate_wm([ds.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_WM])
         ds_reg = D.V8FMiniWindows(store, J, D.train_windows(store, J, clips, hist=cfg.hist, start=cfg.window_start), hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
@@ -3220,6 +3224,7 @@ def main(argv=None):
             probe["lead_y"], probe["lead_has"], probe["lead_near"] = lead_stage(probe, LL)
         if a.wm_only:                                    # PREREG_V8F_MRATE: G-LIVE of the WM-only mode + the planner identity (the other probes need gradients on the frozen readers and are not run)
             live = wm_only_live_check(model.cpu(), probe if probe_wm is None else probe_wm, cfg)
+            live_first = live.pop("terms_first")                  # AMEND_ACTSENS_1: kept out of `live` so a flag-absent selfcheck keeps its key set
             pid = planner_identity_probe(model.cpu(), probe, cfg)
         else:
             live = live_check(model.cpu(), probe, cfg)
@@ -3328,6 +3333,8 @@ def main(argv=None):
                                  "stripped_argv_sha": pl["stripped_argv_sha"]}
     sc ={"declared_vs_built": "PASS", "live": live, "code_mix_probe": mix, "o_interface_probe": ocut, "acc_probe": accp, "admissibility": adm, "levers": levers,
           "steps_total": total, "S_steps_per_epoch_100pct": S, "info": info, "argv_sha": argv_sha(argv)}
+    if a.wm_only and a.wm_idm_gamma is not None:                         # AMEND_ACTSENS_1: lever-NAMED launches only: G-LIVE step 0, the instrument of control C3
+        sc["live_first"] = live_first
     sc["ego_perturb_probe"] = egop
     sc["dagger_probe"] = dagp
     sc["ego_dagger_compose_probe"] = cmpp
