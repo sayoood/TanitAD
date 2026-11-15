@@ -2,7 +2,7 @@
 ``refcv9-full`` / ``refcv9-full-d1`` profiles, and nothing broader.
 
   composer   stack/scripts/r9_e3_make_argv.py   (E2 doc -> E3 doc [profile refcv9-full] + D1 doc [profile refcv9-full-d1]; byte-reproducible)
-  sources    every committed r9e2_<V>.argv.json (K0, K2, K2M1N20, K2M3, K2M3N20) + a synthetic "hold L" K2 (``--w-r8-drivable`` 0.06843 + ``w_cost_ratio`` / ``w_cost_source``).
+  sources    every committed r9e2_<V>.argv.json (K0, K2, K2M1N20, K2M3, K2M3N20, K2DC) + a synthetic "hold L" K2 (``--w-r8-drivable`` 0.06843 + ``w_cost_ratio`` / ``w_cost_source``).
              NO test pins K2's weight: it is read from the SOURCE, so the file passes with either content of ``r9e2_K2.argv.json``.
 
 STATIC GATE CHECKS CALLED (no GPU, no data): ``profile_argv_rules`` (required flags, forbidden values, forbidden levers [the branch flags outside the D1 profile], nav-tau rule, required_values /
@@ -41,10 +41,11 @@ from tanitad.train import lr_schedule as LRS  # noqa: E402
 from test_launch_gate_refcv9_full import TRAINER, env  # noqa: E402,F401  (env: the module fixture -- the pinned-init profiles + the nav-tau record)
 
 RUNS = ROOT / "ops" / "runs.d"
-COMMITTED = ("K0", "K2", "K2M1N20", "K2M3", "K2M3N20")
+COMMITTED = ("K0", "K2", "K2M1N20", "K2M3", "K2M3N20", "K2DC")   # K2DC (PREREG_K2DC_2026-11-12): K2M1N20 + the map-dose share controller; E3 composes from it on an E2 GO
 SOURCES = COMMITTED + ("K2HOLDL",)
 BRANCH = LG._R9F_BRANCH
-OPEN_ITEMS = {"K0": [], "K2": [], "K2HOLDL": [], "K2M1N20": ["E1-MAP-OWN-RECORD"], "K2M3": ["E1-MAP-OWN-RECORD"], "K2M3N20": ["E1-MAP-OWN-RECORD"]}
+OPEN_ITEMS = {"K0": [], "K2": [], "K2HOLDL": [], "K2M1N20": ["E1-MAP-OWN-RECORD"], "K2M3": ["E1-MAP-OWN-RECORD"], "K2M3N20": ["E1-MAP-OWN-RECORD"],
+              "K2DC": ["E1-MAP-OWN-RECORD"]}
 CRITIC_SOURCES = [v for v in SOURCES if v != "K0"]
 E3_OUT = "/home/nvidia/r8ns/r9e3/runs/r9e3-%s"
 HOLD_L_W, HOLD_L_R = "0.06843", 1.4613
@@ -577,7 +578,7 @@ def test_G_LIVE_coverage_and_the_decoder_passthrough_hold_for_both_argvs(trainer
         assert pr == [], pr
 
 
-@pytest.mark.parametrize("v", [x for x in SOURCES if x not in ("K0", "K2M1N20", "K2M3", "K2M3N20")])
+@pytest.mark.parametrize("v", [x for x in SOURCES if x not in ("K0", "K2M1N20", "K2M3", "K2M3N20", "K2DC")])
 def test_the_C8_planner_wire_pins_accept_the_composed_K2_argvs(trainer, v, sources):
     from tanitad.train import plan_wires_flag as PW
     _p, _b, _doc, e3, d1 = built(v, sources)
