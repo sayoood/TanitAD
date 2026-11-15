@@ -3,7 +3,8 @@
 
   E3   profile ``refcv9-full``     = the E2 arm's argv with ONLY the full-run schedule rows changed (REFCV9_DESIGN 4.4: ``--steps 73280``, ``--warmup 1000``, ``--wsd-decay-steps 12458``),
                                      ``--save-at`` ADDED (the stable-phase full-state checkpoint ``ckpt_full_30000.pt`` the D1 branch resumes) and ``--out`` set to the run directory the
-                                     operator passes. Every other token is the E2 source's, in the E2 source's order (``--init-from``, ``--w-r8-drivable`` and the lever block included).
+                                     operator passes. Every other token is the E2 source's, in the E2 source's order (``--init-from``, ``--w-r8-drivable`` and the lever block included),
+                                     EXCEPT the dose controller's cadence: a source that carries ``--map-hires-share-every`` gets E3's ``1000`` in place (PI 2026-11-15).
   D1   profile ``refcv9-full-d1``  = the E3 argv with EXACTLY the gate's 4-flag delta (``launch_gate._R9F_BRANCH["delta"]``): ``--out`` (the D1 run directory), ``--steps 36000`` (= 30,000 + 6,000),
                                      ``--wsd-branch-from <E3 --out>/ckpt_full_30000.pt``, ``--wsd-branch-decay 6000``. ``--save-at`` is the one EXEMPT cadence flag
                                      (``_R9F_BRANCH["exempt"]``): the D1 argv carries none -- the trainer REFUSES a ``--save-at`` step <= the branch's start step as "never written"
@@ -50,6 +51,10 @@ SCHEDULE_ROWS = (("--steps", str(E3_STEPS)), ("--warmup", str(E3_WARMUP)), ("--w
 #: E3's gradient-share readings (REFCV9_DESIGN 4.5 costs 12): E2's 1000,3000,5000 would cover only the first 7 % of the run. All <= D1_STEPS because the trainer refuses a reading past --steps
 #: (grad_share.parse_at) and D1 must stay the gate's exact 4-flag delta (_R9F_BRANCH), so no reading exists past 36,000; the in-run evals (--eval-every 500) cover the rest of the run.
 GRAD_SHARE_AT = "1000,3000,6000,9000,12000,15000,18000,21000,24000,27000,30000,36000"
+#: E3's dose-controller cadence (PI 2026-11-15 "Yes, every 1000"; dagland/e3/PROPOSAL_E3_DOSE_CADENCE_2026-11-15.md). Each firing's fp32 replay costs ~578 s
+#: (MEASURED, K2DC's E2 run, dcp_fp32_replay_s at 250..1750), so E2's 250 would spend ~47 Thor-h of E3 (293 firings) and ~3.9 h of D1 (24, its 30,000-36,000 branch). Replaced IN PLACE only
+#: when the E2 source carries the controller (an arm without it stays byte-identical); D1 inherits E3's value (it is not in the gate's 4-flag delta).
+DOSE_EVERY_FLAG, E3_DOSE_EVERY = "--map-hires-share-every", "1000"
 BRANCH_FLAGS = ("--wsd-branch-from", "--wsd-branch-decay")
 SAVE_AT = "--save-at"
 W_COST_KEYS = ("w_cost", "w_cost_ratio", "w_cost_source")
@@ -140,7 +145,8 @@ def _check_e2(e2_doc: dict) -> tuple:
 
 
 def compose_e3(e2_doc: dict, out: str, save_at=str(SRC_STEP)) -> list:
-    """The E2 argv with ``--steps`` / ``--warmup`` / ``--wsd-decay-steps`` / ``--grad-share-at`` / ``--out`` replaced IN PLACE by the full-run rows and ``--save-at`` appended. Nothing else moves."""
+    """The E2 argv with ``--steps`` / ``--warmup`` / ``--wsd-decay-steps`` / ``--grad-share-at`` / ``--out`` (and, when the source carries the dose controller,
+    ``--map-hires-share-every``) replaced IN PLACE by the full-run rows and ``--save-at`` appended. Nothing else moves."""
     argv, _ = _check_e2(e2_doc)
     out = _run_dir(out, "--out")
     ps = pairs(argv)
@@ -148,6 +154,8 @@ def compose_e3(e2_doc: dict, out: str, save_at=str(SRC_STEP)) -> list:
         _die("--out %s is the E2 source's own run directory: E3 is a new run" % out)
     _one(ps, "--grad-share-at")                      # the E2 source must carry the flag: it is replaced in place, never added
     sets = dict(SCHEDULE_ROWS, **{"--out": out, "--grad-share-at": GRAD_SHARE_AT})
+    if any(f == DOSE_EVERY_FLAG for f, _ in ps):      # the K2DC controller: E3 fires it every 1000 (PI 2026-11-15); never added to a source without it
+        sets[DOSE_EVERY_FLAG] = E3_DOSE_EVERY
     res = [(f, [sets[f]] if f in sets else v) for f, v in ps]
     return E2.flat(res + [(SAVE_AT, [save_at_text(save_at)])])
 
@@ -188,9 +196,10 @@ def _set_lines(e2_argv: list, e3_argv: list) -> list:
     old, new = {f: v for f, v in pairs(e2_argv)}, {f: v for f, v in pairs(e3_argv)}
     why = {"--out": "the E3 run directory (operator-passed)", "--steps": "REFCV9_DESIGN 4.4 E3: 73,280 steps",
            "--warmup": "REFCV9_DESIGN 4.4 E3: warm-up 1,000", "--wsd-decay-steps": "REFCV9_DESIGN 4.4 E3: WSD decay 12,458",
-           SAVE_AT: "full-state ckpt_full_<s>.pt at these steps; 30000 is the D1 branch's stable-phase source"}
+           SAVE_AT: "full-state ckpt_full_<s>.pt at these steps; 30000 is the D1 branch's stable-phase source",
+           DOSE_EVERY_FLAG: "PI 2026-11-15: E3's dose-controller cadence (each fp32-replay firing ~578 s MEASURED)"}
     lines = []
-    for f in ("--out", "--steps", "--warmup", "--wsd-decay-steps", SAVE_AT):
+    for f in ("--out", "--steps", "--warmup", "--wsd-decay-steps", SAVE_AT) + ((DOSE_EVERY_FLAG,) if DOSE_EVERY_FLAG in new else ()):
         was = old.get(f)
         lines.append("%s %s  <- %s%s" % (f, " ".join(new[f]), why[f], "" if was == new[f] else " (E2 source: %s)" % (" ".join(was) if was is not None else "absent")))
     return lines
@@ -205,9 +214,10 @@ def e3_doc(e2_doc: dict, e2_bytes: bytes, e2_path, out: str, save_at=str(SRC_STE
     if "lever" in carried:
         rec["lever"] = carried.pop("lever")
     rec["set_lines"] = _set_lines(e2_doc["argv"], argv)
-    rec["what"] = ("E3 (the refcv9 full run, REFCV9_DESIGN 4.4) = %s with ONLY the full-run schedule rows (--steps %d, --warmup %d, --wsd-decay-steps %d), --grad-share-at (12 readings), --save-at %s and --out changed; every other "
+    dose = (", --map-hires-share-every %s (PI 2026-11-15)" % E3_DOSE_EVERY) if DOSE_EVERY_FLAG in argv else ""
+    rec["what"] = ("E3 (the refcv9 full run, REFCV9_DESIGN 4.4) = %s with ONLY the full-run schedule rows (--steps %d, --warmup %d, --wsd-decay-steps %d), --grad-share-at (12 readings)%s, --save-at %s and --out changed; every other "
                    "token is the E2 source's, in order. Composed by stack/scripts/r9_e3_make_argv.py from %s -- never hand-written; base_sha256 = sha256 of the E2 FILE bytes."
-                   % (e2_doc["arm"], E3_STEPS, E3_WARMUP, E3_DECAY, save_at_text(save_at), _posix(e2_path)))
+                   % (e2_doc["arm"], E3_STEPS, E3_WARMUP, E3_DECAY, dose, save_at_text(save_at), _posix(e2_path)))
     rec["profile"] = E3_PROFILE
     rec.update(carried)
     return rec

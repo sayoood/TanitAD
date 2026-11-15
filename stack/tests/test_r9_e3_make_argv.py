@@ -118,6 +118,7 @@ def test_E3_is_the_E2_argv_with_only_the_schedule_rows_save_at_and_out_changed_a
     assert a[-1] == ("--save-at", ["30000"]) and "--save-at" not in dict(b)
     assert [f for f, _ in a[:-1]] == [f for f, _ in b]                                   # the same flags in the same order (+ --save-at LAST)
     want = {"--out", "--steps", "--wsd-decay-steps", "--grad-share-at"} | ({"--warmup"} if dict(b)["--warmup"] != ["1000"] else set())
+    want |= {"--map-hires-share-every"} if dict(b).get("--map-hires-share-every", ["1000"]) != ["1000"] else set()   # PI 2026-11-15: E3 fires the controller every 1000
     changed = {f for (f, va), (_, vb) in zip(a[:-1], b) if va != vb}
     assert changed == want, changed
     assert [g for g in a[:-1] if g[0] not in want] == [g for g in b if g[0] not in want]   # every other group is byte-identical (and so is its order)
@@ -125,6 +126,26 @@ def test_E3_is_the_E2_argv_with_only_the_schedule_rows_save_at_and_out_changed_a
     assert d["--steps"] == ["73280"] and d["--warmup"] == ["1000"] and d["--wsd-decay-steps"] == ["12458"] and d["--lr-schedule"] == ["wsd"]
     assert d["--out"] == [E3_OUT % v] and d["--init-from"] == dict(b)["--init-from"] == [MK2.INIT_FROM]
     assert e3["argv"].count("--out") == 1 and [t for t in e3["argv"] if t.startswith("--") and "=" in t] == []
+
+
+# ============================================ the dose controller's E3 cadence (PI 2026-11-15 "Yes, every 1000") ==
+@pytest.mark.parametrize("v", SOURCES)
+def test_E3_and_D1_fire_the_dose_controller_every_1000_exactly_when_the_source_carries_it(v, sources):
+    # MEASURED on K2DC's E2 run: each firing's fp32 replay ~578 s, so 250 would cost E3 ~47 Thor-h (dagland/e3/PROPOSAL_E3_DOSE_CADENCE_2026-11-15.md)
+    _p, _b, doc, e3, d1 = built(v, sources)
+    src, a, d = dict(groups(doc["argv"])), dict(groups(e3["argv"])), dict(groups(d1["argv"]))
+    assert MK.E3_DOSE_EVERY == "1000" and MK.DOSE_EVERY_FLAG == "--map-hires-share-every"
+    if "--map-hires-share-every" in src:
+        assert a["--map-hires-share-every"] == ["1000"] and d["--map-hires-share-every"] == ["1000"]
+        for k in ("--map-hires-share-target", "--map-hires-share-group", "--map-hires-w-bounds"):   # the rest of the controller is the source's
+            assert a[k] == src[k] == d[k], k
+        assert any(s.startswith("--map-hires-share-every 1000  <- PI 2026-11-15") for s in e3["set_lines"]), e3["set_lines"]
+        assert "--map-hires-share-every 1000 (PI 2026-11-15)" in e3["what"]
+        log_every = int(a["--log-every"][0])
+        assert 1000 % log_every == 0 and 1000 <= MK.D1_STEPS <= MK.E3_STEPS   # map_dose_ctl.pin_args: a multiple of --log-every and <= --steps, in both runs
+    else:
+        assert "--map-hires-share-every" not in a and "--map-hires-share-every" not in d   # never added to an arm without the controller
+        assert not any(s.startswith("--map-hires-share-every") for s in e3["set_lines"]) and "map-hires-share-every" not in e3["what"]
 
 
 @pytest.mark.parametrize("v", SOURCES)
@@ -175,7 +196,8 @@ def test_the_docs_keep_the_E2_layout_and_record_their_provenance(v, sources):
     assert d1["base_sha256"] == hashlib.sha256(MK.dump(e3).encode("utf-8")).hexdigest() and d1["e2_source"] == e3["e2_source"]
     assert e3["lever"] == d1["lever"] == doc["lever"] if "lever" in doc else "lever" not in e3 and "lever" not in d1
     assert json.loads(MK.dump(e3)) == e3 and json.loads(MK.dump(d1)) == d1 and MK.dump(e3).endswith("}\n") and "\r" not in MK.dump(e3) + MK.dump(d1)
-    assert e3["seed"] == d1["seed"] == doc["seed"] and len(e3["set_lines"]) == 5 and len(d1["set_lines"]) == 5
+    assert e3["seed"] == d1["seed"] == doc["seed"] and len(d1["set_lines"]) == 5
+    assert len(e3["set_lines"]) == 5 + ("--map-hires-share-every" in doc["argv"])   # + the dose cadence line (PI 2026-11-15) on a controller arm
 
 
 @pytest.mark.parametrize("v", SOURCES)
