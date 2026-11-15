@@ -1,0 +1,14 @@
+tree_leadcond copied from tree_ruleown2
+pins: all 18 sha256 equal
+== arms_leadcond_a.txt sha256 5b1d6ad6e9ba9d7d3ecdfa9653ba62e450b85430b033213570dfc85ad41b0910 PIN 12 ARM 6
+LFT_s0|HIERFT6|0|--wm-state grid --wm-cell-dim 16 --lead-sup on --w-lead-sup 1.0 --init-ckpt /workspace/v8proof/runs/leadsup_a/LS_s0/ckpt_last.pt --steps 6000 --lr 1e-4 --warmup 100
+LC_s0|HIERFT6|0|--wm-state grid --wm-cell-dim 16 --lead-sup on --w-lead-sup 1.0 --init-ckpt /workspace/v8proof/runs/leadsup_a/LS_s0/ckpt_last.pt --steps 6000 --lr 1e-4 --warmup 100 --lead-cond on
+LFT_s1|HIERFT6|1|--wm-state grid --wm-cell-dim 16 --lead-sup on --w-lead-sup 1.0 --init-ckpt /workspace/v8proof/runs/leadsup_a/LS_s1/ckpt_last.pt --steps 6000 --lr 1e-4 --warmup 100
+LC_s1|HIERFT6|1|--wm-state grid --wm-cell-dim 16 --lead-sup on --w-lead-sup 1.0 --init-ckpt /workspace/v8proof/runs/leadsup_a/LS_s1/ckpt_last.pt --steps 6000 --lr 1e-4 --warmup 100 --lead-cond on
+LFTb_s0|HIERFT6|0|--wm-state grid --wm-cell-dim 16 --lead-sup on --w-lead-sup 1.0 --init-ckpt /workspace/v8proof/runs/leadsup_a/LS_s0/ckpt_last.pt --steps 6000 --lr 1e-4 --warmup 100
+LFTb_s1|HIERFT6|1|--wm-state grid --wm-cell-dim 16 --lead-sup on --w-lead-sup 1.0 --init-ckpt /workspace/v8proof/runs/leadsup_a/LS_s1/ckpt_last.pt --steps 6000 --lr 1e-4 --warmup 100
+argv of LFTb_s0 equals that of LFT_s0 apart from name and out folder
+argv of LC_s0 equals that of LFT_s0 apart from name, out folder and the flag --lead-cond on
+--seed 0 --lead-sup on --init-ckpt /workspace/v8proof/runs/leadsup_a/LS_s0/ckpt_last.pt --steps 6000 --lr 1e-4 --warmup 100 
+memory.max 49999998976 ; anon 6314168320
+187547, 1822 MiB;224153, 668 MiB;

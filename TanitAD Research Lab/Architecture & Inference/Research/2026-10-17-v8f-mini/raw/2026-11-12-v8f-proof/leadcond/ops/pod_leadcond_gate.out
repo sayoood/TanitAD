@@ -1,0 +1,34 @@
+GATE-RAN 2026-11-15T12:58:28Z with 2 GPU jobs before
+dry gate LFT_s0 rc 0
+[2026-11-15T12:58:28Z] dry gate LFT_s0 start
+ZZ DRY LFT_s0 PASS (2026-11-15T13:02:18Z): selfcheck and every expectation string of the arms file
+dry gate LC_s0 rc 1
+[2026-11-15T13:02:18Z] dry gate LC_s0 start
+ZZ DRY LC_s0 FAIL: selfcheck rc=1: RuntimeError: Expected all tensors to be on the same device, but got weight is on cuda:0, different from other tensors on cpu (when checking argument in method wrapper_CUDA__native_layer_norm)
+Traceback (most recent call last):
+  File "/workspace/v8proof/chain2/gate_token4.py", line 139, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/workspace/v8proof/chain2/gate_token4.py", line 135, in main
+    return cmd_make(a) if a.cmd == "make" else cmd_verify(a)
+           ^^^^^^^^^^^
+  File "/workspace/v8proof/chain2/gate_token4.py", line 50, in cmd_make
+    sc = json.load(open(a.selfcheck, encoding="utf-8"))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/workspace/v8proof/runs/motion_dry/LC_s0/out/selfcheck.json'
+token kind HIERFT6 rc 1 (must be 0)
+Traceback (most recent call last):
+  File "/workspace/v8proof/chain2/gate_token4.py", line 139, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/workspace/v8proof/chain2/gate_token4.py", line 135, in main
+    return cmd_make(a) if a.cmd == "make" else cmd_verify(a)
+           ^^^^^^^^^^^
+  File "/workspace/v8proof/chain2/gate_token4.py", line 50, in cmd_make
+    sc = json.load(open(a.selfcheck, encoding="utf-8"))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/workspace/v8proof/runs/motion_dry/LC_s0/out/selfcheck.json'
+token kind HIERFT rc 1 (must be 1)
+SELFCHECK LFT_s0 dvb PASS live True steps_total 6000 init {"path": "/workspace/v8proof/runs/leadsup_a/LS_s0/ckpt_last.pt", "sha256": "df7f6b8094ad515f0eec8b393d31e70dd6024a90f5a1ea1e231b343ff1f9ec35", "applied": true, "skipped": null, "n_tensors": 282, "n_mismatch_after_load": 0, "source_step": 19164, "source_arm": " lead_sup on lead_cond None
+   lead_cond probe null
+SELFCHECK LC_s0 ERR [Errno 2] No such file or directory: '/workspace/v8proof/runs/motion_dry/LC_s0/out/selfcheck.json'

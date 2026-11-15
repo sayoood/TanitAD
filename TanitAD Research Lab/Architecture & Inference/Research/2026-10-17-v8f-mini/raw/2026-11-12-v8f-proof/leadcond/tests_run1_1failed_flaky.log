@@ -1,0 +1,439 @@
+tanitad from F:\TanitAD-scratch\v8proof\leadcond\work\tree_patch\stack\tanitad\__init__.py
+============================= test session starts =============================
+platform win32 -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\Admin\venvs\tanitad\Scripts\python.exe
+rootdir: F:\TanitAD-scratch\v8proof\leadcond\work\tree_patch
+plugins: anyio-4.14.1
+collecting ... collected 159 items
+
+stack/tests/test_v8f_lead_cond.py::test_off_builds_nothing_and_adds_no_key PASSED [  0%]
+stack/tests/test_v8f_lead_cond.py::test_on_without_lead_sup_and_unknown_values_are_refused PASSED [  1%]
+stack/tests/test_v8f_lead_cond.py::test_zero_init_outputs_equal_the_off_model_exactly PASSED [  1%]
+stack/tests/test_v8f_lead_cond.py::test_build_moves_no_other_draw_and_no_other_init PASSED [  2%]
+stack/tests/test_v8f_lead_cond.py::test_token_reaches_operative_and_tactical_outputs_and_the_weight_gradient PASSED [  3%]
+stack/tests/test_v8f_lead_cond.py::test_no_gradient_reaches_the_head_or_the_trunk_through_u PASSED [  3%]
+stack/tests/test_v8f_lead_cond.py::test_the_two_adding_lines_exist_once_each PASSED [  4%]
+stack/tests/test_v8f_lead_cond.py::test_deleting_the_token_line_in_either_layer_reads_zero_reach PASSED [  5%]
+stack/tests/test_v8f_lead_cond.py::test_u_reads_only_the_window_frames_and_no_ego_input PASSED [  5%]
+stack/tests/test_v8f_lead_cond.py::test_u_equals_the_training_time_head_output_and_train_equals_infer PASSED [  6%]
+stack/tests/test_v8f_lead_cond.py::test_u_is_zero_where_a_window_frame_is_not_real PASSED [  6%]
+stack/tests/test_v8f_lead_cond.py::test_init_ckpt_leaves_exactly_the_two_keys_fresh_and_refuses_any_other_missing_key PASSED [  7%]
+stack/tests/test_v8f_lead_cond.py::test_gate_declared_vs_built PASSED    [  8%]
+stack/tests/test_v8f_lead_cond.py::test_probe_reports_reach_and_goes_red_without_the_detach PASSED [  8%]
+stack/tests/test_v8f_rule_own.py::test_flags_default_off_and_have_their_gate_entries PASSED [  9%]
+stack/tests/test_v8f_rule_own.py::test_mask_and_inputs_equal_the_relabel_mask PASSED [ 10%]
+stack/tests/test_v8f_rule_own.py::test_cap_equals_distance_rule_by_hand_on_the_detached_prediction_and_term_is_the_mean_squared_distance PASSED [ 10%]
+stack/tests/test_v8f_rule_own.py::test_the_rule_applied_twice_equals_once PASSED [ 11%]
+stack/tests/test_v8f_rule_own.py::test_samples_without_a_lead_or_with_a_non_finite_raw_speed_contribute_exactly_zero PASSED [ 11%]
+stack/tests/test_v8f_rule_own.py::test_reach_a_plan_into_the_lead_a_plan_inside_the_rule_and_a_batch_without_a_lead PASSED [ 12%]
+stack/tests/test_v8f_rule_own.py::test_reach_on_a_world_batch_is_partial_and_reaches_the_model_gradient PASSED [ 13%]
+stack/tests/test_v8f_rule_own.py::test_mutation_deleting_the_line_that_adds_the_term_goes_red PASSED [ 13%]
+stack/tests/test_v8f_rule_own.py::test_the_loop_applies_the_term_after_the_loss_and_guards_it PASSED [ 14%]
+stack/tests/test_v8f_rule_own.py::test_gdvb_declared_equals_built_and_a_wrong_expectation_is_refused PASSED [ 15%]
+stack/tests/test_v8f_rule_own.py::test_selfcheck_on_has_the_probe_and_the_strings_and_off_has_no_key PASSED [ 15%]
+stack/tests/test_v8f_rule_own.py::test_refused_combinations[extra0] PASSED [ 16%]
+stack/tests/test_v8f_rule_own.py::test_refused_combinations[extra1] PASSED [ 16%]
+stack/tests/test_v8f_rule_own.py::test_refused_combinations[extra2] PASSED [ 17%]
+stack/tests/test_v8f_rule_own.py::test_the_weight_without_the_relabel_is_refused PASSED [ 18%]
+stack/tests/test_v8f_rule_own.py::test_train_log_keys_only_when_on_and_checkpoint_cfg_equals_its_base PASSED [ 18%]
+stack/tests/test_v8f_rule_own.py::test_weighted_loss_equals_a_hand_computation_and_only_changed_samples_carry_the_weight PASSED [ 19%]
+stack/tests/test_v8f_rule_own.py::test_mutation_deleting_the_line_that_adds_the_weight_goes_red PASSED [ 20%]
+stack/tests/test_v8f_rule_own_l1.py::test_flag_default_is_sq_and_has_its_gate_entry PASSED [ 20%]
+stack/tests/test_v8f_rule_own_l1.py::test_sq_default_is_the_earlier_term_bit_for_bit PASSED [ 21%]
+stack/tests/test_v8f_rule_own_l1.py::test_l1_cap_by_hand_and_term_is_the_mean_distance_in_metres PASSED [ 22%]
+stack/tests/test_v8f_rule_own_l1.py::test_l1_rows_without_a_lead_or_with_a_non_finite_speed_contribute_exactly_zero PASSED [ 22%]
+stack/tests/test_v8f_rule_own_l1.py::test_l1_reach_into_the_lead_inside_the_rule_and_without_a_lead PASSED [ 23%]
+stack/tests/test_v8f_rule_own_l1.py::test_l1_mixed_batch_is_partial PASSED [ 23%]
+stack/tests/test_v8f_rule_own_l1.py::test_l1_gradient_is_finite_with_exact_zeros_at_knots_on_the_cap PASSED [ 24%]
+stack/tests/test_v8f_rule_own_l1.py::test_mutation_deleting_the_line_that_selects_the_linear_form_goes_red PASSED [ 25%]
+stack/tests/test_v8f_rule_own_l1.py::test_gdvb_declared_equals_built_and_a_wrong_expectation_is_refused PASSED [ 25%]
+stack/tests/test_v8f_rule_own_l1.py::test_loop_passes_the_built_form PASSED [ 26%]
+stack/tests/test_v8f_rule_own_l1.py::test_selfcheck_strings_and_probe_form_and_the_default_has_none PASSED [ 27%]
+stack/tests/test_v8f_rule_own_l1.py::test_refused_without_the_weight PASSED [ 27%]
+stack/tests/test_v8f_rule_own_l1.py::test_train_log_keys_unchanged_and_checkpoint_cfg_equals_its_base PASSED [ 28%]
+stack/tests/test_v8f_rule_relabel.py::test_rule_file_is_the_pinned_one PASSED [ 28%]
+stack/tests/test_v8f_rule_relabel.py::test_flag_default_off_and_declared_in_the_gate_table PASSED [ 29%]
+stack/tests/test_v8f_rule_relabel.py::test_relabel_gt_equals_distance_rule_by_hand_and_keeps_rows_without_a_lead PASSED [ 30%]
+stack/tests/test_v8f_rule_relabel.py::test_rows_without_gt_or_frame_or_closing_label_keep_their_target PASSED [ 30%]
+stack/tests/test_v8f_rule_relabel.py::test_stage_on_a_world_batch_is_exact_against_the_rule_by_hand PASSED [ 31%]
+stack/tests/test_v8f_rule_relabel.py::test_reach_loss_and_gradient_differ_with_a_lead_and_are_exactly_equal_without PASSED [ 32%]
+stack/tests/test_v8f_rule_relabel.py::test_selfcheck_on_passes_with_a_count_and_off_has_no_key PASSED [ 32%]
+stack/tests/test_v8f_rule_relabel.py::test_refused_combinations[extra0] PASSED [ 33%]
+stack/tests/test_v8f_rule_relabel.py::test_refused_combinations[extra1] PASSED [ 33%]
+stack/tests/test_v8f_rule_relabel.py::test_the_loop_attaches_the_relabelled_target_and_guards_it PASSED [ 34%]
+stack/tests/test_v8f_rule_relabel.py::test_a_row_with_a_lead_and_a_nan_logged_speed_keeps_its_target_and_is_not_counted PASSED [ 35%]
+stack/tests/test_v8f_lead_sup.py::test_label_rule_equals_the_literal_hist_run_ls_slope_rule PASSED [ 35%]
+stack/tests/test_v8f_lead_sup.py::test_planted_series_give_the_exact_slope_and_the_run_breaks_where_it_must PASSED [ 36%]
+stack/tests/test_v8f_lead_sup.py::test_the_label_file_is_not_read_from_the_lead_head_arrays_and_gap_range_is_0_to_60 PASSED [ 37%]
+stack/tests/test_v8f_lead_sup.py::test_batch_carries_the_labels_only_when_the_dataset_is_made_with_lead_sup PASSED [ 37%]
+stack/tests/test_v8f_lead_sup.py::test_synthetic_lead_labels_are_deterministic PASSED [ 38%]
+stack/tests/test_v8f_lead_sup.py::test_flags_have_entries_defaults_and_the_config_refuses_what_it_cannot_build PASSED [ 38%]
+stack/tests/test_v8f_lead_sup.py::test_default_model_has_no_head_no_key_no_term PASSED [ 39%]
+stack/tests/test_v8f_lead_sup.py::test_init_of_the_head_arm_is_G_plus_the_head_only_and_the_count PASSED [ 40%]
+stack/tests/test_v8f_lead_sup.py::test_reach_term_alone_head_and_state_encoder_nonzero_everything_else_exactly_zero PASSED [ 40%]
+stack/tests/test_v8f_lead_sup.py::test_detach_on_the_term_reaches_nothing_outside_the_head_exactly PASSED [ 41%]
+stack/tests/test_v8f_lead_sup.py::test_all_labels_masked_reads_exactly_zero_term_parts_and_gradients PASSED [ 42%]
+stack/tests/test_v8f_lead_sup.py::test_frame_alignment_labels_of_non_end_frames_change_nothing_end_frames_do PASSED [ 42%]
+stack/tests/test_v8f_lead_sup.py::test_the_total_gains_exactly_w_times_the_term_and_the_line_is_load_bearing PASSED [ 43%]
+stack/tests/test_v8f_lead_sup.py::test_declared_vs_built_goes_red_on_every_lie PASSED [ 44%]
+stack/tests/test_v8f_lead_sup.py::test_checkpoint_cfg_round_trip_loads_in_the_eval_builder_and_the_read_hook_runs PASSED [ 44%]
+stack/tests/test_v8f_lead_sup.py::test_the_driving_output_path_does_not_read_the_head_or_the_labels PASSED [ 45%]
+stack/tests/test_v8f_target_levers.py::test_defaults_build_no_head_no_new_key_no_new_loss_term_and_refuse_stray_inputs[flat] PASSED [ 45%]
+stack/tests/test_v8f_target_levers.py::test_defaults_build_no_head_no_new_key_no_new_loss_term_and_refuse_stray_inputs[cell] PASSED [ 46%]
+stack/tests/test_v8f_target_levers.py::test_levelconfig_refuses_futtok_where_it_cannot_run PASSED [ 47%]
+stack/tests/test_v8f_target_levers.py::test_t4_states_read_by_the_term_equal_the_stack_rollout[flat] PASSED [ 47%]
+stack/tests/test_v8f_target_levers.py::test_t4_states_read_by_the_term_equal_the_stack_rollout[cell] PASSED [ 48%]
+stack/tests/test_v8f_target_levers.py::test_futtok_value_is_the_mean_squared_error_to_the_layernormed_token[flat] PASSED [ 49%]
+stack/tests/test_v8f_target_levers.py::test_futtok_value_is_the_mean_squared_error_to_the_layernormed_token[cell] PASSED [ 49%]
+stack/tests/test_v8f_target_levers.py::test_t3_futtok_alone_reaches_head_predictor_embedding_and_start_state_and_not_levels_2_3[flat] PASSED [ 50%]
+stack/tests/test_v8f_target_levers.py::test_t3_futtok_alone_reaches_head_predictor_embedding_and_start_state_and_not_levels_2_3[cell] PASSED [ 50%]
+stack/tests/test_v8f_target_levers.py::test_t3_state_projection_gets_the_gradient_through_the_start_state_of_the_token_term PASSED [ 51%]
+stack/tests/test_v8f_target_levers.py::test_t5_total_moves_by_w_times_the_term_and_a_mutation_of_the_adding_line_goes_red[flat] PASSED [ 52%]
+stack/tests/test_v8f_target_levers.py::test_t5_total_moves_by_w_times_the_term_and_a_mutation_of_the_adding_line_goes_red[cell] PASSED [ 52%]
+stack/tests/test_v8f_target_levers.py::test_roll_and_futtok_with_the_same_k_share_one_rollout_and_different_k_do_not PASSED [ 53%]
+stack/tests/test_v8f_target_levers.py::test_roll_term_alone_is_unchanged_by_the_refactor_of_its_call PASSED [ 54%]
+stack/tests/test_v8f_target_levers.py::test_diag_futtok_copy_is_the_head_on_the_start_state_without_a_graph[flat] PASSED [ 54%]
+stack/tests/test_v8f_target_levers.py::test_diag_futtok_copy_is_the_head_on_the_start_state_without_a_graph[cell] PASSED [ 55%]
+stack/tests/test_v8f_target_levers.py::test_egov_scale_actions_two_channels_when_off_three_when_on_and_a_clear_error_without_speed PASSED [ 55%]
+stack/tests/test_v8f_target_levers.py::test_wm_frame_speed_reads_the_field_the_trainer_reads_and_refuses_a_batch_without_it PASSED [ 56%]
+stack/tests/test_v8f_target_levers.py::test_t2_egov_reaches_the_third_channel_weights_and_the_controls_read_exact_zero_and_the_loss_is_sensitive PASSED [ 57%]
+stack/tests/test_v8f_target_levers.py::test_egov_builds_the_rest_of_the_model_unchanged_in_init PASSED [ 57%]
+stack/tests/test_v8f_target_levers.py::test_wm_speed_is_the_logged_speed_of_every_cached_frame PASSED [ 58%]
+stack/tests/test_v8f_target_levers.py::test_config_refuses_what_it_cannot_build PASSED [ 59%]
+stack/tests/test_v8f_target_levers.py::test_futtok_forward_refuses_a_missing_or_mismatched_token_grid PASSED [ 59%]
+stack/tests/test_v8f_target_levers.py::test_flags_have_entries_defaults_and_ckpt_match PASSED [ 60%]
+stack/tests/test_v8f_target_levers.py::test_t6_declared_vs_built_passes_when_built_and_refuses_every_wrong_expectation[E_grid] PASSED [ 61%]
+stack/tests/test_v8f_target_levers.py::test_t6_declared_vs_built_passes_when_built_and_refuses_every_wrong_expectation[F_grid] PASSED [ 61%]
+stack/tests/test_v8f_target_levers.py::test_t6_declared_vs_built_passes_when_built_and_refuses_every_wrong_expectation[EF_cell] PASSED [ 62%]
+stack/tests/test_v8f_target_levers.py::test_t6_declared_vs_built_passes_when_built_and_refuses_every_wrong_expectation[E_mean] PASSED [ 62%]
+stack/tests/test_v8f_target_levers.py::test_declared_but_not_built_is_refused_in_both_directions PASSED [ 63%]
+stack/tests/test_v8f_target_levers.py::test_trainer_loss_logs_the_terms_and_diag_changes_no_value PASSED [ 64%]
+stack/tests/test_v8f_target_levers.py::test_the_trainer_runs_both_levers_and_checkpoint_cfg_keys_follow_the_defaults PASSED [ 64%]
+stack/tests/test_v8f_target_levers.py::test_g_live_requires_and_sees_the_futtok_term_and_every_group_trains PASSED [ 65%]
+stack/tests/test_v8f_cell_predictor.py::test_interface_equals_causal_predictor PASSED [ 66%]
+stack/tests/test_v8f_cell_predictor.py::test_stack_loss_and_rollout_run_unchanged_and_are_finite PASSED [ 66%]
+stack/tests/test_v8f_cell_predictor.py::test_c2_parameters_at_or_below_the_flat_predictor_of_the_grid_arm PASSED [ 67%]
+stack/tests/test_v8f_cell_predictor.py::test_c3_causality_exact_zero_for_later_steps_and_nonzero_for_the_same_step PASSED [ 67%]
+stack/tests/test_v8f_cell_predictor.py::test_c4_one_cell_moves_the_other_cells_and_the_regression_that_removes_it_goes_red PASSED [ 68%]
+stack/tests/test_v8f_cell_predictor.py::test_c5_every_new_group_gets_a_gradient_through_the_real_loss_and_zero_weight_reads_exactly_zero PASSED [ 69%]
+stack/tests/test_v8f_cell_predictor.py::test_config_refuses_what_it_cannot_build PASSED [ 69%]
+stack/tests/test_v8f_cell_predictor.py::test_the_flag_has_its_entries_and_a_default PASSED [ 70%]
+stack/tests/test_v8f_cell_predictor.py::test_declared_vs_built_goes_red_on_every_lie_in_both_directions PASSED [ 71%]
+stack/tests/test_v8f_cell_predictor.py::test_the_gate_refuses_a_cell_predictor_above_the_flat_budget PASSED [ 71%]
+stack/tests/test_v8f_cell_predictor.py::test_checkpoint_cfg_keys_and_the_t1_builder_round_trip PASSED [ 72%]
+stack/tests/test_v8f_motion_levers.py::test_defaults_build_no_wrapper_no_new_key_and_no_new_loss_term[flat] PASSED [ 72%]
+stack/tests/test_v8f_motion_levers.py::test_defaults_build_no_wrapper_no_new_key_and_no_new_loss_term[cell] PASSED [ 73%]
+stack/tests/test_v8f_motion_levers.py::test_m2_residual_at_init_equals_the_copy_exactly_and_the_control_does_not[flat] PASSED [ 74%]
+stack/tests/test_v8f_motion_levers.py::test_m2_residual_at_init_equals_the_copy_exactly_and_the_control_does_not[cell] PASSED [ 74%]
+stack/tests/test_v8f_motion_levers.py::test_residual_is_the_same_trunk_plus_the_skip_and_uses_no_extra_random_draw[flat] PASSED [ 75%]
+stack/tests/test_v8f_motion_levers.py::test_residual_is_the_same_trunk_plus_the_skip_and_uses_no_extra_random_draw[cell] PASSED [ 76%]
+stack/tests/test_v8f_motion_levers.py::test_residual_refused_where_it_cannot_be_built PASSED [ 76%]
+stack/tests/test_v8f_motion_levers.py::test_m4_the_rollout_in_the_loss_equals_the_stack_rollout_with_the_predictor_context[False-flat] PASSED [ 77%]
+stack/tests/test_v8f_motion_levers.py::test_m4_the_rollout_in_the_loss_equals_the_stack_rollout_with_the_predictor_context[False-cell] PASSED [ 77%]
+stack/tests/test_v8f_motion_levers.py::test_m4_the_rollout_in_the_loss_equals_the_stack_rollout_with_the_predictor_context[True-flat] PASSED [ 78%]
+stack/tests/test_v8f_motion_levers.py::test_m4_the_rollout_in_the_loss_equals_the_stack_rollout_with_the_predictor_context[True-cell] PASSED [ 79%]
+stack/tests/test_v8f_motion_levers.py::test_roll_loss_is_the_mean_squared_error_over_starts_steps_and_batch PASSED [ 79%]
+stack/tests/test_v8f_motion_levers.py::test_m3_roll_loss_alone_reaches_the_predictor_and_the_start_state_and_never_a_target_only_frame[flat] PASSED [ 80%]
+stack/tests/test_v8f_motion_levers.py::test_m3_roll_loss_alone_reaches_the_predictor_and_the_start_state_and_never_a_target_only_frame[cell] PASSED [ 81%]
+stack/tests/test_v8f_motion_levers.py::test_m3_state_projection_gets_the_gradient_through_the_start_state PASSED [ 81%]
+stack/tests/test_v8f_motion_levers.py::test_m5_total_moves_by_w_times_the_roll_term_and_a_mutation_of_the_adding_line_goes_red[flat] PASSED [ 82%]
+stack/tests/test_v8f_motion_levers.py::test_m5_total_moves_by_w_times_the_roll_term_and_a_mutation_of_the_adding_line_goes_red[cell] PASSED [ 83%]
+stack/tests/test_v8f_motion_levers.py::test_both_levers_together_run_finite_and_roll_term_matters[flat] PASSED [ 83%]
+stack/tests/test_v8f_motion_levers.py::test_both_levers_together_run_finite_and_roll_term_matters[cell] PASSED [ 84%]
+stack/tests/test_v8f_motion_levers.py::test_config_refuses_what_it_cannot_build PASSED [ 84%]
+stack/tests/test_v8f_motion_levers.py::test_flags_have_entries_defaults_and_ckpt_match PASSED [ 85%]
+stack/tests/test_v8f_motion_levers.py::test_declared_vs_built_passes_when_built_and_refuses_every_lie[A_grid] PASSED [ 86%]
+stack/tests/test_v8f_motion_levers.py::test_declared_vs_built_passes_when_built_and_refuses_every_lie[B_grid] PASSED [ 86%]
+stack/tests/test_v8f_motion_levers.py::test_declared_vs_built_passes_when_built_and_refuses_every_lie[AB_cell] PASSED [ 87%]
+stack/tests/test_v8f_motion_levers.py::test_declared_vs_built_passes_when_built_and_refuses_every_lie[A_mean] PASSED [ 88%]
+stack/tests/test_v8f_motion_levers.py::test_declared_vs_built_passes_when_built_and_refuses_every_lie[B_mean] PASSED [ 88%]
+stack/tests/test_v8f_motion_levers.py::test_declared_but_not_built_is_refused_in_both_directions PASSED [ 89%]
+stack/tests/test_v8f_motion_levers.py::test_wm_off_with_a_motion_lever_is_refused PASSED [ 89%]
+stack/tests/test_v8f_motion_levers.py::test_diag_off_adds_no_key_on_adds_four_and_the_loss_is_unchanged PASSED [ 90%]
+stack/tests/test_v8f_motion_levers.py::test_diag_copy_values_equal_a_hand_computation PASSED [ 91%]
+stack/tests/test_v8f_motion_levers.py::test_the_trainer_runs_both_levers_and_checkpoint_cfg_keys_follow_the_defaults PASSED [ 91%]
+stack/tests/test_v8f_motion_levers.py::test_g_live_requires_and_sees_the_roll_term_and_every_group_trains PASSED [ 92%]
+stack/tests/test_v8f_spatial_state.py::test_widths_are_the_declared_ones[extra0-128-128] PASSED [ 93%]
+stack/tests/test_v8f_spatial_state.py::test_widths_are_the_declared_ones[extra1-640-256] PASSED [ 93%]
+stack/tests/test_v8f_spatial_state.py::test_widths_are_the_declared_ones[extra2-640-256] PASSED [ 94%]
+stack/tests/test_v8f_spatial_state.py::test_widths_are_the_declared_ones[extra3-320-256] PASSED [ 94%]
+stack/tests/test_v8f_spatial_state.py::test_default_is_the_tip_shape PASSED [ 95%]
+stack/tests/test_v8f_spatial_state.py::test_config_refuses_what_it_cannot_build PASSED [ 96%]
+stack/tests/test_v8f_spatial_state.py::test_every_new_flag_has_an_entry_and_a_default PASSED [ 96%]
+stack/tests/test_v8f_spatial_state.py::test_declared_vs_built_goes_red_on_every_lie PASSED [ 97%]
+stack/tests/test_v8f_spatial_state.py::test_the_wm_term_alone_reaches_projection_and_adapter_and_zero_weight_reads_exactly_zero PASSED [ 98%]
+stack/tests/test_v8f_spatial_state.py::test_location_is_in_the_grid_state_and_not_in_the_mean_state PASSED [ 98%]
+stack/tests/test_v8f_spatial_state.py::test_a_default_checkpoint_keeps_the_tip_cfg_keys_and_a_grid_one_round_trips PASSED [ 99%]
+stack/tests/test_v8f_spatial_state.py::test_rung_beta_refuses_a_grid_model PASSED [100%]
+
+================================== FAILURES ===================================
+_____ test_train_log_keys_only_when_on_and_checkpoint_cfg_equals_its_base _____
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/v8proof/leadcond/work/pt/run_all/test_train_log_keys_only_when_0')
+
+    def test_train_log_keys_only_when_on_and_checkpoint_cfg_equals_its_base(tmp_path):
+        cks = {}
+        for tag, extra in (("off", []), ("own", ["--w-rule-own", "1.0"]), ("wt", ["--rule-relabel", "on", "--rule-relabel-weight", "4"])):
+            out = tmp_path / tag
+>           rc = TR.main([*SYN, *TINY, *extra, "--steps", "3", "--log-every", "1", "--ckpt-every", "100", "--out", str(out)])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_rule_own.py:279: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+argv = ['--synthetic', '--arm', 'M2b', '--grid', 'pool4x10', '--kin-mode', ...]
+
+    def main(argv=None):
+        argv = list(sys.argv[1:] if argv is None else argv)
+        a = build_parser().parse_args(argv)
+        if a.p10 is None:
+            a.p10 = os.path.join(PKG, "raw", "p10_yaw" if a.kin_mode == "yaw" else "p10", "p10_prior.pt")
+        if a.threads:
+            torch.set_num_threads(a.threads)
+        os.makedirs(a.out, exist_ok=True)
+        cfg = make_config(a)
+        ego = make_ego_perturb(a)                                        # O-RECOVER (PREREG_V8F_HACC_MC section 7): off by default; the object the loop applies, G-DVB reads back and the probes exercise
+        dev = torch.device("cuda" if (a.device == "auto" and torch.cuda.is_available()) else ("cpu" if a.device == "auto" else a.device))
+        torch.manual_seed(a.seed)
+        np.random.seed(a.seed)
+        store, J, wins, clips, info = build_data(a, cfg)
+        RR = RRL.RuleRelabel(a.rule_relabel, J, store)                          # RULETRAIN: off = nothing built; on = the lead label arrays of the join (the same rule as lead_sup_label_arrays)
+        if RR.on:
+            info["rule_relabel"] = {"mode": RR.mode, "labels_sha256": RR.labels["sha256"], **{k: RR.labels[k] for k in ("n_rows", "n_pres", "n_gap", "n_clos")},
+                                    "dist_rule_sha256": hashlib.sha256(open(RRL.R.__file__, "rb").read()).hexdigest(), "floor_lifts": False, "m": RRL.RULE_M,
+                                    "constants": {"D_M": RRL.R.D_M, "TAU_S": RRL.R.TAU_S, "B_MAX": RRL.R.B_MAX, "DT": RRL.R.DT}}
+        RO = ROW.RuleOwn(a.w_rule_own, a.rule_relabel_weight, J, store, share=RR, form=a.rule_own_form)       # RULEOWN: off (0.0 and 1.0) = nothing built; flag A builds from the join (or shares RR's label arrays)
+        if RO.own_on:
+            src = RO.src
+            info["rule_own"] = {"w_rule_own": RO.w_own, "labels_sha256": src.labels["sha256"], **{k: src.labels[k] for k in ("n_rows", "n_pres", "n_gap", "n_clos")},
+                                "dist_rule_sha256": hashlib.sha256(open(RRL.R.__file__, "rb").read()).hexdigest(), "floor_lifts": False, "m": ROW.RULE_M, "output": "traj30",
+                                "constants": {"D_M": RRL.R.D_M, "TAU_S": RRL.R.TAU_S, "B_MAX": RRL.R.B_MAX, "DT": RRL.R.DT}}
+            if RO.form != "sq":
+                info["rule_own"]["form"] = RO.form                         # RULEOWNL1: only the l1 record names its form (the sq record keeps its key set)
+        if RO.weight_on:
+            info["rule_relabel_weight"] = {"w": RO.w_weight, "terms": ["ade", "fde"] + (["acc"] if a.w_acc > 0.0 else []) + (["launch_along"] if a.launch_intent_w > 0.0 else []), "renormalised": False}
+        info["p10_units"] = None if a.synthetic else M.p10_meta(a.p10).get("units", "steer")
+        if not a.synthetic:
+            try:
+                M.check_p10_units(a.p10, a.kin_mode)                 # REFUSES a prior whose declared units are not this mode's
+            except ValueError as e:
+                raise SystemExit(f"ZZDVB-REFUSEDZZ {e}")
+        fstore = None
+        if a.encoder == "lora":
+            if not a.frames_root:
+                raise SystemExit("ZZDVB-REFUSEDZZ --encoder lora needs --frames-root")
+            fstore = D.FrameStore(a.frames_root, lru=info["lru"])
+            info["frames_missing"] = len(fstore.missing(clips))
+        if a.encoder == "lora":                                          # two NAMED constructions, so test_v8f_window_start's static guard can see both
+            ds = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+                                       window_start=cfg.window_start)
+        else:
+            ds = D.V8FMiniWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+                                  window_start=cfg.window_start, lead_sup=cfg.lead_sup == "on")
+        info["ds_lead_sup"] = bool(getattr(ds, "lead_sup", False))      # LEADSUP: read back from the BUILT dataset (G-DVB compares it)
+        if info["ds_lead_sup"]:
+            info["lead_sup_labels"] = {k: ds.lead_sup_labels[k] for k in ("sha256", "n_rows", "n_pres", "n_gap", "n_clos")}
+        info["ds_window_start"] = ds.window_start                       # the held-age clamp's origin, read back from the BUILT dataset (G-DVB compares it)
+        LL = make_lead_labels(a, cfg, J, info)                          # PREREG_LEVELHEAD_A2: the lead head's label arrays (None with the head off: nothing read, nothing built)
+        SA = make_stop_aux(a, cfg, J, clips, info)                      # PREREG_V8F_STOPPERC arm A: the per-clip camera arrays (None with the head off: nothing read, nothing built)
+        prior = M.load_p10(a.p10) if not a.synthetic else M.P10Prior.synthetic(a.seed)
+        mu, sd = M.cons_stats(J)
+        model = M.V8FMini(cfg, prior, mu, sd).to(dev)
+        if a.init_ckpt:                                                  # O-RECOVER's start state: the MODEL weights of an earlier checkpoint (before the optimiser, the probes and the gate); a resume of THIS run wins
+            try:
+                info["init_ckpt"] = load_init_ckpt(a.init_ckpt, model, cfg, apply=not (os.path.exists(os.path.join(a.out, "ckpt_last.pt")) and not a.no_resume))
+            except Exception as e:                                       # noqa: BLE001  a missing / foreign / mismatched checkpoint is a REFUSAL, not a crash
+                raise SystemExit(f"ZZDVB-REFUSEDZZ init-ckpt {a.init_ckpt}: {type(e).__name__}: {str(e)[:600]}")
+        dag = make_dagger(a, J, wins, clips, info)                       # PREREG_V8F_DAGGER: off by default (no bank read); with a bank: load + K-B2 + K-B3 + COVERAGE here, a refusal stops the launch before the gate
+        rcv = make_recover(a, J, wins, store, clips, info)               # PREREG_RECOVER_FT: off by default (--recover-p 0: no bank read, no table built); with the empirical law: bank load + K-B3 + the deviation table from THIS trainer's TRAIN store here, a refusal stops the launch before the gate
+        comp = make_compose(a, ego, dag)                                 # AMEND1 section 1: off by default; with --ego-perturb-with-dagger the loop calls THIS (swap first, then the perturbation on the samples the swap left)
+        enc = None
+        if a.encoder == "lora":
+            enc = make_encoder(a, dev)                     # AFTER the heads: it must not move their initialisation (the global RNG is restored inside)
+            enc.set_checkpointing(a.enc_ckpt)
+        decay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim >= 2]
+        nodecay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim < 2]
+        groups = [{"params": decay, "weight_decay": a.wd}, {"params": nodecay, "weight_decay": 0.0}]
+        if enc is not None:                                # the LoRA matrices (2-D: the same weight-decay rule as the heads), their own peak lr
+            groups.append({"params": enc.lora_parameters(), "weight_decay": a.wd, "lr": lora_lr_of(a), "name": "lora", "lr_mult": lora_lr_of(a) / a.lr})
+        opt = torch.optim.AdamW(groups, lr=a.lr)
+        S = math.ceil(info["n_windows_all_clips"] / a.batch)
+        total = a.steps or S * a.steps_mult
+        sampler = D.ChunkedSampler(wins, a.batch, seed=a.seed, chunk=max(4, min(48, info["lru"] - 2)),
+                                   max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
+        # ---- the launch gate
+        lr_at = LRSchedule(a.lr, a.warmup, total)                        # the loop's schedule, built BEFORE the gate so that G-DVB can read --warmup back from it
+        bad = declared_vs_built(a, cfg, model, opt, info, enc, ego, lr_at, dag, comp, rcv)
+        if bad:
+            raise SystemExit("ZZDVB-REFUSEDZZ declared-vs-built: " + "; ".join(bad))
+        chunk = enc_chunk(a, cfg)
+        ident = None
+        if enc is None:
+            probe = D.collate([ds.item(*w) for w in next(sampler.epoch(0))])
+            if cfg.launch_intent_w > 0.0:                    # PREREG_V8F_LAUNCH_INTENT: every probe calls model.loss on this batch, and a lever-ON loss reads b["launch"] (the loop's own call, on the LOGGED state)
+                probe["launch"] = launch_stage(probe)
+            if cfg.level_head == "on":                       # PREREG_V8F_LEVEL: every probe calls model.loss on this batch, and a lever-ON loss reads level_y / level_ok (the loop's own call, on the LOGGED state)
+                probe["level_y"], probe["level_ok"] = level_stage(probe)
+            if cfg.lead_head == "on":                        # PREREG_LEVELHEAD_A2: as above (the lead labels, looked up by the probe's own clip index and step)
+                probe["lead_y"], probe["lead_has"], probe["lead_near"] = lead_stage(probe, LL)
+            if cfg.stop_aux == "on":                         # PREREG_V8F_STOPPERC arm A: as above (the stop labels, from the probe's own NOW-frame label and clip camera)
+                probe["stop_cell"], probe["stop_pos"], probe["stop_has"] = stop_aux_stage(probe, SA)
+            if cfg.lead_sup == "on":                         # LEADSUP: the number of frames with a label that the G-LIVE probe batch carries (counted like the loss counts: all `lead_hist` frames behind the end frame are real)
+                okw = probe["frame_ok"].unfold(1, cfg.lead_hist, 1).all(-1)
+                sl = slice(cfg.lead_hist - 1, None)
+                info["lead_sup_n_labelled"] = int((okw & torch.isfinite(probe["lead_gapm"][:, sl])).sum())
+                info["lead_sup_n_presence"] = int(okw.sum())
+                info["lead_sup_n_closing"] = int((okw & torch.isfinite(probe["lead_clos"][:, sl])).sum())
+            probe_logged, rr_i = dict(probe), None
+            if RR.on:                                        # RULETRAIN: every probe below calls model.loss on the batch the loop's loss receives, i.e. with the relabelled target; the logged one is kept for the reach probe
+                probe["gt"], rr_i = RR.stage(probe)
+                info["rule_relabel_n"], info["rule_relabel_changed"], info["rule_relabel_rows"] = rr_i["n_relabel"], rr_i["n_changed"], rr_i["n_rows"]
+                if rr_i["n_relabel"] == 0:
+                    raise SystemExit("ZZDVB-REFUSEDZZ rule-relabel: --rule-relabel on but the G-LIVE probe batch has no sample with a label lead (count 0): a lever that is declared and does nothing")
+            ro_in = RO.stage(probe_logged) if RO.own_on else None          # RULEOWN: the inputs of flag A on the LOGGED probe batch (the same mask as the relabel)
+            live = live_check(model.cpu(), probe, cfg)
+        else:
+            ds_probe = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+                                             window_start=cfg.window_start, keep_cached=True)
+            probe_f = D.collate_frames([ds_probe.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_LORA], fstore)
+            if cfg.launch_intent_w > 0.0:                    # PREREG_V8F_LAUNCH_INTENT: as above (the cached tokens stay in `probe`; the mask comes from the logged kin3 and the GT)
+                probe_f["launch"] = launch_stage(probe_f)
+            if cfg.level_head == "on":                       # PREREG_V8F_LEVEL: as above
+                probe_f["level_y"], probe_f["level_ok"] = level_stage(probe_f)
+            if cfg.lead_head == "on":                        # PREREG_LEVELHEAD_A2: as above
+                probe_f["lead_y"], probe_f["lead_has"], probe_f["lead_near"] = lead_stage(probe_f, LL)
+            if cfg.stop_aux == "on":                         # PREREG_V8F_STOPPERC arm A: as above
+                probe_f["stop_cell"], probe_f["stop_pos"], probe_f["stop_has"] = stop_aux_stage(probe_f, SA)
+            probe = {k: v for k, v in probe_f.items() if k not in ("frames_u8", "frame_map")}      # the cached tokens stay in `probe` (admissibility, identity)
+            live = live_check_lora(model, enc, probe_f, cfg, a, dev, chunk)
+            ident = identity_probe(enc, probe_f, dev, chunk)
+        model.to(dev)
+        try:
+            mix = code_mix_probe(model, probe, cfg)           # PREREG_V8F_MIXO: the joint structure of the code the BUILT model hands O is the declared one (whole: all-or-nothing; kind: partial)
+        except AssertionError as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: {e}")
+        try:
+            ocut = o_interface_probe(model, probe, cfg)       # PREREG_V8F_FLAT: what the BUILT model's O is handed under a perturbation of everything above it (cut: constants, traj60 invariant; full: it moves)
+        except AssertionError as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: {e}")
+        try:
+            accp = acc_probe(model, probe, cfg)               # PREREG_V8F_OACC: the BUILT loss moves by exactly w_acc x the acceleration term, and O's head receives its gradient (a deleted line reads 0.0 and is refused)
+        except AssertionError as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: {e}")
+        adm = M.assert_no_situation_classifier_input(model.cpu().eval(), probe)
+        model.to(dev).train()
+        try:                                                  # after the model is back on its device in train mode: the probe sees the state the acc probe saw
+            egop = ego_perturb_probe(model, probe, cfg, ego)  # O-RECOVER: G-LIVE on a PERTURBED batch; the perturbed tensors reach the loss gradient, a p = 0 control reads EXACTLY 0.0 (a deleted apply line is refused)
+        except AssertionError as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ ego-perturb: {e}")
+        try:
+            dagp = dagger_probe(model, probe, cfg, dag)       # PREREG_V8F_DAGGER: G-LIVE on a SWAPPED batch; the own-state tensors reach the loss gradient, a p = 0 control reads EXACTLY 0.0 (a deleted apply line is refused)
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ dagger: {e}")
+        try:
+            cmpp = ego_dagger_compose_probe(model, probe, cfg, comp)      # AMEND1 section 1: G-LIVE on a COMPOSED batch; both levers reach the loss gradient, the p = 0 controls read EXACTLY 0.0, the overlap is exactly 0
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ ego-dagger-compose: {e}")
+        try:
+            recp = recover_probe(model, probe, cfg, rcv)      # PREREG_RECOVER_FT: G-LIVE on a RECOVERED batch; the perturbed tensors AND the re-expressed target reach the loss gradient, a p = 0 control reads EXACTLY 0.0 (a deleted apply line is refused)
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ recover: {e}")
+        try:
+            lip = launch_intent_probe(model, probe, cfg)      # PREREG_V8F_LAUNCH_INTENT: G-LIVE on the loop's own mask (launch_stage); the term reaches the loss on the rows the mask names, O's head gets its gradient, an all-False mask reads EXACTLY 0.0 (off: nothing runs)
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ launch-intent: {e}")
+        try:
+            rrp = rule_relabel_probe(model, probe_logged, probe, cfg, RR, rr_i or {}) if enc is None else {"rule_relabel": "off", "pass": True}      # RULETRAIN: G-LIVE (count, reach, controls); off: nothing runs
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ rule-relabel: {e}")
+        try:
+            rop = rule_own_probe(model, probe_logged, RO, ro_in, cfg) if enc is None else {"rule_own": "off", "pass": True}      # RULEOWN: G-LIVE (count, term, gradients, controls); off: nothing runs
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ rule-own: {e}")
+        try:
+            lvp = level_head_probe(model, probe, cfg)         # PREREG_V8F_LEVEL: G-LIVE on the loop's own label call (level_stage); the term reaches the loss with its weight, the head gets its gradient, the detach control reads EXACTLY 0.0, the token reaches O, the head is vision-only (off: nothing runs)
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ level-head: {e}")
+        try:
+            ldp = lead_head_probe(model, probe, cfg)          # PREREG_LEVELHEAD_A2: G-LIVE on the loop's own label call (lead_stage); the term reaches the loss with its weight, BOTH outputs get their gradient, the detach control reads EXACTLY 0.0, the lead output reaches O, the head is vision-only (off: nothing run)
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ lead-head: {e}")
+        try:
+            sap = stop_aux_probe(model, probe, cfg)           # PREREG_V8F_STOPPERC arm A: G-LIVE on the loop's own label call (stop_aux_stage); the term reaches the loss with its weight, both heads AND the adapter get the gradient, the zero control reads EXACTLY 0.0, the head is vision-only (off: nothing run)
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ stop-aux: {e}")
+        try:
+            lcp = lead_cond_probe(model, probe, cfg)          # LEADCOND: G-LIVE on the BUILT loss; the token reaches the loss (gradient on lead_cond.weight above 0), the lead head gets no gradient through u, the zero-u control reads EXACTLY 0.0 (off: nothing runs)
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ lead-cond: {e}")
+        levers = model.built_levers()
+        levers["ego_perturb"] = ego.built_levers()                        # recorded like every other lever (selfcheck.json, summary.json, the checkpoint)
+        levers["dagger"] = dag.built_levers()                             # PREREG_V8F_DAGGER: what was BUILT (the bank's path and sha256 included) ...
+        levers["dagger_p"], levers["dagger_bank_sha256"] = dag.p, dag.bank_sha256          # ... and the two values the reader keys on, flat (0.0 / None when the lever is off)
+        levers["dagger_bank_sha256_declared"] = a.dagger_bank_sha256 or None              # ... and the hash the argv DECLARED (--dagger-bank-sha256); the gate has just required it to equal the built one (None when the lever is off)
+        levers["recover"] = rcv.built_levers()                             # PREREG_RECOVER_FT: what was BUILT (the LOADED bank's path and sha256 included; recover_p 0.0 and every other lever at its default when the lever is off) ...
+        levers["recover_table"] = (info.get("recover") or {}).get("table")  # ... and the deviation table's build summary (n, content sha256, means, share of records with logged v in [3, 8]); None when the lever is off (the card's KR3 reads it)
+        levers["ego_perturb_with_dagger"] = comp.on                        # AMEND1 section 1: what was BUILT (False unless --ego-perturb-with-dagger) ...
+        levers["ego_perturb_stream"] = comp.ego.stream                     # ... and the perturbation's generator stream: 0 = the original, D.EGO_PERTURB_COMPOSED_STREAM = domain-separated from the swap's (composed arms only)
+        levers["ego_dagger_overlap_n"] = cmpp["overlap"]                   # ... and the composed probe's measured overlap on the probe batch (0 when off; the run total is summary.json's ego_dagger_overlap_n)
+        levers["launch_intent"] = {"launch_intent_w": cfg.launch_intent_w, "v0_max": M.LAUNCH_V0_MAX, "dv": M.LAUNCH_DV, "dt": M.LAUNCH_DT, "knots": [M.LAUNCH_KNOT_LO, M.LAUNCH_KNOT_HI], "axis": "along (x of the ego frame at NOW)",
+                                   "mask_from": "the LOGGED kin3[:, 0] and the GT future, taken before any ego stage"}   # PREREG_V8F_LAUNCH_INTENT: what was BUILT (the definition the mask uses) ...
+        levers["launch_n"], levers["launch_eligible"] = lip["launch_n"], lip["launch_eligible"]          # ... and the probe batch's natural launch / GT-valid row counts (0 / 0 when off; the run totals are summary.json's launch_n / launch_eligible, present when the lever is on)
+        levers["init_ckpt"] = info.get("init_ckpt")
+        if RR.on:                                                         # RULETRAIN: lever-ON arms only (a flag-off selfcheck.json keeps its key set); the mode is read from the BUILT stage
+            levers["rule_relabel"] = RR.mode
+            levers["rule_relabel_rule"] = {k: info["rule_relabel"][k] for k in ("dist_rule_sha256", "floor_lifts", "m", "constants")}
+        if RO.own_on:                                                     # RULEOWN: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
+            levers["w_rule_own"] = RO.w_own
+            if RO.form != "sq":
+                levers["rule_own_form"] = RO.form                          # RULEOWNL1: absent for the default form
+            levers["rule_own_rule"] = {k: info["rule_own"][k] for k in ("dist_rule_sha256", "floor_lifts", "m", "constants", "output")}
+        if RO.weight_on:
+            levers["rule_relabel_weight"] = RO.w_weight
+        levers["lr_schedule"] = lr_at.built_levers()                       # the built warmup / peak / total the loop calls (G-DVB read --warmup back from it)
+        if enc is not None:
+            levers["encoder"] = enc.built_levers()
+            levers["accum"] = {"accum": a.accum, "micro_windows": a.batch // a.accum, "chunk_frames": chunk}
+        sc = {"declared_vs_built": "PASS", "live": live, "code_mix_probe": mix, "o_interface_probe": ocut, "acc_probe": accp, "admissibility": adm, "levers": levers,
+              "steps_total": total, "S_steps_per_epoch_100pct": S, "info": info, "argv_sha": argv_sha(argv)}
+        sc["ego_perturb_probe"] = egop
+        sc["dagger_probe"] = dagp
+        sc["ego_dagger_compose_probe"] = cmpp
+        sc["recover_probe"] = recp
+        sc["launch_intent_probe"] = lip
+        if RR.on:                                                           # RULETRAIN: lever-ON arms only
+            sc["rule_relabel_probe"] = rrp
+        if RO.own_on:                                                       # RULEOWN: lever-ON arms only
+            sc["rule_own_probe"] = rop
+        if cfg.level_head == "on":                                          # lever-ON arms only: a flag-off selfcheck.json keeps its key set
+            sc["level_head_probe"] = lvp
+        if cfg.lead_head == "on":                                           # PREREG_LEVELHEAD_A2: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
+            sc["lead_head_probe"] = ldp
+            sc["lead_labels"] = info["lead_labels"]
+        if cfg.stop_aux == "on":                                            # PREREG_V8F_STOPPERC arm A: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
+            sc["stop_aux_probe"] = sap
+            sc["stop_aux_extrinsics"] = info["stop_aux"]
+        if cfg.lead_cond == "on":                                           # LEADCOND: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
+            sc["lead_cond_probe"] = lcp
+        if ident is not None:
+            sc["identity_probe"] = ident
+>       json.dump(sc, open(os.path.join(a.out, "selfcheck.json"), "w"), indent=1, default=str)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\v8proof\\leadcond\\work\\pt\\run_all\\test_train_log_keys_only_when_0\\own\\selfcheck.json'
+
+stack\scripts\v8f_mini_train.py:3315: FileNotFoundError
+---------------------------- Captured stdout call -----------------------------
+[1/3] ade 6.526 total 109.177 p_gt 1.00
+[2/3] ade 5.340 total 99.593 p_gt 0.73
+[3/3] ade 8.288 total 94.190 p_gt 0.47
+DONE {"steps": 3, "arm": "M2b", "seed": 0, "seconds": 0.8814470767974854}
+============================== warnings summary ===============================
+stack/tests/test_v8f_lead_cond.py::test_zero_init_outputs_equal_the_off_model_exactly
+  F:\TanitAD-scratch\v8proof\leadcond\work\tree_patch\stack\tests\test_v8f_lead_cond.py:108: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(on.lead_cond.weight.abs().sum()) == 0.0 and float(on.lead_cond.bias.abs().sum()) == 0.0
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack/tests/test_v8f_rule_own.py::test_train_log_keys_only_when_on_and_checkpoint_cfg_equals_its_base
+============ 1 failed, 158 passed, 1 warning in 278.23s (0:04:38) =============
+PYTEST_RC 1
