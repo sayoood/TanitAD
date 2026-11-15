@@ -73,6 +73,18 @@ def test_floor_regression_flips_narrows():
     assert labels(NARR, NUL, null_delta=0.30)["IDM"] != "ACTSENS-NARROWS"
 
 
+def test_inference_floor_is_one_value_over_both_chassis():
+    """DELIBERATE REGRESSION (card 4.4: F_I carries no chassis subscript): a lever effect of -0.20 at both chassis, with a large inference replicate (0.30)
+    at chassis 1 ONLY, is inside the floor at BOTH chassis and reads ACTSENS-NULL. A per-chassis F_I lets chassis 0 pass on its own small replicate,
+    and the label becomes SEEDS-DISAGREE (MEASURED on the per-chassis version: this test goes red)."""
+    spec = {0: dict(acc=-0.20, rep=0.001), 1: dict(acc=-0.20, rep=0.30)}
+    r = V.run(world(spec, NUL), REF)
+    assert r["labels"]["IDM"] == "ACTSENS-NULL", r["labels"]
+    f = r["levers"]["IDM"]["floors"]
+    assert f[0]["acc_mae"]["F_I"] == f[1]["acc_mae"]["F_I"] == 0.30 and f[0]["acc_mae"]["F_I_k"] == 0.001
+    assert labels(both(acc=-0.20, rep=0.001), NUL)["IDM"] == "ACTSENS-NARROWS"
+
+
 def test_sign_regression():
     """DELIBERATE REGRESSION: flipping the sign convention (a worse arm read as better) must change the label; HARM data never reads NARROWS or CEILING."""
     lab = labels(HARM, NUL)["IDM"]

@@ -31,14 +31,20 @@ def cell(arm, key, slot, src="hwm"):
 
 
 def floors(arms, lever, k):
-    """Per quantity: Floor_k = max(F_T, F_I) with its parts."""
+    """Per quantity: Floor_k = max(F_T,k, F_I) with its parts.
+    Card 4.4 subscripts the training floor by chassis (F_T,k) and NOT the inference floor: F_I = max over {arm, R35} of |seed 1 - seed 0| per row,
+    so F_I is ONE value per row, the max over both chassis of the lever arm's and R35's replicate deltas (MM 2026-11-15, fixed before any ACTSENS arm was read;
+    the per-chassis value is kept as F_I_k for the report). Both chassis must be present (label_lever checks that first)."""
     out = {}
     nl = arms.get(NULLS[k])
     for q, key in QS.items():
         ft = abs(cell(nl, key, "vs_r35")["delta"]) if nl else None
-        a = arms[f"{lever}_s{k}"]
-        fi = max(abs(cell(a, key, "rep_arm")["delta"]), abs(cell(a, key, "rep_r35")["delta"]))
-        out[q] = {"F_T": ft, "F_I": fi, "Floor": None if ft is None else max(ft, fi)}
+        fik = {}
+        for j in (0, 1):
+            a = arms[f"{lever}_s{j}"]
+            fik[j] = max(abs(cell(a, key, "rep_arm")["delta"]), abs(cell(a, key, "rep_r35")["delta"]))
+        fi = max(fik.values())
+        out[q] = {"F_T": ft, "F_I": fi, "F_I_k": fik[k], "Floor": None if ft is None else max(ft, fi)}
     return out
 
 
