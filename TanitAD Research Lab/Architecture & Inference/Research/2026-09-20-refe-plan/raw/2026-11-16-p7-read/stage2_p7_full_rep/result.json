@@ -1,0 +1,33 @@
+{
+ "name": "p7_full_rep",
+ "ckpt": "F:/TanitAD_p7read/run/model_final.pt",
+ "rule": "navsim_v1",
+ "tokens": "E:\\Projects\\TanitAD\\data\\refe_navtest\\navtest_full_tokens.json",
+ "n_tokens": 12146,
+ "exploratory": false,
+ "deployed_seam": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\refe_navtest_final_routefix.npz",
+ "deployed_csv": "E:\\Projects\\TanitAD\\data\\refe_navtest\\score\\refe_navtest_final_routefix\\refe_navtest_final_routefix.csv",
+ "estimator": "paired log-cluster bootstrap over the confirmation logs, 10,000 resamples, 95 %, seed 20260927",
+ "tier": "NAVSIM v1.1 PDMS = ego pseudo-simulation of an open-loop plan against logged agents",
+ "harness_pins": {
+  "n_files": 21,
+  "pins_file_sha256": "1c335901ce4a0fb59647e703c8427812c763b64bdfe94c546ac603bd033a1467",
+  "caller": {
+   "ok": true,
+   "sha256_lf": "94f7b024ab2a375a62cf7268e85b0d245ac81ff7b69f2f0c4a9295050ab962b7",
+   "variant": "NT_FIX1",
+   "path": "F:\\TanitAD_p7read_tip\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\score_navtest_refe.py",
+   "why": null
+  }
+ },
+ "ego_yaw": {
+  "table": "E:/Projects/TanitAD-artifacts/yawrate_wp/tables/ego_yaw_navtest.json.gz",
+  "sha256": "f5ebe24fd05a8067215c22f08f873808a7020a97eca6940fdcc568f8b39e29a5",
+  "checkpoint_wants_yaw": true
+ },
+ "seam": {
+  "rc": 1,
+  "seconds": 16304
+ },
+ "verdict": "INCOMPLETE (seam failed)"
+}
