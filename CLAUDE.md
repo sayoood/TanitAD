@@ -380,6 +380,12 @@ in PhysicalAI-AV — the card says verbatim *"we do not include open maps data"*
 enum over **87,481 cuboids is 10 classes, all dynamic agents**. Stop re-asking; the strategic-brain
 topology must come from AlpaSim or an external corpus. *(Also settled: `egomotion` carries **no
 lat/lon/GNSS** — coordinates are clip-local metres, so **OSM map-matching on our traces is impossible**.)*
+⚠️ **2026-11-16, layer = published repo FILES (MEASURED, `…/raw/2026-11-15-v8f-datascale/navprobe/NAVPROBE.md`, R-NAV-1):** the
+repo-level file `navigation/navigation.parquet` (not in `features.csv`) carries turn-by-turn route text for **305,372 of 306,151
+clips**, incl. roundabout manoeuvres ("Turn right in 249m", "Exit rotary in 214m") and **4,564/4,572** of train4572. Its countdown
+follows the ego's driven arc length (median slope −0.9993, R² 0.99997, 1,745 runs); turn side matches the ego on 804/830, 0 opposite.
+⇒ "no roundabout label / no route signal" holds for the per-clip FEATURE SET only. Map, lane graph, traffic-light feature and
+lat/lon are still absent. As a route input it is optimistic by construction (computed along the driven route).
 
 ⛔⛔ **AND THAT PARAGRAPH IS A LAYER-1 FACT THAT HAS ALREADY BEEN QUOTED TO SETTLE A
 LAYER-3 QUESTION.** It is true of the **published PhysicalAI-AV feature set** and SILENT about our
