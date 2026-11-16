@@ -19,7 +19,8 @@
 #   S6c can never be computed while the rolls exist.  Resume: pull $OUT to the dev box and run r9e2_s6c_resume.sh (scores the four traces, then INPUTS -> verdict).
 #
 # ENV PINS (all REQUIRED, exit 4 when unset -- no dev-box default is ever taken on Thor; R8_NO_POSE_SYNC must be UNSET, exit 4):
-#   R9E2_K0_RUN R9E2_K2_RUN   run dirs (model_ema.pt + config.json)         R9E2_TREE   launch tree (= R8_LAUNCH_TREE; PYTHONPATH $T/stack:$T/stack/scripts:$T/taniteval)
+#   R9E2_CKPT_NAME            checkpoint file name in each run dir; default model_ema.pt; ckpt.pt = RAW weights (E2-RAW stage B), which drops --require-ema
+#   R9E2_K0_RUN R9E2_K2_RUN   run dirs (model_ema.pt + config.json)       R9E2_TREE   launch tree (= R8_LAUNCH_TREE; PYTHONPATH $T/stack:$T/stack/scripts:$T/taniteval)
 #   R9E2_PF_CODE              2026-10-20-refcv8-perframe-final/code            PF_R8_CODE  2026-10-15-refcv8-milestone-battery/code (r8_repoint.py)
 #   PF_NF_HOLD                2026-10-20-refcv8-nav-feed-fix                   R8_EVAL_KIT eval139 cache + s2_labels_v8_eval.jsonl.gz
 #   R9E2_REMAP                an EMPTY {} json (Thor)                          R9E2_SPLIT  DEV_HOLD_SPLIT.json     R9E2_S2  s2_windows.json
@@ -48,6 +49,10 @@ if [ -n "${R8_NO_POSE_SYNC:-}" ]; then echo "[r9e2_roll] refusing: R8_NO_POSE_SY
 
 T="$R9E2_TREE"; OUT="$R9E2_OUT"; RD="$OUT/read"; LOGS="$OUT/logs"
 RUN0="$R9E2_K0_RUN"; RUN2="$R9E2_K2_RUN"
+CK="${R9E2_CKPT_NAME:-model_ema.pt}"                         # E2-RAW stage B: R9E2_CKPT_NAME=ckpt.pt reads the RAW weights; default = the tip's behaviour
+case "$CK" in */*|"") echo "[r9e2_roll] refusing: R9E2_CKPT_NAME must be a bare file name, got '$CK'" >&2; exit 4;; esac
+REQEMA=(--require-ema); CKLAB="run checkpoint (EMA)"; CKSTART=""
+if [ "$CK" != "model_ema.pt" ]; then REQEMA=(); CKLAB="run checkpoint ($CK, NOT EMA)"; CKSTART=" ckpt_name=$CK (raw weights, EMA check dropped)"; fi
 SPLIT="$R9E2_SPLIT"; S2="$R9E2_S2"
 export R8_LAUNCH_TREE="$T"                                   # r8_repoint.LAUNCH_TREE (run_battery_r9_e2.pin_repoint asserts it equals this pin)
 PY="${R9E2_PY:-/home/nvidia/venvs/tanitad-train/bin/python}"
@@ -117,10 +122,10 @@ need() {           # $1 = file, $2 = what   (a real run: must exist and be non-e
 
 if [ "$HAVE_FLOCK" = 0 ] && [ "$DRY" != 1 ]; then echo "[r9e2_roll] no flock: refusing a real run without the GPU-lock discipline" >&2; exit 4; fi
 if [ "$DRY" = 1 ]; then echo "[dry] R9E2_DRY=1: every command below is only printed; nothing is created or run"; else mkdir -p "$OUT" "$RD" "$LOGS" || exit 4; fi
-ev START "dry=$DRY k0=$RUN0 k2=$RUN2 out=$OUT tree=$T split=$SPLIT seeds=0,1"
+ev START "dry=$DRY k0=$RUN0 k2=$RUN2 out=$OUT tree=$T split=$SPLIT seeds=0,1$CKSTART"
 
 # ---- inputs, checked BEFORE the GPU lock is taken ----------------------------------------------------------------------------------------
-for R in "$RUN0" "$RUN2"; do need "$R/model_ema.pt" "run checkpoint (EMA)"; need "$R/config.json" "run config"; done
+for R in "$RUN0" "$RUN2"; do need "$R/$CK" "$CKLAB"; need "$R/config.json" "run config"; done
 need "$SPLIT" "DEV_HOLD_SPLIT.json"
 need "$S2" "s2_windows.json"
 need "$R9E2_REMAP" "Thor remap json ({})"
@@ -179,8 +184,8 @@ OSALL=(); [ "${R9E2_OS_ONLY_ALL:-0}" = 1 ] && OSALL=(--os-only-all)
 roll_arm() {       # $1 = K0|K2, $2 = run dir
   local A="$1" RUN="$2" TAG="E2_$1_pf"
   if [ "$DRY" != 1 ] && [ -s "$OUT/$TAG/r9e2_dev_filter.json" ] && [ -s "$OUT/$TAG/dump_s0/manifest.json" ] && [ -s "$OUT/$TAG/dump_s1/manifest.json" ]; then ev ROLL-SKIP "$A: $OUT/$TAG is complete"; return 0; fi
-  ev ROLL-START "$A tag $TAG ckpt $RUN/model_ema.pt"
-  XC "${R9E2_BASE_CWD:-.}" "$LOGS/roll_$A" renv "$PYPATH" "$PY" -X utf8 "$OPS/run_battery_r9_e2.py" --ckpt "$RUN/model_ema.pt" --config "$RUN/config.json" --no-g0 --no-baselines \
+  ev ROLL-START "$A tag $TAG ckpt $RUN/$CK"
+  XC "${R9E2_BASE_CWD:-.}" "$LOGS/roll_$A" renv "$PYPATH" "$PY" -X utf8 "$OPS/run_battery_r9_e2.py" --ckpt "$RUN/$CK" --config "$RUN/config.json" --no-g0 --no-baselines \
       --tag "$TAG" --infer-seeds 0,1 --lock-held --out-root "$OUT" ${OSALL[@]+"${OSALL[@]}"}; local rc=$?
   if [ "$DRY" != 1 ]; then
     [ -s "$OUT/$TAG/r9e2_dev_filter.json" ] || abort ROLL-FAILED "$A rc=$rc: no $OUT/$TAG/r9e2_dev_filter.json (read $LOGS/roll_$A.err)"
@@ -201,7 +206,7 @@ for S in 0 1; do
   if [ "$DRY" != 1 ] && [ -s "$CBD/blind_roll_s$S.json" ] && [ -s "$CBD/dump_s$S/manifest.json" ]; then ev CAMBLIND-SKIP "seed $S: $CBD/blind_roll_s$S.json exists"; continue; fi
   ev CAMBLIND-START "seed $S derange-seed 0"
   XC "$CB_CWD" "$LOGS/camblind_s$S" renv "$PYPATH" "$PY" -X utf8 "$OPS/camblind_roll_r9_e2.py" --camblind-script "$CB_SCRIPT" --camera derange --derange-seed 0 \
-      --ztac-out "$CBD/ztac_blind_s$S.npz" --require-seal -- --ckpt "$RUN2/model_ema.pt" --config "$RUN2/config.json" --seed "$S" --dump-dir "$CBD/dump_s$S" \
+      --ztac-out "$CBD/ztac_blind_s$S.npz" --require-seal -- --ckpt "$RUN2/$CK" --config "$RUN2/config.json" --seed "$S" --dump-dir "$CBD/dump_s$S" \
       --windows-json "$OUT/E2_K2_pf/windows_s$S.json" --device cuda --out-json "$CBD/blind_roll_s$S.json" --os-only; rc=$?
   if [ "$DRY" != 1 ]; then [ -s "$CBD/blind_roll_s$S.json" ] && [ -s "$CBD/dump_s$S/manifest.json" ] || abort CAMBLIND-FAILED "seed $S rc=$rc (read $LOGS/camblind_s$S.err)"; fi
   ev CAMBLIND-DONE "seed $S rc=$rc $CBD/blind_roll_s$S.json"
@@ -210,10 +215,10 @@ done
 dump_arm() {       # $1 = K2|K0, $2 = run dir
   local A="$1" RUN="$2" O="$RD/dump_$1"
   if [ "$DRY" != 1 ] && [ -s "$O/dump.json" ]; then ev DUMP-SKIP "$A: $O/dump.json exists"; return 0; fi
-  ev DUMP-START "$A ckpt $RUN/model_ema.pt"
+  ev DUMP-START "$A ckpt $RUN/$CK"
   [ "$DRY" = 1 ] || rm -rf "$O"
-  XC "$T/stack" "$LOGS/dump_$A" penv "$PYPATH" "$PY" -X utf8 scripts/r9_e1_dump.py --ckpt "$RUN/model_ema.pt" --config "$RUN/config.json" --windows "$SPLIT" \
-      --split dev --s2-windows "$S2" --require-ema --out "$O"; local rc=$?
+  XC "$T/stack" "$LOGS/dump_$A" penv "$PYPATH" "$PY" -X utf8 scripts/r9_e1_dump.py --ckpt "$RUN/$CK" --config "$RUN/config.json" --windows "$SPLIT" \
+      --split dev --s2-windows "$S2" ${REQEMA[@]+"${REQEMA[@]}"} --out "$O"; local rc=$?
   if [ "$DRY" != 1 ]; then [ -s "$O/dump.json" ] || abort DUMP-FAILED "$A rc=$rc (read $LOGS/dump_$A.err)"; fi
   ev DUMP-DONE "$A rc=$rc $O"
 }
@@ -229,11 +234,11 @@ mapsel_arm() {     # $1 = K2|K0, $2 = run dir: the MAPSEL roll at inference seed
   [ "$DRY" = 1 ] || mkdir -p "$MD" || abort MAPSEL-DIR "cannot create $MD"
   for S in 0 1; do
     if [ "$DRY" != 1 ] && [ -s "$MD/trace_s$S.npz" ] && "$PY" -X utf8 "$OPS/r9e2_s6c_tools.py" final "$MD/trace_s$S.npz" "$SPLIT" > /dev/null 2>&1; then ev MAPSEL-SKIP "$A seed $S: $MD/trace_s$S.npz is final"; continue; fi
-    ev MAPSEL-START "$A seed $S own-planes $OPM ckpt $RUN/model_ema.pt"
+    ev MAPSEL-START "$A seed $S own-planes $OPM ckpt $RUN/$CK"
     [ "$DRY" = 1 ] || rm -rf "$MD/rast_s$S" "$MD/dump_s$S"
     XC "${R9E2_BASE_CWD:-.}" "$LOGS/mapsel_${A}_s$S" renv "$PYPATH" "$PY" -X utf8 "$OPS/mapsel_roll_r9_e2.py" --mapsel-code "$MS_CODE" --infer-seed "$S" --own-planes "$OPM" \
         --trace-out "$MD/trace_s$S.npz" --rast-dir "$MD/rast_s$S" --map-gt-root "$R9E2_MAP_GT_ROOT" --require-seal -- \
-        --ckpt "$RUN/model_ema.pt" --config "$RUN/config.json" --dump-dir "$MD/dump_s$S" --windows-json "$OUT/E2_${A}_pf/windows_s$S.json" --device cuda \
+        --ckpt "$RUN/$CK" --config "$RUN/config.json" --dump-dir "$MD/dump_s$S" --windows-json "$OUT/E2_${A}_pf/windows_s$S.json" --device cuda \
         --out-json "$MD/roll_s$S.json" --os-only; rc=$?
     if [ "$DRY" != 1 ]; then
       "$PY" -X utf8 "$OPS/r9e2_s6c_tools.py" final "$MD/trace_s$S.npz" "$SPLIT" > "$LOGS/mapsel_${A}_s$S.final" 2>&1 || abort MAPSEL-FAILED "$A seed $S rc=$rc: trace not final / not the DEV windows ($(cat "$LOGS/mapsel_${A}_s$S.final" 2>/dev/null); read $LOGS/mapsel_${A}_s$S.err)"

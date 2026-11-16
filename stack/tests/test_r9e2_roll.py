@@ -969,3 +969,58 @@ def test_the_driver_never_takes_a_dev_box_default_for_a_path():
     s = SH.read_text(encoding="utf-8")
     body = "\n".join(ln for ln in s.splitlines() if not ln.lstrip().startswith("#"))
     assert not re.search(r"\b[CDEFG]:/(?!Users/Admin/refcv8_pf/refcv9_l1)", body), "a dev-box drive path in the driver"
+
+
+# ---- E2-RAW stage B (2026-11-16): R9E2_CKPT_NAME switches EVERY checkpoint site; default behaviour unchanged ---------------------------------
+def _raw_claims(out: str, name: str) -> list:
+    """Claims about a dry run made with R9E2_CKPT_NAME=<name> (name != model_ema.pt): the failed ones."""
+    bad = []
+    if "model_ema.pt" in out:
+        bad.append("a site still names model_ema.pt: " + "; ".join(ln.strip()[:120] for ln in out.splitlines() if "model_ema.pt" in ln))
+    if "--require-ema" in out:
+        bad.append("--require-ema survives")
+    dry = [ln for ln in out.splitlines() if ln.startswith("[dry] ") and not ln.startswith("[dry] require")]
+    for tool in ("run_battery_r9_e2.py", "camblind_roll_r9_e2.py", "r9_e1_dump.py", "mapsel_roll_r9_e2.py"):
+        cs = [ln for ln in dry if tool in ln]
+        if not cs or not all(f"/{name}" in c for c in cs):
+            bad.append(f"{tool}: not every call carries {name}")
+    if sum(f"/{name}" in ln for ln in out.splitlines() if ln.startswith("[dry] require nonempty")) != 2:
+        bad.append("need-check")
+    if f"ckpt_name={name}" not in out.split("ZZR9E2ROLL-START", 1)[1].splitlines()[0]:
+        bad.append("START line lacks the choice")
+    return bad
+
+
+@needs_bash
+def test_default_ckpt_name_is_the_tips_behaviour(tmp_path):
+    rc, out0, err, _ = _dry(SH, tmp_path)
+    assert rc == 0, err
+    rc, out1, err, _ = _dry(SH, tmp_path, env_extra={"R9E2_CKPT_NAME": "model_ema.pt"})
+    _t = lambda s: re.sub(r"\d\d:\d\d:\d\dZ", "T", s)
+    assert rc == 0 and _t(out1) == _t(out0)                                                  # naming the default explicitly changes nothing
+    assert " ckpt_name=" not in out0 and out0.count("--require-ema") == 2 and out0.count("model_ema.pt") >= 9
+    assert _structure(out0) == []
+
+
+@needs_bash
+def test_raw_ckpt_name_reaches_every_site_and_drops_require_ema(tmp_path):
+    rc, out, err, _ = _dry(SH, tmp_path, env_extra={"R9E2_CKPT_NAME": "ckpt.pt"})
+    assert rc == 0, err
+    assert _raw_claims(out, "ckpt.pt") == [], out
+    rc, out, err, _ = _dry(SH, tmp_path, env_extra={"R9E2_CKPT_NAME": "a/b.pt"})
+    assert rc == 4 and "bare file name" in err
+
+
+@needs_bash
+@pytest.mark.parametrize("old,new", [
+    ('--ckpt "$RUN/$CK" --config "$RUN/config.json" --no-g0', '--ckpt "$RUN/model_ema.pt" --config "$RUN/config.json" --no-g0'),
+    ('--ckpt "$RUN2/$CK"', '--ckpt "$RUN2/model_ema.pt"'),
+    ('scripts/r9_e1_dump.py --ckpt "$RUN/$CK"', 'scripts/r9_e1_dump.py --ckpt "$RUN/model_ema.pt"'),
+    ('--ckpt "$RUN/$CK" --config "$RUN/config.json" --dump-dir "$MD/', '--ckpt "$RUN/model_ema.pt" --config "$RUN/config.json" --dump-dir "$MD/'),
+    ('need "$R/$CK" "$CKLAB"', 'need "$R/model_ema.pt" "$CKLAB"'),
+    ('${REQEMA[@]+"${REQEMA[@]}"}', '--require-ema'),
+])
+def test_RED_reverting_one_site_makes_the_raw_checks_fail(tmp_path, old, new):
+    rc, out, err, _ = _dry(_mutated(tmp_path, old, new), tmp_path, env_extra={"R9E2_CKPT_NAME": "ckpt.pt"})
+    assert rc == 0, err
+    assert _raw_claims(out, "ckpt.pt") != []

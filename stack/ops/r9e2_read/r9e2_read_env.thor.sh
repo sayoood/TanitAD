@@ -6,7 +6,7 @@ K2ARM="${1:?usage: source r9e2_read_env.thor.sh <K2 arm name>}"
 R=/home/nvidia/r8ns/r9e2
 export R9E2_K0_RUN="$R/runs/r9e2-K0"                              # [OK] the chain writes runs/r9e2-<ARM> (HYPHEN; MEASURED 2026-11-11 `ls runs/` = r9e2-K0 r9e2-K2M1N20). Was r9e2_K0 (underscore), a guess written before any run dir existed: a REAL read would not have found the checkpoint
 export R9E2_K2_RUN="$R/runs/r9e2-$K2ARM"                          # [OK] same naming (r9e2-K2M1N20 MEASURED 2026-11-11, training)
-export R9E2_OUT="$R/runs/E2_READ_$K2ARM"                          # output root under the chain's runs dir (created by the roll)
+export R9E2_OUT="${R9E2_OUT:-$R/runs/E2_READ_$K2ARM}"                        # output root under the chain's runs dir (created by the roll)
 export R9E2_TREE="${R9E2_TREE:-$R/read_tree_cf653ca4bb47_lfix_e77c39d4}"       # [OK] FROZEN READ TREE (2026-11-11) = K2M1N20's launch_tree cf653ca4bb47 + EXACTLY e77c39d4's refcv7_loader.py + r9_e1_dump.py (the T1v-history loader fix; blob sha1 verified on Thor; provenance in <tree>.provenance) + FlyWheels packages, built by r9e2_make_read_tree.sh; dry run 72 commands rc 0. Was read_tree_6d0e629f37a2.  ⚠️ RE-RUN that script on the NEW launch tree after the e2 chain restarts at a later tip, then export R9E2_TREE=<new read tree> before sourcing
 export R9E2_SPLIT=/home/nvidia/r8ns/r9dump/DEV_HOLD_SPLIT.json   # [OK] 12K (the roll checks sha256 ca5af020...)
 export R9E2_S2=/home/nvidia/r8ns/perc8/inputs/s2_windows.json     # [OK] 28K
