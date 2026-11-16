@@ -33,7 +33,8 @@ BASE_SHA256 = None            # pinned by the MM when the frozen file is copied 
 STRAT_LABELS_SHA256 = "8055a321df6db1725ea17abde2999d48bcb68d43f1a480a69ed42dd0cf184eff"
 NINE = ("--nav-source", "--nav-text-npz", "--nav-text-sha256", "--ctx-heads", "--w-ctx", "--ctx-labels", "--ctx-labels-sha256", "--ctx-lr-mult", "--ctx-detach")
 KINDS = ("C0", "N1", "S1")
-SEEDS = {"s0": {"base": "OBD-CTL_s0"}, "s1": {"base": "OBD-CTL_s1"}, "rep": {"base": "OBD-CTL_s0", "seed": "2"}}      # rep = init 0, bank s0, dagger-seed 0, seed 2 (OBD-NULL_rep's form)
+SEEDS = {"s0": {"base": "OBD-CTL_s0"}, "s1": {"base": "OBD-CTL_s1"}, "rep": {"base": "OBD-CTL_s0", "seed": "2"},      # rep = init 0, bank s0, dagger-seed 0, seed 2 (OBD-NULL_rep's form)
+         "s10": {"base": "OBD-CTL_s0", "seed": "10"}, "s11": {"base": "OBD-CTL_s1", "seed": "11"}}      # PREREG_V8F_STRAT1 SEEDS-DISAGREE: seed 10 = init 0 (bank s0), seed 11 = init 1 (bank s1), rep's form; PI go 2026-11-16
 RUN_STEPS = 3000
 MOVED = {"adapter": ("adapter", "pos", "time"), "S": ("read_s", "head_s"), "T": ("read_t", "trunk_t", "h_goal", "h_lat", "h_lon", "h_cons"), "O": ("read_o", "head_o"), "WM": ("wm.",)}
 

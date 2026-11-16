@@ -642,3 +642,20 @@ def test_both_evaluators_refuse_a_nav_source_mismatch_in_their_source():
         assert 'cfg.nav_source == "text" and not (a.nav_text_npz and a.nav_text_sha256)' in src and 'cfg.nav_source == "v9" and (a.nav_text_npz or a.nav_text_sha256)' in src
         assert 'D.nav_text_arrays(' in src and '"eval")' in src
 
+
+def test_seeds_disagree_arms_render_the_base_of_their_init_with_only_the_seed_changed(tmp_path):
+    """PREREG_V8F_STRAT1 SEEDS-DISAGREE: s10 = the s0 base (init 0, bank s0) with --seed 10; s11 = the s1 base with --seed 11; nothing else moves."""
+    import json as _json
+    import strat1_check as SC
+    base = {"OBD-CTL_s0": {"argv": ["--init-ckpt", "D:" + chr(92) + "tanitad" + chr(92) + "M2b_s0", "--seed", "0", "--dagger-seed", "0", "--out", "x"]},
+            "OBD-CTL_s1": {"argv": ["--init-ckpt", "D:" + chr(92) + "tanitad" + chr(92) + "M2b_s1", "--seed", "1", "--dagger-seed", "1", "--out", "x"]}}
+    p = tmp_path / "argvs.json"
+    p.write_text(_json.dumps(base), encoding="utf-8")
+    for kind in SC.KINDS:
+        for new_seed, ref, want in (("s10", "s0", "10"), ("s11", "s1", "11")):
+            a = SC.render(kind, new_seed, "/r", "/o", base_argvs=str(p))
+            b = SC.render(kind, ref, "/r", "/o", base_argvs=str(p))
+            assert SC.flag_value(a, "--seed") == want
+            assert SC.flag_value(b, "--seed") == ref[1:]
+            diff = [i for i, (x, y) in enumerate(zip(a, b)) if x != y]
+            assert len(a) == len(b) and [a[i - 1] for i in diff] == ["--seed"], (kind, new_seed, diff)
