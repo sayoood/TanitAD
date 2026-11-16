@@ -1,0 +1,414 @@
+{
+ "tool": "wprobe_score.py",
+ "tier": "T0 (representation read at the NOW frame)",
+ "evidence_class": "MEASURED (ours)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B=2000, seed 0 (F:\\TanitAD-scratch\\strat1\\read/tree/taniteval/taniteval/ci.py); 'another draw of EPISODES' only",
+ "constant_class": 0,
+ "meta": {
+  "eval_feat_diff_mean_abs_and_mean_abs": [
+   0.0018939058063551784,
+   0.1673663854598999
+  ],
+  "disjointness": {
+   "table_train_vs_eval": 0,
+   "train_cache_files_vs_eval": 0,
+   "train_cache_files_vs_grid_order": 0
+  },
+  "eval_cache_md5_equal": 0,
+  "skipped_clips": 0,
+  "n_train_windows": 36051,
+  "train_class_counts": [
+   30988,
+   831,
+   1647,
+   2585
+  ],
+  "smoke": false,
+  "eval_feat_mean_abs_diff_local_vs_pod": null,
+  "script_sha256": "330b8b727762b0094a166a6c9228ec12681b8b0d7a2309a07401d84c1c6ba626",
+  "chosen_epochs": {
+   "S1_s0": 8,
+   "S1_s1": 8
+  },
+  "holdout": {
+   "S1_s0": {
+    "2": 0.0913001248785903,
+    "4": 0.0931039267378938,
+    "8": 0.09463022061884285
+   },
+   "S1_s1": {
+    "2": 0.09116137088941312,
+    "4": 0.09546274455390602,
+    "8": 0.09796031635909541
+   }
+  },
+  "identity_s0_weather_argmax_agree": 1.0,
+  "identity_s0_max_abs_logit_diff": 1.9073486328125e-05,
+  "identity_s1_weather_argmax_agree": 1.0,
+  "identity_s1_max_abs_logit_diff": 1.33514404296875e-05
+ },
+ "arms": {
+  "S1_s0_real": {
+   "n_windows": 2399,
+   "n_episodes": 141,
+   "accuracy": 0.9358065860775323,
+   "balanced_accuracy": 0.8050013826138538,
+   "per_class_recall": [
+    0.9611084103062713,
+    0.7352941176470589,
+    0.5963302752293578,
+    0.9272727272727272
+   ],
+   "confusion": [
+    [
+     1977,
+     30,
+     16,
+     34
+    ],
+    [
+     14,
+     50,
+     2,
+     2
+    ],
+    [
+     42,
+     2,
+     65,
+     0
+    ],
+    [
+     11,
+     1,
+     0,
+     153
+    ]
+   ],
+   "constant_class": 0,
+   "constant_accuracy": 0.8574406002501042,
+   "model_minus_constant": {
+    "status": "OK",
+    "delta": 0.07836598582742815,
+    "lo": 0.0225,
+    "hi": 0.1305,
+    "separated": true,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "detects": true
+  },
+  "S1_s0_real_podenc": {
+   "n_windows": 2399,
+   "n_episodes": 141,
+   "accuracy": 0.9362234264276782,
+   "balanced_accuracy": 0.8051229188316468,
+   "per_class_recall": [
+    0.9615945551774429,
+    0.7352941176470589,
+    0.5963302752293578,
+    0.9272727272727272
+   ],
+   "confusion": [
+    [
+     1978,
+     30,
+     15,
+     34
+    ],
+    [
+     14,
+     50,
+     2,
+     2
+    ],
+    [
+     42,
+     2,
+     65,
+     0
+    ],
+    [
+     11,
+     1,
+     0,
+     153
+    ]
+   ],
+   "constant_class": 0,
+   "constant_accuracy": 0.8574406002501042,
+   "model_minus_constant": {
+    "status": "OK",
+    "delta": 0.07878282617757404,
+    "lo": 0.0229,
+    "hi": 0.1314,
+    "separated": true,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "detects": true
+  },
+  "S1_s0_R1_shuffle": {
+   "n_windows": 2399,
+   "n_episodes": 141,
+   "accuracy": 0.8574406002501042,
+   "balanced_accuracy": 0.25,
+   "per_class_recall": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "confusion": [
+    [
+     2057,
+     0,
+     0,
+     0
+    ],
+    [
+     68,
+     0,
+     0,
+     0
+    ],
+    [
+     109,
+     0,
+     0,
+     0
+    ],
+    [
+     165,
+     0,
+     0,
+     0
+    ]
+   ],
+   "constant_class": 0,
+   "constant_accuracy": 0.8574406002501042,
+   "model_minus_constant": {
+    "status": "OK",
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "separated": false,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "detects": false
+  },
+  "S1_s0_R2_randadapter": {
+   "n_windows": 2399,
+   "n_episodes": 141,
+   "accuracy": 0.9287203001250521,
+   "balanced_accuracy": 0.7946939219997651,
+   "per_class_recall": [
+    0.9581915410792416,
+    0.7941176470588235,
+    0.5779816513761468,
+    0.8484848484848485
+   ],
+   "confusion": [
+    [
+     1971,
+     10,
+     36,
+     40
+    ],
+    [
+     10,
+     54,
+     4,
+     0
+    ],
+    [
+     46,
+     0,
+     63,
+     0
+    ],
+    [
+     19,
+     6,
+     0,
+     140
+    ]
+   ],
+   "constant_class": 0,
+   "constant_accuracy": 0.8574406002501042,
+   "model_minus_constant": {
+    "status": "OK",
+    "delta": 0.07127969987494798,
+    "lo": 0.0171,
+    "hi": 0.1247,
+    "separated": true,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "detects": true
+  },
+  "S1_s1_real": {
+   "n_windows": 2399,
+   "n_episodes": 141,
+   "accuracy": 0.9387244685285535,
+   "balanced_accuracy": 0.7801891690788074,
+   "per_class_recall": [
+    0.9679144385026738,
+    0.6323529411764706,
+    0.5871559633027523,
+    0.9333333333333333
+   ],
+   "confusion": [
+    [
+     1991,
+     23,
+     12,
+     31
+    ],
+    [
+     20,
+     43,
+     3,
+     2
+    ],
+    [
+     37,
+     8,
+     64,
+     0
+    ],
+    [
+     10,
+     1,
+     0,
+     154
+    ]
+   ],
+   "constant_class": 0,
+   "constant_accuracy": 0.8574406002501042,
+   "model_minus_constant": {
+    "status": "OK",
+    "delta": 0.08128386827844936,
+    "lo": 0.0283,
+    "hi": 0.1326,
+    "separated": true,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "detects": true
+  },
+  "S1_s1_real_podenc": {
+   "n_windows": 2399,
+   "n_episodes": 141,
+   "accuracy": 0.9383076281784076,
+   "balanced_accuracy": 0.7800676328610145,
+   "per_class_recall": [
+    0.9674282936315022,
+    0.6323529411764706,
+    0.5871559633027523,
+    0.9333333333333333
+   ],
+   "confusion": [
+    [
+     1990,
+     23,
+     12,
+     32
+    ],
+    [
+     20,
+     43,
+     3,
+     2
+    ],
+    [
+     37,
+     8,
+     64,
+     0
+    ],
+    [
+     10,
+     1,
+     0,
+     154
+    ]
+   ],
+   "constant_class": 0,
+   "constant_accuracy": 0.8574406002501042,
+   "model_minus_constant": {
+    "status": "OK",
+    "delta": 0.08086702792830347,
+    "lo": 0.0283,
+    "hi": 0.1318,
+    "separated": true,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "detects": true
+  },
+  "S1_s1_R1_shuffle": {
+   "n_windows": 2399,
+   "n_episodes": 141,
+   "accuracy": 0.8574406002501042,
+   "balanced_accuracy": 0.25,
+   "per_class_recall": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "confusion": [
+    [
+     2057,
+     0,
+     0,
+     0
+    ],
+    [
+     68,
+     0,
+     0,
+     0
+    ],
+    [
+     109,
+     0,
+     0,
+     0
+    ],
+    [
+     165,
+     0,
+     0,
+     0
+    ]
+   ],
+   "constant_class": 0,
+   "constant_accuracy": 0.8574406002501042,
+   "model_minus_constant": {
+    "status": "OK",
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "separated": false,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "detects": false
+  }
+ },
+ "control_constant": {
+  "accuracy": 0.8574406002501042,
+  "constant_accuracy": 0.8574406002501042,
+  "delta": 0.0,
+  "pass": true
+ },
+ "label": "DETECTS(weather)-by-probe at both seeds",
+ "per_seed": {
+  "S1_s0": "DETECTS",
+  "S1_s1": "DETECTS"
+ },
+ "controls_ok": true
+}
