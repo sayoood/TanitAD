@@ -109,7 +109,8 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
                           metrics=[], summary=None, log=str(work / f"{mode}.log"), run_dir=None, wta_yaw_wrap=None, bank_len={}, nav_modules={},
                           field_calls=[], field_grads=[], field_first=None,
                           aux=None, aux_facts=None, aux_loss_calls=[], aux_loss_grads=[], aux_first=None, aux_tap_obs=[], aux_grads=[], aux_adam=None, opt_param_ids=None,
-                          sp_ptrs=[], sctx_ptr=None, scorer_in_width=None, ego4_abs_max=0.0, ego_col_grads=[])
+                          sp_ptrs=[], sctx_ptr=None, scorer_in_width=None, ego4_abs_max=0.0, ego_col_grads=[],
+                          step0=None, bank_objs=[])
     ap = T.build_parser()
     a, unknown = ap.parse_known_args(list(argv))
     cap.parser_unknown, cap.args = unknown, a
@@ -174,6 +175,9 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
                 cap.tf32 = bool(torch.backends.cuda.matmul.allow_tf32)
                 cap.device = next(cap.model.parameters()).device.type
                 cap.compiled = getattr(cap.model.backbone, "_compiled_call_impl", None) is not None
+                if getattr(a, "init_from", None):               # P5-C G-LIVE (f): the model as BUILT at step 0 (warm start applied, nothing trained), digested tensor by tensor
+                    import p5c_gate as PG
+                    cap.step0 = PG.step0_facts(cap.model, self, a.out)
                 raise Stop()
             return r
 
@@ -194,10 +198,14 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
             def __init__(self, *a_, **k_):
                 if name == "TargetBank" and arm_is("yaw_table_not_passed", arm):          # WP YAW arm: a call site that forgets to hand the declared table to the loader
                     k_.pop("ego_yaw_table", None)
+                if name == "TargetBank" and arm_is("traj_label_not_passed", arm):         # P5-C arm: a call site that forgets to hand the declared label table to the loader
+                    k_.pop("traj_label_table", None)
                 cap.banks.setdefault(name, []).append({"args": [plain(x) for x in a_], "kwargs": {k: plain(v) for k, v in k_.items()}})
                 super().__init__(*a_, **k_)
                 if hasattr(self, "scene_groups"):                       # the TargetBank: what the schedule is sized on (G-CLOCK)
                     cap.bank_len[name] = {"n_tuples": len(self.rows), "n_scenes": len(self.scene_groups)}
+                if name == "TargetBank":
+                    cap.bank_objs.append(self)                         # P5-C G-LIVE (h): the live train bank (with its table), probed on real rows
         W.__name__ = name
         if name == "TargetBank" and arm_is("yaw_override_removed", arm):
             # WP YAW arm: the flag is set and the table is LOADED, but the override line is gone -- slot 4 reaches the model as the bank has it (0.0).  Equivalent to deleting
@@ -292,7 +300,14 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
 
     def rec_warm(model, path):
         cap.warm = path
-        return ws0(model, path)
+        if arm_is("warm_not_loaded", arm):                # P5-C (f) regression arm: the declared --init-from is recorded but never loaded (the model keeps its fresh weights)
+            return {"path": path, "format": "refe-full-v1", "tensors": 0, "sha256": "0" * 64}
+        r_ = ws0(model, path)
+        if arm_is("warm_perturbed", arm):                 # P5-C (f) regression arm: the checkpoint loads, then ONE tensor is nudged by one ulp-scale step
+            with __import__("torch").no_grad():
+                k_ = sorted(model.state_dict())[0]
+                model.state_dict()[k_].add_(1e-3)
+        return r_
 
     def rec_snap(*a_, **k_):
         cap.bank_calls["bank_snapshot"] = cap.bank_calls.get("bank_snapshot", 0) + 1
@@ -507,6 +522,10 @@ DVB_KINDS = {
     # WP YAW (TanitAD-artifacts/yawrate_wp/PLAN.md): a REAL ego[4].  Its observed row is `ego_yaw_dvb_rows` (what EVERY TargetBank construction actually RECEIVED); its EFFECT is observed by G-LIVE
     # (`ego_yaw_live`: a non-zero gradient on ego_enc.0.weight[:, 4]; the unset control reads exactly 0.0).  Default OFF: an arm that means a real yaw rate NAMES --ego-yaw-table.
     "ego_yaw_table": "built",
+    # P5-C (scorer_gym_20261107/p5c/P5C_READINESS.md section 3): the WTA target is a tracker-aware label table, not the raw `traj`.  Its observed row is `traj_label_dvb_rows` (what EVERY TargetBank construction
+    # actually RECEIVED); its EFFECT is observed by test_traj_label_table.py (item[3] == the table label bit for bit through the real loader; flag-off == raw; the arm traj_label_not_passed must FAIL).
+    # Default OFF: an arm that means the label table NAMES --traj-label-table.  Held-out / eval banks never get it.
+    "traj_label_table": "built",
 }
 DVB_REASON = {"score_w": "weights the score BCE inside run(); observed through the live `score` term (G-LIVE), statically traced here",
               "log_every": "logging cadence", "out": "output directory", "resume": "supervised relaunch",
@@ -692,6 +711,51 @@ def ego_yaw_dvb_rows(a, b, profile=None) -> list:
     return rows
 
 
+def traj_label_dvb_rows(a, b, profile=None) -> list:
+    """G-DVB's rows for --traj-label-table (P5-C).  The BUILT side is what EVERY TargetBank construction actually RECEIVED (the BUILD capture wraps the class; --grow's per-epoch rebuild is a second
+    construction site, so a call site that forgets the kwarg shows here as a row, not as a silent raw-traj arm).  The profile MAY pin the table's content (`traj_label_sha256`): the file's own
+    sha256 is then compared with it, so a self-consistent table that is not the registered one is a launch blocker."""
+    declared = getattr(a, "traj_label_table", None) or None
+    rows = []
+    for i, tb in enumerate(b.banks.get("TargetBank") or []):
+        built = (tb.get("kwargs") or {}).get("traj_label_table")
+        rows.append({"dest": "traj_label_table", "flag": "--traj-label-table", "declared": declared, "built": built or None,
+                     "how": f"TargetBank(traj_label_table=) at construction #{i}", "ok": _close(declared, built or None)})
+    pin = (profile or {}).get("traj_label_sha256")
+    if declared and pin:
+        try:
+            got = hashlib.sha256(Path(declared).read_bytes()).hexdigest()
+        except OSError as e:
+            got = f"unreadable: {e}"
+        rows.append({"dest": "traj_label_table", "flag": "--traj-label-table", "declared": pin, "built": got, "how": "the table file's sha256 against the profile's registered pin",
+                     "ok": got == pin})
+    pol_pin = (profile or {}).get("traj_label_rank_policy")          # P5-C card 4.3 / 10.1: the table's DECLARED rank policy is what 4.3's rule decided (the MM fills the pin from the gate set's output), not what the file happens to say
+    if declared and pol_pin:
+        try:
+            import traj_label_table as _TLT
+            got_pol = _TLT.load(declared).meta.get("rank_policy")
+        except Exception as e:                                          # noqa: BLE001 -- an unloadable table is a red row, never a skip
+            got_pol = f"unloadable: {type(e).__name__}: {str(e)[:120]}"
+        rows.append({"dest": "traj_label_table", "flag": "--traj-label-table", "declared": pol_pin, "built": got_pol,
+                     "how": "the table's meta.rank_policy against the profile's registered traj_label_rank_policy", "ok": got_pol == pol_pin})
+    return rows
+
+
+def p5c_init_rows(a, profile=None) -> list:
+    """P5-C card 10.1 G-DVB `init_from`: the base checkpoint's file sha256 == the profile's registered `init_from_sha256` (P5C_BASE_SHA256: P7's final, or P6's 968a469d... under B-P6).
+    Only a profile that registers the pin is asked (every other profile's rows are unchanged); the registration itself is made mandatory by launch_gate.p5c_refusals, so an unfilled pin refuses
+    BEFORE any build and this row can never be the only line of defence."""
+    pin = (profile or {}).get("init_from_sha256")
+    declared = getattr(a, "init_from", None) or None
+    if not pin or not declared:
+        return []
+    try:
+        got = hashlib.sha256(Path(declared).read_bytes()).hexdigest()
+    except OSError as e:
+        got = f"unreadable: {e}"
+    return [{"dest": "init_from", "flag": "--init-from", "declared": pin, "built": got, "how": "the base checkpoint file's sha256 against the profile's registered init_from_sha256", "ok": got == pin}]
+
+
 def dvb_rows(a, b, s, field_min_coverage: float = FIELD_MIN_COVERAGE, profile=None) -> list:
     """{flag, declared, built, how, ok} for every observable lever.  `b` = BUILD capture (real levers), `s` = SMOKE capture or None."""
     from model import BACKBONES, REFeConfig
@@ -776,6 +840,8 @@ def dvb_rows(a, b, s, field_min_coverage: float = FIELD_MIN_COVERAGE, profile=No
     rows += field_dvb_rows(a, b, s, field_min_coverage)
     rows += aux_dvb_rows(a, b, s, profile)
     rows += ego_yaw_dvb_rows(a, b, profile)
+    rows += traj_label_dvb_rows(a, b, profile)
+    rows += p5c_init_rows(a, profile)
     return rows
 
 
@@ -2143,7 +2209,47 @@ def judge_ego_yaw(f: dict, probe: dict) -> list:
     return r
 
 
-def check_live(argv: list, cap, profile: dict, arm=None, rehearsal=False, control: bool = True) -> dict:
+def p5c_live_rows(cap, build_cap, profile) -> tuple:
+    """PREREG_P5C 10.2 (f) and (h) for a P5-C arm.  (f): the build capture's step-0 digest against the base file (and the registered pin).  (h): C1 only, on the smoke run's model and live train bank: the table must reach
+    item[3] and nothing else.  C0 / C0r: the live bank must carry NO table (the flag-off loader).  Returns (reasons, details)."""
+    import p5c_gate as PG
+    reasons, det = [], {}
+    path = getattr(cap.args, "init_from", None) if cap is not None and cap.args is not None else None
+    try:
+        base = PG.base_facts(path) if path else None
+    except Exception as e:                                                        # noqa: BLE001
+        base = None
+        reasons.append(f"(f) the base checkpoint could not be read: {type(e).__name__}: {e}")
+    step0 = getattr(build_cap, "step0", None)
+    if base is not None or not reasons:
+        reasons += PG.judge_warm_identity(step0, base, profile.get("init_from_sha256"))
+    det["warm"] = {"tensors": len(step0["tensors"]) if step0 else None, "opt_state_entries": step0.get("opt_state_entries") if step0 else None, "base_sha256": base.get("file_sha256") if base else None}
+    banks = list(getattr(cap, "bank_objs", []) or [])
+    if not banks:
+        return reasons + ["(h) the smoke run built no train bank to probe"], det
+    ds = banks[0]
+    if profile.get("p5c_arm") != "C1":
+        if ds.traj_label is not None:
+            reasons.append(f"(h) arm {profile.get('p5c_arm')} must not carry a label table, but the live train bank holds one ({ds.traj_label_sha256})")
+        det["isolation"] = "no table (control arm)"
+        return reasons, det
+    if ds.traj_label is None or cap.model is None:
+        return reasons + ["(h) C1's live train bank carries no label table (or the smoke model is gone): nothing to isolate"], det
+    import copy
+    raw = copy.copy(ds)
+    raw.traj_label, raw.traj_label_sha256, raw.traj_label_cov = None, None, None
+    idxs = PG.pick_rows(ds, 2)
+    if not idxs:
+        return reasons + ["(h) no row of the live bank has a table label differing from its raw traj"], det
+    try:
+        f = PG.isolation_facts(cap.model, ds, raw, idxs, yaw_wrap=(getattr(cap.args, "yaw_wrap", "on") == "on"))
+    except Exception as e:                                                        # noqa: BLE001
+        return reasons + [f"(h) the lever-isolation probe could not run: {type(e).__name__}: {e}"], det
+    det["isolation"] = f
+    return reasons + PG.judge_isolation(f), det
+
+
+def check_live(argv: list, cap, profile: dict, arm=None, rehearsal=False, control: bool = True, build_cap=None) -> dict:
     reasons, det = [], {}
     if cap.rc != 0:
         reasons.append(f"the SMOKE trainer run did not finish: rc={cap.rc} {str(cap.error or '')[-300:]}")
@@ -2239,6 +2345,10 @@ def check_live(argv: list, cap, profile: dict, arm=None, rehearsal=False, contro
             det["aux_reach"] = {k: (v if k in ("ran", "labelled", "tap", "score_to_head_grads_all_none") else {"loss": v["loss"], "groups": v["groups"]}) for k, v in ar.items()}
             if not reasons:
                 reasons += judge_aux_reach(ar, cap.args.w_aux_drv, cap.args.aux_drv_tap)
+    if profile.get("p5c_rules"):
+        rs_, dt_ = p5c_live_rows(cap, build_cap, profile)         # PREREG_P5C 10.2 (f) warm-start identity and (h) lever isolation on the real model
+        reasons += rs_
+        det["p5c"] = dt_
     return verdict("G-LIVE", reasons, det, arm=arm, rehearsal=rehearsal)
 
 
@@ -2580,7 +2690,7 @@ def check_clock(argv: list, b, profile: dict, arm=None, rehearsal=False) -> dict
                 reasons.append(f"step-0 bank has {bl.get('n_scenes')} scenes != registered {exp['epoch_len']}")
         # P7-WIRE-INTEGRATE-2: the bank's CONTENT.  A tuple count cannot tell two same-size banks apart; the trainer's own `targets_sha256` of the SAME files the build just loaded can.  Only a profile that
         # registers `targets_sha256_by_bank` (refe_p7) is asked; refe_p6 has no such key and takes none of these lines (its G-CLOCK evidence is byte-for-byte what it was).
-        want_sha, how_sha = clock_bank_sha256(argv, exp, required=bool(profile.get("p7_rules")))
+        want_sha, how_sha = clock_bank_sha256(argv, exp, required=bool(profile.get("p7_rules") or profile.get("p5c_rules")))
         if how_sha is not None:
             import gate_token as GT_
             tg = (GT_.flag_values(argv, "--targets") or [None])[0]

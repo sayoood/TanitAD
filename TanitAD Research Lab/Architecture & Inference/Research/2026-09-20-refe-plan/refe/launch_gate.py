@@ -428,6 +428,142 @@ def p7_refusals(prof: dict, argv: list) -> list:
     return out
 
 
+# ============================================================================================ P5-C (PREREG_P5C 10.1; PREREG_P5C_A1 Point 5): the REFe student fine-tuned on a tracker-aware label table
+# THREE profiles, one per ARM, cloned from refe_p6 / refe_p7 (neither is edited): `refe_p5c` = C1 (the label table), `refe_p5c_c0` = C0 (the matched raw-label fine-tune: the table FORBIDDEN),
+# `refe_p5c_c0r` = C0r (C0 with --seed 1: the card's CONDITIONAL replicate, PI approval needed before it is minted).  The arm is the PROFILE, so an arm cannot be launched as another by omitting a flag
+# (the table flag's default is OFF: a C1 argv that dropped it would read as a clean C0 -- the rls1 `--arm-name` lesson, here by construction).  What `p5c_refusals` asserts that a required-flag list cannot:
+#   * the argv's flag SET and every non-path lever equal the arm's template `p5c_argv(arm)`: argv(C1) - argv(C0) = {--traj-label-table, --out}; argv(C0r) - argv(C0) = {--seed, --out} (card 2, 10.1);
+#   * the PINS are REGISTERED before a minute is spent: the base checkpoint (`init_from_sha256`), and on C1 the label table (`traj_label_sha256`) and its rank policy (`traj_label_rank_policy`).
+#     They are FILLED BY THE MM once the real objects exist and are None here: a profile with an unfilled pin REFUSES (a pin that can be absent is a check that is silently off);
+#   * the schedule 2,000 steps (epochs 0), on the P7 bank registered by count AND content (P7_BANK_TUPLES / P7_TARGETS_SHA256, shared with refe_p7);
+#   * a fresh start: `--out` holds no ckpt_last.pt at MINT time (card 10.1 `resume`: a pre-seeded checkpoint would resume an old optimiser instead of the fresh one the card's symmetry argument needs).
+# NOT carried over from refe_p7, deliberately: the aux head and its store (card 3: OFF; AUX_HEAD_FLAGS forbidden) and G-RESERVE (it audits the five inputs INCLUDING the head's label store, which P5-C has not:
+# the bank is P7's reserve-free bank, pinned by content).  The G-DVB rows are gate_checks.traj_label_dvb_rows (table file sha256 + declared rank policy) and p5c_init_rows (base sha256); the substitution itself
+# is proved by test_traj_label_table.py (G-SUITE).  B-P6 (card 2.1) is `p5c_profile(arm, base="p6")`: the same arm without --ego-yaw-table (forbidden); it is NOT registered in PROFILES until the P7 verdict says so.
+P5C_STEPS = 2000
+P5C_BASE_SHA256 = "2613fc17b9e5d63342c9f42120c5612a6ec7061fda72f83dac46ddd2e70fd3fe"                    # FILLED BY THE MM: sha256 of the base model_final.pt (P7's final run/model_final.pt under B-P7)
+P5C_P6_BASE_SHA256 = "968a469d5b9abdd279aff19b8031c53e9fec0e2683092bff12cfa93be6a4d3d1"       # MEASURED (SG/p6base/PREREG_REP_P6.md section 0): P6's model_final.pt, the B-P6 base
+P5C_LABEL_TABLE_SHA256 = "3b198314721fc7e75e6bd0ca9b569b5b0a56ba25178e4fb63a94b215995637a2"             # FILLED BY THE MM: the sha256 the pod runner prints (P5C_LABEL_TABLE_SHA256=...), of the SELECTED label's table
+P5C_RANK_POLICY = "rank0"                    # FILLED BY THE MM: "all" | "rank0", the table's meta.rank_policy as the gate set decided it (PREREG_P5C 4.3)
+P5C_ARM_SEED = {"C1": 0, "C0": 0, "C0r": 1}
+P5C_PROFILE_NAME = {"C1": "refe_p5c", "C0": "refe_p5c_c0", "C0r": "refe_p5c_c0r"}
+P5C_PATH_FLAGS = ("--targets", "--images", "--calib", "--metric-cache", "--init-from", "--ego-yaw-table", "--traj-label-table", "--out", "--label-workers")      # presence only: a path or the pod's own derivation
+P5C_DEFAULT_PATHS = {"targets": "/workspace/data/refe_navtrain/train_grow_cmd_3c_p7", "images": "/workspace/data/navtrain_pixels",
+                     "calib": "/workspace/data/refe_p7/p7_reserve/calib/calib_table.json", "metric_cache": "/workspace/data/refe_navtrain/metric_cache",
+                     "init_from": "/workspace/data/refe_runs/p7_reserve_head/model_final.pt", "ego_yaw_table": "/workspace/data/refe_navtrain/ego_yaw_navtrain.json.gz",
+                     "traj_label_table": "/workspace/data/p5c_label/P5C_label_table.json.gz", "out_root": "/workspace/data/refe_runs", "label_workers": "13"}       # TEMPLATE paths: p7_pod.sh's; the real argv is diffed against P7's config.json at freeze (RUNBOOK_P5C.md)
+
+
+def p5c_argv(arm: str, base: str = "p7", paths: dict | None = None) -> list:
+    """The arm's launch argv TEMPLATE: P7's ARGS (p7_pod.sh:346) with the card's edits (3): no head, --init-from, 2,000 steps at lr 5e-5, --seed named, and C1 alone carries --traj-label-table.
+    B-P6 (`base="p6"`) drops --ego-yaw-table.  The paths are placeholders unless `paths` overrides them; the gate compares FLAGS and LEVERS, never these paths."""
+    if arm not in P5C_ARM_SEED or base not in ("p7", "p6"):
+        raise ValueError(f"arm {arm!r} / base {base!r}")
+    P = dict(P5C_DEFAULT_PATHS, **(paths or {}))
+    a = ["--backbone", "vitl16", "--targets", P["targets"], "--images", P["images"], "--calib", P["calib"], "--metric-cache", P["metric_cache"], "--scorer-sees-trunk",
+         "--yaw-wrap", "off", "--nav-mode", "command", "--labeller", "online", "--label-workers", P["label_workers"], "--label-chunks", "2",
+         "--init-from", P["init_from"], "--epochs", "0", "--steps", str(P5C_STEPS), "--epoch-unit", "scenes", "--batch", "4", "--accum", "64", "--lr", "5e-5", "--weight-decay", "0.01",
+         "--amp", "bf16", "--score-w", "0.1", "--w-field", "0.0"]
+    if base == "p7":
+        a += ["--ego-yaw-table", P["ego_yaw_table"]]
+    if arm == "C1":
+        a += ["--traj-label-table", P["traj_label_table"]]
+    a += ["--seed", str(P5C_ARM_SEED[arm]), "--tf32", "--compile", "--workers", "2", "--log-every", "1", "--ckpt-every-min", "20", "--out", f"{P['out_root']}/p5c_{arm.lower()}", "--resume"]
+    return a
+
+
+def p5c_profile(arm: str, base: str = "p7") -> dict:
+    """The arm's profile (see the block comment).  `base="p6"` is the card's fallback (no yaw table); it is NOT registered below."""
+    p6, p7 = PROFILES["refe_p6"], PROFILES["refe_p7"]
+    req = {k: v for k, v in p6["required_flags"].items() if k not in ("--epochs", "--lr")}
+    req.update({"--epochs": "0", "--steps": str(P5C_STEPS), "--lr": "5e-5", "--init-from": None, "--seed": str(P5C_ARM_SEED[arm]), "--w-field": "0.0"})
+    if base == "p7":
+        req.update(P7_YAW_REQUIRED)
+    if arm == "C1":
+        req["--traj-label-table"] = None
+    forb = tuple(f for f in p6["forbidden_flags"] if f != "--init-from") + AUX_HEAD_FLAGS
+    if arm != "C1":
+        forb += ("--traj-label-table",)
+    if base == "p6":
+        forb += ("--ego-yaw-table",)
+    data = ("--targets", "--images", "--calib", "--metric-cache", "--init-from") + (("--ego-yaw-table",) if base == "p7" else ()) + (("--traj-label-table",) if arm == "C1" else ())
+    suite = p6["suite"] + [{"script": "test_p7_head_wiring.py", "args": ["--static"], "token": "ZZP7HEAD_PASS"},
+                           {"script": "test_ego_yaw.py", "args": ["--fast"], "token": "ZZEGOYAW_PASS"},
+                           {"script": "test_traj_label_table.py", "args": ["--fast"], "token": "ZZTRAJLABEL_PASS"},
+                           {"script": "test_p5c_profile.py", "args": ["--fast"], "token": "ZZP5CPROF_PASS"},
+                           {"script": "test_p5c_live.py", "args": ["--fast"], "token": "ZZP5CLIVE_PASS"},          # G-LIVE (f) warm-start identity + (h) lever isolation on the real model
+                           {"script": "test_p5c_postgate.py", "args": ["--fast"], "token": "ZZP5CPOST_PASS"},      # the post-training G-ADAM gate's tests
+                           {"script": "test_p5c_chain.py", "args": [], "token": "ZZP5CCHAIN_PASS"}]               # the pod chain's stub-sandbox tests
+    prof = {**p6, "name": P5C_PROFILE_NAME[arm] + ("" if base == "p7" else "_b6"), "p5c_rules": True, "p5c_arm": arm, "p5c_base": base, "data_flags": data, "suite": suite,
+            "forbidden_flags": forb, "required_flags": req, "live_terms": P6_TERMS,
+            "expect_schedule": {"epochs": 0, "steps": P5C_STEPS, "epoch_len": P7_SCENES, "n_tuples_by_bank": dict(P7_BANK_TUPLES), "targets_sha256_by_bank": dict(P7_TARGETS_SHA256)},
+            "init_from_sha256": (P5C_BASE_SHA256 if base == "p7" else P5C_P6_BASE_SHA256)}
+    if arm == "C1":
+        prof["traj_label_sha256"] = P5C_LABEL_TABLE_SHA256
+        prof["traj_label_rank_policy"] = P5C_RANK_POLICY
+    return prof
+
+
+for _arm in ("C1", "C0", "C0r"):
+    PROFILES[P5C_PROFILE_NAME[_arm]] = p5c_profile(_arm)
+
+
+def _p5c_hex64(x) -> bool:
+    return isinstance(x, str) and re.fullmatch(r"[0-9a-f]{64}", x) is not None
+
+
+def p5c_refusals(prof: dict, argv: list) -> list:
+    """What `required_flags` cannot say for a P5-C arm (see the block comment above): registered pins, the arm's flag set and levers, the schedule and bank, a fresh `--out`."""
+    out, name, arm, base = [], prof["name"], prof.get("p5c_arm"), prof.get("p5c_base", "p7")
+    if arm not in P5C_ARM_SEED:
+        return [f"{name}: p5c_rules without a known arm ({arm!r})"]
+    if not _p5c_hex64(prof.get("init_from_sha256")):
+        out.append(f"{name}: the base checkpoint's sha256 is not REGISTERED (init_from_sha256 = {prof.get('init_from_sha256')!r}; P5C_BASE_SHA256): the MM fills it from the sealed P7 final model_final.pt; an unpinned base is never launched from")
+    if arm == "C1":
+        if not _p5c_hex64(prof.get("traj_label_sha256")):
+            out.append(f"{name}: the label table's sha256 is not REGISTERED (traj_label_sha256 = {prof.get('traj_label_sha256')!r}; P5C_LABEL_TABLE_SHA256): the MM fills it from the pod runner's output")
+        if prof.get("traj_label_rank_policy") not in ("all", "rank0"):
+            out.append(f"{name}: the table's rank policy is not REGISTERED (traj_label_rank_policy = {prof.get('traj_label_rank_policy')!r}; P5C_RANK_POLICY): 'all' or 'rank0', as the gate set decided it (PREREG_P5C 4.3)")
+    elif prof.get("traj_label_sha256") or prof.get("traj_label_rank_policy"):
+        out.append(f"{name}: a table pin on a profile that must carry NO table")
+    exp = prof.get("expect_schedule") or {}
+    if not (exp.get("epochs") == 0 and exp.get("steps") == P5C_STEPS and exp.get("epoch_len") == P7_SCENES):
+        out.append(f"{name}: the registered schedule {exp.get('epochs')} epochs / {exp.get('steps')} steps / epoch_len {exp.get('epoch_len')} is not the card's 2,000 steps over {P7_SCENES} scenes")
+    tg = (GT.flag_values(argv, "--targets") or [None])[0]
+    bank = Path(str(tg).rstrip("/\\")).name if tg else None
+    for key, what in (("n_tuples_by_bank", "tuple count"), ("targets_sha256_by_bank", "content sha256")):
+        reg = exp.get(key)
+        if not isinstance(reg, dict) or bank not in reg:
+            out.append(f"{name}: --targets {tg!r} names bank {bank!r}, which has no registered {what} ({key}): the P7 bank is pinned by count AND content")
+    if exp.get("targets_sha256_by_bank") and not all(_p5c_hex64(h) for h in exp["targets_sha256_by_bank"].values()):
+        out.append(f"{name}: a registered targets_sha256 is not 64 lowercase hex digits")
+    # the arm's flag SET and every non-path lever == the template: argv(C1) - argv(C0) = {--traj-label-table, --out}; argv(C0r) - argv(C0) = {--seed, --out}
+    want = {f: v for f, v in GT.flag_pairs(p5c_argv(arm, base))}
+    got: dict = {}
+    for f, v in GT.flag_pairs(argv):
+        got.setdefault(f, []).append(v)
+    for f in sorted(set(want) - set(got) - {"--resume"}):
+        out.append(f"{name}: the argv does not carry {f}, which arm {arm}'s argv carries (the arm's lever set is exactly the card's: nothing dropped)")
+    for f in sorted(set(got) - set(want) - {"--resume"}):
+        out.append(f"{name}: the argv carries {f} {' '.join(got[f][0])}, which arm {arm}'s argv does not (the arm differs from its pair by the card's lever alone)")
+    for f, vs in sorted(got.items()):
+        if len(vs) > 1:
+            out.append(f"{name}: {f} is carried {len(vs)} times")
+        elif f in want and f not in P5C_PATH_FLAGS and f != "--resume":
+            w, g = want[f], vs[0]
+            same = len(w) == len(g) and all((float(a) == float(b)) if re.fullmatch(r"-?[0-9.eE+-]+", a) and re.fullmatch(r"-?[0-9.eE+-]+", b) else a == b for a, b in zip(w, g))
+            if not same:
+                out.append(f"{name}: arm {arm} fixes {f} {' '.join(w)}; the argv has {f} {' '.join(g)}")
+    if arm == "C1":
+        tbl = (GT.flag_values(argv, "--traj-label-table") or [None])[0]
+        if not tbl:
+            out.append(f"{name}: C1 needs --traj-label-table <the pinned table>")
+    ow = (GT.flag_values(argv, "--out") or [None])[0]
+    if ow and (Path(str(ow)) / "ckpt_last.pt").exists():
+        out.append(f"{name}: --out {ow} already holds ckpt_last.pt: a P5-C arm starts FRESH (fresh AdamW; a seeded checkpoint would resume an old optimiser; card 10.1 `resume`)")
+    return out
+
+
 # the replicate = refe_p2 (same checks, same G-P2GATE sub-check, same data flags, same forbidden flags, same P2 levers asserted) + `--seed 1` required + the WHOLE argv pinned + its own chain test in G-SUITE
 PROFILES["refe_p2rep"] = {**PROFILES["refe_p2"], "name": "refe_p2rep", "suite": SUITE + [{"script": "test_p2rep_chain.py", "token": "ZZTEST_PASS"}],
                           "required_flags": {**PROFILES["refe_p2"]["required_flags"], "--seed": str(P2REP_SEED)}, "pinned_argv": tuple(P2REP_ARGV)}
@@ -1070,6 +1206,8 @@ def profile_refusals(prof: dict, argv: list) -> list:
     out += pinned_argv_refusals(prof, argv)
     if prof.get("p7_rules"):
         out += p7_refusals(prof, argv)
+    if prof.get("p5c_rules"):
+        out += p5c_refusals(prof, argv)
     if prof.get("field_arm"):
         got = GT.flag_values(argv, "--w-field")
         try:
@@ -1720,7 +1858,7 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
     if "G-CKPT" in want:
         _log_gpu_reserved("before G-CKPT")
         ckpt_ev = C.check_ckpt(s_argv, work / "ckpt", prof2, arm=arm, rehearsal=rehearsal)
-    need_b = any(c in want for c in ("G-DVB", "G-CLOCK"))
+    need_b = any(c in want for c in ("G-DVB", "G-CLOCK")) or bool("G-LIVE" in want and prof.get("p5c_rules"))        # P5-C: G-LIVE (f) reads the build capture's step-0 digest
     need_s = any(c in want for c in ("G-LIVE", "G-EVAL", "G-DVB", "G-LIVE-LAB"))
     b = C.instrumented_run(b_argv, mode="build", work=work / "build", arm=arm) if need_b else None
     if b is not None:
@@ -1731,7 +1869,7 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
     if "G-DVB" in want:
         emit(C.check_dvb(b_argv, b, s, prof2, arm=arm, rehearsal=rehearsal))
     if "G-LIVE" in want:
-        emit(C.check_live(s_argv, s, prof2, arm=arm, rehearsal=rehearsal))
+        emit(C.check_live(s_argv, s, prof2, arm=arm, rehearsal=rehearsal, build_cap=b))
     if "G-CLOCK" in want:
         emit(C.check_clock(b_argv, b, prof2, arm=arm, rehearsal=rehearsal))
     if "G-EVAL" in want:
@@ -1758,6 +1896,7 @@ def _free(cap, deep: bool = False) -> None:
     import gc
     cap.model = None
     cap.first_batch = None
+    cap.bank_objs = []
     if deep:            # everything else that can pin the model's parameters or its CUDA blocks; the metrics stay (G-LIVE-LAB reads them)
         cap.opt = cap.sched = None
         cap.loaders, cap.samplers = [], []

@@ -38,6 +38,7 @@ from model import BACKBONES, REFe, REFeConfig, param_report, wta_loss  # noqa: E
 from field_loss import field_loss  # noqa: E402  (L_field, eval/PREREG_AUX_FIELD_LOSS_DRAFT.md: only called when --w-field > 0; the label reader is imported lazily by TargetBank)
 import ckpt_io  # noqa: E402
 import nav_command as NC  # noqa: E402
+import traj_label_table as TLT  # noqa: E402  (P5-C: the row -> Tc20s trajectory label table behind --traj-label-table; stdlib only, nothing is read unless the flag is set)
 import ego_yaw_table as EYT  # noqa: E402  (WP YAW: the token -> nuPlan ego_pose.angular_rate_z table behind --ego-yaw-table; imports only the stdlib, and nothing is read unless the flag is set)
 import aux_drivable_head as AUX  # noqa: E402  (P7.1, SPEC_AUX_DRIVABLE_HEAD.md: the TRAINING-ONLY drivable-area head. Built ONLY under --aux-drv; the module imports no map API and no label-store code at import time)
 
@@ -648,7 +649,7 @@ class TargetBank(Dataset):
                  sizes: dict | None = None, onpolicy=None, online: bool = False,
                  field_labels: str | None = None, field_shuffle_seed: int | None = None,
                  aux_labels: str | None = None, aux_shuffle_seed: int | None = None,
-                 ego_yaw_table: str | None = None):
+                 ego_yaw_table: str | None = None, traj_label_table: str | None = None):
         self.scorer = scorer
         # P6 / D1: the ONLINE labeller labels the model's own proposals, so each item also returns its row index (the trainer needs the row's
         # (log_name, token, rank, aug) to find the metric-cache parts). Off => the tuple is the unchanged nine elements.
@@ -847,6 +848,25 @@ class TargetBank(Dataset):
             self.ego_yaw_cov = {"rows": len(self.rows), "covered": len(self.rows), "table_tokens": len(self.ego_yaw)}
             print(f"  EGO YAW (WP YAW): ego[{EYT.EGO_YAW_SLOT}] <- {EYT.YAW_SCALE:g} x {EYT.FIELD} for {len(self.rows):,}/{len(self.rows):,} rows ({len(self.ego_yaw):,} table tokens, "
                   f"sha256 {self.ego_yaw_sha256[:12]}, {ymeta.get('units', '?')})  <- {ego_yaw_table}")
+        # ⭐ P5-C (scorer_gym_20261107/p5c/P5C_READINESS.md section 3): train on the tracker-aware Tc20s LABEL instead of each row's raw `traj`.  `traj_label_table=None` (the default) is the unchanged
+        # loader.  With a table, __getitem__ replaces slot 3 (the WTA target) by the table's label for the ROW (log, token, rank), proven to be computed from THIS row's own traj by its sha256.  A row
+        # the table does not carry KEEPS its raw traj (coverage is printed and kept in `traj_label_cov`; the table may declare a required coverage and then REFUSES below it); a row whose
+        # (log, token, rank) IS in the table under a different traj sha256, and a label that is not [T, 3] / finite / on the raw row's yaw branch, REFUSE here, at construction, over the FINAL rows.
+        self.traj_label = None
+        self.traj_label_sha256 = None
+        self.traj_label_cov = None
+        if traj_label_table:
+            try:
+                tlt = TLT.load(traj_label_table)
+                res = TLT.apply_to_rows(tlt, self.rows)
+            except (OSError, ValueError, TLT.TableRefused) as e:
+                raise SystemExit(f"TargetBank: --traj-label-table {traj_label_table} is refused: {e}")
+            self.traj_label = res["labels"]              # {row index: label [T][3]}; absent index = keeps the raw traj
+            self.traj_label_sha256 = tlt.sha256
+            self.traj_label_cov = res["coverage"]
+            c_ = self.traj_label_cov
+            print(f"  TRAJ LABEL (P5-C): slot 3 <- table label for {c_['covered']:,}/{c_['rows']:,} rows ({100.0 * c_['coverage']:.3f} %), {c_['kept_raw']:,} keep the raw traj, "
+                  f"{c_['differs_from_raw']:,} labels differ from raw {c_['differs_by_rank']} (rank_policy {c_['rank_policy']}; {tlt.meta.get('label_name') or '?'}; {c_['table_keys']:,} table keys, table sha256 {self.traj_label_sha256})  <- {traj_label_table}")
         if self.field is not None:
             # coverage of the FINAL rows (after every drop above) by the label store, keyed by (log_name, token): a row the store lacks reads zeros + valid False = exactly 0 loss
             have = set(self.field.all_keys())
@@ -963,10 +983,12 @@ class TargetBank(Dataset):
             gl = torch.tensor(NC.onehot(NC.command_of_row(r)), dtype=torch.float32)       # P6 / D6: the one-hot command rides in the `goal` slot
         else:
             gl = torch.tensor(r["goal"], dtype=torch.float32)[:2 * c.n_goal_points]
+        # P5-C: the WTA target.  Without --traj-label-table (self.traj_label is None) this is `torch.tensor(r["traj"])`, the unchanged expression; with it, a covered row's table label.
+        tgt_t = torch.tensor(self.traj_label[i] if (self.traj_label is not None and i in self.traj_label) else r["traj"], dtype=torch.float32)
         item = (img,
                 ego_t,
                 gl,
-                torch.tensor(r["traj"], dtype=torch.float32),
+                tgt_t,
                 ct, cg, cm, ci, cal)
         item = item + (torch.tensor(i, dtype=torch.long),) if self.online else item
         if self.field is not None:
@@ -1132,6 +1154,9 @@ def run_identity(a, ds, scorer_bank, frozen_sha256) -> dict:
     if a.aux_drv_labels:
         # P7.1: the head's label store CONTENT, beside the path in `args` -- a key present ONLY on a head run, so every other run's identity is unchanged
         ident["aux_store_sha256"] = ds.aux.manifest["store_sha256"] if getattr(ds, "aux", None) is not None else None
+    if getattr(a, "traj_label_table", None):
+        # P5-C: the label table's CONTENT (sha256 of the file), never its path -- a key present ONLY on a P5-C run, so every other run's identity is unchanged. A resume under a different table is refused.
+        ident["traj_label_sha256"] = getattr(ds, "traj_label_sha256", None)
     if getattr(a, "ego_yaw_table", None):
         # WP YAW: the yaw table's CONTENT (sha256 of the file), never its path -- a key present ONLY on a yaw run, so every other run's identity is unchanged. A resume under a different table is refused.
         ident["ego_yaw_sha256"] = getattr(ds, "ego_yaw_sha256", None)
@@ -1410,6 +1435,7 @@ def run(a) -> int:
                     limit=a.overfit_n if a.overfit else None, spread=a.spread,
                     scorer=scorer_bank if scorer_bank.n_rows else None,
                     ego_yaw_table=a.ego_yaw_table or None,                    # WP YAW (None = the unchanged loader)
+                    traj_label_table=a.traj_label_table or None,              # P5-C (None = the unchanged loader)
                     max_missing_frac=a.max_missing_images, calib=a.calib, sizes=grow_snap,
                     onpolicy=op_bank, online=online,
                     field_labels=a.field_labels, field_shuffle_seed=a.field_shuffle_seed,
@@ -1544,6 +1570,11 @@ def run(a) -> int:
                 "n_cameras": cfg.n_cameras, "cameras": list(cfg.cameras)}
         if cfg.nav_mode != "goal":
             meta["nav_mode"] = cfg.nav_mode         # ckpt_io.config_for_checkpoint: the planner builds the SAME model (absent => goal, every checkpoint before P6)
+        if a.traj_label_table:
+            # P5-C: a checkpoint trained on table labels says so (the table's sha256 + coverage); absent => the WTA target was the bank's raw traj (every checkpoint before P5-C)
+            meta["traj_label_table_sha256"] = ds.traj_label_sha256
+            meta["traj_label_coverage"] = ds.traj_label_cov
+            meta["traj_label_rank_policy"] = ds.traj_label_cov.get("rank_policy")      # all | rank0 | identity: what the table DECLARED and apply_to_rows enforced on this bank's rows
         if a.ego_yaw_table:
             # WP YAW: a checkpoint trained with a REAL ego[4] says so (refe/ego_yaw.py reads these at deploy to feed the same yaw rate); absent => ego[4] was 0.0 in training (every checkpoint before WP YAW)
             meta["ego_yaw"] = EYT.YAW_TAG
@@ -1670,6 +1701,7 @@ def run(a) -> int:
                        limit=a.overfit_n if a.overfit else None, spread=a.spread,
                        scorer=sb if sb.n_rows else None,
                        ego_yaw_table=a.ego_yaw_table or None,
+                       traj_label_table=a.traj_label_table or None,
                        max_missing_frac=a.max_missing_images, calib=a.calib, sizes=snap,
                        onpolicy=ob, field_labels=a.field_labels, field_shuffle_seed=a.field_shuffle_seed,
                        aux_labels=a.aux_drv_labels or None, aux_shuffle_seed=a.aux_drv_shuffle_seed)
@@ -2240,6 +2272,12 @@ def build_parser() -> argparse.ArgumentParser:
                     help="a refe/ego_yaw_table.py table (gzipped JSON {lidar_pc token: ego_pose.angular_rate_z, rad/s CCW+}). Each sample's ego[4] (yaw_rate) is then set to YAW_SCALE (10.0) x the table value for the row's "
                          "token; ego[5] (steering) is left as the bank has it. A bank row whose token is missing from the table REFUSES the launch. Absent = ego[4] is whatever the bank holds (0.0). "
                          "The checkpoint's meta then carries ego_yaw='nuplan_angular_rate_z' and the table sha256.")
+    # ---- P5-C (scorer_gym_20261107/p5c/P5C_READINESS.md section 3): the WTA target is the tracker-aware Tc20s label. The default (None) is the trainer without the feature, bit for bit.
+    ap.add_argument("--traj-label-table", default=None,
+                    help="a refe/traj_label_table.py table (gzipped JSON {log|token|rank|sha256(row traj): [T, 3] label}). Each TRAIN row's WTA target (item[3]) is then the table's label for the row; a row the table does "
+                         "not carry keeps its raw traj (coverage printed), a row whose traj sha256 differs from the one the label was computed from REFUSES the launch. The held-out / eval banks never get it. "
+                         "NOT used by the scorer / on-policy paths (train.py reads r['traj'] there at the scorer-bank and on-policy-bank loaders; refe_p6 / refe_p7 forbid those flags). "
+                         "Absent = the raw traj. The checkpoint's meta then carries traj_label_table_sha256 and the coverage.")
     # ---- P7.1 (SPEC_AUX_DRIVABLE_HEAD.md section 4): the training-only drivable-area head. EVERY default builds nothing; an arm that means the head NAMES --aux-drv AND --w-aux-drv > 0.
     AUX.add_aux_args(ap)
     ap.add_argument("--preflight", action="store_true",

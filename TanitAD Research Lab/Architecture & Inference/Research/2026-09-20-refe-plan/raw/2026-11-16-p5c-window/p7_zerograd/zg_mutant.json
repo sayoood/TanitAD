@@ -1,0 +1,82 @@
+{
+  "gate": "zerograd_gate",
+  "gate_version": "1",
+  "verdict": "FAIL",
+  "model_key": null,
+  "optimizer_key": "opt",
+  "optimizer": {
+    "n_groups": 1,
+    "n_registered": 320,
+    "n_with_state_entry": 319,
+    "n_trained": 318,
+    "n_case_a_no_state": 1,
+    "n_case_b_zero_state": 1,
+    "step_max": 9075,
+    "ckpt_step": null
+  },
+  "alignment": {
+    "mode": "param_names",
+    "unique": true,
+    "n_alignments": 1.0,
+    "param_names_source": "file",
+    "param_names_rejected": null,
+    "n_model_float_entries": 0,
+    "n_entries_excluded": 0,
+    "exclude_entries": [
+      "(.*\\.)?(running_mean|running_var|num_batches_tracked)"
+    ],
+    "note": "",
+    "n_ids_name_ambiguous": 0,
+    "n_ids_unnamed": 0
+  },
+  "offenders": [
+    {
+      "id": 195,
+      "case": "b_zero_state",
+      "names": [
+        "traj_head.0.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        256,
+        256
+      ],
+      "numel_lo": 65536,
+      "numel_hi": 65536,
+      "allowed_by": null
+    },
+    {
+      "id": 319,
+      "case": "a_no_state",
+      "names": [
+        "aux_drv.head.out.bias"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": null,
+      "numel_hi": null,
+      "allowed_by": null
+    }
+  ],
+  "allowed": [],
+  "unused_allow": [],
+  "untrained_numel": {
+    "offending_lo": null,
+    "offending_hi": null,
+    "allowed_lo": 0,
+    "allowed_hi": 0
+  },
+  "controls": [],
+  "info": {
+    "partial_grad": []
+  },
+  "ckpt": "mutant_ckpt.pt",
+  "ckpt_size_bytes": 257651244,
+  "load": {
+    "weights_only": false,
+    "mmap": true,
+    "earlier_load_failures": [
+      "weights_only=True mmap=True: UnpicklingError: Weights only load failed. This file can still be loaded, to do so you have two options, \u001b[1mdo those steps only if you trust the source of the checkpoint\u001b[0m. \n"
+    ]
+  }
+}
