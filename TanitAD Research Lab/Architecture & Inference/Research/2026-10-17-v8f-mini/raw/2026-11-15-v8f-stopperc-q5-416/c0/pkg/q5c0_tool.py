@@ -145,15 +145,24 @@ def ref_meta(i):
 
 
 def manifest_with_meta(pdir, meta_dict):
-    names = ["E.npy", "v40.npy", "v160.npy", "mean.npy", "y.npy", "clip.npy", "ws.npy", "eid.npy", "meta.json", "sample.json"]
-    lines = []
-    for nm in names:
-        if nm == "meta.json":
-            h = hashlib.sha256(json.dumps(meta_dict, indent=1, sort_keys=True).encode("utf-8")).hexdigest()
-        else:
-            h = sha256_file(os.path.join(pdir, nm))
-        lines.append(f"{h}  {nm}\n")
-    return hashlib.sha256("".join(lines).encode("utf-8")).hexdigest()
+    """The pulled MANIFEST.sha256 with ONLY its meta.json line swapped for the hash of the banked meta (serialised as box 2 wrote it).
+    MM fix 2026-11-16: box 2 writes meta.json and MANIFEST.sha256 in Windows text mode (CRLF). The first version rebuilt both with LF, so the
+    rebuilt hash could never equal the banked one (C0 FAIL on 4/4 shards while every data file was byte-equal: MEASURED, MM check, the manifest
+    with only the elapsed_s text changed hashes to the banked manifest_sha256 on all 4 shards). Every data line must still match the file on disk."""
+    raw_meta = open(os.path.join(pdir, "meta.json"), "rb").read()
+    nl = b"\r\n" if b"\r\n" in raw_meta else b"\n"
+    mb = json.dumps(meta_dict, indent=1, sort_keys=True).encode("utf-8").replace(b"\n", nl)
+    if raw_meta.endswith(nl) and not mb.endswith(nl):
+        mb += nl
+    man = open(os.path.join(pdir, "MANIFEST.sha256"), "rb").read()
+    h_meta = hashlib.sha256(raw_meta).hexdigest().encode()
+    if man.count(h_meta) != 1:
+        return "MANIFEST-META-LINE-MISSING"
+    for line in man.decode("utf-8").splitlines():
+        h, nm = line.split("  ", 1)
+        if nm != "meta.json" and sha256_file(os.path.join(pdir, nm)) != h:
+            return f"DATA-FILE-MISMATCH {nm}"
+    return hashlib.sha256(man.replace(h_meta, hashlib.sha256(mb).hexdigest().encode())).hexdigest()
 
 
 def c0check(state, base, out):
