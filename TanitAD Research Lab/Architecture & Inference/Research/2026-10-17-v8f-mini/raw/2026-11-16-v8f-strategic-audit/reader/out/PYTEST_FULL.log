@@ -1,0 +1,116 @@
+EE.................E.................................................... [ 83%]
+..............                                                           [100%]
+=================================== ERRORS ====================================
+________ ERROR at setup of test_a_reduction_bit_identical_to_plantest _________
+
+    @pytest.fixture(scope="module")
+    def real():
+        """M2b s0 (2,2), PLANTEST's windows and TRAIN prior (zero training; priors fitted on TRAIN windows only)."""
+        m, cfg, ck = D.load_model(D.CK["M2b_s0"])
+        st = m.wm.stack
+>       trZ, trA = D.trainset_from_latents_pt(D.TRAIN16, "M2b_s0")
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_hwm_plan.py:94: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+hwm_data.py:41: in trainset_from_latents_pt
+    L = P.load_latents(path, tag)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\plantest\plantest_lib.py:191: in load_latents
+    L = torch.load(path, weights_only=False)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\serialization.py:1530: in load
+    with _open_file_like(f, "rb") as opened_file:
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\serialization.py:795: in _open_file_like
+    return _open_file(name_or_buffer, mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <torch.serialization._open_file object at 0x00000274FA6F56D0>
+name = 'F:\\TanitAD-scratch\\strategic\\build\\src/../wmact/latents_train.pt'
+mode = 'rb'
+
+    def __init__(self, name: str | os.PathLike[str], mode: str) -> None:
+>       super().__init__(open(name, mode))  # noqa: SIM115
+                         ^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\strategic\\build\\src/../wmact/latents_train.pt'
+
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\serialization.py:776: FileNotFoundError
+_______________ ERROR at setup of test_a_mutations_each_go_red ________________
+
+    @pytest.fixture(scope="module")
+    def real():
+        """M2b s0 (2,2), PLANTEST's windows and TRAIN prior (zero training; priors fitted on TRAIN windows only)."""
+        m, cfg, ck = D.load_model(D.CK["M2b_s0"])
+        st = m.wm.stack
+>       trZ, trA = D.trainset_from_latents_pt(D.TRAIN16, "M2b_s0")
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_hwm_plan.py:94: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+hwm_data.py:41: in trainset_from_latents_pt
+    L = P.load_latents(path, tag)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\plantest\plantest_lib.py:191: in load_latents
+    L = torch.load(path, weights_only=False)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\serialization.py:1530: in load
+    with _open_file_like(f, "rb") as opened_file:
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\serialization.py:795: in _open_file_like
+    return _open_file(name_or_buffer, mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <torch.serialization._open_file object at 0x00000274FA6F56D0>
+name = 'F:\\TanitAD-scratch\\strategic\\build\\src/../wmact/latents_train.pt'
+mode = 'rb'
+
+    def __init__(self, name: str | os.PathLike[str], mode: str) -> None:
+>       super().__init__(open(name, mode))  # noqa: SIM115
+                         ^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\strategic\\build\\src/../wmact/latents_train.pt'
+
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\serialization.py:776: FileNotFoundError
+_______ ERROR at setup of test_h_geometry_is_read_from_the_built_stack ________
+
+    @pytest.fixture(scope="module")
+    def real():
+        """M2b s0 (2,2), PLANTEST's windows and TRAIN prior (zero training; priors fitted on TRAIN windows only)."""
+        m, cfg, ck = D.load_model(D.CK["M2b_s0"])
+        st = m.wm.stack
+>       trZ, trA = D.trainset_from_latents_pt(D.TRAIN16, "M2b_s0")
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_hwm_plan.py:94: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+hwm_data.py:41: in trainset_from_latents_pt
+    L = P.load_latents(path, tag)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\plantest\plantest_lib.py:191: in load_latents
+    L = torch.load(path, weights_only=False)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\serialization.py:1530: in load
+    with _open_file_like(f, "rb") as opened_file:
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\serialization.py:795: in _open_file_like
+    return _open_file(name_or_buffer, mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <torch.serialization._open_file object at 0x00000274FA6F56D0>
+name = 'F:\\TanitAD-scratch\\strategic\\build\\src/../wmact/latents_train.pt'
+mode = 'rb'
+
+    def __init__(self, name: str | os.PathLike[str], mode: str) -> None:
+>       super().__init__(open(name, mode))  # noqa: SIM115
+                         ^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\strategic\\build\\src/../wmact/latents_train.pt'
+
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\serialization.py:776: FileNotFoundError
+=========================== short test summary info ===========================
+ERROR test_hwm_plan.py::test_a_reduction_bit_identical_to_plantest - FileNotF...
+ERROR test_hwm_plan.py::test_a_mutations_each_go_red - FileNotFoundError: [Er...
+ERROR test_hwm_plan.py::test_h_geometry_is_read_from_the_built_stack - FileNo...
+83 passed, 3 errors in 46.49s
