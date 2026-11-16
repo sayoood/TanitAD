@@ -1,0 +1,32 @@
+.................................F                                       [100%]
+================================== FAILURES ===================================
+____________________ test_defaults_reproduce_the_a3_module ____________________
+
+W = {'tmp': WindowsPath('F:/tanitad_scratch/mm_a33chk/tmp/pytest-of-Admin/pytest-1/test_defaults_reproduce_the_a30'), 'ban... 'token': 'b2', 'rank': 1, 'sim_hz': 10, ...}, {'log_name': 'logC', 'token': 'c1', 'rank': 1, 'sim_hz': 10, ...}], ...}
+
+    def test_defaults_reproduce_the_a3_module(W):
+        """rekey / provenance / tb0r with no A3.3 argument give the A3 module's outputs byte for byte"""
+        import importlib.util
+        base = os.environ.get("P5C_A3_RJ5_BASE", os.path.join(HERE, "..", "..", "base", "p5c_rj5_path.py"))
+        spec = importlib.util.spec_from_file_location("p5c_rj5_path_a3", base)
+        P0 = importlib.util.module_from_spec(spec)
+>       spec.loader.exec_module(P0)
+
+test_p5c_a33_rj5.py:205: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+<frozen importlib._bootstrap_external>:755: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:892: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000020E95256CF0>
+path = 'F:\\tanitad_scratch\\mm_a33chk\\a33w\\a3\\..\\..\\base\\p5c_rj5_path.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\tanitad_scratch\\mm_a33chk\\a33w\\a3\\..\\..\\base\\p5c_rj5_path.py'
+
+<frozen importlib._bootstrap_external>:950: FileNotFoundError
+=========================== short test summary info ===========================
+FAILED test_p5c_a33_rj5.py::test_defaults_reproduce_the_a3_module - FileNotFo...
+1 failed, 33 passed in 5.10s

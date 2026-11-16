@@ -1,0 +1,19 @@
+.............F.                                                          [100%]
+================================== FAILURES ===================================
+_____________ test_defaults_are_byte_identical_to_the_a32_module ______________
+
+W = namespace(bank={'log': ['2021.06.14.17.26.26_veh-38_05455_05749', '2021.06.14.17.26.26_veh-38_05455_05749', '2021.06.2...21.10.05.04.03.05_veh-50_01466_01790|e8c23aae687e5c60|0', '2021.10.05.04.03.05_veh-50_01466_01790|fb5943411cd45bf6|0'])
+
+    def test_defaults_are_byte_identical_to_the_a32_module(W):
+        """no A3.3 argument: gates.json and table_meta_fields.json of the A3.3 module == the A3.2 module's, for the same inputs"""
+>       assert os.path.exists(BASE_GATES), BASE_GATES
+E       AssertionError: F:\tanitad_scratch\mm_a33chk\a33w\a1\..\..\base\p5c_table_gates.py
+E       assert False
+E        +  where False = <built-in function _path_exists>('F:\\tanitad_scratch\\mm_a33chk\\a33w\\a1\\..\\..\\base\\p5c_table_gates.py')
+E        +    where <built-in function _path_exists> = <module 'ntpath' (frozen)>.exists
+E        +      where <module 'ntpath' (frozen)> = os.path
+
+test_p5c_a33_gates.py:245: AssertionError
+=========================== short test summary info ===========================
+FAILED test_p5c_a33_gates.py::test_defaults_are_byte_identical_to_the_a32_module
+1 failed, 14 passed in 28.00s

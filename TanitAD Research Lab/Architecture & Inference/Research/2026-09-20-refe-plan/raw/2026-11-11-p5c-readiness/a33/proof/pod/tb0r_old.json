@@ -1,0 +1,66 @@
+{
+ "bar": "A3 TB-0 on RJ5 inputs: Tc20s max abs diff <= 1e-09 (R-A) AND P5-R R-TOL-1/2/3 (R-B) per rank, on every dev-box RJ5 row (n == 16133, every dev row's traj sha == the fed traj's)",
+ "coverage_ok": true,
+ "gates_module_sha256": "718290ce656457c7ca1d7b78c09ab8706835ee49a8910ae0984dc9328117bab4",
+ "id": "TB-0r",
+ "n_dev_records": 16133,
+ "n_dev_traj_sha_not_fed": 0,
+ "p5r": {
+  "criteria": {
+   "R-TOL-1": "sim8 identical >= 99.5% of common rows",
+   "R-TOL-2": "per-row max abs diff: median <= 0.001 and p99 <= 0.005",
+   "R-TOL-3": "TB-6 acc/hr ratio within +-0.01 of the dev-box ratio on the SAME common rows (row-matched; verdict.json is context only) and sim8-fail rate within +-0.25 pp of the dev-box EVAL value"
+  },
+  "failed_criteria": [],
+  "max_abs_diff": 0.3350045654323309,
+  "n_common_rows": 16133,
+  "n_control_ok_missing_in_table": 0,
+  "n_control_rows": 16133,
+  "n_control_rows_not_in_bank": 0,
+  "ok": true,
+  "per_rank": {
+   "0": {
+    "R-TOL-1": true,
+    "R-TOL-2": true,
+    "R-TOL-3": true,
+    "frac_sim8_identical": 1.0,
+    "n_common_rows": 16133,
+    "n_control_rows": 16133,
+    "n_sim8_identical": 16133,
+    "p99_estimator": "numpy.percentile linear, over per-row max abs label difference (x, y, yaw)",
+    "rowmax_max": 0.3350045654323309,
+    "rowmax_median": 4.607655751165396e-06,
+    "rowmax_p99": 0.0018288074761033044,
+    "sim8_fail_rate_dev_eval": 0.005578627657596231,
+    "sim8_fail_rate_diff_pp": 0.0,
+    "sim8_fail_rate_pod": 0.005578627657596231,
+    "tb6_diff_acc": -8.395160537855162e-07,
+    "tb6_diff_hr": -3.3759641748787317e-09,
+    "tb6_ratio_acc": 1.1578398994224002,
+    "tb6_ratio_hr": 1.385782882774263,
+    "tb6_ref_acc": 1.157840738938454,
+    "tb6_ref_hr": 1.3857828861502273,
+    "tb6_ref_source": "recomputed with learn() from the stored control labels and the bank trajectories"
+   },
+   "1": {
+    "n_common_rows": 0,
+    "n_control_rows": 0,
+    "note": "no EVAL control row of this rank in the table"
+   }
+  }
+ },
+ "schema": "p5c-a3-rj5-path-v1",
+ "status": "FAIL",
+ "tc20s": {
+  "n": 16133,
+  "n_common_rows": 16133,
+  "n_control_logs": 198,
+  "n_control_ok_missing_in_table": 0,
+  "n_sim8_compared": 0,
+  "n_sim8_verdict_differs": 0,
+  "n_traj_sha_mismatch": 0,
+  "status": "FAIL",
+  "tol": 1e-09,
+  "value": 2.547964894628052e-09
+ }
+}
