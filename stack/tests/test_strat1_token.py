@@ -36,7 +36,7 @@ def _w(p, data):
 def _junit(d, results):
     os.makedirs(d, exist_ok=True)
     cases = "".join(f'<testcase classname="t.mod" name="{n}">' + ("" if s == "pass" else "<failure/>") + "</testcase>" for n, s in results.items())
-    open(os.path.join(d, "shard0.xml"), "w").write(f"<testsuites><testsuite>{cases}</testsuite></testsuites>")
+    open(os.path.join(d, "shard0.xml"), "w", encoding="utf-8").write(f"<testsuites><testsuite>{cases}</testsuite></testsuites>")
 
 
 @pytest.fixture
@@ -54,7 +54,7 @@ def rig(tmp_path):
     rep = {sp: {"G-CLOCK-NAV_pass": True, "G-CLOCK-NAV_regression_arm_plus_travelled": {"pass": False}} for sp in ("train", "eval")}
     rep["navtext_nav_sha256"] = C.sha_file(nav)
     nav_report = os.path.join(inp, "strat1", "navtext_nav_report.json")
-    json.dump(rep, open(nav_report, "w"))
+    json.dump(rep, open(nav_report, "w", encoding="utf-8"))
     ctx = _w(os.path.join(inp, "ctx.npz"), b"ctxbytes")
     bank = os.path.join(inp, "bank")
     _w(os.path.join(bank, "bank.json"), b'{"b": 1}')
@@ -68,11 +68,11 @@ def rig(tmp_path):
     _junit(str(tmp_path / "jb"), {"a": "pass", "b": "pass", "c": "fail"})
     _junit(str(tmp_path / "jn"), {"a": "pass", "b": "pass", "c": "fail", "d": "pass"})
     suite = str(tmp_path / "gsuite_result.json")
-    json.dump(C.suite_compare(str(tmp_path / "jb"), str(tmp_path / "jn"), COMMIT, "cdbff971"), open(suite, "w"))
+    json.dump(C.suite_compare(str(tmp_path / "jb"), str(tmp_path / "jn"), COMMIT, "cdbff971"), open(suite, "w", encoding="utf-8"))
     runs = str(tmp_path / "runs")
     rd = os.path.join(runs, "S1_s0")
     os.makedirs(os.path.join(rd, "gate"))
-    json.dump(toks, open(os.path.join(rd, "argv.json"), "w"))
+    json.dump(toks, open(os.path.join(rd, "argv.json"), "w", encoding="utf-8"))
     sc = _w(os.path.join(rd, "gate", "selfcheck.json"), b'{"declared_vs_built": "PASS"}')
     b, bad = C.binding("S1", toks, root, COMMIT, suite, nav_report=nav_report)
     assert bad == []
@@ -91,22 +91,22 @@ def _refused(rig):
 def test_untampered_passes_and_trainer_gets_exact_argv(rig):
     assert C.token_problems(os.path.join(rig["rd"], "gate", "gate_token.json"), "S1", rig["toks"], rig["root"], COMMIT, rig["suite"], nav_report=rig["nav_report"]) == []
     assert C.run_arm("S1_s0", "S1", rig["a"]) == 0
-    assert json.load(open(os.path.join(rig["out"], "ran_argv.json"))) == rig["toks"]
+    assert json.load(open(os.path.join(rig["out"], "ran_argv.json"), encoding="utf-8")) == rig["toks"]
 
 
 def test_tampered_argv_byte_refuses(rig):
     p = os.path.join(rig["rd"], "argv.json")
-    s = open(p).read()
+    s = open(p, encoding="utf-8").read()
     assert "49.6969" in s
-    open(p, "w").write(s.replace("49.6969", "49.6960"))
+    open(p, "w", encoding="utf-8").write(s.replace("49.6969", "49.6960"))
     _refused(rig)
 
 
 def test_tampered_argv_other_flag_refuses(rig):
     p = os.path.join(rig["rd"], "argv.json")
-    t = json.load(open(p))
+    t = json.load(open(p, encoding="utf-8"))
     t[t.index("--seed") + 1] = "1"
-    json.dump(t, open(p, "w"))
+    json.dump(t, open(p, "w", encoding="utf-8"))
     _refused(rig)
 
 
@@ -126,18 +126,18 @@ def test_missing_token_refuses(rig):
 
 def test_edited_token_body_refuses(rig):
     p = os.path.join(rig["rd"], "gate", "gate_token.json")
-    t = json.load(open(p))
+    t = json.load(open(p, encoding="utf-8"))
     t["commit"] = "0" * 40
-    json.dump(t, open(p, "w"))
+    json.dump(t, open(p, "w", encoding="utf-8"))
     _refused(rig)
 
 
 def test_hand_written_token_refuses(rig):
     p = os.path.join(rig["rd"], "gate", "gate_token.json")
-    t = json.load(open(p))
+    t = json.load(open(p, encoding="utf-8"))
     t["written_by"] = "me"
     t["body_sha256"] = C.body_sha(t)
-    json.dump(t, open(p, "w"))
+    json.dump(t, open(p, "w", encoding="utf-8"))
     _refused(rig)
 
 
@@ -172,20 +172,20 @@ def test_suite_regression_blocks_the_binding(rig):
     r = C.suite_compare(str(rig["tmp"] / "jb"), str(rig["tmp"] / "jn2"), COMMIT, "cdbff971")
     assert r["n_regressions"] == 1 and r["regressions"] == ["t.mod::a"] and r["fail_on_both"] == ["t.mod::c"]
     p = str(rig["tmp"] / "gs2.json")
-    json.dump(r, open(p, "w"))
+    json.dump(r, open(p, "w", encoding="utf-8"))
     _, bad = C.binding("S1", rig["toks"], rig["root"], COMMIT, p)
     assert any("regressions" in x for x in bad)
 
 
 def test_nav_report_failure_refuses(rig):
-    r = json.load(open(rig["nav_report"]))
+    r = json.load(open(rig["nav_report"], encoding="utf-8"))
     r["train"]["G-CLOCK-NAV_pass"] = False
-    json.dump(r, open(rig["nav_report"], "w"))
+    json.dump(r, open(rig["nav_report"], "w", encoding="utf-8"))
     _refused(rig)
 
 
 def test_suite_hand_edited_result_is_caught(rig):
-    r = json.load(open(rig["suite"]))
+    r = json.load(open(rig["suite"], encoding="utf-8"))
     r["written_by"] = "me"
-    json.dump(r, open(rig["suite"], "w"))
+    json.dump(r, open(rig["suite"], "w", encoding="utf-8"))
     _refused(rig)
