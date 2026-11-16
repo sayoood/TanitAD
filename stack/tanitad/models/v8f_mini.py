@@ -150,8 +150,22 @@ LEAD_HUBER_DELTA = 0.1                     # in gap / 40 units (= 4 m): the card
 AUX_TOKEN_DIM = 3                          # [v_hat / LEVEL_SCALE, sigmoid(presence logit), gap_hat]
 LEAD_KEY_PREFIXES = ("lead_head.", "e_lead.")
 AUX_KEY_PREFIXES = ("e_aux.",)
+#: PREREG_V8F_STRAT1 (`--ctx-heads`, `--w-ctx`, `--ctx-detach`, `--nav-source`): the CONTEXT head, a third vision-only head (mean of the CURRENT frame's adapted tokens -> MLP(d, d, 41)) that reads five detected strategic-information
+#: variables. ``off`` (default) builds nothing = every earlier arm, bit for bit. The logits go to the loss and the evaluator ONLY: they never reach S, T, O, ``e_code``, ``e_ck`` or any goal path (pinned by ``ctx_isolation_problems``).
+CTX_VARS = ("country", "weather", "surface", "illumination", "period_of_day")   # order FROZEN = LABEL_SPEC section 2
+CTX_N = (25, 4, 3, 4, 5)                  # = len(vocab_<var>) of strat_labels_table.npz (sha256 8055a321...); a test pins it
+CTX_DIM = sum(CTX_N)                      # 41
+CTX_VAR_W = (1.0, 1.0, 0.5, 1.0, 1.0)     # surface at half weight (borderline label, LABEL_SPEC); a constant, not a flag
+CTX_TWILIGHT_ID = 3                       # illumination id masked in the loss (card: 0/9 recalled)
+CTX_KEY_PREFIXES = ("ctx_head.",)
+CTX_FORBIDDEN_NAMES = LEVEL_FORBIDDEN_NAMES + ("ctx_y", "nav_source", "country", "hour", "month", "platform")
+CTX_ALLOWED_KEYS = frozenset({"frame_ok"})
+CTX_INIT_SEED = 20261116
+NAV_SOURCES = ("v9", "text")
+CTX_HEAD_MODES = ("off", "on")
+
 #: every state-dict key a declared lever may ADD to an older checkpoint's key set (load_init_ckpt: EXACTLY these may be fresh)
-NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + ("e_stok.",)      # PREREG_V8F_OTBAND adds the strategic-token embedding
+NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + ("e_stok.",) + CTX_KEY_PREFIXES      # PREREG_V8F_OTBAND adds the strategic-token embedding
 #: identifiers the lead head's own code (``V8FMini._lead``) and the aux-token assembly (``V8FMini._aux_in``) must not mention (the level list + the lead labels): the head is VISION ONLY
 LEAD_FORBIDDEN_NAMES = LEVEL_FORBIDDEN_NAMES + ("lead_y", "lead_has", "lead_near", "lead_gap_h", "s_h", "pose_now")
 LEAD_ALLOWED_KEYS = frozenset({"frame_ok"})
@@ -242,6 +256,10 @@ class V8FMiniConfig:
     lead_head: str = "off"             # PREREG_LEVELHEAD_A2 (`--lead-head`): off = nothing built (every earlier arm, bit for bit); on = the vision-only lead head (presence + gap) + O's lead conditioning (LEAD_HEAD_MODES)
     w_lead: float = 0.0                # PREREG_LEVELHEAD_A2 (`--w-lead`): the weight of BCE(presence) + Huber(gap_hat) in the total. Must be > 0 with the head on and exactly 0.0 with it off (checked by the launch gate)
     aux_cond: str = "add"              # PREREG_LEVELHEAD_A2 (`--aux-cond`): how O reads the head outputs: add (e_level / e_lead ADDED to the ego token, zero-init) | token (ONE extra conditioning token, replaces both additive paths)
+    ctx_heads: str = "off"             # PREREG_V8F_STRAT1 (`--ctx-heads`): off = nothing built (every earlier arm, bit for bit); on = the vision-only context head (CTX_VARS, CTX_DIM logits)
+    w_ctx: float = 0.0                 # PREREG_V8F_STRAT1 (`--w-ctx`): the weight of the weighted-mean context CE in the total. > 0 iff the head is on, exactly 0.0 iff off (checked by the trainer's bad_ctx)
+    ctx_detach: str = "off"            # PREREG_V8F_STRAT1 (`--ctx-detach`): on = the head reads the adapter tokens DETACHED (the ctx loss then cannot move the shared adapter)
+    nav_source: str = "v9"             # PREREG_V8F_STRAT1 (`--nav-source`): a DATA lever (v9 = the join's nav, text = the router-text nav); the model never reads it, the checkpoint records it (as window_start)
     w_level: float = 0.0               # PREREG_V8F_LEVEL (`--w-level`): the weight of Huber(v_hat, logged speed) in the total. Must be > 0 with the head on and exactly 0.0 with it off (checked by the launch gate: a head with no loss, or a weight with no head, is refused)
 
     @property
@@ -275,6 +293,14 @@ class V8FMiniConfig:
             raise ValueError(f"w_level must be a finite number >= 0, got {self.w_level!r}")
         if self.lead_head not in LEAD_HEAD_MODES:
             raise ValueError(f"lead_head must be one of {LEAD_HEAD_MODES}, got {self.lead_head!r}")
+        if self.ctx_heads not in CTX_HEAD_MODES:
+            raise ValueError(f"ctx_heads must be one of {CTX_HEAD_MODES}, got {self.ctx_heads!r}")
+        if self.ctx_detach not in CTX_HEAD_MODES:
+            raise ValueError(f"ctx_detach must be one of {CTX_HEAD_MODES}, got {self.ctx_detach!r}")
+        if not (math.isfinite(self.w_ctx) and self.w_ctx >= 0.0):
+            raise ValueError(f"w_ctx must be a finite number >= 0, got {self.w_ctx!r}")
+        if self.nav_source not in NAV_SOURCES:
+            raise ValueError(f"nav_source must be one of {NAV_SOURCES}, got {self.nav_source!r}")
         if self.aux_cond not in AUX_COND_MODES:
             raise ValueError(f"aux_cond must be one of {AUX_COND_MODES}, got {self.aux_cond!r}")
         if not (math.isfinite(self.w_lead) and self.w_lead >= 0.0):
@@ -868,6 +894,11 @@ class V8FMini(nn.Module):
         self.e_stok = None
         if cfg.stok_dim > 0:                                               # PREREG_V8F_OTBAND: the strategic token into T (a new conditioning token of run_t); built LAST, default (non-zero) init: it must carry signal from step 0
             self.e_stok = nn.Linear(cfg.stok_dim + 1, d)
+        self.ctx_head = None
+        if cfg.ctx_heads == "on":                                          # PREREG_V8F_STRAT1: built LAST under a forked RNG: every module above and the global stream after it are the off model's
+            with torch.random.fork_rng(devices=[]):
+                torch.manual_seed(CTX_INIT_SEED)
+                self.ctx_head = _mlp(d, d, CTX_DIM)
         self.p_gt = 1.0
 
     # ---- helpers -------------------------------------------------------------------------------------------
@@ -923,6 +954,13 @@ class V8FMini(nn.Module):
         ok = self._at(b["frame_ok"], last)
         lead_in = torch.where(ok[:, None], torch.stack([torch.sigmoid(logit.detach()), gap_hat.detach()], -1), torch.zeros_like(o))
         return logit, gap_hat, lead_in
+
+    def _ctx(self, b, adapt: Tensor, last: Tensor) -> Tensor:
+        """PREREG_V8F_STRAT1: the context logits [B, CTX_DIM] from the CURRENT frame's vision tokens. VISION ONLY (pinned by :func:`ctx_head_source_problems` and :func:`assert_ctx_head_vision_only`)."""
+        tok = self._at(adapt, last)
+        if self.cfg.ctx_detach == "on":
+            tok = tok.detach()
+        return self.ctx_head(tok.mean(1)).float()
 
     def _aux_in(self, b, adapt: Tensor, last: Tensor) -> Tensor:
         """PREREG_LEVELHEAD_A2 (``--aux-cond token``): the [B, 3] input of ``e_aux`` = ``[v_hat / LEVEL_SCALE (0 without the level head), sigmoid(presence logit), gap_hat (both 0 without the lead head)]``, detached,
@@ -1033,6 +1071,8 @@ class V8FMini(nn.Module):
             out["level_v"] = self._level(b, adapt, last_now)[0]
         if self.lead_head is not None:                                  # PREREG_LEVELHEAD_A2: (presence logit, gap_hat) from the CURRENT tick frame's vision tokens (for the loss); O recomputes the same values inside run_o
             out["lead_logit"], out["lead_gap"] = self._lead(b, adapt, last_now)[:2]
+        if self.ctx_head is not None:                                   # PREREG_V8F_STRAT1: logits for the loss and the evaluator ONLY (never an input of S, T, O)
+            out["ctx_logits"] = self._ctx(b, adapt, last_now)
         # ---- S at its tick
         ck_s = self.run_s(b, adapt, last_s)
         out["ckpt"] = ck_s
@@ -1209,6 +1249,19 @@ class V8FMini(nn.Module):
             T["lead_bce"] = (bce * lhas).sum() / lhas.sum().clamp_min(1.0)
             T["lead_huber"] = (hub * lnear).sum() / lnear.sum().clamp_min(1.0)
             T["lead"] = T["lead_bce"] + T["lead_huber"]
+        if cfg.ctx_heads == "on":                                    # PREREG_V8F_STRAT1: computed ONLY when the head is built (off = no new tensor op, no new T key = the tip, bit for bit)
+            if "ctx_y" not in batch:
+                raise ValueError("ctx_heads on but the batch carries no ctx_y: the trainer stages it (ctx_stage) before any ego stage")
+            y = batch["ctx_y"].long()                                # [B, 5], -1 = masked
+            fok = batch["frame_ok"][:, -1]
+            num, den, o = 0.0, 0.0, 0
+            for v, (n, w) in enumerate(zip(CTX_N, CTX_VAR_W)):
+                lg, t = out["ctx_logits"][:, o:o + n], y[:, v]
+                m = (t >= 0) & fok
+                ce = F.cross_entropy(lg, t.clamp_min(0), reduction="none")
+                T[f"ctx/{CTX_VARS[v]}"] = (ce * m).sum() / m.sum().clamp_min(1)
+                num, den, o = num + w * T[f"ctx/{CTX_VARS[v]}"], den + w, o + n
+            T["ctx"] = num / den
         # consistency penalties
         lim = limit_ms_from_onehot(batch["limit"], batch["limit_ok"])
         if cfg.consistency:
@@ -1242,6 +1295,7 @@ class V8FMini(nn.Module):
         total = total + cfg.w_tac_traj * T["tac"] if cfg.w_tac_traj > 0.0 else total
         total = total + cfg.w_level * T["level"] if cfg.level_head == "on" else total          # PREREG_V8F_LEVEL: ONE line (a mutation deletes it); head off adds nothing: the tip's total
         total = total + cfg.w_lead * T["lead"] if cfg.lead_head == "on" else total             # PREREG_LEVELHEAD_A2: ONE line (a mutation deletes it); head off adds nothing: the tip's total
+        total = total + cfg.w_ctx * T["ctx"] if cfg.ctx_heads == "on" else total               # PREREG_V8F_STRAT1: ONE line (a mutation deletes it); head off adds nothing: the tip's total
         if cfg.consistency:
             total = total + cfg.w_pen * sum(T[f"pen_{r}"] for r in RULES) + cfg.w_pen_self * sum(T[f"pens_{r}"] for r in RULES)
         if self.wm is not None:
@@ -1290,6 +1344,8 @@ class V8FMini(nn.Module):
             g["AUX"] = [self.e_aux]
         if self.e_stok is not None:
             g["STOK"] = [self.e_stok]                                               # PREREG_V8F_OTBAND: G-LIVE then requires its gradient
+        if self.ctx_head is not None:
+            g["CTX"] = [self.ctx_head]                                              # PREREG_V8F_STRAT1
         return g
 
     def built_levers(self) -> dict:
@@ -1340,6 +1396,10 @@ class V8FMini(nn.Module):
             lv["w_op"], lv["w_tac_traj"] = cfg.w_op, cfg.w_tac_traj
         if self.e_stok is not None:
             lv["stok_dim"] = int(self.e_stok.in_features) - 1
+        if self.ctx_head is not None:                                      # PREREG_V8F_STRAT1: present ONLY with the head built (an off model keeps the tip's key set)
+            lv["ctx_heads"], lv["w_ctx"], lv["ctx_detach"] = "on", cfg.w_ctx, cfg.ctx_detach
+            lv["ctx_dim"] = int(self.ctx_head[2].out_features)
+            lv["ctx_vision_only_source"] = not ctx_head_source_problems()
         if self.lead_head is not None or self.e_aux is not None:           # the BUILT wiring, read back by the gate (absent = the additive default with no head: a token declared with no head builds nothing and is refused)
             lv["aux_cond"] = "token" if self.e_aux is not None else "add"
             lv["aux_vision_only_source"] = not aux_source_problems()
@@ -1581,3 +1641,56 @@ def assert_aux_vision_only(model: V8FMini, batch: dict) -> dict:
         raise AssertionError(f"the aux token's assembly names non-vision inputs: {src}")
     rec = _vision_only_run(model, batch, lambda b, adapt, last: model._aux_in(b, adapt, last), LEAD_ALLOWED_KEYS | LEVEL_ALLOWED_KEYS, "aux token input")
     return {**rec, "source_problems": src}
+
+
+def ctx_head_source_problems(fn=None) -> list:
+    """PREREG_V8F_STRAT1 admissibility, STATIC half: the identifiers of ``V8FMini._ctx``'s CODE that name an ego, nav, limit, code, label or metadata input (:data:`CTX_FORBIDDEN_NAMES`) -- empty = the head's code reads vision only."""
+    return _forbidden_in(V8FMini._ctx if fn is None else fn, CTX_FORBIDDEN_NAMES)
+
+
+def assert_ctx_head_vision_only(model: V8FMini, batch: dict) -> dict:
+    """PREREG_V8F_STRAT1 admissibility (binding: labels may use ego, inference is vision-only): ``ctx_logits`` is a function of the VISION tokens alone. Raises AssertionError unless (1) :func:`ctx_head_source_problems`
+    is empty; (2) running ``model._ctx`` on a key-guarded batch READS only :data:`CTX_ALLOWED_KEYS`; (3) the logits are IDENTICAL (bit for bit) when every non-vision batch key is replaced, and DIFFERENT when ``feats`` is."""
+    if model.ctx_head is None:
+        raise AssertionError("assert_ctx_head_vision_only: the model has no ctx head")
+    src = ctx_head_source_problems(type(model)._ctx)
+    if src:
+        raise AssertionError(f"the ctx head's code names non-vision inputs: {src}")
+    rec = _vision_only_run(model, batch, lambda b, adapt, last: model._ctx(b, adapt, last), CTX_ALLOWED_KEYS, "ctx head")
+    return {**rec, "source_problems": src}
+
+
+#: the outputs that must not move when the ctx head's weights are perturbed (the head feeds no planner or goal path)
+CTX_ISOLATED_OUTPUTS = ("traj30", "traj60", "ckpt", "goal_logits", "lat_logits", "lon_logits", "cons_pred", "code")
+
+
+def ctx_isolation_problems(model: V8FMini, batch: dict) -> list:
+    """PREREG_V8F_STRAT1 T-ISO: ``forward_infer`` twice, the second after adding N(0, 1) to every ``ctx_head`` parameter (forked RNG). The planner and goal outputs (:data:`CTX_ISOLATED_OUTPUTS`) must be bit-identical and
+    ``ctx_logits`` must differ. A non-empty list = the head feeds the planner or the goal path (or the check is blind)."""
+    if model.ctx_head is None:
+        return ["the model has no ctx head"]
+    was = model.training
+    model.eval()
+    probs = []
+    saved = [p.detach().clone() for p in model.ctx_head.parameters()]
+    try:
+        with torch.no_grad():
+            a = model.forward_infer(batch)
+            with torch.random.fork_rng(devices=[]):
+                torch.manual_seed(7)
+                for p in model.ctx_head.parameters():
+                    p.add_(torch.randn_like(p))
+            b2 = model.forward_infer(batch)
+        for k in CTX_ISOLATED_OUTPUTS:
+            if k not in a:
+                continue
+            if not torch.equal(a[k], b2[k]):
+                probs.append(f"{k} moved when only ctx_head weights changed")
+        if "ctx_logits" not in a or torch.equal(a["ctx_logits"], b2["ctx_logits"]):
+            probs.append("ctx_logits did not move when ctx_head weights changed")
+    finally:
+        with torch.no_grad():
+            for p, q in zip(model.ctx_head.parameters(), saved):
+                p.copy_(q)
+        model.train(was)
+    return probs

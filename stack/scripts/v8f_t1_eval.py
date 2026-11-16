@@ -275,6 +275,7 @@ def causal_bucket(v, j: int, steps: int | None):
 # ------------------------------------------------------------------------------------------------ planners
 #: the S / T head outputs ``--dump-heads`` keeps from ``forward_infer`` (the names ``v8f_mini_eval.cmd_run`` collects into ``outs``); float32, as the T0 eval stores them
 HEAD_KEYS = ("ckpt", "goal_prob", "lat_logits", "lon_logits", "cons_pred")
+NAV_VARIANTS = ("real", "donor", "zero")          # PREREG_V8F_STRAT1 (--nav-variant): real = the join's nav (the tool's output bit for bit); donor = an episode-disjoint donor window's rows (seed 0); zero = all five channels 0
 
 
 def model_planner(model, device, keep_aux: bool = False, keep_heads: bool = False):
@@ -290,7 +291,7 @@ def model_planner(model, device, keep_aux: bool = False, keep_heads: bool = Fals
             plan.aux = {"tau": out.get("traj30_o", out["traj30"]).double().cpu().numpy(), "P": out["p10"].double().cpu().numpy(),
                         "fired": None if "hacc_gate_fired" not in out else out["hacc_gate_fired"].cpu().numpy()}
         if keep_heads:
-            plan.heads = {k: out[k].float().cpu().numpy() for k in HEAD_KEYS}
+            plan.heads = {k: out[k].float().cpu().numpy() for k in HEAD_KEYS + (("ctx_logits",) if "ctx_logits" in out else ())}      # PREREG_V8F_STRAT1: only a ctx model carries the key
         return out["traj30"].float().cpu().numpy()
     plan.keys_read = set()
     plan.aux = None
@@ -338,9 +339,10 @@ class TickRecorder:
     RAW_HEAD_FIELDS = ("s_ckpt", "s_pose", "t_goal_prob", "t_lat_logits", "t_lon_logits", "t_cons_pred", "t_pose", "pose_w0")      # recorded per tick
     HEAD_FIELDS = RAW_HEAD_FIELDS + ("s_ckpt_now", "s_ckpt_w0")                                                                      # + the two frames derived at save()
 
-    def __init__(self, planner, store, J, heads: bool = False):
+    def __init__(self, planner, store, J, heads: bool = False, nav: bool = False, ctx: bool = False):
         self.planner, self.store, self.J, self.heads = planner, store, J, bool(heads)
-        self.rows = {k: [] for k in self.FIELDS + (self.RAW_HEAD_FIELDS if self.heads else ())}
+        self.nav, self.ctx = bool(nav), bool(ctx) and bool(heads)       # PREREG_V8F_STRAT1: --dump-nav adds nav_in; ctx_logits ride with --dump-heads on a ctx model
+        self.rows = {k: [] for k in self.FIELDS + (self.RAW_HEAD_FIELDS if self.heads else ()) + (("nav_in",) if self.nav else ()) + (("ctx_logits",) if self.ctx else ())}
         self.clip = []
         self.base = 0                                                    # the index of the chunk's first window in the run's window list
 
@@ -364,6 +366,10 @@ class TickRecorder:
             r["fired"].append(False if aux["fired"] is None else bool(aux["fired"][b]))
             r["win"].append(self.base + b); r["ci"].append(st.ci); r["t0"].append(st.t0); r["tick"].append(n); r["j"].append(st.j)
             r["age_t"].append(int(batch["a_t"][b])); r["age_s"].append(int(batch["a_s"][b]))
+            if self.nav:
+                r["nav_in"].append(batch["nav"][b, -1].float().cpu().numpy())          # PREREG_V8F_STRAT1: the [5] vector fed at NOW
+            if self.ctx:
+                r["ctx_logits"].append(hd["ctx_logits"][b])
             if self.heads:
                 r["s_ckpt"].append(hd["ckpt"][b])
                 r["s_pose"].append(pose_s[b])
@@ -424,13 +430,30 @@ def rollout(planner, states, ds, proxy, *, m: int = 1, schedule: str = "periodic
     return plan0, [st.executed_ego() for st in states]
 
 
-def make_states(store, tracks, J, wins, nav_mode):
+def nav_rows_variant(J, ci: int, t0: int, variant: str, donor=None):
+    """PREREG_V8F_STRAT1: the nav rows a window's state starts from. real = the join's rows (the tool's output bit for bit); zero = all five channels 0 (the trained no-row state); donor = the history rows
+    ``0..t0`` replaced by the donor window's rows ending at the donor's NOW step (``donor = (dci, dt)``), the own clip's later rows untouched (they are NaN in dead-reckoning mode)."""
+    o, n = int(J["off"][ci]), int(J["n"][ci])
+    rows = np.array(J["nav"][o:o + n], np.float32, copy=True)
+    if variant == "real":
+        return rows
+    if variant == "zero":
+        return np.zeros_like(rows)
+    if variant == "donor":
+        dci, dt = donor
+        do, dn = int(J["off"][dci]), int(J["n"][dci])
+        for j in range(t0 + 1):
+            rows[j] = J["nav"][do + int(np.clip(dt - (t0 - j), 0, dn - 1))]
+        return rows
+    raise ValueError(f"nav variant must be one of {NAV_VARIANTS}, got {variant!r}")
+
+
+def make_states(store, tracks, J, wins, nav_mode, variant: str = "real", donors=None):
     out = []
-    for ci, t0, _, _ in wins:
+    for i, (ci, t0, _, _) in enumerate(wins):
         clip = str(J["clip"][ci])
         base = store.get(clip)
-        o, n = int(J["off"][ci]), int(J["n"][ci])
-        out.append(WindowState(base, tracks[clip], J["nav"][o:o + n], ci, t0, nav_mode))
+        out.append(WindowState(base, tracks[clip], nav_rows_variant(J, ci, t0, variant, None if donors is None else donors[i]), ci, t0, nav_mode))
     return out
 
 
@@ -490,6 +513,11 @@ def build_parser():
     p.add_argument("--device", default="auto")
     p.add_argument("--no-analyze", action="store_true")
     p.add_argument("--dump-ticks", default="", help="PREREG_V8F_HACC_LAT: a directory; writes ticks_<tag>.npz = one row per (window, tick) of the model's rollout (tau, P, plan, v0, GT in the executed frame, ids)")
+    p.add_argument("--nav-text-npz", default="", help="PREREG_V8F_STRAT1: the text-nav file (required iff the checkpoint was trained with --nav-source text; its eval split is read)")
+    p.add_argument("--nav-text-sha256", default="", help="PREREG_V8F_STRAT1: sha256 of --nav-text-npz (re-hashed at load)")
+    p.add_argument("--nav-variant", choices=NAV_VARIANTS, default="real",
+                   help="PREREG_V8F_STRAT1: real (default) = the tool's output bit for bit; donor = the nav rows of an episode-disjoint donor window (donor_indices seed 0); zero = all five channels 0. Needs --nav deadreckon")
+    p.add_argument("--dump-nav", action="store_true", help="PREREG_V8F_STRAT1 (needs --dump-ticks): add nav_in [5] (the vector fed at NOW) to every tick row; with --dump-heads on a ctx model also ctx_logits")
     p.add_argument("--dump-heads", action="store_true", help="T1-HEADS (needs --dump-ticks): add the S head and T head outputs of each tick's forward_infer call to those rows (s_ckpt*, t_goal_prob, t_lat_logits, t_lon_logits, t_cons_pred + poses)")
     p = sub.add_parser("analyze")
     p.add_argument("--dump-dir", required=True)
@@ -504,6 +532,14 @@ def cmd_run(a):
         raise SystemExit("REFUSED: --dump-heads adds columns to the --dump-ticks file; it needs --dump-ticks DIR (a flag that silently writes nothing is worse than none)")
     ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
     cfg = M.V8FMiniConfig(**ck["cfg"])
+    if a.dump_nav and not a.dump_ticks:
+        raise SystemExit("REFUSED: --dump-nav adds columns to the --dump-ticks file; it needs --dump-ticks DIR")
+    if cfg.nav_source == "text" and not (a.nav_text_npz and a.nav_text_sha256):      # PREREG_V8F_STRAT1: the nav the checkpoint was trained on is the nav it is scored on
+        raise SystemExit("REFUSED: this checkpoint was trained with --nav-source text; run needs --nav-text-npz and --nav-text-sha256 (the eval split of the text nav)")
+    if cfg.nav_source == "v9" and (a.nav_text_npz or a.nav_text_sha256):
+        raise SystemExit("REFUSED: this checkpoint was trained with --nav-source v9; --nav-text-npz / --nav-text-sha256 name a nav it never saw")
+    if a.nav_variant != "real" and a.nav != "deadreckon":
+        raise SystemExit("REFUSED: --nav-variant donor|zero replaces the route channel; it needs --nav deadreckon (a logged route would mix the donor's history with the own clip's future)")
     if cfg.kin_mode != "yaw":
         raise SystemExit("REFUSED: T1-kin rebuilds the ego state from the executed pose track; a --kin-mode steer checkpoint reads the "
                          "recorded steering angle (PI ruling D-PI-YAWRATE-1) and has no own-motion equivalent.")
@@ -513,10 +549,16 @@ def cmd_run(a):
     model.to(dev).eval()
     tracks = D.load_native_tracks(a.tracks)
     J = D.load_join(a.eval_join)
+    if cfg.nav_source == "text":                       # PREREG_V8F_STRAT1: the eval split of the text nav, row-aligned to the eval join (a shifted row / wrong sha is a refusal)
+        J["nav"], J["nav_d"], _nav_rec = D.nav_text_arrays(J, a.nav_text_npz, a.nav_text_sha256, "eval")
     store = D.ClipStore(a.eval_cache, "eval", lru=a.lru, grid=ck.get("grid", "pool4x10"), kin_mode="yaw", tracks=tracks)
     wins = D.eval_grid_windows(a.eval_grid, J)
     if a.max_windows and a.max_windows < len(wins):
         wins = [wins[i] for i in np.linspace(0, len(wins) - 1, a.max_windows).round().astype(int)]
+    perm = None
+    if a.nav_variant == "donor":                       # PREREG_V8F_STRAT1: the T0 eval's donor rule (episode-disjoint, seed 0), over the run's window list
+        from tanitad.models.hjepa import donor_indices
+        perm = donor_indices(len(wins), episode_ids=torch.as_tensor(np.asarray([w[0] for w in wins])), seed=0).numpy()
     proxy = _OneClipStore()
     ds = D.V8FMiniWindows(proxy, J, [], hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
                           window_start=cfg.window_start)     # PREREG_V8F_HIST Amendment 1: the held-age clamp origin is the CHECKPOINT's (-1 = absent = hist - 1)
@@ -528,15 +570,16 @@ def cmd_run(a):
     for b0 in range(0, len(wins), a.batch):
         chunk = wins[b0:b0 + a.batch]
         mp = model_planner(model, dev, keep_aux=bool(a.dump_ticks), keep_heads=bool(a.dump_heads))
-        st_m = make_states(store, tracks, J, chunk, a.nav)
+        dn_ = None if perm is None else [(wins[int(perm[b0 + k])][0], wins[int(perm[b0 + k])][1]) for k in range(len(chunk))]
+        st_m = make_states(store, tracks, J, chunk, a.nav, a.nav_variant, dn_)
         if a.dump_ticks:
-            rec = rec or TickRecorder(mp, store, J, heads=a.dump_heads)
+            rec = rec or TickRecorder(mp, store, J, heads=a.dump_heads, nav=a.dump_nav, ctx=model.ctx_head is not None)
             rec.planner, rec.base = mp, b0
             plan0, exe = rollout(mp, st_m, ds, proxy, hook=rec, **kw)
         else:
             plan0, exe = rollout(mp, st_m, ds, proxy, **kw)
         keys |= mp.keys_read
-        st_f = make_states(store, tracks, J, chunk, a.nav)
+        st_f = make_states(store, tracks, J, chunk, a.nav, a.nav_variant, dn_)
         _, exe_f = rollout(floor_planner(model, dev), st_f, ds, proxy, **kw)
         n_clip["cl"] += sum(s.clipped > 0 for s in st_m)
         n_clip["fl"] += sum(s.clipped > 0 for s in st_f)
@@ -563,6 +606,8 @@ def cmd_run(a):
                                 "speed bucket from the human's realised future max speed (D-SPEEDBAND-EGO-ECHO-1)" if a.limit == "logged" else ""],
               "acts": {k: fk.acts_check(v, DT) for k, v in arms.items() if k in ("cl", "fl", "ol")}}
     header["open_channels"] = [c for c in header["open_channels"] if c]
+    if a.nav_variant != "real" or cfg.nav_source != "v9":              # PREREG_V8F_STRAT1: only then (a v9 / real run's header is byte-identical to the tool's)
+        header["nav_variant"], header["nav_source"] = a.nav_variant, cfg.nav_source
     if a.limit in ("causal", "causal_all"):                              # only then: --limit logged / off outputs stay byte-identical (C-L1)
         header["causal_bucket"] = {"rule": "speed_max_bin(max finite measured ego speed over rows "
                                            + (f"[j - {CAUSAL_STEPS}, j])" if a.limit == "causal" else "[0, j])"),

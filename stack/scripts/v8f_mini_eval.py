@@ -235,6 +235,12 @@ def cmd_run(a):
     from tanitad.models import v8f_mini as M
     ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
     cfg = M.V8FMiniConfig(**ck["cfg"])                 # a checkpoint written before the ruling has no kin_mode => steer
+    if cfg.nav_source == "text" and not (a.nav_text_npz and a.nav_text_sha256):      # PREREG_V8F_STRAT1: the nav the checkpoint was trained on is the nav it is scored on
+        raise SystemExit("REFUSED: this checkpoint was trained with --nav-source text; run needs --nav-text-npz and --nav-text-sha256 (the eval split of the text nav)")
+    if cfg.nav_source == "v9" and (a.nav_text_npz or a.nav_text_sha256):
+        raise SystemExit("REFUSED: this checkpoint was trained with --nav-source v9; --nav-text-npz / --nav-text-sha256 name a nav it never saw")
+    if a.nav_withheld and a.nav_shuffle:
+        raise SystemExit("REFUSED: --nav-withheld and --nav-shuffle are two interventions on the same channel; run them separately")
     if a.plan == "beta":
         if cfg.wm == "off":
             raise SystemExit("REFUSED: --plan beta scores with the checkpoint's OWN world model; this one was trained with wm='off' (arm M1). Use M2a / M2b.")
@@ -265,6 +271,10 @@ def cmd_run(a):
     model.to(dev).eval()
     tot_hmax = cfg.hmax
     ej = D.load_join(a.eval_join)
+    if cfg.nav_source == "text":                       # PREREG_V8F_STRAT1: the eval split of the text nav, row-aligned to the eval join (a shifted row / wrong sha is a refusal)
+        ej["nav"], ej["nav_d"], _nav_rec = D.nav_text_arrays(ej, a.nav_text_npz, a.nav_text_sha256, "eval")
+    if a.nav_withheld:                                 # PREREG_V8F_STRAT1: all five channels 0 = the trained no-row state
+        ej["nav"] = np.zeros_like(ej["nav"])
     store = D.ClipStore(a.eval_cache, "eval", lru=a.lru, grid=ck.get("grid", "pool4x10"), kin_mode=cfg.kin_mode, tracks=tracks)
     wins = D.eval_grid_windows(a.eval_grid, ej)
     ds = D.V8FMiniWindows(store, ej, wins, hist=cfg.hist, hmax=tot_hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
@@ -281,6 +291,8 @@ def cmd_run(a):
     tac_rows = {"shift": [], "oracle_fallback": [], "code": [], "absent_frac": []}
     outs = {"traj30": [], "ckpt": [], "goal_prob": [], "lat_logits": [], "lon_logits": [], "cons_pred": [],
             "traj30_proj": []}
+    if model.ctx_head is not None:                     # PREREG_V8F_STRAT1: the context logits ride in the eval npz (the reader scores them)
+        outs["ctx_logits"] = []
     beta_rows = []                                     # rung beta: the planner's per-window inputs (only with --plan beta)
     if a.plan == "beta":
         from tanitad.models import v8f_beta as BETA
@@ -341,6 +353,8 @@ def cmd_run(a):
             outs["lat_logits"].append(o["lat_logits"].float().cpu().numpy())
             outs["lon_logits"].append(o["lon_logits"].float().cpu().numpy())
             outs["cons_pred"].append(o["cons_pred"].float().cpu().numpy())
+            if model.ctx_head is not None:
+                outs["ctx_logits"].append(o["ctx_logits"].float().cpu().numpy())
             if a.project:
                 lim = M.limit_ms_from_onehot(b["limit"], b["limit_ok"])
                 cap = torch.where(torch.isfinite(lim), lim, torch.full_like(lim, 1e9))
@@ -377,7 +391,11 @@ def cmd_run(a):
         os.makedirs(a.out_dir, exist_ok=True)
         np.savez_compressed(os.path.join(a.out_dir, f"eval_{tag}_proj.npz"), pred=O["traj30_proj"], **pw2)
     os.makedirs(a.out_dir, exist_ok=True)
-    np.savez_compressed(os.path.join(a.out_dir, f"eval_{tag}.npz"), pred=O["traj30"], **O, **pw, **tac_npz, eid=X["eid"])
+    nav_variant = "zero" if a.nav_withheld else ("donor" if a.nav_shuffle else "real")
+    res["nav_variant"], res["nav_source"] = nav_variant, cfg.nav_source               # PREREG_V8F_STRAT1
+    np.savez_compressed(os.path.join(a.out_dir, f"eval_{tag}.npz"), pred=O["traj30"], **O, **pw, **tac_npz, eid=X["eid"],
+                        win_ci=np.asarray([w[0] for w in wins], np.int64), win_t=np.asarray([w[1] for w in wins], np.int64),
+                        nav_variant=np.asarray(nav_variant), nav_source=np.asarray(cfg.nav_source))
     jdump(res, os.path.join(a.out_dir, f"eval_{tag}.json"))
     print(tag, "ADE6", r["traj"]["ade6_m"]["mean"], "ADE2", r["traj"]["ade2_m"]["mean"],
           "CONS(a)", r["consistency_a"]["any"]["rate_all"])
@@ -629,6 +647,9 @@ def main(argv=None):
     p.add_argument("--eval-cache", default="C:/Users/Admin/refav1_hj_cache")
     p.add_argument("--ages", choices=("fresh", "cycle"), default="cycle")
     p.add_argument("--nav-shuffle", action="store_true"); p.add_argument("--project", action="store_true")
+    p.add_argument("--nav-text-npz", default="", help="PREREG_V8F_STRAT1: the text-nav file (required iff the checkpoint was trained with --nav-source text; its eval split is read)")
+    p.add_argument("--nav-text-sha256", default="", help="PREREG_V8F_STRAT1: sha256 of --nav-text-npz (re-hashed at load)")
+    p.add_argument("--nav-withheld", action="store_true", help="PREREG_V8F_STRAT1: all five nav channels 0 (the trained no-row state); refused with --nav-shuffle")
     p.add_argument("--tac", choices=("pred", "shuffle", "oracle", "absmask"), default="pred",
                    help="PREREG_V8F_TAC: pred (DEFAULT) = O reads T's own held code. shuffle = O reads a DONOR window's predicted code (another "
                         "episode, seed 1): does O use T at all? oracle = O reads the GT v9 code where the window has a row (T0 diagnostic: what "

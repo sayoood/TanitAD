@@ -318,6 +318,87 @@ def lead_label_arrays(J: dict, lead_npz) -> dict:
     return {"has": has, "near": near, "y": y, "off": off, "n_rows": N, "n_has": int(has.sum()), "n_near": int(near.sum()), "n_clips": int(len(off)), "n_clips_with_labels": n_with}
 
 
+def _sha256_file(path) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for blk in iter(lambda: f.read(1 << 20), b""):
+            h.update(blk)
+    return h.hexdigest()
+
+
+def _assert_table_aligned(z, J: dict, split: str, what: str):
+    """The table's clip / off / n arrays must equal the join's, EXACTLY (a shifted row is a launch refusal, never a warning)."""
+    for k, jk in ((f"{split}_clip", "clip"), (f"{split}_off", "off"), (f"{split}_n", "n")):
+        a, b = np.asarray(z[k]), np.asarray(J[jk])
+        if a.shape != b.shape or not np.array_equal(a.astype(b.dtype) if a.dtype.kind != "U" else a.astype(str), b if b.dtype.kind != "U" else b.astype(str)):
+            raise ValueError(f"{what}: {k} does not equal the join's {jk} (misaligned rows are refused)")
+
+
+def ctx_label_arrays(J: dict, path, expect_sha256: str, split: str = "train") -> dict:
+    """PREREG_V8F_STRAT1 (LABEL_SPEC sections 1-4): the context head's targets, ROW-ALIGNED to the label join ``J`` (step ``j`` of clip ``c`` is row ``off[c] + j``). ``y`` int8 ``[N, 5]`` in ``CTX_VARS`` order,
+    -1 where ``flag != 0`` or ``<var>_valid`` is False, and illumination == ``CTX_TWILIGHT_ID`` set to -1 (the card: 0/9 recalled). Re-hashes the file and refuses a mismatch; refuses a shifted ``clip`` / ``off`` / ``n``.
+    NEVER loads ``visibility`` or any metadata column (LABEL_SPEC section 2)."""
+    from tanitad.models.v8f_mini import CTX_N, CTX_TWILIGHT_ID, CTX_VARS
+    sha = _sha256_file(path)
+    if expect_sha256 and sha != expect_sha256:
+        raise ValueError(f"ctx_label_arrays: sha256 {sha} != declared {expect_sha256}")
+    if not expect_sha256:
+        raise ValueError("ctx_label_arrays: no declared sha256 (--ctx-labels-sha256 is required)")
+    with np.load(path, allow_pickle=False) as z:
+        _assert_table_aligned(z, J, split, "ctx_label_arrays")
+        flag = np.asarray(z[f"{split}_flag"])
+        N = int(len(flag))
+        if N != int(np.asarray(J["off"])[-1] + np.asarray(J["n"])[-1]):
+            raise ValueError(f"ctx_label_arrays: {N} table rows != the join's {int(J['off'][-1] + J['n'][-1])} steps")
+        y = np.full((N, len(CTX_VARS)), -1, np.int8)
+        okm = np.zeros((N, len(CTX_VARS)), bool)
+        n_valid = {}
+        n_twi = 0
+        for v, nm in enumerate(CTX_VARS):
+            ids, ok = np.asarray(z[f"{split}_{nm}_id"]), np.asarray(z[f"{split}_{nm}_valid"])
+            if len(z[f"vocab_{nm}"]) != CTX_N[v]:
+                raise ValueError(f"ctx_label_arrays: vocab_{nm} has {len(z[f'vocab_{nm}'])} classes, the head has {CTX_N[v]}")
+            good = (flag == 0) & ok.astype(bool) & (ids >= 0) & (ids < CTX_N[v])
+            okm[:, v] = good                                        # the table's own validity (before the twilight mask): the coverage guard reads this
+            if nm == "illumination":
+                tw = good & (ids == CTX_TWILIGHT_ID)
+                n_twi = int(tw.sum())
+                good = good & ~tw
+            y[:, v] = np.where(good, ids, -1)
+            n_valid[nm] = int(good.sum())
+    return {"off": np.asarray(J["off"]), "y": y, "ok": okm, "sha256": sha, "n_valid": n_valid, "n_twilight_masked": n_twi}
+
+
+#: the nav-text channel ranges (the v9 nav's layout: ch0-2 one-hot FOLLOW / L / R or all zeros, ch3 = distance / 100 in [0, 3], ch4 = row-present)
+def nav_text_arrays(J: dict, path, expect_sha256: str, split: str = "train"):
+    """PREREG_V8F_STRAT1 (BUILD_SPEC section 4): the text-derived nav, ROW-ALIGNED to the join. Returns ``(nav [N, 5] float32, nav_d [N] float32, rec)``. Re-hashes the file (refuses a mismatch or an undeclared sha),
+    refuses a shifted ``clip`` / ``off`` / ``n``, asserts the channel ranges. ``rec`` = sha256, the digest of the nav bytes, and ``n_text_ne_v9`` (rows whose five channels differ from the join's)."""
+    sha = _sha256_file(path)
+    if not expect_sha256 or sha != expect_sha256:
+        raise ValueError(f"nav_text_arrays: sha256 {sha} != declared {expect_sha256!r}")
+    with np.load(path, allow_pickle=False) as z:
+        _assert_table_aligned(z, J, split, "nav_text_arrays")
+        nav = np.asarray(z[f"{split}_nav"], np.float32)
+        nav_d = np.asarray(z[f"{split}_nav_d"], np.float32)
+    N = int(np.asarray(J["off"])[-1] + np.asarray(J["n"])[-1])
+    if nav.shape != (N, 5) or nav_d.shape != (N,):
+        raise ValueError(f"nav_text_arrays: shapes {nav.shape} / {nav_d.shape} != ({N}, 5) / ({N},)")
+    if not np.isfinite(nav).all():
+        raise ValueError("nav_text_arrays: NaN / inf in the nav channels")
+    oh = nav[:, :3]
+    if not (np.isin(oh, (0.0, 1.0)).all() and (oh.sum(1) <= 1.0).all()):
+        raise ValueError("nav_text_arrays: channels 0-2 are not one-hot / all-zero rows")
+    if nav[:, 3].min() < 0.0 or nav[:, 3].max() > 3.0:
+        raise ValueError("nav_text_arrays: channel 3 outside [0, 3]")
+    if not np.isin(nav[:, 4], (0.0, 1.0)).all():
+        raise ValueError("nav_text_arrays: channel 4 is not in {0, 1}")
+    jn = np.asarray(J["nav"])
+    rec = {"sha256": sha, "nav_digest": hashlib.sha256(nav.tobytes()).hexdigest(),
+           "n_text_ne_v9": int((nav != jn).any(1).sum()) if jn.shape == nav.shape else -1}
+    return nav, nav_d, rec
+
+
+
 # ------------------------------------------------------------------------------------------------ kinematic floors
 KIN_MODES = ("steer", "yaw")
 #: ``floors_kin`` action unit the third kinematic channel is integrated in, per mode

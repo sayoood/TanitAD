@@ -115,6 +115,10 @@ FLAG_CHECKS = {
     # PREREG_LEVELHEAD_A2 (arm LLR): the lead head + how O reads the heads. `lever:lead_head` = built_levers().get("lead_head", "off"); `cfg:w_lead` = the BUILT config's weight; `lever:aux_cond` = built_levers().get("aux_cond", "add")
     # (the BUILT wiring: e_lead / e_level exist iff add, e_aux iff token and a head is on). argv -> make_config -> the BUILT model -> declared_vs_built (bad_lead) -> lead_head_probe (G-LIVE) -> `lead_stage(b, LL)` BEFORE the ego stages.
     "lead_head": "lever:lead_head", "w_lead": "cfg:w_lead", "aux_cond": "lever:aux_cond",
+    # PREREG_V8F_STRAT1: argv -> make_config -> the BUILT model / loss / optimiser groups / data arrays -> declared_vs_built (bad_ctx) -> ctx_head_probe + nav_source_probe (G-LIVE) -> `ctx_stage(b, CL)` BEFORE the ego stages
+    "nav_source": "data:nav_source", "nav_text_npz": "path", "nav_text_sha256": "data:nav_text_sha256",
+    "ctx_heads": "lever:ctx_heads", "w_ctx": "cfg:w_ctx", "ctx_labels": "path", "ctx_labels_sha256": "data:ctx_labels_sha256",
+    "ctx_lr_mult": "opt:ctx_lr_mult", "ctx_detach": "lever:ctx_detach",
     # PREREG_V8F_MRATE: `lever:wm_k` = equals built_levers().get("wm_k", 1) (the BUILT modules' window / dilation / causal pad, WMAux.built_k); `lever:wm_only` = the record the WM-only loader read back (bad_wm_only: non-WM tensors bit-equal to the checkpoint,
     # NO WM tensor loaded, the WM re-initialised under --seed, trainable == the WM's parameters exactly, every other lever at its default) -> wm_only_live_check (G-LIVE) + planner_identity_probe -> `model.wm_only_loss(b)` in the loop.
     "wm_k": "lever:wm_k", "wm_only": "lever:wm_only",
@@ -190,6 +194,23 @@ def build_parser():
                     help="PREREG_LEVELHEAD_A2: how O reads the heads' outputs. add (default) = e_level(v_hat.detach() / 10) and e_lead([sigmoid(logit), gap_hat].detach()) are zero-initialised and ADDED to O's ego conditioning token (the step-0 forward is the "
                          "init's). token = O gets ONE extra conditioning token e_aux(Linear(3, d), default init) of [v_hat / 10 (0 without the level head), sigmoid(logit), gap_hat] (detached), REPLACING both additive paths (the step-0 forward differs "
                          "from the init's by construction). token is refused unless --level-head or --lead-head is on")
+    # ---- PREREG_V8F_STRAT1: nav text + the detected strategic-information (context) head. Every default DISABLES the lever; every STRAT1 argv names all nine (the control too).
+    ap.add_argument("--nav-source", dest="nav_source", choices=M.NAV_SOURCES, default="v9",
+                    help="PREREG_V8F_STRAT1: where the nav channels come from. v9 (default) = the join's nav, bit for bit. text = the router-text nav of --nav-text-npz (build_navtext_nav.py), overwriting J['nav'] / J['nav_d'] "
+                         "right after the join is loaded; the model never reads this flag, the checkpoint records it")
+    ap.add_argument("--nav-text-npz", dest="nav_text_npz", default="", help="PREREG_V8F_STRAT1: the text-nav file (navtext_nav.npz). Must exist iff --nav-source text, must be '' iff v9")
+    ap.add_argument("--nav-text-sha256", dest="nav_text_sha256", default="", help="PREREG_V8F_STRAT1: sha256 of --nav-text-npz (re-hashed at load; a mismatch is a refusal)")
+    ap.add_argument("--ctx-heads", dest="ctx_heads", choices=M.CTX_HEAD_MODES, default="off",
+                    help="PREREG_V8F_STRAT1: off (default) = nothing built = every earlier arm, bit for bit. on = the vision-only context head (country, weather, surface, illumination, period_of_day; 41 logits) read from the "
+                         "current frame's tokens, trained with --w-ctx x the weighted-mean CE; its logits never reach S, T, O or any goal path")
+    ap.add_argument("--w-ctx", dest="w_ctx", type=float, default=0.0,
+                    help="PREREG_V8F_STRAT1: the weight of the context term in the total. 0.0 (default) with --ctx-heads off; must be > 0 with it on (a head with no loss is refused)")
+    ap.add_argument("--ctx-labels", dest="ctx_labels", default="", help="PREREG_V8F_STRAT1: strat_labels_table.npz (read iff --ctx-heads on; '' when off)")
+    ap.add_argument("--ctx-labels-sha256", dest="ctx_labels_sha256", default="", help="PREREG_V8F_STRAT1: sha256 of --ctx-labels (re-hashed at load; a mismatch is a refusal)")
+    ap.add_argument("--ctx-lr-mult", dest="ctx_lr_mult", type=float, default=1.0,
+                    help="PREREG_V8F_STRAT1: the context head's lr as a multiple of --lr (its own optimiser groups named ctx / ctx_nd). 1.0 (default) with the head off")
+    ap.add_argument("--ctx-detach", dest="ctx_detach", choices=M.CTX_HEAD_MODES, default="off",
+                    help="PREREG_V8F_STRAT1: off (default) = the context loss reaches the shared adapter (a declared training-time coupling); on = the head reads the tokens detached")
     # ---- PREREG_V8F_HACC_MC section 7 (O-RECOVER): an ego-state perturbation of the kinematic inputs; targets and labels are never touched. Every flag defaults to OFF (the defaults are
     # data.EGO_PERTURB_DEFAULTS), and every flag has its G-DVB entry in FLAG_CHECKS and its clause in bad_ego_perturb.
     ap.add_argument("--ego-perturb-p", dest="ego_perturb_p", type=float, default=D.EGO_PERTURB_DEFAULTS["p"],
@@ -433,6 +454,7 @@ def make_config(a) -> M.V8FMiniConfig:
                            wm_rollout_w=declared_wm_ladder(a)["wm_rollout_w"], wm_ctx=declared_wm_ladder(a)["wm_ctx"],
                            detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, launch_intent_w=a.launch_intent_w,
                            level_head=a.level_head, w_level=a.w_level,
+                           ctx_heads=a.ctx_heads, w_ctx=a.w_ctx, ctx_detach=a.ctx_detach, nav_source=a.nav_source,        # PREREG_V8F_STRAT1: the lines that apply the STRAT1 levers (a mutation deletes them)
                            lead_head=a.lead_head, w_lead=a.w_lead, aux_cond=a.aux_cond,
                            w_op=a.w_op, w_tac_traj=a.w_tac_traj,                      # PREREG_V8F_OTBAND: the lines that apply the band levers (a mutation deletes them)
                            stok_dim=(D.stok_dim_of(a.t_stok_dir) if a.t_stok_dir else 0))
@@ -760,7 +782,7 @@ def bad_init_ckpt(a, data_info) -> list:
     elif got.get("skipped") != "resume":
         bad.append(f"init_ckpt: declared but neither applied nor skipped for a resume ({got.get('skipped')!r})")
     if got.get("applied"):                                  # PREREG_V8F_LEVEL: only the declared lever's keys may be fresh, and a lever-ON argv must have declared them
-        if bool(got.get("declared_new_keys")) != (a.level_head == "on" or a.lead_head == "on" or bool(a.t_stok_dir)):          # PREREG_LEVELHEAD_A2: the lead head adds keys too; PREREG_V8F_OTBAND: so does the token
+        if bool(got.get("declared_new_keys")) != (a.level_head == "on" or a.lead_head == "on" or bool(a.t_stok_dir) or a.ctx_heads == "on"):          # PREREG_LEVELHEAD_A2: the lead head adds keys too; PREREG_V8F_OTBAND: so does the token
             bad.append(f"init_ckpt: level_head {a.level_head} / lead_head {a.lead_head} / t_stok_dir {a.t_stok_dir!r} declared but the load declared new keys {got.get('declared_new_keys')}")
         if set(got.get("fresh_keys", [])) - set(got.get("declared_new_keys", [])):
             bad.append(f"init_ckpt: keys {sorted(set(got.get('fresh_keys', [])) - set(got.get('declared_new_keys', [])))} were left fresh but are not the declared lever's")
@@ -825,7 +847,8 @@ def load_init_ckpt(path, model, cfg, apply: bool = True) -> dict:
 #: PREREG_V8F_MRATE: every other lever a WM-only argv must leave at its parser default (the readers, heads and planner are frozen and never run: a lever on them is declared and does nothing)
 WM_ONLY_DEFAULT_DESTS = ("navonly", "no_consistency", "cons_absent", "code_mix", "o_interface", "w_acc", "launch_intent_w", "level_head", "w_level", "lead_head", "w_lead", "aux_cond", "detach_upper",
                          "ego_perturb_p", "ego_perturb_yawrate_std", "dagger_p", "dagger_bank", "dagger_bank_sha256", "ego_perturb_with_dagger", "recover_p", "recover_dev_bank", "recover_dev_bank_sha256",
-                         "encoder", "lora_lr", "frames_root", "accum", "enc_ckpt", "window_start", "w_op", "w_tac_traj", "t_stok_dir", "t_stok_shuffle", "freeze", "v10_md5")
+                         "encoder", "lora_lr", "frames_root", "accum", "enc_ckpt", "window_start", "w_op", "w_tac_traj", "t_stok_dir", "t_stok_shuffle", "freeze", "v10_md5",
+                         "ctx_heads", "w_ctx", "ctx_detach", "ctx_lr_mult", "ctx_labels", "ctx_labels_sha256", "nav_source", "nav_text_npz", "nav_text_sha256")
 
 
 def is_wm_param(name: str) -> bool:
@@ -1640,6 +1663,92 @@ def oband_probe(model, batch, cfg, rtol: float = 1e-3) -> dict:
     return res
 
 
+def bad_ctx(a, model, data_info=None, opt=None) -> list:
+    """PREREG_V8F_STRAT1, G-DVB: the nine STRAT1 flags read back from the BUILT model, optimiser groups and label / nav arrays. Empty = pass. Refused: a head on with no loss (w_ctx 0), a weight with no head, any ctx_head
+    key in an off model, a head with no labels or a label file whose sha256 is not the declared one, ctx_lr_mult / ctx_detach with no head, a head whose code names a non-vision input, a ctx optimiser group that is not
+    exactly the head, nav_source text without its file / with a sha mismatch / whose overwrite did not happen, nav_source v9 with a text file named, and a head combined with a mode that never runs the ctx stage."""
+    bad = []
+    info = data_info or {}
+    on = a.ctx_heads == "on"
+    built = model.built_levers()
+    if not (math.isfinite(a.w_ctx) and a.w_ctx >= 0.0):
+        bad.append(f"w_ctx {a.w_ctx!r} is not a finite number >= 0")
+    if built.get("ctx_heads", "off") != a.ctx_heads:
+        bad.append(f"lever ctx_heads: declared {a.ctx_heads} but built {built.get('ctx_heads', 'off')}")
+    if model.cfg.w_ctx != a.w_ctx:
+        bad.append(f"cfg.w_ctx: declared {a.w_ctx} but built {model.cfg.w_ctx}")
+    if built.get("ctx_detach", "off") != a.ctx_detach and (on or a.ctx_detach == "on"):
+        bad.append(f"lever ctx_detach: declared {a.ctx_detach} but built {built.get('ctx_detach', 'off')}")
+    if on and not a.w_ctx > 0.0:
+        bad.append("ctx_heads on but w_ctx is 0: a head with no loss is a lever that is declared and does nothing")
+    if not on and a.w_ctx != 0.0:
+        bad.append(f"w_ctx {a.w_ctx} declared with --ctx-heads off: a weight with no head")
+    keys = [k for k in model.state_dict() if k.startswith(M.CTX_KEY_PREFIXES)]
+    if not on and keys:
+        bad.append(f"ctx_heads off but the built model carries ctx_head keys {keys[:3]}")
+    if on and (model.ctx_head is None or not keys):
+        bad.append("ctx_heads on declared but no ctx_head was built")
+    if not on and (a.ctx_detach == "on" or a.ctx_lr_mult != 1.0):
+        bad.append(f"ctx_detach {a.ctx_detach} / ctx_lr_mult {a.ctx_lr_mult} declared with --ctx-heads off: a lever with no head")
+    if not (math.isfinite(a.ctx_lr_mult) and a.ctx_lr_mult > 0.0):
+        bad.append(f"ctx_lr_mult {a.ctx_lr_mult!r} is not a finite number > 0")
+    if on:
+        if M.ctx_head_source_problems():
+            bad.append(f"the ctx head's code names non-vision inputs: {M.ctx_head_source_problems()}")
+        if not a.ctx_labels or not os.path.exists(a.ctx_labels):
+            bad.append(f"ctx_heads on declared but --ctx-labels {a.ctx_labels!r} does not exist")
+        cl = info.get("ctx_labels")
+        if not cl:
+            bad.append("ctx_heads on declared but no ctx label arrays were built")
+        else:
+            if cl.get("path") != os.path.abspath(a.ctx_labels):
+                bad.append(f"ctx labels: declared {os.path.abspath(a.ctx_labels)!r} but built from {cl.get('path')!r}")
+            if not (a.ctx_labels_sha256 and cl.get("sha256") == a.ctx_labels_sha256):
+                bad.append(f"ctx labels: declared sha256 {a.ctx_labels_sha256!r} but the loaded file is {cl.get('sha256')!r}")
+            for v in M.CTX_VARS:                                    # LABEL_SPEC section 4: the valid share over the TRAINED windows
+                sh = (cl.get("valid_share") or {}).get(v)
+                if sh is None or not sh >= CTX_MIN_VALID_SHARE:
+                    bad.append(f"ctx labels: variable {v} valid share over the trained windows is {sh}, below {CTX_MIN_VALID_SHARE}")
+        if getattr(a, "t2_bank_p", 0.0) and a.t2_bank_p > 0.0:
+            bad.append("ctx_heads on with --t2-bank-p > 0: the bank swap builds a new batch after the label stages and drops ctx_y")
+        if a.wm_only or a.wm_windows == "wmonly":
+            bad.append("ctx_heads on with a WM-only argv: the ctx stage never runs")
+        if opt is not None:
+            names = {g.get("name"): g for g in opt.param_groups if str(g.get("name", "")).startswith("ctx")}
+            held = {id(p) for g in names.values() for p in g["params"]}
+            if not names or held != {id(p) for p in model.ctx_head.parameters()}:
+                bad.append("the ctx optimiser groups do not hold exactly the ctx head's parameters")
+            for g in names.values():
+                if abs(g["lr"] - a.lr * a.ctx_lr_mult) > 1e-15 * max(1.0, a.lr) or g.get("lr_mult") != a.ctx_lr_mult:
+                    bad.append(f"ctx_lr_mult: declared {a.ctx_lr_mult} but the group {g.get('name')} holds lr {g['lr']} / lr_mult {g.get('lr_mult')}")
+    else:
+        if a.ctx_labels or a.ctx_labels_sha256:
+            bad.append("ctx_heads off but --ctx-labels / --ctx-labels-sha256 are named: the file is not read, so it is declared and does nothing")
+        if opt is not None and any(str(g.get("name", "")).startswith("ctx") for g in opt.param_groups):
+            bad.append("ctx_heads off but the optimiser carries a ctx group")
+    # ---- the nav source
+    ns = info.get("nav_source")
+    if model.cfg.nav_source != a.nav_source:
+        bad.append(f"cfg.nav_source: declared {a.nav_source} but built {model.cfg.nav_source}")
+    if not ns or ns.get("source") != a.nav_source:
+        bad.append(f"nav_source: declared {a.nav_source} but the data was built from {None if not ns else ns.get('source')!r}")
+    elif a.nav_source == "text":
+        if not a.nav_text_npz or not os.path.exists(a.nav_text_npz):
+            bad.append(f"nav_source text declared but --nav-text-npz {a.nav_text_npz!r} does not exist")
+        if not (a.nav_text_sha256 and ns.get("sha256") == a.nav_text_sha256):
+            bad.append(f"nav text: declared sha256 {a.nav_text_sha256!r} but the loaded file is {ns.get('sha256')!r}")
+        if not ns.get("nav_digest") or not ns.get("n_text_ne_v9", 0) > 0:
+            bad.append(f"nav_source text declared but the overwrite did not happen (n_text_ne_v9 {ns.get('n_text_ne_v9')})")
+    else:
+        if a.nav_text_npz or a.nav_text_sha256:
+            bad.append("nav_source v9 with --nav-text-npz / --nav-text-sha256 named: the file is not read, so it is declared and does nothing")
+    return bad
+
+
+#: PREREG_V8F_STRAT1 (LABEL_SPEC section 4): a ctx variable whose valid share over the trained windows is below this is the wrong table (a stated guard, ESTIMATED from the 98.66 % all-clip coverage)
+CTX_MIN_VALID_SHARE = 0.98
+
+
 def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None, rec=None, t2b=None) -> list:
     """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
     bad = bad_encoder(a, enc, data_info)
@@ -1650,6 +1759,7 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
     bad += bad_wm_only(a, cfg, model, data_info)                                                 # PREREG_V8F_MRATE: --wm-k read back from the BUILT WM modules, --wm-only from the loader's record and the frozen set
     bad += bad_wm_ladder(a, cfg, model, data_info)                                               # PREREG_V8F_LADDER: the seven ladder flags read back from the BUILT loss / predictor shapes / dataset
     bad += bad_wm_strides(a, cfg, model)                                                         # PREREG_V8F_LFS: --wm-strides read back from the BUILT WM modules (and the >= 2 transitions per level rule)
+    bad += bad_ctx(a, model, data_info, opt)                                                    # PREREG_V8F_STRAT1: the nine STRAT1 flags read back from the BUILT model / optimiser groups / label and nav arrays
     bad += bad_lead(a, model, data_info)                                                         # PREREG_LEVELHEAD_A2: --lead-head / --w-lead / --aux-cond read back from the BUILT model and the built label arrays
     bad += bad_oband(a, cfg, model, data_info)                                                   # PREREG_V8F_OTBAND: the band split, the band weights, the strategic token, --freeze and --v10-md5 read back from the BUILT model and data
     bad += bad_dagger(a, dag, model.cfg, data_info)                                              # PREREG_V8F_DAGGER: --dagger-p / --dagger-bank / --dagger-seed read back from the BUILT swap
@@ -1731,7 +1841,7 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
         bad.append(f"wm {lv['wm']} declared but built gamma {built['wm_idm_gamma']}")
     # optimiser read-back
     lrs = {g["lr"] for g in opt.param_groups}
-    want_lrs = {a.lr} | ({lora_lr_of(a)} if enc is not None else set())
+    want_lrs = {a.lr} | ({lora_lr_of(a)} if enc is not None else set()) | ({a.lr * a.ctx_lr_mult} if a.ctx_heads == "on" else set())
     if lrs != want_lrs:
         bad.append(f"lr: declared {sorted(want_lrs)} but optimiser holds {sorted(lrs)}")
     if enc is not None:
@@ -1793,6 +1903,8 @@ def live_check(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> dict:
         expect.add("level")                                              # PREREG_V8F_LEVEL
     if cfg.lead_head == "on":
         expect.add("lead")                                               # PREREG_LEVELHEAD_A2
+    if cfg.ctx_heads == "on":
+        expect |= {"ctx"} | {f"ctx/{v_}" for v_ in M.CTX_VARS}           # PREREG_V8F_STRAT1
     missing = sorted(expect - set(terms_seen))
     extra_pen = sorted(k for k in terms_seen if k.startswith("pen") and not cfg.consistency)
     declared_dead = [n for n in acc if cfg.wm == "a" and ".idm_heads." in n]
@@ -1809,7 +1921,7 @@ def live_check(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> dict:
            "n_trainable": len(acc), "groups_grad": {g: float(sum(v for n, v in acc.items() if n.startswith(pre)))
                                                    for g, pre in (("adapter", "adapter"), ("S", "read_s"), ("T", "read_t"),
                                                                   ("O", "read_o"), ("head_s", "head_s"), ("head_o", "head_o"),
-                                                                  ("wm", "wm."))}}
+                                                                  ("wm", "wm.")) + ((("CTX", "ctx_head"),) if cfg.ctx_heads == "on" else ())}}
     ok = (not missing and not extra_pen and not unexpected_dead and not declared_dead_alive
           and res["control_prior_grad_sum"] == 0.0 and head_first > 0.0)
     res["pass"] = bool(ok)
@@ -2127,6 +2239,165 @@ def launch_intent_probe(model, batch, cfg, rtol: float = 1e-3) -> dict:
         raise AssertionError(f"launch probe: the natural mask names {res['launch_n']} rows but the total moved by {res['natural_contribution']} (head_o grad diff {res['natural_head_o_grad_diff']}): the real labels do not reach the loss")
     res["pass"] = True
     return res
+
+def make_ctx_labels(a, cfg, J, info):
+    """PREREG_V8F_STRAT1: the context head's label arrays, row-aligned to the label join (``D.ctx_label_arrays``), or None when the head is off (nothing is read). The file is re-hashed against ``--ctx-labels-sha256``
+    inside ``D.ctx_label_arrays`` (a mismatch or a shifted row is a refusal). Records the sha256, the per-variable valid counts over the table and the valid SHARE over the trained windows in ``info["ctx_labels"]``."""
+    if cfg.ctx_heads != "on":
+        return None
+    if not a.ctx_labels or not os.path.exists(a.ctx_labels):
+        raise SystemExit(f"ZZDVB-REFUSEDZZ ctx-heads: --ctx-heads on needs the labels and --ctx-labels {a.ctx_labels!r} does not exist")
+    try:
+        CL = D.ctx_label_arrays(J, a.ctx_labels, a.ctx_labels_sha256, "train")
+    except ValueError as e:
+        raise SystemExit(f"ZZDVB-REFUSEDZZ ctx-heads: {e}")
+    wins = info.get("_train_windows") or []
+    share = {}
+    if wins:                                                         # the share of TRAINED windows (NOW step) with a valid target, per variable
+        rows = np.array([int(J["off"][ci]) + int(t) for ci, t, *_ in wins], np.int64)
+        for v, nm in enumerate(M.CTX_VARS):
+            share[nm] = float(CL["ok"][rows, v].mean())          # the table's validity (twilight is masked in y, not missing: it is counted in n_twilight_masked)
+    info["ctx_labels"] = {"path": os.path.abspath(a.ctx_labels), "sha256": CL["sha256"], "n_valid": CL["n_valid"], "n_twilight_masked": CL["n_twilight_masked"], "valid_share": share}
+    return CL
+
+
+def ctx_stage(batch: dict, CL: dict):
+    """PREREG_V8F_STRAT1: the ONE call that turns a COLLATED batch into the context head's label ``ctx_y`` [B, 5] int8 (-1 = masked), looked up by the sample's clip index and NOW step (``batch["ci"]``, ``batch["t"]``:
+    row ``off[ci] + t`` of ``D.ctx_label_arrays``). It must run BEFORE ``ego.apply`` / ``dag.apply`` / ``comp.apply`` / ``rcv.apply`` (a swapped sample's ``ci`` / ``t`` is the own one, not the label's: the head sees the
+    LOGGED frame and is asked for the LOGGED frame's label; no swap rewrites ``feats``). Labels may use anything; the head's input is vision only."""
+    rows = CL["off"][batch["ci"].cpu().numpy()] + batch["t"].cpu().numpy()
+    return torch.as_tensor(CL["y"][rows])
+
+
+def ctx_head_probe(model, batch, cfg, CL=None, a=None, rtol: float = 1e-3) -> dict:
+    """PREREG_V8F_STRAT1 G-LIVE (lever-on only), on the loop's own label call (``ctx_stage``): (a) the BUILT loss's total moves by exactly ``w_ctx`` x ``T["ctx"]``; (b) the head gets a non-zero gradient at ``w_ctx`` and
+    EXACTLY 0.0 at ``w_ctx = 0`` (control); (c) the shared adapter receives the ctx gradient with ``--ctx-detach off`` and EXACTLY 0.0 with it on (control); (d) an ALL-MASKED ``ctx_y`` gives term 0.0 and head gradient
+    EXACTLY 0.0 (control); (e) the head is vision-only (source + runtime) and isolated from the planner and goal outputs; (f) the staged ``ctx_y`` equals an independent re-read of the table at ``(ci, t)``."""
+    if cfg.ctx_heads != "on":
+        return {"skipped": "ctx_heads off"}
+    if "ctx_y" not in batch:
+        raise AssertionError("ctx probe: the probe batch carries no ctx_y (the loop's own call is ctx_stage)")
+    res = {}
+    m = copy.deepcopy(model).cpu()
+    m.train()
+    head = list(m.ctx_head.parameters())
+    adapter = [p for mod in (m.adapter, m.pos, m.time) for p in (mod.parameters() if isinstance(mod, torch.nn.Module) else [mod])]
+
+    def run(mm, b, w):
+        mm.cfg.w_ctx = w
+        torch.manual_seed(0)                                         # the loss draws from the global stream too (MEASURED on the real-data smoke 2026-11-16: two unseeded calls differed by 1.4e-3 in the total)
+        return mm.loss(b, p_gt=0.5, gen=torch.Generator().manual_seed(0))["terms"]
+
+    def gabs(y, ps):
+        gr = torch.autograd.grad(y, ps, retain_graph=True, allow_unused=True)
+        return float(sum(float(x.abs().sum()) for x in gr if x is not None))
+    w = float(cfg.w_ctx)
+    T1, T0 = run(m, batch, w), run(m, batch, 0.0)
+    dtot = float(T1["total"] - T0["total"])
+    want = w * float(T1["ctx"])
+    res["w_ctx"], res["term_ctx"], res["total_diff"], res["total_diff_expected"] = w, float(T1["ctx"]), dtot, want
+    if not (float(T1["ctx"]) > 0.0 and abs(dtot - want) <= rtol * max(abs(want), 1e-12)):
+        raise AssertionError(f"ctx probe: the total moved by {dtot} but w_ctx x term is {want}: the ctx term does not reach the total with its weight")
+    res["head_grad"] = gabs(run(m, batch, w)["total"], head)
+    res["control_head_grad_w0"] = gabs(run(m, batch, 0.0)["total"], head)
+    if not res["head_grad"] > 0.0:
+        raise AssertionError("ctx probe: the ctx head receives no gradient at w_ctx")
+    if res["control_head_grad_w0"] != 0.0:
+        raise AssertionError(f"ctx probe: the head gradient at w_ctx = 0 must read exactly 0.0, got {res['control_head_grad_w0']!r}")
+    res["per_var"] = {k_[4:]: float(v_) for k_, v_ in T1.items() if k_.startswith("ctx/")}
+    res["adapter_grad_ctx"] = gabs(run(m, batch, w)["ctx"], adapter)
+    m2 = copy.deepcopy(m)
+    m2.cfg.ctx_detach = "on"
+    adapter2 = [p for mod in (m2.adapter, m2.pos, m2.time) for p in (mod.parameters() if isinstance(mod, torch.nn.Module) else [mod])]
+    res["control_adapter_grad_detach_on"] = gabs(run(m2, batch, w)["ctx"], adapter2)
+    if cfg.ctx_detach == "off" and not res["adapter_grad_ctx"] > 0.0:
+        raise AssertionError("ctx probe: --ctx-detach off but the ctx loss puts no gradient on the shared adapter")
+    if cfg.ctx_detach == "on" and res["adapter_grad_ctx"] != 0.0:
+        raise AssertionError(f"ctx probe: --ctx-detach on but the ctx loss puts gradient {res['adapter_grad_ctx']!r} on the adapter")
+    if res["control_adapter_grad_detach_on"] != 0.0:
+        raise AssertionError(f"ctx probe: the detach-on control must read exactly 0.0 on the adapter, got {res['control_adapter_grad_detach_on']!r}")
+    b0 = dict(batch)
+    b0["ctx_y"] = torch.full_like(batch["ctx_y"], -1)
+    Tm = run(m, b0, w)
+    res["control_allmasked_term"] = float(Tm["ctx"])
+    res["control_allmasked_head_grad"] = gabs(Tm["total"], head)
+    if res["control_allmasked_term"] != 0.0 or res["control_allmasked_head_grad"] != 0.0:
+        raise AssertionError(f"ctx probe: an ALL-MASKED ctx_y must read exactly 0.0 (term {res['control_allmasked_term']}, head grad {res['control_allmasked_head_grad']})")
+    res["vision_only"] = M.assert_ctx_head_vision_only(m, batch)
+    iso = M.ctx_isolation_problems(m, batch)
+    res["isolation_problems"] = iso
+    if iso:
+        raise AssertionError(f"ctx probe: the ctx head is not isolated from the planner / goal outputs: {iso}")
+    if CL is not None and a is not None and a.ctx_labels:                    # (f) an independent re-read of the table (numpy, the raw arrays: no D.ctx_label_arrays)
+        with np.load(a.ctx_labels, allow_pickle=False) as z:
+            off = np.asarray(z["train_off"])
+            rows = off[batch["ci"].cpu().numpy()] + batch["t"].cpu().numpy()
+            ref = np.full((len(rows), len(M.CTX_VARS)), -1, np.int64)
+            for v, nm in enumerate(M.CTX_VARS):
+                ids, ok, fl = np.asarray(z[f"train_{nm}_id"])[rows], np.asarray(z[f"train_{nm}_valid"])[rows], np.asarray(z["train_flag"])[rows]
+                good = (fl == 0) & ok.astype(bool) & (ids >= 0)
+                if nm == "illumination":
+                    good &= ids != M.CTX_TWILIGHT_ID
+                ref[:, v] = np.where(good, ids, -1)
+        got = batch["ctx_y"].cpu().numpy().astype(np.int64)
+        res["label_staging_equal"] = bool((ref == got).all())
+        if not res["label_staging_equal"]:
+            raise AssertionError("ctx probe: ctx_y of the probe batch differs from an independent re-read of the table at (ci, t)")
+    res["pass"] = True
+    return res
+
+
+def nav_source_probe(model, batch, J, info, a, hist_rows=None) -> dict:
+    """PREREG_V8F_STRAT1 G-LIVE (EVERY argv; the control records source v9): (a) the digest of ``J["nav"]`` equals the declared source's (the npz's for text, the join's for v9); (b) text: ``n_text_ne_v9 > 0`` (zero =
+    the overwrite did not happen), v9: == 0; (c) the probe batch's ``nav`` equals an independent read of the source rows at its history steps; (d) reach: the nav encoder gets a non-zero gradient and ``forward_infer``
+    with ``nav`` set to zeros differs from the real one on ``ckpt``."""
+    ns = info.get("nav_source") or {}
+    res = {"source": ns.get("source")}
+    dig = hashlib.sha256(np.ascontiguousarray(J["nav"]).tobytes()).hexdigest()
+    res["J_nav_digest"] = dig
+    if a.nav_source == "text":
+        res["declared_digest"], res["n_text_ne_v9"] = ns.get("nav_digest"), ns.get("n_text_ne_v9")
+        if dig != ns.get("nav_digest"):
+            raise AssertionError("nav probe: J['nav'] is not the text nav the file declares (the overwrite line is missing)")
+        if not (ns.get("n_text_ne_v9") or 0) > 0:
+            raise AssertionError("nav probe: nav_source text but zero rows differ from the join's v9 nav")
+    else:
+        res["declared_digest"] = ns.get("join_nav_digest")
+        if dig != ns.get("join_nav_digest"):
+            raise AssertionError("nav probe: nav_source v9 but J['nav'] is not the join's nav")
+    # (c) independent read at the batch's history steps (rows off[ci] + clip(t - hmax + 1 .. t, 0, n - 1))
+    src = np.asarray(J["nav"])
+    if a.nav_source == "text":
+        with np.load(a.nav_text_npz, allow_pickle=False) as z:
+            src = np.asarray(z["train_nav"], np.float32)
+    Fn = int(batch["nav"].shape[1])
+    ok = True
+    for bi_ in range(int(batch["nav"].shape[0])):
+        ci, t = int(batch["ci"][bi_]), int(batch["t"][bi_])
+        n = int(J["n"][ci])
+        idc = np.clip(np.arange(t - Fn + 1, t + 1), 0, n - 1)
+        ok &= bool(np.array_equal(batch["nav"][bi_].cpu().numpy(), src[int(J["off"][ci]) + idc]))
+    res["batch_nav_equals_source_rows"] = ok
+    if not ok:
+        raise AssertionError("nav probe: the probe batch's nav differs from an independent read of the declared source rows")
+    # (d) reach
+    m = copy.deepcopy(model).cpu()
+    m.train()
+    tm = m.loss(batch, p_gt=0.5, gen=torch.Generator().manual_seed(0))["terms"]
+    gr = torch.autograd.grad(tm["total"], list(m.e_nav.parameters()), allow_unused=True)
+    res["e_nav_grad"] = float(sum(float(x.abs().sum()) for x in gr if x is not None))
+    m.eval()
+    with torch.no_grad():
+        o1 = m.forward_infer(batch)["ckpt"]
+        b2 = dict(batch)
+        b2["nav"] = torch.zeros_like(batch["nav"])
+        o2 = m.forward_infer(b2)["ckpt"]
+    res["zero_nav_dckpt"] = float((o1 - o2).abs().max())
+    if not res["e_nav_grad"] > 0.0 or not res["zero_nav_dckpt"] > 0.0:
+        raise AssertionError(f"nav probe: the nav channel does not reach the model (e_nav grad {res['e_nav_grad']}, zero-nav dckpt {res['zero_nav_dckpt']})")
+    res["pass"] = True
+    return res
+
 
 def level_stage(batch: dict) -> tuple:
     """PREREG_V8F_LEVEL: the ONE call that turns a COLLATED batch into the level head's label ``(level_y [B] float32, level_ok [B] bool)`` -- the LOGGED speed at NOW, ``kin3[:, 0]``. The training loop calls it, and
@@ -3040,6 +3311,8 @@ def live_check_lora(model, enc, batch, cfg, a, dev, chunk, steps: int = 3, lr: f
         expect.add("level")                                              # PREREG_V8F_LEVEL
     if cfg.lead_head == "on":
         expect.add("lead")                                               # PREREG_LEVELHEAD_A2
+    if cfg.ctx_heads == "on":
+        expect |= {"ctx"} | {f"ctx/{v_}" for v_ in M.CTX_VARS}           # PREREG_V8F_STRAT1
     missing = sorted(expect - set(terms_seen))
     declared_dead = [n for n in acc if cfg.wm == "a" and ".idm_heads." in n]
     if cfg.o_interface == "cut":                  # PREREG_V8F_FLAT: O reads a constant code, so e_code.weight receives EXACTLY 0.0 (its bias still trains): declared dead, and G-LIVE REQUIRES the zero
@@ -3088,6 +3361,10 @@ def build_data(a, cfg):
                                    speed=D.load_speed_sidecar(a.speed_train))
             if a.join_train:
                 D.save_join(J, a.join_train)
+    info["nav_source"] = {"source": a.nav_source, "join_nav_digest": hashlib.sha256(np.ascontiguousarray(J["nav"]).tobytes()).hexdigest()}        # PREREG_V8F_STRAT1
+    if a.nav_source == "text":
+        J["nav"], J["nav_d"], rec_ = D.nav_text_arrays(J, a.nav_text_npz, a.nav_text_sha256, "train")          # PREREG_V8F_STRAT1: ONE line (a mutation deletes it, T-NAV-MUT)
+        info["nav_source"].update(rec_)
     excluded, n_ex_declared = [], 0
     if a.exclude:
         xlo, xhi = (int(x) for x in a.exclude.split(":"))
@@ -3284,6 +3561,9 @@ def main(argv=None):
         info["stok_attached"] = getattr(ds, "stok", None) is not None and getattr(ds, "stok", None) is getattr(store, "stok_store", None)
     if a.wm_windows != "wmonly":
         info["ds_window_start"] = ds.window_start                   # the held-age clamp's origin, read back from the BUILT dataset (G-DVB compares it)
+    info["_train_windows"] = wins                                   # PREREG_V8F_STRAT1: the ctx valid-share guard reads the trained windows (popped before the selfcheck is written)
+    CL = make_ctx_labels(a, cfg, J, info)                           # PREREG_V8F_STRAT1: the context head's label arrays (None with the head off: nothing read, nothing built)
+    info.pop("_train_windows", None)
     LL = make_lead_labels(a, cfg, J, info)                          # PREREG_LEVELHEAD_A2: the lead head's label arrays (None with the head off: nothing read, nothing built)
     prior = M.load_p10(a.p10) if not a.synthetic else M.P10Prior.synthetic(a.seed)
     mu, sd = M.cons_stats(J)
@@ -3309,9 +3589,13 @@ def main(argv=None):
     if a.encoder == "lora":
         enc = make_encoder(a, dev)                     # AFTER the heads: it must not move their initialisation (the global RNG is restored inside)
         enc.set_checkpointing(a.enc_ckpt)
-    decay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim >= 2]
-    nodecay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim < 2]
+    ctx_ids = {id(p) for p in model.ctx_head.parameters()} if model.ctx_head is not None else set()      # PREREG_V8F_STRAT1: the head's own optimiser groups (empty with the head off = the tip's groups, bit for bit)
+    decay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim >= 2 and id(p) not in ctx_ids]
+    nodecay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim < 2 and id(p) not in ctx_ids]
     groups = [{"params": decay, "weight_decay": a.wd}, {"params": nodecay, "weight_decay": 0.0}]
+    if ctx_ids:
+        groups.append({"params": [p for p in model.ctx_head.parameters() if p.ndim >= 2], "weight_decay": a.wd, "lr": a.lr * a.ctx_lr_mult, "name": "ctx", "lr_mult": a.ctx_lr_mult})
+        groups.append({"params": [p for p in model.ctx_head.parameters() if p.ndim < 2], "weight_decay": 0.0, "lr": a.lr * a.ctx_lr_mult, "name": "ctx_nd", "lr_mult": a.ctx_lr_mult})
     if enc is not None:                                # the LoRA matrices (2-D: the same weight-decay rule as the heads), their own peak lr
         groups.append({"params": enc.lora_parameters(), "weight_decay": a.wd, "lr": lora_lr_of(a), "name": "lora", "lr_mult": lora_lr_of(a) / a.lr})
     opt = torch.optim.AdamW(groups, lr=a.lr)
@@ -3342,6 +3626,8 @@ def main(argv=None):
             probe["level_y"], probe["level_ok"] = level_stage(probe)
         if cfg.lead_head == "on":                        # PREREG_LEVELHEAD_A2: as above (the lead labels, looked up by the probe's own clip index and step)
             probe["lead_y"], probe["lead_has"], probe["lead_near"] = lead_stage(probe, LL)
+        if cfg.ctx_heads == "on":                        # PREREG_V8F_STRAT1: as above (the ctx labels, looked up by the probe's own clip index and step, BEFORE any ego stage)
+            probe["ctx_y"] = ctx_stage(probe, CL)
         if a.wm_only:                                    # PREREG_V8F_MRATE: G-LIVE of the WM-only mode + the planner identity (the other probes need gradients on the frozen readers and are not run)
             live = wm_only_live_check(model.cpu(), probe if probe_wm is None else probe_wm, cfg)
             pid = planner_identity_probe(model.cpu(), probe, cfg)
@@ -3357,12 +3643,14 @@ def main(argv=None):
             probe_f["level_y"], probe_f["level_ok"] = level_stage(probe_f)
         if cfg.lead_head == "on":                        # PREREG_LEVELHEAD_A2: as above
             probe_f["lead_y"], probe_f["lead_has"], probe_f["lead_near"] = lead_stage(probe_f, LL)
+        if cfg.ctx_heads == "on":                        # PREREG_V8F_STRAT1: as above
+            probe_f["ctx_y"] = ctx_stage(probe_f, CL)
         probe = {k: v for k, v in probe_f.items() if k not in ("frames_u8", "frame_map")}      # the cached tokens stay in `probe` (admissibility, identity)
         live = live_check_lora(model, enc, probe_f, cfg, a, dev, chunk)
         ident = identity_probe(enc, probe_f, dev, chunk)
     model.to(dev)
     if a.wm_only:                                                          # PREREG_V8F_MRATE: the readers, heads and planner are frozen and never run; the probes that need their gradients are skipped (and recorded as skipped)
-        mix = ocut = accp = egop = dagp = recp = t2p = lvp = ldp = obp = {"skipped": "wm_only"}
+        mix = ocut = accp = egop = dagp = recp = t2p = lvp = ldp = obp = cxp = nsp = {"skipped": "wm_only"}
         lip = {"skipped": "wm_only", "launch_n": 0, "launch_eligible": 0}
         cmpp = {"skipped": "wm_only", "overlap": 0}
         adm = M.assert_no_situation_classifier_input(model.cpu().eval(), probe)
@@ -3419,6 +3707,14 @@ def main(argv=None):
             ldp = lead_head_probe(model, probe, cfg)          # PREREG_LEVELHEAD_A2: G-LIVE on the loop's own label call (lead_stage); the term reaches the loss with its weight, BOTH outputs get their gradient, the detach control reads EXACTLY 0.0, the lead output reaches O, the head is vision-only (off: nothing run)
         except (AssertionError, ValueError) as e:
             raise SystemExit(f"ZZDVB-REFUSEDZZ lead-head: {e}")
+        try:
+            cxp = ctx_head_probe(model, probe, cfg, CL, a)    # PREREG_V8F_STRAT1: G-LIVE on the loop's own label call (ctx_stage); the term reaches the total with its weight, the head gets its gradient, three exact-0.0 controls, vision-only + isolated (off: nothing runs)
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ ctx-head: {e}")
+        try:
+            nsp = nav_source_probe(model, probe, J, info, a)  # PREREG_V8F_STRAT1: EVERY argv: the nav the batch carries is the declared source's, the overwrite happened (text) or did not (v9), the channel reaches the model
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ nav-source: {e}")
     levers = model.built_levers()
     levers["ego_perturb"] = ego.built_levers()                        # recorded like every other lever (selfcheck.json, summary.json, the checkpoint)
     levers["dagger"] = dag.built_levers()                             # PREREG_V8F_DAGGER: what was BUILT (the bank's path and sha256 included) ...
@@ -3466,6 +3762,10 @@ def main(argv=None):
         sc["otband_probe"] = obp
         if info.get("stok"):
             sc["stok"] = info["stok"]
+    sc["nav_source_probe"] = nsp                                        # PREREG_V8F_STRAT1: every argv (the control's records source v9); a tip selfcheck has none
+    if cfg.ctx_heads == "on":                                           # PREREG_V8F_STRAT1: lever-ON arms only
+        sc["ctx_head_probe"] = cxp
+        sc["ctx_labels"] = info["ctx_labels"]
     if cfg.lead_head == "on":                                           # PREREG_LEVELHEAD_A2: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
         sc["lead_head_probe"] = ldp
         sc["lead_labels"] = info["lead_labels"]
@@ -3492,6 +3792,7 @@ def main(argv=None):
     launch_on = cfg.launch_intent_w > 0.0                          # PREREG_V8F_LAUNCH_INTENT: off (the default) = the loop runs no new line
     level_on = cfg.level_head == "on"                              # PREREG_V8F_LEVEL: off (the default) = the loop runs no new line
     lead_on = cfg.lead_head == "on"                                # PREREG_LEVELHEAD_A2: off (the default) = the loop runs no new line
+    ctx_on = cfg.ctx_heads == "on"                                 # PREREG_V8F_STRAT1: off (the default) = the loop runs no new line
     launch_tot = {"rows": 0, "eligible": 0, "n": 0}                # ... run totals: rows seen, GT-valid rows (the along-track label exists), GT-launch rows; carried in the checkpoint of an arm that has the lever ON only
     launch_int = {"rows": 0, "eligible": 0, "n": 0}                # ... and since the last log line
     perf_rec = None                                                  # AMENDMENT_V8F_LORA_5: set only by a resume across --accum / --enc-ckpt under --resume-perf-levers
@@ -3530,6 +3831,10 @@ def main(argv=None):
             blob["recover"], blob["recover_totals"] = rcv.built_levers(), dict(rec_tot)
         if launch_on:                                                   # lever-ON arms only: a flag-off checkpoint keeps its key set
             blob["launch_totals"] = dict(launch_tot)
+        if a.nav_source == "text":                                      # PREREG_V8F_STRAT1: lever-ON arms only
+            blob["nav_text_sha256"] = a.nav_text_sha256
+        if ctx_on:
+            blob["ctx_labels_sha256"] = a.ctx_labels_sha256
         if a.wm_only:                                                   # WM-only arms only
             blob["wm_only"] = True
         if enc is not None:             # `model` keeps B's layout (the unchanged v8f_mini_eval.py loads it); the LoRA matrices travel beside it
@@ -3561,6 +3866,8 @@ def main(argv=None):
                     lvl_lab = level_stage(b)
                 if lead_on:                                            # PREREG_LEVELHEAD_A2: the lead label of the LOGGED frame (clip index and step), taken BEFORE any ego stage (a swapped sample's ci / t is the own one)
                     lead_lab = lead_stage(b, LL)
+                if ctx_on:                                             # PREREG_V8F_STRAT1: the ctx label of the LOGGED frame (clip index and step), taken BEFORE any ego stage (no swap rewrites feats)
+                    ctx_lab = ctx_stage(b, CL)
                 if comp.on:                                            # AMEND1 section 1 (--ego-perturb-with-dagger): the swap is drawn first, the perturbation only on the samples the swap did not replace; the overlap is measured (exactly 0)
                     b = comp.apply(b, step)
                     for c_ in (ov_int, ov_tot):
@@ -3598,6 +3905,8 @@ def main(argv=None):
                     b["level_y"], b["level_ok"] = lvl_lab
                 if lead_on:                                            # PREREG_LEVELHEAD_A2: attached AFTER the stages: the loss reads b["lead_y"], b["lead_has"], b["lead_near"]
                     b["lead_y"], b["lead_has"], b["lead_near"] = lead_lab
+                if ctx_on:                                             # PREREG_V8F_STRAT1: attached AFTER the stages: the loss reads b["ctx_y"]
+                    b["ctx_y"] = ctx_lab
                 if t2b.active:                                         # PREREG_T2_DAGGER (exclusive with every stage above): whole bank samples replace a share p of the rows AFTER the label stages (it masks launch / level / lead itself); p = 0 runs none of these lines
                     b_pre = b
                     b = t2b.apply(b, step)
@@ -3693,6 +4002,10 @@ def main(argv=None):
     if lead_on:
         summary["lead_head"], summary["w_lead"] = "on", cfg.w_lead
         summary["lead_labels"] = info["lead_labels"]
+    if a.nav_source == "text" or ctx_on:                                   # PREREG_V8F_STRAT1: the lever-ON arm's run record (a flag-off summary.json keeps its key set)
+        summary["nav_source"], summary["n_text_ne_v9"] = a.nav_source, info["nav_source"].get("n_text_ne_v9")
+    if ctx_on:
+        summary["ctx_heads"], summary["w_ctx"], summary["ctx_labels"] = "on", cfg.w_ctx, info["ctx_labels"]
     if enc is not None:
         summary["encoder"] = "lora"
     if a.wm_only:                                                          # PREREG_V8F_MRATE: the WM-only arm's run record (a flag-off summary.json keeps its key set)
