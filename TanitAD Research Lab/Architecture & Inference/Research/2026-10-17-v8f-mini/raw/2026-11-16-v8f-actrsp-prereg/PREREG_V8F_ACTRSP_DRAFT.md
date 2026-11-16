@@ -106,7 +106,11 @@ Base argv: `C:/Users/Admin/t2v8f_pulls/actsens_NULL_s2/argv.txt` (chassis 0) and
 * **LONGITUDINAL:** `acc_mae`, `speed_err`, and distance-keeping `hw_err` / `tg_err` / `ttc_err` on windows with a lead (n printed per cell).
 * **LATERAL:** `yaw_mae`, `head_err`, `curv_err`, `xtrack`, `ade`.
 * **TACTICAL:** plan-derived (`hwm_eval.TACTICAL_SCOPE`): `tac_man_dis`, `tac_lat_dis`, `tac_lon_dis` per band. Goal and anchor selection: n = 0, NOT COMPUTABLE (the planner has no decision output).
-* **STRATEGIC:** PAUSED (PI item 25, 2026-09-19). Never a pass, never omitted.
+* **STRATEGIC** (reported in full; the item 25 pause ended by PI ruling 2026-11-16). Cells from the NVIDIA navigation text (`strategic_cells.py`, audit `0c58187e`; reader wiring in build, MM package `F:/TanitAD-scratch/strategic/build/`), full 6 s band only, the 0-2 s and 2-6 s bands empty by construction:
+  * `s_adh` route adherence (announced L/R turn inside the plan's arc; signed-degree twin beside it) and `s_false` false turn, each with the logged-path rate beside it (S_FALSE is read only as plan minus logged). n on the 994 SCORE windows: S_ADH about 13 windows / 3 episodes, S_FALSE 919 (MEASURED, audit `proto_actsens_read.json`): S_ADH is NOT decision-grade here and is reported with its n.
+  * HWM-ORACLE plans: the goal is the encoded true future, so these cells measure the world model's use of an oracle (T0 diagnostic), not a strategic decision.
+  * `S_CKPT`, strategic intent 6-30 s, derived goals, detected info: NOT COMPUTABLE on these arms, each with its reason (no S head in the HWM planner; no output beyond 6 s; no derived-goal or context output) and the would-have n. A structural n/a, never a pass.
+  * COMPLETE_M 20 m, theta 25 deg (SLIGHT 10 deg) and the 30 m margin are HYPOTHESIS values, fixed here before any ACTRSP window is scored; one sensitivity row at COMPLETE_M 10 and 30. No ACTRSP outcome in section 7 is decided on a STRATEGIC cell.
 
 ### 4.4 Estimator and floors (every reported interval names the question it answers)
 * **Interval:** paired episode-cluster bootstrap (`taniteval/ci.py` through `hwm_eval.contrast`), B 2,000, seed 0, over the 994 SCORE windows in 71 episodes. It answers *another draw of episodes*, nothing else.
@@ -165,3 +169,4 @@ Base argv: `C:/Users/Admin/t2v8f_pulls/actsens_NULL_s2/argv.txt` (chassis 0) and
 
 ## Log
 * 2026-11-16, agent draft. No ACTRSP code, run or scored window existed. Every number above comes from banked artifacts named beside it; the dose and the contrasts come from TRAIN windows and from R35's training log, never from scored windows. Freeze line: Master Mind.
+* 2026-11-16, MM: section 4.3 STRATEGIC filled after the PI ruling of 2026-11-16 (pause ended); cells and their HYPOTHESIS constants fixed before any ACTRSP window exists.
