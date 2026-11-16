@@ -1,0 +1,136 @@
+{
+ "item": "stageb",
+ "record": {
+  "B_s0.B": {
+   "C-BANK": {
+    "problems": [],
+    "n_shards": 4,
+    "partial": false,
+    "coverage": {
+     "blocked": false,
+     "fraction": 0.7640475460422878,
+     "min": 0.5,
+     "n_eligible": 234231,
+     "n_windows": 306566
+    },
+    "n_records": 613132
+   },
+   "G-DAGGER": {
+    "problems": [],
+    "result": {
+     "mutated": false,
+     "argv": "/root/dscale10k/gate/sb/B_s0.B.argv.json",
+     "out": "/root/dscale10k/gate/sb/B_s0.B",
+     "rc": 0,
+     "refused": false,
+     "selfcheck": "/root/dscale10k/gate/sb/B_s0.B/selfcheck.json",
+     "declared_vs_built": "PASS",
+     "dagger_probe_pass": true,
+     "acc_probe_pass": true
+    },
+    "dagger_probe": {
+     "pass": true,
+     "n_rows": 64,
+     "n_eligible": 55,
+     "n_selected_at_p1": 55,
+     "loss_diff": 32.94429016113281,
+     "grad_diff_all": 11556.6337890625,
+     "control_repeat_loss_diff": 0.0,
+     "control_repeat_grad_diff": 0.0,
+     "control_p0_same_object": true,
+     "control_p0_loss_diff": 0.0,
+     "control_p0_grad_diff": 0.0,
+     "control_prior_grad_diff": 0.0,
+     "control_wm_grad_diff": 0.0,
+     "rows_changed": {
+      "p10f": 55,
+      "base": 55,
+      "kin3": 55,
+      "p10_t": 55,
+      "pose": 55,
+      "pose_t": 40,
+      "pose_s": 52,
+      "nav": 29
+     }
+    },
+    "acc_probe": {
+     "pass": true,
+     "w_acc_declared": 49.6969,
+     "head_o_grad_diff": 1295.2626953125,
+     "declared_zero_total_reproduces_exactly": null
+    }
+   }
+  },
+  "mutation": {
+   "rc": 1,
+   "refused": true,
+   "message": "ZZDVB-REFUSEDZZ dagger: dagger probe: the swapped kin3 of a selected row is not the bank record's own kin3: the swap does not write the bank's state into the batch",
+   "selfcheck": null
+  },
+  "U_s0.B_smoke": {
+   "scope": "--max-clips 200 bank (4 shards, parallel) and selfcheck on the UNION stage-B argv; a full union bank is built in the chain (about 2.3 h)",
+   "C-BANK": {
+    "problems": [],
+    "n_shards": 4,
+    "coverage": {
+     "blocked": false,
+     "fraction": 0.7179506081828234,
+     "min": 0.5,
+     "n_eligible": 9739,
+     "n_windows": 13565
+    }
+   },
+   "G-DAGGER": {
+    "problems": [],
+    "dagger_probe_pass": true,
+    "grad_diff_all": 7823.3330078125,
+    "loss_diff": 11.43433952331543
+   }
+  },
+  "B_rep.A_selfcheck": {
+   "declared_vs_built": "PASS",
+   "live_pass": true,
+   "n_trainable_tensors": 252
+  }
+ },
+ "regression": [
+  {
+   "arm": "dagger_apply_mutated (the swapped tensors discarded)",
+   "red": true,
+   "problems": [
+    "the trainer refused the mutated swap: ZZDVB-REFUSEDZZ dagger: dagger probe: the swapped kin3 of a selected row is not the bank record's own kin3: the swap does not write the bank's state into the ba",
+    "no passing selfcheck.json under the mutation"
+   ]
+  },
+  {
+   "arm": "partial_bank",
+   "red": true,
+   "problems": [
+    "the bank is PARTIAL (--limit-clips): it may not train an arm"
+   ]
+  },
+  {
+   "arm": "p0_control_not_exactly_zero",
+   "red": true,
+   "problems": [
+    "dagger_probe control control_p0_grad_diff reads 1e-09, expected exactly 0.0"
+   ]
+  },
+  {
+   "arm": "swap_does_not_reach_the_loss",
+   "red": true,
+   "problems": [
+    "dagger_probe: loss_diff 32.94429016113281, grad_diff_all 0.0: the swap does not reach the loss"
+   ]
+  },
+  {
+   "arm": "coverage_below_0.5",
+   "red": true,
+   "problems": [
+    "the selfcheck carries no bank controls, or the bank coverage is blocked"
+   ]
+  }
+ ],
+ "problems": [],
+ "pass": true
+}

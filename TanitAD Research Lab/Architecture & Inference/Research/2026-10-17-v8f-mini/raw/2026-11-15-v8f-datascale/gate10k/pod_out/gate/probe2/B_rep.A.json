@@ -1,0 +1,157 @@
+{
+ "argv": "/root/dscale10k/argv/B_rep.A.json",
+ "n_clips": 4512,
+ "train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+ "arm": {
+  "n_trainable": 7214495,
+  "cfg": {
+   "d": 256,
+   "heads": 4,
+   "ff": 512,
+   "d_feat": 1024,
+   "n_tok": 40,
+   "hist": 4,
+   "hmax": 16,
+   "n_q": 4,
+   "depth_s": 1,
+   "depth_t": 1,
+   "depth_o": 2,
+   "nb": 12,
+   "res_scale_m": 2.0,
+   "navonly": false,
+   "consistency": true,
+   "wm": "b",
+   "wm_dim": 128,
+   "wm_strides": [
+    2,
+    2
+   ],
+   "wm_k": 1,
+   "wm_rollout_k": [
+    1,
+    1,
+    1
+   ],
+   "wm_rollout_stride": [
+    1,
+    1,
+    1
+   ],
+   "wm_rollout_w": 1.0,
+   "wm_ctx": [
+    3,
+    3,
+    3
+   ],
+   "w_ckpt": 1.0,
+   "w_tac": 1.0,
+   "w_cons": 0.5,
+   "w_traj": 1.0,
+   "w_pen": 0.5,
+   "w_pen_self": 0.25,
+   "w_wm": 0.1,
+   "wm_beta": 0.08,
+   "wm_gamma": 100.0,
+   "p_gt_start": 1.0,
+   "p_gt_end": 0.2,
+   "max_age_t": 2,
+   "max_age_s": 6,
+   "detach_upper": false,
+   "kin_mode": "yaw",
+   "cons_absent": "mask",
+   "window_start": -1,
+   "code_mix": "whole",
+   "o_interface": "full",
+   "w_acc": 0.0,
+   "launch_intent_w": 0.0,
+   "w_op": 0.0,
+   "w_tac_traj": 0.0,
+   "stok_dim": 0,
+   "level_head": "off",
+   "lead_head": "off",
+   "w_lead": 0.0,
+   "aux_cond": "add",
+   "w_level": 0.0
+  }
+ },
+ "n_windows": {
+  "corpus": 306566,
+  "tenk": 0
+ },
+ "corpus": {
+  "ckpt": {
+   "finite": true,
+   "value": 1.9159045219421387,
+   "grad": 4512.0439144503325
+  },
+  "tac_lat": {
+   "finite": true,
+   "value": 1.3882880210876465,
+   "grad": 1628.9657127490354
+  },
+  "tac_lon": {
+   "finite": true,
+   "value": 1.882393717765808,
+   "grad": 782.8392586798655
+  },
+  "goal_vlm": {
+   "finite": true,
+   "value": 0.25572866201400757,
+   "grad": 113.6078778561614
+  },
+  "goal_geom": {
+   "finite": true,
+   "value": 0.440338134765625,
+   "grad": 273.9273281029018
+  },
+  "traj": {
+   "finite": true,
+   "value": 1.437894582748413,
+   "grad": 66.7455925643444
+  },
+  "acc": {
+   "finite": true,
+   "value": 0.02143140323460102,
+   "grad": 10.13357062637806
+  },
+  "cons_lc": {
+   "finite": true,
+   "value": 0.0,
+   "grad": 0.0
+  },
+  "cons_lat": {
+   "finite": true,
+   "value": 0.23692317306995392,
+   "grad": 363.4738341260636
+  },
+  "cons_lon": {
+   "finite": true,
+   "value": 0.3501704931259155,
+   "grad": 180.23234347309335
+  },
+  "pen": {
+   "finite": true,
+   "value": 1.1219711303710938,
+   "grad": 1471.3708248138428
+  },
+  "pen_self": {
+   "finite": true,
+   "value": 4.505692005157471,
+   "grad": 2613.923610687256
+  },
+  "wm": {
+   "finite": true,
+   "value": 212.89491271972656,
+   "grad": 15681.57569058612
+  }
+ },
+ "control_n_positive_windows": 42,
+ "control": {
+  "goal_vlm_grad": 194.09589170004347,
+  "goal_vlm_value": 0.5012836456298828
+ },
+ "mapping": "are the checker's (STAGE_A_TERMS). Their mapping onto the trainer's loss terms is stated in ``mapping`` of the output and is the probe author's:\n  ckpt<-T.ckpt, tac_lat<-T.lat, tac_lon<-T.lon, traj<-ade/3+0.5*fde/6, pen<-sum pen_*, pen_self<-sum pens_*, wm<-T.wm, acc<-T.acc;\n  goal_vlm / goal_geom<-the goal BCE split by the goal classes whose release GOAL_PROV contains `vlm` / not; cons_lc<-the Huber columns lc_*, cons_lat<-columns 0..9, cons_lon<-the rest.",
+ "cons_absent": "mask",
+ "vlm_mask_bits": 4194080,
+ "problems_stageA": []
+}

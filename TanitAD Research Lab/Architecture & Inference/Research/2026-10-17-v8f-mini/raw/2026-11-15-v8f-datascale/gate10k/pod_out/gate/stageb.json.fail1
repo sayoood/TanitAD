@@ -1,0 +1,111 @@
+{
+ "item": "stageb",
+ "record": {
+  "B_s0.B": {
+   "C-BANK": {
+    "problems": [],
+    "n_shards": 4,
+    "partial": false,
+    "coverage": {
+     "blocked": false,
+     "fraction": 0.7640475460422878,
+     "min": 0.5,
+     "n_eligible": 234231,
+     "n_windows": 306566
+    },
+    "n_records": 613132
+   },
+   "G-DAGGER": {
+    "problems": [
+     "no selfcheck.json from the real stage-B argv: ZZDVB-REFUSEDZZ dagger-bank /root/dscale10k/gate/bank_B_pilot: K-B3: the canonical eval-141 grid /root/dscale10k/tree/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/eval_grid_windows.json does not exist: the eval-disjointness check cannot run, and a check that cannot run is a refusal"
+    ],
+    "result": {
+     "mutated": false,
+     "argv": "/root/dscale10k/gate/sb/B_s0.B.argv.json",
+     "out": "/root/dscale10k/gate/sb/B_s0.B",
+     "rc": 1,
+     "refused": true,
+     "message": "ZZDVB-REFUSEDZZ dagger-bank /root/dscale10k/gate/bank_B_pilot: K-B3: the canonical eval-141 grid /root/dscale10k/tree/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/eval_grid_windows.json does not exist: the eval-disjointness check cannot run, and a check that cannot run is a refusal",
+     "selfcheck": null
+    },
+    "dagger_probe": {
+     "pass": null,
+     "n_rows": null,
+     "n_eligible": null,
+     "n_selected_at_p1": null,
+     "loss_diff": null,
+     "grad_diff_all": null,
+     "control_repeat_loss_diff": null,
+     "control_repeat_grad_diff": null,
+     "control_p0_same_object": null,
+     "control_p0_loss_diff": null,
+     "control_p0_grad_diff": null,
+     "control_prior_grad_diff": null,
+     "control_wm_grad_diff": null,
+     "rows_changed": null
+    },
+    "acc_probe": {
+     "pass": null,
+     "w_acc_declared": null,
+     "head_o_grad_diff": null,
+     "declared_zero_total_reproduces_exactly": null
+    }
+   }
+  },
+  "mutation": {
+   "rc": 1,
+   "refused": true,
+   "message": "ZZDVB-REFUSEDZZ dagger-bank /root/dscale10k/gate/bank_B_pilot: K-B3: the canonical eval-141 grid /root/dscale10k/tree/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/eval_grid_windows.json does not exist: the eval-disjointness check cannot run, and a check that cannot run is a refusal",
+   "selfcheck": null
+  },
+  "U_s0.B_smoke": {
+   "scope": "--max-clips 200 bank (4 shards, parallel) and selfcheck on the UNION stage-B argv; a full union bank is built in the chain (about 2.3 h)",
+   "C-BANK": {
+    "problems": [],
+    "n_shards": 4,
+    "coverage": {
+     "blocked": false,
+     "fraction": 0.7179506081828234,
+     "min": 0.5,
+     "n_eligible": 9739,
+     "n_windows": 13565
+    }
+   },
+   "G-DAGGER": {
+    "problems": [
+     "no selfcheck.json from the U smoke stage-B argv: ZZDVB-REFUSEDZZ dagger-bank /root/dscale10k/gate/sb/U_smoke_bank: K-B3: the canonical eval-141 grid /root/dscale10k/tree/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/eval_grid_windows.json does not exist: the eval-disjointness check cannot run, and a check that cannot run is a refusal"
+    ],
+    "dagger_probe_pass": null,
+    "grad_diff_all": null,
+    "loss_diff": null
+   }
+  },
+  "B_rep.A_selfcheck": {
+   "declared_vs_built": "PASS",
+   "live_pass": true,
+   "n_trainable_tensors": 252
+  }
+ },
+ "regression": [
+  {
+   "arm": "dagger_apply_mutated (the swapped tensors discarded)",
+   "red": true,
+   "problems": [
+    "the trainer refused the mutated swap: ZZDVB-REFUSEDZZ dagger-bank /root/dscale10k/gate/bank_B_pilot: K-B3: the canonical eval-141 grid /root/dscale10k/tree/TanitAD Research Lab/Architecture & Infere",
+    "no passing selfcheck.json under the mutation"
+   ]
+  },
+  {
+   "arm": "partial_bank",
+   "red": true,
+   "problems": [
+    "the bank is PARTIAL (--limit-clips): it may not train an arm"
+   ]
+  }
+ ],
+ "problems": [
+  "B_s0.B G-DAGGER: no selfcheck.json from the real stage-B argv: ZZDVB-REFUSEDZZ dagger-bank /root/dscale10k/gate/bank_B_pilot: K-B3: the canonical eval-141 grid /root/dscale10k/tree/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/eval_grid_windows.json does not exist: the eval-disjointness check cannot run, and a check that cannot run is a refusal",
+  "U_s0.B smoke G-DAGGER: no selfcheck.json from the U smoke stage-B argv: ZZDVB-REFUSEDZZ dagger-bank /root/dscale10k/gate/sb/U_smoke_bank: K-B3: the canonical eval-141 grid /root/dscale10k/tree/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/eval_grid_windows.json does not exist: the eval-disjointness check cannot run, and a check that cannot run is a refusal"
+ ],
+ "pass": false
+}
