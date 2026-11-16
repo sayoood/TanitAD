@@ -164,6 +164,7 @@ LIMITS_MS = (30 / 3.6, 50 / 3.6, 100 / 3.6, 120 / 3.6)
 CH1_SCALE = {"steer": 0.3, "yaw": 0.4}
 #: the scale the WM auxiliary divides action channel 0 (longitudinal acceleration, m/s^2) by.
 WM_ACC_SCALE = 2.0
+RSP_DELTA = (0.42, 0.24)   # PREREG_V8F_ACTRSP section 2.1: the contrast size per level-1 action channel in WM units = 1 sd on R35 TRAIN windows (PROBE_ACTSENS_RESULT.json action_sd_wm_units 0.4203 / 0.2369, MEASURED)
 #: EXACTLY the batch keys the inference path may read. Everything else (``lab*``, ``gt``, ``s_h``, ``lead_gap_h`` ...)
 #: is a label or an evaluator-side quantity and is never touched by ``forward_infer``.
 INFERENCE_INPUT_KEYS = frozenset({"feats", "frame_ok", "p10f", "act", "nav", "pose", "limit", "limit_ok", "base",
@@ -209,6 +210,7 @@ class V8FMiniConfig:
     wm_beta: float = 0.08
     wm_gamma: float = 100.0
     wm_gamma_levels: tuple = ()        # PREREG_V8F_ACTSENS (`--wm-idm-gamma G1 G2 G3`): the IDM weight of each WM level. () = (wm_gamma,) x 3 = every earlier arm, bit for bit (changes the loss weight only, never a parameter shape)
+    wm_rsp_w: float = 0.0              # PREREG_V8F_ACTRSP (`--wm-rsp-w`): the weight of the level-1 action-response term (HJEPAStack.response_loss). 0.0 = the term is NOT built = every earlier arm, bit for bit (no key, no op, no parameter); > 0 needs wm b and kin_mode yaw (the contrast sizes are WM units of the yaw-rate channel)
     p_gt_start: float = 1.0
     p_gt_end: float = 0.2
     max_age_t: int = 2
@@ -283,6 +285,13 @@ class V8FMiniConfig:
             raise ValueError(f"wm_gamma_levels must be () or three finite numbers > 0 (levels 1, 2, 3), got {wgl!r}")
         if len(wgl) > 0 and self.wm != "b":
             raise ValueError("wm_gamma_levels needs wm b (the IDM runs only at b): a lever that is declared and builds nothing")
+        wr = self.wm_rsp_w                                                         # PREREG_V8F_ACTRSP: a finite float >= 0; > 0 only with wm b (the IDM head is the readout) and kin_mode yaw (the contrast sizes are yaw-rate units)
+        if not (isinstance(wr, (int, float)) and not isinstance(wr, bool) and math.isfinite(wr) and wr >= 0.0):
+            raise ValueError(f"wm_rsp_w must be a finite number >= 0, got {wr!r}")
+        if wr > 0.0 and self.wm != "b":
+            raise ValueError("wm_rsp_w > 0 needs wm b (the level-1 IDM head is the readout): a lever that is declared and builds nothing")
+        if wr > 0.0 and self.kin_mode != "yaw":
+            raise ValueError(f"wm_rsp_w > 0 needs kin_mode yaw (the contrast sizes are WM units of the yaw-rate channel), got {self.kin_mode!r}")
         for nm in ("wm_rollout_k", "wm_rollout_stride", "wm_ctx"):               # PREREG_V8F_LADDER: three ints >= 1 (one per WM level)
             v = getattr(self, nm)
             if not (isinstance(v, (tuple, list)) and len(v) == 3 and all(isinstance(x, int) and not isinstance(x, bool) and x >= 1 for x in v)):
@@ -697,7 +706,8 @@ class WMAux(nn.Module):
         K = int(cfg.wm_k)
         up = lambda i: dict(window=K, dilation=cfg.wm_strides[i], causal_pad=True) if K > 1 else {}      # K = 1: LevelConfig's defaults, i.e. the earlier build
         lad = lambda i: dict(context=int(cfg.wm_ctx[i]), rollout_k=int(cfg.wm_rollout_k[i]), rollout_stride=int(cfg.wm_rollout_stride[i]), rollout_w=float(cfg.wm_rollout_w))   # noqa: E731  PREREG_V8F_LADDER: (3, 3, 3) / (1, 1, 1) = LevelConfig's defaults, i.e. the earlier build
-        lv = [mk(gl[0], action_dim=2, act_embed_dim=32, **lad(0)),
+        lv = [mk(gl[0], action_dim=2, act_embed_dim=32, **lad(0), **(dict(rsp_w=float(cfg.wm_rsp_w), rsp_delta=RSP_DELTA) if float(cfg.wm_rsp_w) > 0.0 else {})),   # PREREG_V8F_ACTRSP: level 1 only; absent = LevelConfig's rsp_w 0.0
+
               mk(gl[1], action_dim=32, stride=cfg.wm_strides[0], **up(0), **lad(1)), mk(gl[2], action_dim=32, stride=cfg.wm_strides[1], **up(1), **lad(2))]
         self.stack = HJEPAStack(lv, sigreg_projections=256)
         self.proj = nn.Sequential(nn.LayerNorm(cfg.d), nn.Linear(cfg.d, cfg.wm_dim))
@@ -771,6 +781,11 @@ class WMAux(nn.Module):
     def forward_mean(self, am: Tensor, act: Tensor) -> dict:
         """PREREG_V8F_LADDER: :meth:`forward` from the token-pooled adapter output ``am`` [B, F, d] (the frozen-adapter pooled path); the same ops after the pooling."""
         return self.stack.loss(self.z1_from_mean(am), self.scale_actions(act)[:, :-1])
+
+    def built_rsp(self, n_frames: int) -> dict:
+        """PREREG_V8F_ACTRSP, the G-DVB reader for ``--wm-rsp-w``: the BUILT stack's own measurement of the action-response term (``HJEPAStack.built_rsp``: the term's rollout call, its contrast / anchor / step counts and context, and the weight the loss
+        really gives it) for a window of ``n_frames`` frames."""
+        return self.stack.built_rsp(int(n_frames))
 
     def built_ladder(self, n_frames: int) -> dict:
         """PREREG_V8F_LADDER, the G-DVB reader for the ladder levers: the BUILT stack's own measurements (``HJEPAStack.built_rollout``: predictor calls inside the free run, anchors, the context handed to ``rollout``, the

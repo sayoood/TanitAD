@@ -47,6 +47,7 @@ CONVENTIONS
 
 from __future__ import annotations
 
+import copy
 import math
 from dataclasses import dataclass, field
 from typing import Callable, Mapping, Optional, Sequence
@@ -255,6 +256,10 @@ class IDMHead(nn.Module):
 # Upper-level encoders  (Eq. 1)
 # =============================================================================================
 
+#: PREREG_V8F_ACTRSP section 2.1: the action-response term's fixed geometry (no flag: the card fixes it). K steps (2.0 s at the 0.2 s level-1 step), anchors every RSP_STRIDE states, the planner's context 1, the slope floor.
+RSP_K, RSP_STRIDE, RSP_CTX, RSP_S_MIN = 10, 10, 1, 0.1
+
+
 def _windows(z: Tensor, w: int, s: int, d: int = 1) -> Tensor:
     """``(N, T, D) -> (N, n, w*D)`` with ``n = (T - ((w-1)*d + 1))//s + 1``; window ``i`` = ``z[i*s + m*d]``, ``m = 0..w-1`` (oldest first).
     ``d = 1`` is the consecutive window ``z[i*s : i*s+w]`` (every earlier call, bit for bit). PREREG_V8F_MRATE: ``d > 1`` = dilated at the level's own spacing."""
@@ -462,6 +467,8 @@ class LevelConfig:
     rollout_k: int = 1         # PREREG_V8F_LADDER: free-run steps of the k-step loss (:meth:`HJEPAStack.rollout_loss`). 1 = the teacher-forced one-step loss only = every earlier build, bit for bit (no term, no key in the loss dict)
     rollout_stride: int = 1    # PREREG_V8F_LADDER: the free run starts at every ``rollout_stride``-th state of the level (anchors 0, s, 2s, ..); used only when ``rollout_k`` > 1
     rollout_w: float = 1.0     # PREREG_V8F_LADDER: weight of the k-step term in the level's loss (constant over training: no schedule); used only when ``rollout_k`` > 1
+    rsp_w: float = 0.0         # PREREG_V8F_ACTRSP: weight of the action-response term :meth:`HJEPAStack.response_loss` in the level's loss (level 1 only). 0.0 = the term is NOT built = every earlier build, bit for bit (no key, no op)
+    rsp_delta: tuple = (0.42, 0.24)   # PREREG_V8F_ACTRSP: the contrast size per action channel in WM units (1 sd of acceleration / 2.0 and yaw rate / 0.4 on R35's TRAIN windows); used only when ``rsp_w`` > 0
 
 
 @dataclass
@@ -590,6 +597,8 @@ class HJEPAStack(nn.Module):
                     row.update(dilation=c.dilation, causal_pad=c.causal_pad, enc_in_dim=enc.net[0].in_features)
             if c.rollout_k > 1:                                           # PREREG_V8F_LADDER: present only when moved; the G-DVB reader is :meth:`built_rollout` (the loss's own loop), not this config echo
                 row.update(rollout_k=c.rollout_k, rollout_stride=c.rollout_stride, rollout_w=c.rollout_w)
+            if lv == 1 and c.rsp_w > 0.0:                                 # PREREG_V8F_ACTRSP: present only when moved (a flag-off stack keeps its key set); the G-DVB reader is :meth:`built_rsp` (the loss's own run), not this config echo
+                row.update(rsp_w=c.rsp_w, rsp_delta=tuple(c.rsp_delta), rsp_k=RSP_K, rsp_stride=RSP_STRIDE, rsp_ctx=RSP_CTX)
             out[lv] = row
         return out
 
@@ -756,6 +765,11 @@ class HJEPAStack(nn.Module):
                 ro = self.rollout_loss(lv, z, enc.idm_target[0] if lv == 1 else a, c.rollout_k, c.rollout_stride, detach_target)
                 out[f"rollout/L{lv}"], out[f"rollout_valid/L{lv}"], out[f"rollout_masked/L{lv}"] = ro["loss"], ro["n_valid"], ro["n_masked"]
                 level_loss = level_loss + c.rollout_w * ro["loss"]
+            if lv == 1 and c.rsp_w > 0.0:                                 # PREREG_V8F_ACTRSP: the action-response term (rsp_w = 0.0: this block does not exist, the dict and the total are the earlier build's)
+                rs = self.response_loss(z, enc.idm_target[0], c)
+                out["rsp/L1"] = rs["loss"]
+                out.update({f"{k}/L1": v for k, v in rs["diag"].items()})
+                level_loss = level_loss + c.rsp_w * rs["loss"]
             out[f"level/L{lv}"] = level_loss
             total = total + level_loss
         out["total"] = total
@@ -828,6 +842,46 @@ class HJEPAStack(nn.Module):
         step_err = (contrib.sum(dim=(0, 1)) / (b_ * valid.sum(dim=0).clamp_min(1))).detach()
         return {"loss": loss, "contrib": contrib, "step_err": step_err, "n_valid": (n_valid * b_).to(per.dtype), "n_masked": ((~valid).sum() * b_).to(per.dtype)}
 
+    def response_loss(self, z: Tensor, a: Tensor, c: "LevelConfig") -> dict:
+        """PREREG_V8F_ACTRSP section 2.1: the level-1 action-response term. For anchors ``0, RSP_STRIDE, .. `` (every K-step stretch inside the window) the predictor is rolled ``RSP_K`` steps from the DETACHED anchor state under the logged
+        actions plus / minus ``rsp_delta`` on each channel (four contrasts, one batched :meth:`rollout` call at context ``RSP_CTX``), the level-1 IDM head (parameters detached: it keeps training on real pairs only) reads each predicted
+        transition, and the read difference per unit command, divided by the head's own slope on the batch's REAL transitions (detached, floored at ``RSP_S_MIN``), is matched to the identity: ``G[c', c] = (I_c'(+) - I_c'(-)) / (2 delta_c s_c')``,
+        loss = mean (G - I)^2. No new parameter and no random draw. Gradient reaches ``predictors[0]`` and ``act_embed`` only.
+
+        ``z`` ``(B, T, D)`` level-1 states, ``a`` ``(B, T - 1, 2)`` the level-1 actions in WM units. Returns ``loss`` and ``diag`` (detached: ``rsp_g_aa``, ``rsp_g_ww``, ``rsp_g_aw``, ``rsp_g_wa``, ``rsp_s_a``, ``rsp_s_w``)."""
+        b_, t_, _ = z.shape
+        K = RSP_K
+        idx = torch.arange(0, t_ - K, RSP_STRIDE, device=z.device)                    # anchors 0, 10, .. 80 at T = 91: each K-step stretch lies inside the window
+        if idx.numel() == 0:
+            raise ValueError(f"window of {t_} states is too short for the action-response term (needs > {K})")
+        pos = idx[:, None] + torch.arange(K, device=z.device)[None, :]               # (A, K): the transition i + h
+        base = a[:, pos]                                                             # (B, A, K, 2)
+        z0 = z[:, idx].detach()                                                      # the anchor state: the term trains the forward response, never the latent geometry
+        dlt = torch.as_tensor(c.rsp_delta, dtype=base.dtype, device=base.device)     # (2,)
+        e = base.new_zeros(4, 2)
+        e[0, 0], e[1, 0], e[2, 1], e[3, 1] = 1.0, -1.0, 1.0, -1.0                    # lonp, lonm, latp, latm
+        a4 = base[None] + (e * dlt)[:, None, None, None, :]                          # (4, B, A, K, 2)
+        z0x4 = z0[None].expand(4, -1, -1, -1)
+        zh = self.rollout(1, z0x4, a4, context=RSP_CTX)                              # (4, B, A, K, D)
+        prev = torch.cat([z0x4[..., None, :], zh[..., :-1, :]], dim=-2)              # (4, B, A, K, D): the state before each predicted step
+        head = self.idm_heads[0]
+        frozen = {k: v.detach() for k, v in head.named_parameters()}
+        rd = torch.func.functional_call(head, frozen, (prev, zh))                    # (4, B, A, K, 2)
+        with torch.no_grad():
+            ir = head(z[:, :-1].detach(), z[:, 1:].detach()).float()                 # the readout on the REAL transitions
+            ar = a.detach().float()
+            ir_c, ar_c = ir - ir.mean(dim=(0, 1)), ar - ar.mean(dim=(0, 1))
+            slope = ((ir_c * ar_c).mean(dim=(0, 1)) / (ar_c.pow(2).mean(dim=(0, 1))).clamp_min(1e-12)).clamp_min(RSP_S_MIN)   # (2,)
+        slope = slope.to(base.dtype)                                                 # a no-op in float32; in float64 (the analytic-identity test) it keeps 2 * delta * slope out of float32 promotion rules
+        diff_lon = rd[0] - rd[1]                                                     # (B, A, K, 2): read difference under the +/- acceleration command
+        diff_lat = rd[2] - rd[3]                                                     # ... and under the +/- yaw-rate command
+        g = torch.stack([diff_lon / (2.0 * dlt[0] * slope), diff_lat / (2.0 * dlt[1] * slope)], dim=-1)   # (B, A, K, c', c)
+        eye = torch.eye(2, dtype=g.dtype, device=g.device)
+        loss = (g - eye).pow(2).mean()
+        gd = g.detach()
+        diag = {"rsp_g_aa": gd[..., 0, 0].mean(), "rsp_g_ww": gd[..., 1, 1].mean(), "rsp_g_aw": gd[..., 0, 1].mean(), "rsp_g_wa": gd[..., 1, 0].mean(), "rsp_s_a": slope[0].detach(), "rsp_s_w": slope[1].detach()}
+        return {"loss": loss, "diag": diag}
+
     def states_per_level(self, n_frames: int) -> list:
         """States per level for a window of ``n_frames`` level-1 frames, MEASURED by running :meth:`encode` on zeros."""
         c1 = self.cfg[0]
@@ -848,6 +902,8 @@ class HJEPAStack(nn.Module):
         orig = self.rollout
 
         def wrapped(level, z0, actions, *, context=1):
+            if actions.dim() == 5:                                                   # PREREG_V8F_ACTRSP: the action-response term's own call (actions (contrast, B, anchor, K, A)) is not the ladder's free run: not counted, not recorded (:meth:`built_rsp` reads it)
+                return orig(level, z0, actions, context=context)
             flag["lv"] = level
             seen[level]["anchors"], seen[level]["ctx"] = (int(actions.shape[1]) if actions.dim() == 4 else 1), int(context)
             try:
@@ -879,9 +935,41 @@ class HJEPAStack(nn.Module):
             res["ctx_built"].append(int(pm.pos.shape[0]) if hasattr(pm, "pos") else None)
             if f"rollout/L{lv}" in out and float(out[f"rollout/L{lv}"]) != 0.0:
                 other = out[f"pred/L{lv}"] + c.beta * out[f"sigreg/L{lv}"] + c.gamma * out[f"idm/L{lv}"] + (c.act_sigreg * out[f"act_sigreg/L{lv}"] if lv >= 2 else 0.0)
+                if lv == 1 and "rsp/L1" in out:                          # PREREG_V8F_ACTRSP: the response term is not the ladder lever; level 1's other terms include it (else the ladder reader would read 1 + rsp_w x rsp / rollout)
+                    other = other + c.rsp_w * out["rsp/L1"]
                 res["w_in_loss"].append(float((out[f"level/L{lv}"] - other) / out[f"rollout/L{lv}"]))
             else:
                 res["w_in_loss"].append(None)
+        return res
+
+    def built_rsp(self, n_frames: int, batch: int = 2) -> dict:
+        """PREREG_V8F_ACTRSP, the G-DVB reader for ``--wm-rsp-w``: what the BUILT loss does, measured by running it (on a float64 COPY of the stack, so the weight read back is not blurred by float32 sums of terms of size ~100) on noise for a window of
+        ``n_frames`` frames, with the global RNG forked. A wrapper on :meth:`rollout` records the term's own call (the only 5-D ``actions`` call: ``(contrast, B, anchor, K, A)``): ``calls``, ``contrasts``, ``anchors``, ``k``, ``ctx_passed``.
+        ``w_in_loss_rsp`` = (level/L1 - every other level-1 term) / rsp/L1 = the weight the total really gives the term (None when the term is absent)."""
+        m = copy.deepcopy(self).double()
+        seen = {"calls": 0, "contrasts": None, "anchors": None, "k": None, "ctx_passed": None}
+        orig = m.rollout
+
+        def wrapped(level, z0, actions, *, context=1):
+            if actions.dim() == 5:
+                seen.update(calls=seen["calls"] + 1, contrasts=int(actions.shape[0]), anchors=int(actions.shape[2]), k=int(actions.shape[3]), ctx_passed=int(context))
+            return orig(level, z0, actions, context=context)
+        m.rollout = wrapped
+        c1 = m.cfg[0]
+        with torch.no_grad(), torch.random.fork_rng(devices=[]):
+            torch.manual_seed(0)
+            z1 = torch.randn(batch, n_frames, c1.latent_dim).double()
+            a = torch.randn(batch, n_frames - 1, c1.action_dim).double()
+            m.eval()
+            out = m.loss(z1, a)
+        res = dict(seen)
+        res["w_in_loss_rsp"] = None
+        if "rsp/L1" in out and float(out["rsp/L1"]) != 0.0:
+            other = out["pred/L1"] + c1.beta * out["sigreg/L1"] + c1.gamma * out["idm/L1"]
+            if c1.rollout_k > 1:
+                other = other + c1.rollout_w * out["rollout/L1"]
+            res["w_in_loss_rsp"] = float((out["level/L1"] - other) / out["rsp/L1"])
+        res["rsp_term"] = None if "rsp/L1" not in out else float(out["rsp/L1"])
         return res
 
     def goal_cost(self, z_pred: Tensor, goal: Tensor, level: int, last_k: Optional[int] = None) -> Tensor:
