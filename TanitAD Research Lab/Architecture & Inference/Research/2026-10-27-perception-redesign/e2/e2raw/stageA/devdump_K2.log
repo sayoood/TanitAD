@@ -1,0 +1,28 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from /home/nvidia/data/refcv8_train4572_eval139_extrinsics.json (4711 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v2] /home/nvidia/data/refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] refcv8 label speed input (road-type sidecar refcv6_speed_max_v8_eval.jsonl): 23772/23772 windows fed, per-step windows {'30': 8042, '50': 8382, '100': 6153, '120': 1195}, per-clip rows {'30': 49, '50': 52, '100': 39, '120': 7}
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 0.9856 of 23772 windows over 139 clips (verdict PASS)
+[dump] model built (full), 2397 windows (DEV), digest 1c4cddfd96a9
+[dump] future-frame control: PASS on 2 windows
+[dump] 1/2397 windows (1 s; box3d 1, rasters 1; {'wait_decode': 0.1, 'forward': 0.4, 'planes': 0.1})
+[dump] 201/2397 windows (97 s; box3d 189, rasters 201; {'wait_decode': 0.1, 'forward': 87.3, 'planes': 9.3})
+[dump] 401/2397 windows (194 s; box3d 389, rasters 401; {'wait_decode': 0.1, 'forward': 174.8, 'planes': 18.5})
+[dump] 601/2397 windows (293 s; box3d 589, rasters 601; {'wait_decode': 0.1, 'forward': 264.2, 'planes': 28.5})
+[dump] 801/2397 windows (390 s; box3d 789, rasters 801; {'wait_decode': 0.1, 'forward': 351.9, 'planes': 37.8})
+[dump] 1001/2397 windows (488 s; box3d 979, rasters 1001; {'wait_decode': 0.1, 'forward': 439.4, 'planes': 47.4})
+[dump] 1201/2397 windows (585 s; box3d 1167, rasters 1201; {'wait_decode': 0.1, 'forward': 527.0, 'planes': 57.2})
+[dump] 1401/2397 windows (682 s; box3d 1367, rasters 1401; {'wait_decode': 0.1, 'forward': 614.6, 'planes': 66.4})
+[dump] 1601/2397 windows (779 s; box3d 1567, rasters 1601; {'wait_decode': 0.1, 'forward': 701.2, 'planes': 76.0})
+[dump] 1801/2397 windows (871 s; box3d 1714, rasters 1801; {'wait_decode': 0.1, 'forward': 783.6, 'planes': 85.6})
+[dump] 2001/2397 windows (965 s; box3d 1912, rasters 2001; {'wait_decode': 0.1, 'forward': 868.5, 'planes': 95.1})
+[dump] 2201/2397 windows (1060 s; box3d 2112, rasters 2201; {'wait_decode': 0.1, 'forward': 954.0, 'planes': 104.2})
+[dump] done: {"rig": false, "n_windows": 2397, "n_box3d_windows": 2308, "n_rasters": 2397, "loop_s": 1155.4, "wall_s": 1287.0}
