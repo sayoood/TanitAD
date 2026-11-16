@@ -1,0 +1,59 @@
+46a47,49
+> #: pod-side patch 2026-11-16: the real releases (corpus and 10k alike, MEASURED) carry 10 more per-clip columns; they are carried by sid, only row0 is re-based
+> EXTRA_CLIP_KEYS = ("sha12", "grid_start_s", "dt_s", "clock_src", "has_record", "has_lead", "has_lc", "n_turns", "n_announced", "suppressed")
+> CLIP_ALL = CLIP_KEYS + EXTRA_CLIP_KEYS
+183,184c186,187
+<     if set(clips) != set(CLIP_KEYS):
+<         raise MergeError(f"{name}: clip__ keys {sorted(clips)} != {sorted(CLIP_KEYS)}")
+---
+>     if set(clips) not in (set(CLIP_KEYS), set(CLIP_ALL)):       # the synthetic fixtures carry the 4 core keys, the real releases all 14 (MEASURED)
+>         raise MergeError(f"{name}: clip__ keys {sorted(clips)} != {sorted(CLIP_KEYS)} or {sorted(CLIP_ALL)}")
+211c214
+<     if list(rc) != list(rt):
+---
+>     if set(rc) != set(rt):                                        # pod-side patch 2026-11-16: the real files differ in key ORDER only (MEASURED); the union uses the corpus order
+230a234
+>     cset = {x[0] for x in tc}
+238c242,245
+<     cdt = {k: cc[k].dtype for k in CLIP_KEYS}
+---
+>     present = tuple(k for k in CLIP_ALL if k in cc)
+>     if set(present) != {k for k in CLIP_ALL if k in ct}:
+>         raise MergeError("the two releases carry different clip__ key sets")
+>     cdt = {k: cc[k].dtype for k in present}
+241c248
+<     for k in CLIP_KEYS:
+---
+>     for k in present:
+243a251,256
+>     exs = {}
+>     for C in (cc, ct):
+>         for i, sid in enumerate(C["sid"].tolist()):
+>             exs[sid] = i
+>     for k in present[len(CLIP_KEYS):]:
+>         out["clip__" + k] = np.array([(cc if x[0] in cset else ct)[k][exs[x[0]]] for x in new], cdt[k])
+269a283,285
+>     cm, tm = c.pop("meta", None), t.pop("meta", None)                  # pod-side patch 2026-11-16: the real lead files carry a 0-d string `meta` (MEASURED); the trainer does not read it
+>     if (cm is None) != (tm is None):
+>         raise MergeError("only one lead file has a meta key")
+283a300,301
+>     if cm is not None:
+>         out["meta"] = _lead_meta(cm, tm)
+288a307,310
+> def _lead_meta(cm, tm):
+>     return np.array(json.dumps({"tool": "dscale10k_merge.py", "merged_from": {"corpus": str(cm), "tenk": str(tm)}}, sort_keys=True))
+> 
+> 
+387c409
+<     for k in CLIP_KEYS:
+---
+>     for k in clips:
+446a469,472
+>     if "meta" in c:
+>         if u["meta"].tobytes() != _lead_meta(c.pop("meta"), t.pop("meta")).tobytes():
+>             bad.append("lead meta differs from the expected merged meta")
+>         u.pop("meta")
+489c515
+<     for k in CLIP_KEYS:
+---
+>     for k in cu:
