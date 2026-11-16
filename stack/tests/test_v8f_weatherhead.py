@@ -339,12 +339,86 @@ def src(name):
 
 
 def test_both_evaluators_declare_the_flag_and_refuse_a_mismatch_with_the_checkpoint_cfg():
-    for fn in ("v8f_mini_eval.py", "v8f_t1_eval.py"):
-        s = src(fn)
-        assert '"--ctx-pool", choices=("off", "on"), default="off"' in s, fn
-        assert "a.ctx_pool != cfg.ctx_pool" in s and "REFUSED: --ctx-pool" in s, fn
-    assert 'outs["ctx_pool_logits"].append(o["ctx_pool_logits"]' in src("v8f_mini_eval.py")
-    assert 'r["ctx_pool_logits"].append(hd["ctx_pool_logits"][b])' in src("v8f_t1_eval.py")
+    s = src("v8f_mini_eval.py")
+    assert '"--ctx-pool", choices=("off", "on"), default="off"' in s
+    assert "a.ctx_pool != cfg.ctx_pool" in s and "REFUSED: --ctx-pool" in s
+    assert 'outs["ctx_pool_logits"].append(o["ctx_pool_logits"]' in s
+    w = src("v8f_t1_eval_pool.py")                                     # T1: the wrapper (the shared tool is sha-pinned by v8f_t1_speedsub.py)
+    assert '"--ctx-pool", choices=("off", "on"), default="off"' in w
+    assert "a.ctx_pool != have" in w and "REFUSED: --ctx-pool" in w
+    assert "self.rows[POOL_KEY].append(hd[POOL_KEY][b])" in w
+
+
+# ------------------------------------------------------------------------------------------------ T1: the shared tool stays pinned, the head rides in a wrapper
+def t1_pool():
+    import importlib
+    for p in (HERE.parent, HERE.parents[1] / "taniteval", HERE.parent / "scripts"):
+        if str(p) not in sys.path:
+            sys.path.insert(0, str(p))
+    return importlib.import_module("v8f_t1_eval_pool")
+
+
+def cfg_ckpt(tmp_path, ctx_pool):
+    import dataclasses
+    p = tmp_path / f"cfg_{ctx_pool}.pt"
+    torch.save({"cfg": dataclasses.asdict(M.V8FMiniConfig(ctx_pool=ctx_pool))}, p)
+    return str(p)
+
+
+def test_the_shared_t1_tool_is_byte_equal_to_the_pin_that_speedsub_and_the_wrapper_share():
+    import re
+    W = t1_pool()
+    tool = HERE.parent / "scripts" / "v8f_t1_eval.py"
+    assert hashlib.sha256(tool.read_bytes()).hexdigest() == W.TOOL_SHA256 == W.tool_sha256()
+    assert "ctx_pool" not in tool.read_text(encoding="utf-8")
+    pin = re.search(r'^TOOL_SHA256 = "([0-9a-f]{64})"', src("v8f_t1_speedsub.py"), re.M).group(1)
+    assert pin == W.TOOL_SHA256
+
+
+def test_the_t1_wrapper_refuses_a_flag_that_disagrees_with_the_checkpoint_cfg(tmp_path):
+    W = t1_pool()
+    T = W.T
+    bp, cr = T.build_parser, T.cmd_run
+    req = ["--tag", "x", "--tracks", "x", "--eval-grid", "x", "--eval-join", "x", "--out-dir", str(tmp_path)]
+    for have, flag in (("on", "off"), ("off", "on")):
+        with pytest.raises(SystemExit) as e:
+            W.main(["run", "--ckpt", cfg_ckpt(tmp_path, have), "--ctx-pool", flag] + req)
+        assert f"REFUSED: --ctx-pool {flag}" in str(e.value) and f"ctx_pool={have!r}" in str(e.value)
+        assert T.build_parser is bp and T.cmd_run is cr                  # the tool is left as it was
+    with pytest.raises(SystemExit) as e:                                  # the tool itself has no such flag (argparse exit 2)
+        T.main(["run", "--ckpt", cfg_ckpt(tmp_path, "on"), "--ctx-pool", "on"] + req)
+    assert e.value.code == 2
+
+
+def test_the_t1_wrapper_patches_the_tool_only_inside_an_on_call(tmp_path):
+    import argparse
+    W = t1_pool()
+    T = W.T
+    keys0, rec0, seen = T.HEAD_KEYS, T.TickRecorder, []
+    run = W.make_cmd_run(lambda a: seen.append((T.HEAD_KEYS, T.TickRecorder)) or 0)
+    assert run(argparse.Namespace(ckpt=cfg_ckpt(tmp_path, "on"), ctx_pool="on")) == 0
+    assert seen[-1] == (keys0 + (W.POOL_KEY,), W.PoolTickRecorder)
+    assert (T.HEAD_KEYS, T.TickRecorder) == (keys0, rec0)               # restored after the call
+    assert run(argparse.Namespace(ckpt=cfg_ckpt(tmp_path, "off"), ctx_pool="off")) == 0
+    assert seen[-1] == (keys0, rec0)                                    # off: nothing of the tool is patched
+    boom = W.make_cmd_run(lambda a: 1 / 0)
+    with pytest.raises(ZeroDivisionError):
+        boom(argparse.Namespace(ckpt=cfg_ckpt(tmp_path, "on"), ctx_pool="on"))
+    assert (T.HEAD_KEYS, T.TickRecorder) == (keys0, rec0)               # restored after a raise too
+
+
+def test_the_pool_recorder_writes_one_row_per_tick_and_the_tool_recorder_none(monkeypatch):
+    import types
+    W = t1_pool()
+    T = W.T
+    monkeypatch.setattr(T.TickRecorder, "__call__", lambda self, n, batch, plan, states: None)      # the tool's own rows are the tool's tests
+    z = np.arange(3 * 41, dtype=np.float32).reshape(3, 41)
+    planner = types.SimpleNamespace(heads={W.POOL_KEY: z}, aux={})
+    rec = W.PoolTickRecorder(planner, None, None, heads=True)
+    rec(0, {}, None, [object()] * 3)
+    assert len(rec.rows[W.POOL_KEY]) == 3 and all(np.array_equal(r, z[b]) for b, r in enumerate(rec.rows[W.POOL_KEY]))
+    assert W.POOL_KEY not in W.PoolTickRecorder(planner, None, None, heads=False).rows           # rides with --dump-heads only
+    assert W.POOL_KEY not in T.TickRecorder(planner, None, None, heads=True).rows                # the pinned tool never writes it
 
 
 def test_the_trainer_and_the_launch_gate_are_untouched_by_this_card():
