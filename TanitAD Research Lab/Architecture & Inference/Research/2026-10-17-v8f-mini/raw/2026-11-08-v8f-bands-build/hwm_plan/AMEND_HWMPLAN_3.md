@@ -291,3 +291,36 @@ The card's bars, arms, outcomes and controls 1-15. FREEZE fills 1-5, as amended 
   3. **The image constraint (section 7):** the (I) / (II) choice belongs to AMEND_HWMPLAN_4's own draft. Nothing in LON-PLAN depends on it.
   * **Run order:** build (`test_lonplan.py` and the run wrapper with C-L1 to C-L4, C-READBACK, C-STRAT, each with its deliberate-regression arm, green), THEN the TRAIN selection (λ\*_0 and λ\*_1 written into this Log), THEN SCORE.
   * **Q1 (QUESTIONS_LONPLAN.md):** the PI is told that LON-PLAN runs on dev-box CPU after the build unless the PI says no. It has no box 2, GPU, training or spend. **Q2 stays with the PI.**
+* **2026-11-16 ~18:55Z, Master Mind: λ\* SELECTED on TRAIN** (section 3). The text above this entry is the frozen file, sha256 `7bbdc9fe…`; `AMEND_HWMPLAN_3.sha256` now carries the hash of the file with this entry. No SCORE window has been planned at any λ ≠ 0.
+  * **λ\*_0 = 300** (R35_s0). The base grid chose 100, the largest value run, with D 0.2196 ≥ 0.10, so the extension up ran: 300 is admissible with a lower C, and 1000 has D 0.0660 < 0.10, which stops it.
+  * **λ\*_1 = 100** (R35_s1). The base grid chose 100; the extension up ran 300, whose D 0.0934 < 0.10 stops it.
+  * Both selections ran on dev-box CPU, 1 worker × 2 threads, OMP 2: `lonplan_select.py` from the build working copy (landed `bd6f2276`). R35_s1 finished ~18:31Z, R35_s0 ~18:43Z. Records: `lonplan/selection/LAMBDA_SELECTION_R35_s0.json` (sha256 `06804864…`) and `LAMBDA_SELECTION_R35_s1.json` (`905c3c43…`), with every argv, input sha256 and code-of-record sha256. Inputs equal section 3.1: checkpoints `d920d62c…` / `a97e6017…`, TRAIN latents `76a2d4f5…` / `692eb002…`. Selection windows: 564 per chassis in 141 TRAIN clips, 0 of them in the eval set.
+  * **Tier: T0 diagnostic on TRAIN windows. Evidence: MEASURED. A selection record, never a result.**
+
+| λ | C s0 | D s0 | D_yaw s0 | C s1 | D s1 | D_yaw s1 |
+|---|---|---|---|---|---|---|
+| −1 (sign check) | 1.4848 | 1.7450 | 1.3767 | 1.4494 | 1.6917 | 1.4028 |
+| 0 (A0, not admissible) | 1.2677 | 1.4884 | 1.1942 | 1.2304 | 1.4352 | 1.1982 |
+| 0.3 | 1.1916 | 1.3950 | 1.1463 | 1.1568 | 1.3474 | 1.1341 |
+| 1 | 1.0286 | 1.2067 | 1.0440 | 1.0045 | 1.1681 | 1.0215 |
+| 3 | 0.8043 | 0.9340 | 0.8696 | 0.7796 | 0.8916 | 0.8109 |
+| 10 | 0.5902 | 0.6515 | 0.6083 | 0.5713 | 0.6026 | 0.5048 |
+| 30 | 0.4437 | 0.4181 | 0.3720 | 0.4202 | 0.3631 | 0.2667 |
+| 100 | 0.3472 | 0.2196 | 0.1877 | **0.3299** | 0.1775 | 0.1443 |
+| 300 | **0.3121** | 0.1167 | 0.1182 | 0.3056 (D < 0.10) | 0.0934 | 0.1048 |
+| 1000 | 0.3011 (D < 0.10) | 0.0660 | 0.0943 | not run | | |
+
+  * C is the mean 0-2 s `acc_mae` in m/s² over the 564 windows; D and D_yaw are in TRAIN prior-std units (section 3.3).
+  * **Sign check (C-REG on TRAIN): ok at both.** C(−1) − C(0) = +0.2171 (s0) and +0.2190 (s1).
+  * **Beside, no bar.** C(HOLD) 0.2965 at both chassis (HOLD does not depend on the world model); C(PRIOR) 0.5132.
+    * **The TRAIN-CEILING flag is false at both.** C(λ\*) is 0.3121 (s0) and 0.3299 (s1), above C(HOLD) 0.2965. On TRAIN, every admissible λ reads above HOLD, and C falls monotonically toward HOLD as λ rises.
+    * This is the in-sample sign that section 6 prints beside the outcome. It decides no label; SCORE does. HYPOTHESIS: the TRAIN curve has the shape of a pull toward HOLD, which is the question arm S answers on SCORE.
+  * **DIR-ACC on TRAIN** (section 5, beside, no bar). Pearson r at λ\*: 0.332 [0.227, 0.493] (s0) and 0.356 [0.274, 0.482] (s1). Estimator: episode-cluster bootstrap over the 141 clips, B 2,000, seed 0. At λ 0 r is 0.301 (s0) and 0.279 (s1); at λ −1 it is 0.288 and 0.267.
+  * **Arm S's α, fixed now on TRAIN** (section 4, α_k,c = D_TRAIN,k,c(λ\*_k) / D_TRAIN,k,c(0)), computed from the records above:
+    * s0: α_acc = 0.078433, α_yaw = 0.098969.
+    * s1: α_acc = 0.123680, α_yaw = 0.120455.
+  * **Next, in the frozen order: SCORE.** Before the first SCORE plan at λ ≠ 0, three steps:
+    * build `lonplan_shrink.py` (arm S, C-SHRINK) and the SCORE-side DIR-ACC, each with its deliberate-regression arm;
+    * fetch or regenerate the R35_s1 SCORE windows;
+    * re-run the code-of-record tests.
+  * A0 (λ 0) does not depend on λ\*.
