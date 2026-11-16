@@ -516,6 +516,23 @@ def N1(world):
     return C0(world)[:0] + ["--nav-source", "text", "--nav-text-npz", str(world["nav"]), "--nav-text-sha256", sha(world["nav"])] + C0(world)[6:]
 
 
+def test_gate_reads_detach_upper_from_the_built_record(world):
+    """The OBD-CTL recipe names --detach-upper. The checker first read levers['detach_upper'], a key the trainer never writes, so it refused the first real mint (pilot4, C0).
+    The built value is otband_probe.detach_upper (cfg.detach_upper of the built model, with its gradient isolation asserted). Real record, both directions, plus the argv."""
+    import strat1_check as SC
+    tag = "c0du"
+    assert TR.main(_argv(world, tag, ["--steps", "3", "--detach-upper", *C0(world)])) == 0
+    sc = _sc(Path(world["root"]) / tag)
+    toks = json.loads((Path(world["root"]) / tag / "argv.json").read_text(encoding="utf-8"))["argv"]
+    assert sc["otband_probe"]["detach_upper"] is True and "detach_upper" not in sc["levers"]
+    du = lambda probs: [x for x in probs if "detach-upper" in x]                                          # noqa: E731
+    assert du(SC.gate_problems("C0", toks, sc)) == []
+    off = json.loads(json.dumps(sc))
+    off["otband_probe"]["detach_upper"] = False
+    assert du(SC.gate_problems("C0", toks, off))                                                         # built off: refused
+    assert du(SC.gate_problems("C0", [t for t in toks if t != "--detach-upper"], sc))                   # argv does not name it: refused
+
+
 def test_end_to_end_c0_n1_s1_selfchecks_and_steps(world):
     for tag, extra in (("c0", C0(world)), ("n1", N1(world)), ("s1", S1(world))):
         assert TR.main(_argv(world, tag, ["--steps", "3", *extra])) == 0, tag

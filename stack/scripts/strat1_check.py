@@ -115,8 +115,8 @@ def gate_problems(kind, toks, sc, steps=RUN_STEPS):
     for k in ("acc_probe", "dagger_probe", "otband_probe"):                 # the inherited probes (OBD-CTL's gate read them)
         if not isinstance(sc.get(k), dict) or sc[k].get("skipped"):
             bad.append(f"inherited probe {k} is missing or skipped")
-    if not lv.get("detach_upper"):
-        bad.append("--detach-upper is not built (the OBD-CTL recipe)")
+    if "--detach-upper" not in toks or (sc.get("otband_probe") or {}).get("detach_upper") is not True:      # the BUILT value: the otband probe records cfg.detach_upper and, when it is on,
+        bad.append("--detach-upper is not built (the OBD-CTL recipe)")                                       # asserts O's terms put no gradient on S / T (levers has no such key: reading it refused every real mint)
     return bad
 
 
