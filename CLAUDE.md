@@ -774,6 +774,9 @@ and ⛔ never extended to longitudinal, lateral or tactical, which keep full for
 the pause; lifting it is the PI's call (`verdict_refcv6.py --unpause-strategic` restores S1).
 ⛔ **Nav is an INPUT at training AND inference** — stated by the PI many times; it is not an oracle
 that disappears at deployment.
+⭐ **2026-11-16, PI: THE PAUSE ENDS** — *"strategic is not paused anymore"*. From 2026-11-16 every eval and every card reports the
+STRATEGIC family in full (strategic decision + goal/route setting quality); PAUSED is not an admissible entry for a new read. Reads
+finished before the ruling keep their stamp as written. Route signal available for it: NVIDIA's navigation text (NAVPROBE, R-NAV-1).
 
 ## ⛔ BINDING — NO TRAINING LAUNCH WITHOUT A LAUNCH-GATE PASS (PI, 2026-09-26)
 
