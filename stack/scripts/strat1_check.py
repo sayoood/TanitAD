@@ -32,7 +32,9 @@ BASE_ARGVS = "E:/Projects/TanitAD-artifacts/dagland/motion_c/theory/obd/box2/fro
 BASE_SHA256 = None            # pinned by the MM when the frozen file is copied into the chain's folder (UNVERIFIED here: read in place)
 STRAT_LABELS_SHA256 = "8055a321df6db1725ea17abde2999d48bcb68d43f1a480a69ed42dd0cf184eff"
 NINE = ("--nav-source", "--nav-text-npz", "--nav-text-sha256", "--ctx-heads", "--w-ctx", "--ctx-labels", "--ctx-labels-sha256", "--ctx-lr-mult", "--ctx-detach")
-KINDS = ("C0", "N1", "S1")
+KINDS = ("C0", "N1", "S1", "S1d")
+NAV_KINDS = ("N1", "S1", "S1d")                                           # the arms that read the text nav
+CTX_KINDS = ("S1", "S1d")                                                 # the arms with the ctx heads on; S1d = S1 with --ctx-detach on (PREREG_V8F_STRAT1 SEEDS read COSTS-HEADS)
 SEEDS = {"s0": {"base": "OBD-CTL_s0"}, "s1": {"base": "OBD-CTL_s1"}, "rep": {"base": "OBD-CTL_s0", "seed": "2"},      # rep = init 0, bank s0, dagger-seed 0, seed 2 (OBD-NULL_rep's form)
          "s10": {"base": "OBD-CTL_s0", "seed": "10"}, "s11": {"base": "OBD-CTL_s1", "seed": "11"}}      # PREREG_V8F_STRAT1 SEEDS-DISAGREE: seed 10 = init 0 (bank s0), seed 11 = init 1 (bank s1), rep's form; PI go 2026-11-16
 RUN_STEPS = 3000
@@ -66,8 +68,8 @@ def render(kind, seed, root, out, nav_npz="", ctx_npz="", base_argvs=BASE_ARGVS,
     t[t.index("--out") + 1] = out
     if "seed" in SEEDS[seed]:
         t[t.index("--seed") + 1] = SEEDS[seed]["seed"]
-    nav = ["--nav-source", "text", "--nav-text-npz", nav_npz, "--nav-text-sha256", sha_file(nav_npz) if os.path.exists(nav_npz) else "<sha of navtext_nav.npz>"] if kind in ("N1", "S1") else         ["--nav-source", "v9", "--nav-text-npz", "", "--nav-text-sha256", ""]
-    ctx = ["--ctx-heads", "on", "--w-ctx", "0.5", "--ctx-labels", ctx_npz, "--ctx-labels-sha256", STRAT_LABELS_SHA256, "--ctx-lr-mult", "10", "--ctx-detach", "off"] if kind == "S1" else         ["--ctx-heads", "off", "--w-ctx", "0", "--ctx-labels", "", "--ctx-labels-sha256", "", "--ctx-lr-mult", "1", "--ctx-detach", "off"]
+    nav = ["--nav-source", "text", "--nav-text-npz", nav_npz, "--nav-text-sha256", sha_file(nav_npz) if os.path.exists(nav_npz) else "<sha of navtext_nav.npz>"] if kind in NAV_KINDS else         ["--nav-source", "v9", "--nav-text-npz", "", "--nav-text-sha256", ""]
+    ctx = ["--ctx-heads", "on", "--w-ctx", "0.5", "--ctx-labels", ctx_npz, "--ctx-labels-sha256", STRAT_LABELS_SHA256, "--ctx-lr-mult", "10", "--ctx-detach", "on" if kind == "S1d" else "off"] if kind in CTX_KINDS else         ["--ctx-heads", "off", "--w-ctx", "0", "--ctx-labels", "", "--ctx-labels-sha256", "", "--ctx-lr-mult", "1", "--ctx-detach", "off"]
     return t + nav + ctx
 
 
@@ -91,12 +93,15 @@ def gate_problems(kind, toks, sc, steps=RUN_STEPS):
     nsp = sc.get("nav_source_probe") or {}
     if not nsp.get("pass"):
         bad.append("nav_source_probe missing or not pass")
-    want_src = "text" if kind in ("N1", "S1") else "v9"
+    want_src = "text" if kind in NAV_KINDS else "v9"
     if nsp.get("source") != want_src or flag_value(toks, "--nav-source") != want_src:
         bad.append(f"nav source: arm {kind} needs {want_src}, probe read {nsp.get('source')}, argv {flag_value(toks, '--nav-source')}")
     if (nsp.get("n_text_ne_v9", 0) > 0) != (want_src == "text"):
         bad.append(f"n_text_ne_v9 {nsp.get('n_text_ne_v9')} is inconsistent with source {want_src}")
-    on = kind == "S1"
+    on = kind in CTX_KINDS
+    want_det = "on" if kind == "S1d" else "off"
+    if flag_value(toks, "--ctx-detach") != want_det or lv.get("ctx_detach", "off") != want_det:
+        bad.append(f"ctx_detach: arm {kind} needs {want_det}, argv {flag_value(toks, '--ctx-detach')}, built {lv.get('ctx_detach', 'off')}")
     if lv.get("ctx_heads", "off") != ("on" if on else "off") or flag_value(toks, "--ctx-heads") != ("on" if on else "off"):
         bad.append(f"ctx_heads: arm {kind} needs {'on' if on else 'off'}, built {lv.get('ctx_heads', 'off')}")
     if on:
@@ -105,6 +110,9 @@ def gate_problems(kind, toks, sc, steps=RUN_STEPS):
             bad.append("ctx_head_probe missing or not pass")
         if cp.get("control_head_grad_w0") != 0.0 or cp.get("control_allmasked_head_grad") != 0.0 or cp.get("control_adapter_grad_detach_on") != 0.0:
             bad.append("a ctx exact-0.0 control is not exactly 0.0")
+        ag = cp.get("adapter_grad_ctx")                                  # S1: the ctx loss reaches the shared adapter (> 0); S1d: exactly 0.0 (the detach)
+        if not isinstance(ag, (int, float)) or (ag != 0.0 if kind == "S1d" else not ag > 0.0):
+            bad.append(f"adapter_grad_ctx {ag!r}: arm {kind} needs " + ("exactly 0.0" if kind == "S1d" else "> 0.0"))
         if not (live.get("groups_grad") or {}).get("CTX", 0.0) > 0.0:
             bad.append("G-LIVE: the CTX group has no gradient")
         if float(lv.get("w_ctx", 0)) != float(flag_value(toks, "--w-ctx")) or lv.get("ctx_dim") != 41 or not lv.get("ctx_vision_only_source"):
@@ -122,7 +130,7 @@ def gate_problems(kind, toks, sc, steps=RUN_STEPS):
 
 
 def moved_identity(init_sd, fin_sd, kind):
-    """The post check: every non-ctx group moved from the init; ``ctx_head.*`` exists and moved iff S1; no ctx key in C0 / N1."""
+    """The post check: every non-ctx group moved from the init; ``ctx_head.*`` exists and moved iff S1 / S1d; no ctx key in C0 / N1."""
     import torch
     bad = []
     for g, pre in MOVED.items():
@@ -130,9 +138,9 @@ def moved_identity(init_sd, fin_sd, kind):
         if ks and all(torch.equal(init_sd[k], fin_sd[k]) for k in ks):
             bad.append(f"group {g} did not move")
     ck = [k for k in fin_sd if k.startswith("ctx_head.")]
-    if kind == "S1":
+    if kind in CTX_KINDS:
         if not ck:
-            bad.append("S1 checkpoint has no ctx_head keys")
+            bad.append(f"{kind} checkpoint has no ctx_head keys")
         else:                                                           # the head's seeded init (CTX_INIT_SEED, forked RNG) is the fresh start state: it must have moved
             from tanitad.models import v8f_mini as M
             d = int(fin_sd["ctx_head.0.weight"].shape[1])
@@ -299,7 +307,7 @@ def suite_problems(path, commit):
 
 def nav_report_problems(kind, nav_npz, report_path):
     """G-CLOCK-NAV: the nav builder's report must read PASS on train and eval, its regression arm must FAIL, and it must describe this npz."""
-    if kind not in ("N1", "S1"):
+    if kind not in NAV_KINDS:
         return []
     try:
         r = json.load(open(report_path, encoding="utf-8"))
@@ -452,7 +460,7 @@ def mint(tag, kind, seed, a):
         toks = _with(toks, steps=a.steps)
     json.dump(toks, open(os.path.join(rd, "argv.json"), "w", encoding="utf-8"))
     nav_report = os.path.join(a.inputs, "strat1", "navtext_nav_report.json")
-    b, bad = binding(kind, toks, a.root, a.commit, a.suite, nav_report=nav_report if kind in ("N1", "S1") else "")
+    b, bad = binding(kind, toks, a.root, a.commit, a.suite, nav_report=nav_report if kind in NAV_KINDS else "")
     if bad:
         return ["binding: " + x for x in bad]
     trainer = os.path.join(a.root, TRAINER_REL)
@@ -460,7 +468,7 @@ def mint(tag, kind, seed, a):
     checks = {"G-SUITE": {"pass": True, "result_sha256": b["gsuite_result_sha256"]}, "frozen_argvs_sha256": {"pass": True, "sha256": sha_file(frozen)}}
     h = hyg()
     checks["G-HYG"] = {"pass": not h, "problems": h}
-    if kind in ("N1", "S1"):
+    if kind in NAV_KINDS:
         checks["G-CLOCK"] = {"pass": True, "nav_report_sha256": b["nav_report_sha256"], "note": "G-CLOCK-NAV read from the builder report (train + eval PASS, regression arm FAILS); ctx label alignment asserts run inside the trainer's selfcheck"}
     else:
         checks["G-CLOCK"] = {"pass": True, "note": "control: no new label clock; the inherited label clock is the OBD-CTL recipe's"}
@@ -528,7 +536,7 @@ def run_arm(tag, kind, a):
     except (OSError, ValueError):
         print(f"REFUSED {tag}: no argv.json")
         return 2
-    nav_report = os.path.join(a.inputs, "strat1", "navtext_nav_report.json") if kind in ("N1", "S1") else ""
+    nav_report = os.path.join(a.inputs, "strat1", "navtext_nav_report.json") if kind in NAV_KINDS else ""
     trainer = a.trainer or os.path.join(a.root, TRAINER_REL)
     bad = token_problems(os.path.join(rd, "gate", "gate_token.json"), kind, toks, a.root, a.commit, a.suite, os.path.join(rd, "gate", "selfcheck.json"), trainer, nav_report)
     if bad:
