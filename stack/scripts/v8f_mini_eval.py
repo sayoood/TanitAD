@@ -235,6 +235,8 @@ def cmd_run(a):
     from tanitad.models import v8f_mini as M
     ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
     cfg = M.V8FMiniConfig(**ck["cfg"])                 # a checkpoint written before the ruling has no kin_mode => steer
+    if a.ctx_pool != cfg.ctx_pool:                    # PREREG_V8F_WEATHERHEAD: the head the checkpoint carries is the head the run declares (a cfg that drops it, or a flag that names a head the checkpoint lacks, is refused)
+        raise SystemExit(f"REFUSED: --ctx-pool {a.ctx_pool} but the checkpoint's cfg has ctx_pool={cfg.ctx_pool!r}: the evaluator would silently skip (or invent) the pooled head")
     if cfg.nav_source == "text" and not (a.nav_text_npz and a.nav_text_sha256):      # PREREG_V8F_STRAT1: the nav the checkpoint was trained on is the nav it is scored on
         raise SystemExit("REFUSED: this checkpoint was trained with --nav-source text; run needs --nav-text-npz and --nav-text-sha256 (the eval split of the text nav)")
     if cfg.nav_source == "v9" and (a.nav_text_npz or a.nav_text_sha256):
@@ -293,6 +295,8 @@ def cmd_run(a):
             "traj30_proj": []}
     if model.ctx_head is not None:                     # PREREG_V8F_STRAT1: the context logits ride in the eval npz (the reader scores them)
         outs["ctx_logits"] = []
+    if model.ctx_pool_head is not None:                # PREREG_V8F_WEATHERHEAD: the pooled head's logits ride in the eval npz
+        outs["ctx_pool_logits"] = []
     beta_rows = []                                     # rung beta: the planner's per-window inputs (only with --plan beta)
     if a.plan == "beta":
         from tanitad.models import v8f_beta as BETA
@@ -355,6 +359,8 @@ def cmd_run(a):
             outs["cons_pred"].append(o["cons_pred"].float().cpu().numpy())
             if model.ctx_head is not None:
                 outs["ctx_logits"].append(o["ctx_logits"].float().cpu().numpy())
+            if model.ctx_pool_head is not None:
+                outs["ctx_pool_logits"].append(o["ctx_pool_logits"].float().cpu().numpy())
             if a.project:
                 lim = M.limit_ms_from_onehot(b["limit"], b["limit_ok"])
                 cap = torch.where(torch.isfinite(lim), lim, torch.full_like(lim, 1e9))
@@ -649,6 +655,7 @@ def main(argv=None):
     p.add_argument("--nav-shuffle", action="store_true"); p.add_argument("--project", action="store_true")
     p.add_argument("--nav-text-npz", default="", help="PREREG_V8F_STRAT1: the text-nav file (required iff the checkpoint was trained with --nav-source text; its eval split is read)")
     p.add_argument("--nav-text-sha256", default="", help="PREREG_V8F_STRAT1: sha256 of --nav-text-npz (re-hashed at load)")
+    p.add_argument("--ctx-pool", choices=("off", "on"), default="off", help="PREREG_V8F_WEATHERHEAD: on = the checkpoint carries the attention-pooled detected-information head and the eval writes ctx_pool_logits; must equal the checkpoint's cfg (a mismatch is refused)")
     p.add_argument("--nav-withheld", action="store_true", help="PREREG_V8F_STRAT1: all five nav channels 0 (the trained no-row state); refused with --nav-shuffle")
     p.add_argument("--tac", choices=("pred", "shuffle", "oracle", "absmask"), default="pred",
                    help="PREREG_V8F_TAC: pred (DEFAULT) = O reads T's own held code. shuffle = O reads a DONOR window's predicted code (another "

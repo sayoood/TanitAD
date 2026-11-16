@@ -163,9 +163,15 @@ CTX_ALLOWED_KEYS = frozenset({"frame_ok"})
 CTX_INIT_SEED = 20261116
 NAV_SOURCES = ("v9", "text")
 CTX_HEAD_MODES = ("off", "on")
+#: PREREG_V8F_WEATHERHEAD form (a) (`--ctx-pool`): the attention-pooled detected-information head, five sub-heads (one per CTX_VARS entry) over the planner's own scene tokens (frames t-3..t, 160 tokens). ``off`` (default) builds nothing
+#: = a4357e79 bit for bit. The logits go to the fit loss and the evaluators ONLY: they never reach S, T, O, ``e_code``, ``e_ck`` or any goal path (T-ISO, pinned by ``ctx_pool_isolation_problems``).
+CTX_POOL_MODES = ("off", "on")
+CTX_POOL_INIT_SEED = 20261117
+CTX_POOL_KEY_PREFIXES = ("ctx_pool_head.",)
+CTX_POOL_HEADS = 4
 
 #: every state-dict key a declared lever may ADD to an older checkpoint's key set (load_init_ckpt: EXACTLY these may be fresh)
-NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + ("e_stok.",) + CTX_KEY_PREFIXES      # PREREG_V8F_OTBAND adds the strategic-token embedding
+NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + ("e_stok.",) + CTX_KEY_PREFIXES + CTX_POOL_KEY_PREFIXES      # PREREG_V8F_OTBAND adds the strategic-token embedding
 #: identifiers the lead head's own code (``V8FMini._lead``) and the aux-token assembly (``V8FMini._aux_in``) must not mention (the level list + the lead labels): the head is VISION ONLY
 LEAD_FORBIDDEN_NAMES = LEVEL_FORBIDDEN_NAMES + ("lead_y", "lead_has", "lead_near", "lead_gap_h", "s_h", "pose_now")
 LEAD_ALLOWED_KEYS = frozenset({"frame_ok"})
@@ -259,6 +265,7 @@ class V8FMiniConfig:
     ctx_heads: str = "off"             # PREREG_V8F_STRAT1 (`--ctx-heads`): off = nothing built (every earlier arm, bit for bit); on = the vision-only context head (CTX_VARS, CTX_DIM logits)
     w_ctx: float = 0.0                 # PREREG_V8F_STRAT1 (`--w-ctx`): the weight of the weighted-mean context CE in the total. > 0 iff the head is on, exactly 0.0 iff off (checked by the trainer's bad_ctx)
     ctx_detach: str = "off"            # PREREG_V8F_STRAT1 (`--ctx-detach`): on = the head reads the adapter tokens DETACHED (the ctx loss then cannot move the shared adapter)
+    ctx_pool: str = "off"              # PREREG_V8F_WEATHERHEAD (`--ctx-pool`): off = nothing built (a4357e79, bit for bit); on = the attention-pooled detected-information head (CTX_VARS, CTX_DIM logits) on the planner's scene tokens
     nav_source: str = "v9"             # PREREG_V8F_STRAT1 (`--nav-source`): a DATA lever (v9 = the join's nav, text = the router-text nav); the model never reads it, the checkpoint records it (as window_start)
     w_level: float = 0.0               # PREREG_V8F_LEVEL (`--w-level`): the weight of Huber(v_hat, logged speed) in the total. Must be > 0 with the head on and exactly 0.0 with it off (checked by the launch gate: a head with no loss, or a weight with no head, is refused)
 
@@ -299,6 +306,8 @@ class V8FMiniConfig:
             raise ValueError(f"ctx_detach must be one of {CTX_HEAD_MODES}, got {self.ctx_detach!r}")
         if not (math.isfinite(self.w_ctx) and self.w_ctx >= 0.0):
             raise ValueError(f"w_ctx must be a finite number >= 0, got {self.w_ctx!r}")
+        if self.ctx_pool not in CTX_POOL_MODES:
+            raise ValueError(f"ctx_pool must be one of {CTX_POOL_MODES}, got {self.ctx_pool!r}")
         if self.nav_source not in NAV_SOURCES:
             raise ValueError(f"nav_source must be one of {NAV_SOURCES}, got {self.nav_source!r}")
         if self.aux_cond not in AUX_COND_MODES:
@@ -736,6 +745,30 @@ def _mlp(d_in, d_hid, d_out, zero_last=False):
     return m
 
 
+class PoolHead(nn.Module):
+    """PREREG_V8F_WEATHERHEAD 4.1: LayerNorm(d) -> MultiheadAttention(d, 4 heads, batch_first) with ONE learned query ~ N(0, 0.02^2) and a key padding mask -> LayerNorm(d) -> Linear(d, n). 264,448 + 257 n parameters."""
+
+    def __init__(self, d: int, n: int, heads: int = CTX_POOL_HEADS):
+        super().__init__()
+        self.n1 = nn.LayerNorm(d)
+        self.q = nn.Parameter(torch.randn(1, 1, d) * 0.02)
+        self.att = nn.MultiheadAttention(d, heads, batch_first=True)
+        self.n2 = nn.LayerNorm(d)
+        self.out = nn.Linear(d, n)
+
+    def forward(self, tok: Tensor, pad: Tensor | None = None) -> Tensor:
+        x = self.n1(tok)
+        o, _ = self.att(self.q.expand(x.shape[0], -1, -1), x, x, key_padding_mask=pad, need_weights=False)
+        return self.out(self.n2(o[:, 0]))
+
+
+def build_ctx_pool_heads(d: int, seed: int) -> "nn.ModuleDict":
+    """The five sub-heads, built in CTX_VARS order under a forked RNG seeded ``seed`` (the global stream is untouched)."""
+    with torch.random.fork_rng(devices=[]):
+        torch.manual_seed(seed)
+        return nn.ModuleDict({v: PoolHead(d, n) for v, n in zip(CTX_VARS, CTX_N)})
+
+
 class WMAux(nn.Module):
     """M2: the H-JEPA world-model auxiliary (``tanitad.models.hjepa``), levels z1 / z2 / z3 on the O / T / S cycles
     (0.2 s / 0.4 s / 0.8 s on the cache grid -- the nearest multiples to 0.1 / 0.5 / 1.0 s). a = without IDM
@@ -899,6 +932,9 @@ class V8FMini(nn.Module):
             with torch.random.fork_rng(devices=[]):
                 torch.manual_seed(CTX_INIT_SEED)
                 self.ctx_head = _mlp(d, d, CTX_DIM)
+        self.ctx_pool_head = None
+        if cfg.ctx_pool == "on":                                           # PREREG_V8F_WEATHERHEAD: built LAST under a forked RNG: every module above and the global stream after it are the off model's
+            self.ctx_pool_head = build_ctx_pool_heads(d, CTX_POOL_INIT_SEED)
         self.p_gt = 1.0
 
     # ---- helpers -------------------------------------------------------------------------------------------
@@ -961,6 +997,33 @@ class V8FMini(nn.Module):
         if self.cfg.ctx_detach == "on":
             tok = tok.detach()
         return self.ctx_head(tok.mean(1)).float()
+
+    def _ctx_pool_scene(self, b, adapt: Tensor, last: Tensor):
+        """PREREG_V8F_WEATHERHEAD: the planner's own scene assembly (frames t-3..t, adapter + pos + time) and its pad mask. VISION ONLY: the only batch key read is ``frame_ok``. A row whose frames are ALL padded gets an
+        unmasked NOW slot so attention never returns NaN (the row is masked in the loss and the read)."""
+        tok, pad = self._scene(adapt, b["frame_ok"], last)
+        n = adapt.shape[2]
+        allpad = pad.all(1)
+        pad = torch.cat([pad[:, :-n], pad[:, -n:] & ~allpad[:, None]], 1)
+        return tok, pad
+
+    def _ctx_pool_apply(self, tok: Tensor, pad: Tensor) -> Tensor:
+        """PREREG_V8F_WEATHERHEAD: the five sub-heads on the scene tokens -> logits [B, CTX_DIM] float32 in CTX_VARS order (the layout of ``ctx_logits``)."""
+        return torch.cat([self.ctx_pool_head[v](tok, pad) for v in CTX_VARS], -1).float()
+
+    def _ctx_pool(self, b, adapt: Tensor, last: Tensor) -> Tensor:
+        """PREREG_V8F_WEATHERHEAD: ``ctx_pool_logits`` [B, CTX_DIM] from the scene tokens. VISION ONLY (pinned by :func:`ctx_pool_source_problems` and :func:`assert_ctx_pool_vision_only`)."""
+        tok, pad = self._ctx_pool_scene(b, adapt, last)
+        return self._ctx_pool_apply(tok, pad)
+
+    def ctx_pool_fit_logits(self, b, train_adapter: bool = False) -> Tensor:
+        """PREREG_V8F_WEATHERHEAD 4.1 (the FIT path): the adapter, ``pos``, ``time`` and the token assembly run under no_grad (the frozen model gets no gradient path); only the sub-heads carry a graph.
+        ``train_adapter`` (the FEAT control only) lets the adapter, ``pos`` and ``time`` carry gradient too."""
+        with torch.set_grad_enabled(torch.is_grad_enabled() and train_adapter):
+            adapt = self._encode(b)
+            last = torch.full((adapt.shape[0],), adapt.shape[1] - 1, dtype=torch.long, device=adapt.device)
+            tok, pad = self._ctx_pool_scene(b, adapt, last)
+        return self._ctx_pool_apply(tok, pad)
 
     def _aux_in(self, b, adapt: Tensor, last: Tensor) -> Tensor:
         """PREREG_LEVELHEAD_A2 (``--aux-cond token``): the [B, 3] input of ``e_aux`` = ``[v_hat / LEVEL_SCALE (0 without the level head), sigmoid(presence logit), gap_hat (both 0 without the lead head)]``, detached,
@@ -1073,6 +1136,8 @@ class V8FMini(nn.Module):
             out["lead_logit"], out["lead_gap"] = self._lead(b, adapt, last_now)[:2]
         if self.ctx_head is not None:                                   # PREREG_V8F_STRAT1: logits for the loss and the evaluator ONLY (never an input of S, T, O)
             out["ctx_logits"] = self._ctx(b, adapt, last_now)
+        if self.ctx_pool_head is not None:                              # PREREG_V8F_WEATHERHEAD: logits for the fit loss and the evaluators ONLY (never an input of S, T, O)
+            out["ctx_pool_logits"] = self._ctx_pool(b, adapt, last_now)
         # ---- S at its tick
         ck_s = self.run_s(b, adapt, last_s)
         out["ckpt"] = ck_s
@@ -1346,6 +1411,8 @@ class V8FMini(nn.Module):
             g["STOK"] = [self.e_stok]                                               # PREREG_V8F_OTBAND: G-LIVE then requires its gradient
         if self.ctx_head is not None:
             g["CTX"] = [self.ctx_head]                                              # PREREG_V8F_STRAT1
+        if self.ctx_pool_head is not None:
+            g["CTX_POOL"] = list(self.ctx_pool_head.values())                       # PREREG_V8F_WEATHERHEAD
         return g
 
     def built_levers(self) -> dict:
@@ -1400,6 +1467,10 @@ class V8FMini(nn.Module):
             lv["ctx_heads"], lv["w_ctx"], lv["ctx_detach"] = "on", cfg.w_ctx, cfg.ctx_detach
             lv["ctx_dim"] = int(self.ctx_head[2].out_features)
             lv["ctx_vision_only_source"] = not ctx_head_source_problems()
+        if self.ctx_pool_head is not None:                                 # PREREG_V8F_WEATHERHEAD: present ONLY with the head built (an off model keeps the tip's key set)
+            lv["ctx_pool"] = "on"
+            lv["ctx_pool_dim"] = int(sum(self.ctx_pool_head[v].out.out_features for v in CTX_VARS))
+            lv["ctx_pool_vision_only_source"] = not ctx_pool_source_problems()
         if self.lead_head is not None or self.e_aux is not None:           # the BUILT wiring, read back by the gate (absent = the additive default with no head: a token declared with no head builds nothing and is refused)
             lv["aux_cond"] = "token" if self.e_aux is not None else "add"
             lv["aux_vision_only_source"] = not aux_source_problems()
@@ -1691,6 +1762,74 @@ def ctx_isolation_problems(model: V8FMini, batch: dict) -> list:
     finally:
         with torch.no_grad():
             for p, q in zip(model.ctx_head.parameters(), saved):
+                p.copy_(q)
+        model.train(was)
+    return probs
+
+
+# ---------------------------------------------------------------------------------------------------- PREREG_V8F_WEATHERHEAD form (a)
+def ctx_pool_terms(logits: Tensor, y: Tensor, frame_ok_now: Tensor) -> dict:
+    """The FIT loss (card 4.2): unweighted cross entropy per variable over the rows with a label (``y >= 0``) whose NOW frame is real; ``T["ctx_pool"]`` = the SUM over variables. ``y`` [B, 5] long, -1 = masked."""
+    T, o = {}, 0
+    for k, (v, n) in enumerate(zip(CTX_VARS, CTX_N)):
+        t = y[:, k].long()
+        m = (t >= 0) & frame_ok_now
+        ce = F.cross_entropy(logits[:, o:o + n], t.clamp_min(0), reduction="none")
+        T[f"ctx_pool/{v}"] = (ce * m).sum() / m.sum().clamp_min(1)
+        o += n
+    T["ctx_pool"] = sum(T[f"ctx_pool/{v}"] for v in CTX_VARS)
+    return T
+
+
+#: the methods whose CODE must read vision only (the scene assembly, the head application, the fit path)
+CTX_POOL_FNS = ("_ctx_pool_scene", "_ctx_pool_apply", "_ctx_pool", "ctx_pool_fit_logits")
+
+
+def ctx_pool_source_problems(cls=None) -> list:
+    """PREREG_V8F_WEATHERHEAD T-VIS, STATIC half: the identifiers of the pooled head's CODE (:data:`CTX_POOL_FNS`) that name an ego, nav, limit, code, label or metadata input (:data:`CTX_FORBIDDEN_NAMES`). Empty = vision only."""
+    cls = V8FMini if cls is None else cls
+    return sorted({n for f in CTX_POOL_FNS for n in _forbidden_in(getattr(cls, f), CTX_FORBIDDEN_NAMES)})
+
+
+def assert_ctx_pool_vision_only(model: V8FMini, batch: dict) -> dict:
+    """PREREG_V8F_WEATHERHEAD T-VIS: ``ctx_pool_logits`` is a function of the VISION tokens alone. Raises AssertionError unless (1) :func:`ctx_pool_source_problems` is empty; (2) ``model._ctx_pool`` on a key-guarded batch READS only
+    :data:`CTX_ALLOWED_KEYS`; (3) the logits are IDENTICAL (bit for bit) when every non-vision batch key is replaced, and DIFFERENT when ``feats`` is."""
+    if model.ctx_pool_head is None:
+        raise AssertionError("assert_ctx_pool_vision_only: the model has no pooled head")
+    src = ctx_pool_source_problems(type(model))
+    if src:
+        raise AssertionError(f"the pooled head's code names non-vision inputs: {src}")
+    rec = _vision_only_run(model, batch, lambda b, adapt, last: model._ctx_pool(b, adapt, last), CTX_ALLOWED_KEYS, "ctx pool head")
+    return {**rec, "source_problems": src}
+
+
+def ctx_pool_isolation_problems(model: V8FMini, batch: dict) -> list:
+    """PREREG_V8F_WEATHERHEAD T-ISO (b), the extension of :func:`ctx_isolation_problems`: ``forward_infer`` twice, the second after adding N(0, 1) to every ``ctx_pool_head`` parameter (forked RNG). The planner and goal outputs
+    (:data:`CTX_ISOLATED_OUTPUTS`) and ``ctx_logits`` (when the model has the shipped head) must be bit-identical and ``ctx_pool_logits`` must differ. A non-empty list = the head feeds the planner or the goal path (or the check is blind)."""
+    if model.ctx_pool_head is None:
+        return ["the model has no pooled head"]
+    was = model.training
+    model.eval()
+    probs = []
+    saved = [p.detach().clone() for p in model.ctx_pool_head.parameters()]
+    try:
+        with torch.no_grad():
+            a = model.forward_infer(batch)
+            with torch.random.fork_rng(devices=[]):
+                torch.manual_seed(7)
+                for p in model.ctx_pool_head.parameters():
+                    p.add_(torch.randn_like(p))
+            b2 = model.forward_infer(batch)
+        for k in CTX_ISOLATED_OUTPUTS + ("ctx_logits",):
+            if k not in a:
+                continue
+            if not torch.equal(a[k], b2[k]):
+                probs.append(f"{k} moved when only ctx_pool_head weights changed")
+        if "ctx_pool_logits" not in a or torch.equal(a["ctx_pool_logits"], b2["ctx_pool_logits"]):
+            probs.append("ctx_pool_logits did not move when ctx_pool_head weights changed")
+    finally:
+        with torch.no_grad():
+            for p, q in zip(model.ctx_pool_head.parameters(), saved):
                 p.copy_(q)
         model.train(was)
     return probs

@@ -291,7 +291,7 @@ def model_planner(model, device, keep_aux: bool = False, keep_heads: bool = Fals
             plan.aux = {"tau": out.get("traj30_o", out["traj30"]).double().cpu().numpy(), "P": out["p10"].double().cpu().numpy(),
                         "fired": None if "hacc_gate_fired" not in out else out["hacc_gate_fired"].cpu().numpy()}
         if keep_heads:
-            plan.heads = {k: out[k].float().cpu().numpy() for k in HEAD_KEYS + (("ctx_logits",) if "ctx_logits" in out else ())}      # PREREG_V8F_STRAT1: only a ctx model carries the key
+            plan.heads = {k: out[k].float().cpu().numpy() for k in HEAD_KEYS + (("ctx_logits",) if "ctx_logits" in out else ()) + (("ctx_pool_logits",) if "ctx_pool_logits" in out else ())}      # PREREG_V8F_STRAT1 / PREREG_V8F_WEATHERHEAD: only a ctx / pooled-head model carries the key
         return out["traj30"].float().cpu().numpy()
     plan.keys_read = set()
     plan.aux = None
@@ -339,10 +339,11 @@ class TickRecorder:
     RAW_HEAD_FIELDS = ("s_ckpt", "s_pose", "t_goal_prob", "t_lat_logits", "t_lon_logits", "t_cons_pred", "t_pose", "pose_w0")      # recorded per tick
     HEAD_FIELDS = RAW_HEAD_FIELDS + ("s_ckpt_now", "s_ckpt_w0")                                                                      # + the two frames derived at save()
 
-    def __init__(self, planner, store, J, heads: bool = False, nav: bool = False, ctx: bool = False):
+    def __init__(self, planner, store, J, heads: bool = False, nav: bool = False, ctx: bool = False, pool: bool = False):
         self.planner, self.store, self.J, self.heads = planner, store, J, bool(heads)
         self.nav, self.ctx = bool(nav), bool(ctx) and bool(heads)       # PREREG_V8F_STRAT1: --dump-nav adds nav_in; ctx_logits ride with --dump-heads on a ctx model
-        self.rows = {k: [] for k in self.FIELDS + (self.RAW_HEAD_FIELDS if self.heads else ()) + (("nav_in",) if self.nav else ()) + (("ctx_logits",) if self.ctx else ())}
+        self.pool = bool(pool) and bool(heads)                          # PREREG_V8F_WEATHERHEAD: ctx_pool_logits ride with --dump-heads on a pooled-head model
+        self.rows = {k: [] for k in self.FIELDS + (self.RAW_HEAD_FIELDS if self.heads else ()) + (("nav_in",) if self.nav else ()) + (("ctx_logits",) if self.ctx else ()) + (("ctx_pool_logits",) if self.pool else ())}
         self.clip = []
         self.base = 0                                                    # the index of the chunk's first window in the run's window list
 
@@ -370,6 +371,8 @@ class TickRecorder:
                 r["nav_in"].append(batch["nav"][b, -1].float().cpu().numpy())          # PREREG_V8F_STRAT1: the [5] vector fed at NOW
             if self.ctx:
                 r["ctx_logits"].append(hd["ctx_logits"][b])
+            if self.pool:
+                r["ctx_pool_logits"].append(hd["ctx_pool_logits"][b])
             if self.heads:
                 r["s_ckpt"].append(hd["ckpt"][b])
                 r["s_pose"].append(pose_s[b])
@@ -517,6 +520,7 @@ def build_parser():
     p.add_argument("--nav-text-sha256", default="", help="PREREG_V8F_STRAT1: sha256 of --nav-text-npz (re-hashed at load)")
     p.add_argument("--nav-variant", choices=NAV_VARIANTS, default="real",
                    help="PREREG_V8F_STRAT1: real (default) = the tool's output bit for bit; donor = the nav rows of an episode-disjoint donor window (donor_indices seed 0); zero = all five channels 0. Needs --nav deadreckon")
+    p.add_argument("--ctx-pool", choices=("off", "on"), default="off", help="PREREG_V8F_WEATHERHEAD: on = the checkpoint carries the attention-pooled detected-information head and the eval writes ctx_pool_logits; must equal the checkpoint's cfg (a mismatch is refused)")
     p.add_argument("--dump-nav", action="store_true", help="PREREG_V8F_STRAT1 (needs --dump-ticks): add nav_in [5] (the vector fed at NOW) to every tick row; with --dump-heads on a ctx model also ctx_logits")
     p.add_argument("--dump-heads", action="store_true", help="T1-HEADS (needs --dump-ticks): add the S head and T head outputs of each tick's forward_infer call to those rows (s_ckpt*, t_goal_prob, t_lat_logits, t_lon_logits, t_cons_pred + poses)")
     p = sub.add_parser("analyze")
@@ -532,6 +536,8 @@ def cmd_run(a):
         raise SystemExit("REFUSED: --dump-heads adds columns to the --dump-ticks file; it needs --dump-ticks DIR (a flag that silently writes nothing is worse than none)")
     ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
     cfg = M.V8FMiniConfig(**ck["cfg"])
+    if a.ctx_pool != cfg.ctx_pool:                    # PREREG_V8F_WEATHERHEAD: the head the checkpoint carries is the head the run declares (a cfg that drops it, or a flag that names a head the checkpoint lacks, is refused)
+        raise SystemExit(f"REFUSED: --ctx-pool {a.ctx_pool} but the checkpoint's cfg has ctx_pool={cfg.ctx_pool!r}: the evaluator would silently skip (or invent) the pooled head")
     if a.dump_nav and not a.dump_ticks:
         raise SystemExit("REFUSED: --dump-nav adds columns to the --dump-ticks file; it needs --dump-ticks DIR")
     if cfg.nav_source == "text" and not (a.nav_text_npz and a.nav_text_sha256):      # PREREG_V8F_STRAT1: the nav the checkpoint was trained on is the nav it is scored on
@@ -573,7 +579,7 @@ def cmd_run(a):
         dn_ = None if perm is None else [(wins[int(perm[b0 + k])][0], wins[int(perm[b0 + k])][1]) for k in range(len(chunk))]
         st_m = make_states(store, tracks, J, chunk, a.nav, a.nav_variant, dn_)
         if a.dump_ticks:
-            rec = rec or TickRecorder(mp, store, J, heads=a.dump_heads, nav=a.dump_nav, ctx=model.ctx_head is not None)
+            rec = rec or TickRecorder(mp, store, J, heads=a.dump_heads, nav=a.dump_nav, ctx=model.ctx_head is not None, pool=model.ctx_pool_head is not None)
             rec.planner, rec.base = mp, b0
             plan0, exe = rollout(mp, st_m, ds, proxy, hook=rec, **kw)
         else:
