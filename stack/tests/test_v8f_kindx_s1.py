@@ -832,6 +832,7 @@ def _new_tip_selfcheck():
     sc = copy.deepcopy(_banked("gate_M2b-mixo/selfcheck.json"))
     sc["levers"]["o_interface"] = "full"
     sc["o_interface_probe"] = {"o_interface": "full", "shift": 2.5, "n_windows": 64, "perturbations": {}, "pass": True}
+    sc["info"]["nav_source"] = {"source": "v9", "join_nav_digest": "ab" * 32}                         # PREREG_V8F_STRAT1: the tip records the nav source (absent from the banked s0)
     return sc
 
 
@@ -886,7 +887,8 @@ def test_the_new_tip_must_build_mixos_model_the_same_levers_data_and_steps():
     for name, f in {"a lever changed": lambda s: s["levers"].__setitem__("hmax", 10), "a parameter group changed": lambda s: s["levers"]["params"].__setitem__("O", 1),
                     "a lever disappeared": lambda s: s["levers"].pop("wm"), "an unknown lever appeared": lambda s: s["levers"].__setitem__("surprise", 1),
                     "o_interface is cut": lambda s: s["levers"].__setitem__("o_interface", "cut"), "the data changed": lambda s: s["info"].__setitem__("train_sha256", "22" * 32),
-                    "the steps changed": lambda s: s.__setitem__("steps_total", 1)}.items():
+                    "the steps changed": lambda s: s.__setitem__("steps_total", 1),
+                    "the nav source is text": lambda s: s["info"].__setitem__("nav_source", {"source": "text", "join_nav_digest": "ab" * 32})}.items():
         sc = _new_tip_selfcheck()
         f(sc)
         assert D.same_model_violations(sc, base) != [], name
@@ -1284,9 +1286,26 @@ def test_mixos_argv_with_seed_1_passes_the_trainers_gate_on_the_new_tip_without_
 def test_seed_1_builds_the_same_model_and_data_as_seed_0_apart_from_the_seed(trainer_runs):
     r0, r1 = trainer_runs["runs"][0]["sc"], trainer_runs["runs"][1]["sc"]
     assert r0["levers"] == r1["levers"], "the built levers (every lever, every parameter group) are seed-independent"
-    strip = lambda i: {k: v for k, v in i.items() if k not in ("lru", "argv_sha")}                      # noqa: E731
+    # PREREG_V8F_STRAT1 added info["nav_source"] with a digest of the join's nav: it is a digest of the DATA, and this fixture's synthetic world is built FROM the seed (build_data: make_synthetic_world(seed=a.seed)),
+    # so it differs by construction; the source must still agree. On real data J comes from the manifest and never sees the seed.
+    strip = lambda i: {k: (dict(v, join_nav_digest=None) if k == "nav_source" else v) for k, v in i.items() if k not in ("lru", "argv_sha")}   # noqa: E731
     assert strip(r0["info"]) == strip(r1["info"]) and r0["steps_total"] == r1["steps_total"] and r0["argv_sha"] != r1["argv_sha"]
-    assert D.same_model_violations(r1, r0) == []
+    nd = lambda s: {**s, "info": {k: (dict(v, join_nav_digest=None) if k == "nav_source" else v) for k, v in s["info"].items()}}   # noqa: E731  (the seed-built world's digest, as above)
+    assert D.same_model_violations(nd(r1), nd(r0)) == []
+    assert D.same_model_violations(r1, r0) and all("join_nav_digest" in x for x in D.same_model_violations(r1, r0))   # the control: the digest IS compared, and it is the only difference
+
+
+def test_an_info_key_added_since_s0_passes_only_at_its_default():
+    """A gate record banked before PREREG_V8F_STRAT1 has no info.nav_source; the tip's carries it. Absent in the base + v9 at the tip = the same model; any other value is not."""
+    base = {"levers": {"hmax": 10}, "info": {"train_sha256": "11" * 32}, "steps_total": 5}
+    tip = copy.deepcopy(base)
+    tip["info"]["nav_source"] = {"source": "v9", "join_nav_digest": "ab" * 32}
+    assert D.same_model_violations(tip, base) == []
+    tip["info"]["nav_source"]["source"] = "text"
+    assert D.same_model_violations(tip, base) != []
+    tip["info"].pop("nav_source")
+    base["info"]["nav_source"] = {"source": "v9", "join_nav_digest": "ab" * 32}
+    assert D.same_model_violations(tip, base) != []                                                    # a key the base HAS and the tip dropped stays a violation
 
 
 def test_the_trainers_own_gate_refuses_a_declared_cut_that_was_not_built_and_the_new_tip_names_its_flag(trainer_runs):

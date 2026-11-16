@@ -327,6 +327,8 @@ def gate_violations(sc: dict, b: dict, *, holdout_sha: str = HOLDOUT_SHA, steps:
 _INFO_VOLATILE = ("lru", "argv_sha")
 #: what the tip may have ADDED to the built levers since MIXO's s0 gate was banked, with the only value X may have for it
 _LEVERS_ADDED_SINCE_S0 = {"o_interface": "full"}
+#: info keys a later PREREG added since MIXO's s0 gate was banked (absent from the banked record), with the only value X may carry: PREREG_V8F_STRAT1's nav_source at its default v9
+_INFO_ADDED_SINCE_S0 = {"nav_source": lambda v: isinstance(v, dict) and v.get("source") == "v9"}
 
 
 def same_model_violations(sc: dict, base: dict) -> list:
@@ -346,6 +348,10 @@ def same_model_violations(sc: dict, base: dict) -> list:
             elif lv[k] != _LEVERS_ADDED_SINCE_S0[k]:
                 bad.append(f"levers.{k} = {lv[k]!r}, expected the default {_LEVERS_ADDED_SINCE_S0[k]!r}")
         for k in sorted(set(sc["info"]) | set(base["info"])):
+            if k in _INFO_ADDED_SINCE_S0 and k not in base["info"] and k in sc["info"]:
+                if not _INFO_ADDED_SINCE_S0[k](sc["info"][k]):
+                    bad.append(f"info.{k} = {sc['info'][k]!r}: new since MIXO s0 and not at its default")
+                continue
             if k not in _INFO_VOLATILE and sc["info"].get(k) != base["info"].get(k):
                 bad.append(f"info.{k}: {sc['info'].get(k)!r} != MIXO s0's {base['info'].get(k)!r}")
         if sc.get("steps_total") != base.get("steps_total"):

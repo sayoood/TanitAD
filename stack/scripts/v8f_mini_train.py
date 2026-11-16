@@ -1728,6 +1728,8 @@ def bad_ctx(a, model, data_info=None, opt=None) -> list:
             bad.append("ctx_heads off but the optimiser carries a ctx group")
     # ---- the nav source
     ns = info.get("nav_source")
+    if ns is None and a.nav_source == "v9":
+        ns = {"source": "v9"}       # an info dict that predates the key is not a lie: v9 is what every pre-STRAT1 build read. main() always records the key, and G-LIVE's nav_source_probe still checks the digest (no key -> no digest -> RED). Declared text with no key stays refused.
     if model.cfg.nav_source != a.nav_source:
         bad.append(f"cfg.nav_source: declared {a.nav_source} but built {model.cfg.nav_source}")
     if not ns or ns.get("source") != a.nav_source:
@@ -2383,6 +2385,9 @@ def nav_source_probe(model, batch, J, info, a, hist_rows=None) -> dict:
     # (d) reach
     m = copy.deepcopy(model).cpu()
     m.train()
+    res["e_nav_frozen"] = not any(p.requires_grad for p in model.e_nav.parameters())
+    for p in m.e_nav.parameters():
+        p.requires_grad_(True)      # on the COPY only: reach asks whether the loss depends on the nav encoder, which is true whether or not --freeze holds it still (a frozen e_nav made autograd.grad raise)
     tm = m.loss(batch, p_gt=0.5, gen=torch.Generator().manual_seed(0))["terms"]
     gr = torch.autograd.grad(tm["total"], list(m.e_nav.parameters()), allow_unused=True)
     res["e_nav_grad"] = float(sum(float(x.abs().sum()) for x in gr if x is not None))

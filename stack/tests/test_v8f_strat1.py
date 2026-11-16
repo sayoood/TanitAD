@@ -430,7 +430,7 @@ def test_dvb_refuses_each_misdeclared_flag_and_passes_the_declared_ones(world):
     b, J = make_batch(world)
     CL = CLof(world, J)
 
-    def gate(extra, **over):
+    def gate(extra, _drop_ns=False, **over):
         a = args(world, extra)
         cfg = TR.make_config(a)
         cfg = M.V8FMiniConfig(**{**cfg.__dict__, **{k: v for k, v in TINY.items() if k not in ("nb", "n_q", "d", "ff")}, "d": 32, "ff": 64, **over})
@@ -447,6 +447,8 @@ def test_dvb_refuses_each_misdeclared_flag_and_passes_the_declared_ones(world):
             info["nav_source"].update({"sha256": sha(world["nav"]), "nav_digest": "d", "n_text_ne_v9": 5})
         if a.ctx_heads == "on":
             info["ctx_labels"] = {"path": os.path.abspath(a.ctx_labels), "sha256": sha(world["ctx"]), "valid_share": {v: 0.99 for v in M.CTX_VARS}}
+        if _drop_ns:
+            info.pop("nav_source")                                                                      # an info dict that predates the key (every pre-STRAT1 test builds one)
         return TR.bad_ctx(a, model, info, opt)
 
     on = ["--ctx-heads", "on", "--w-ctx", "0.5", "--ctx-labels", str(world["ctx"]), "--ctx-labels-sha256", sha(world["ctx"]), "--ctx-lr-mult", "10"]
@@ -461,6 +463,22 @@ def test_dvb_refuses_each_misdeclared_flag_and_passes_the_declared_ones(world):
     assert gate(["--nav-source", "text", "--nav-text-npz", str(world["nav"]), "--nav-text-sha256", "0" * 64], nav_source="text")
     assert gate(txt, nav_source="v9")                                                                  # declared text, built v9
     assert gate(on, ctx_heads="off")                                                                   # declared on, built off
+    assert gate([], _drop_ns=True) == []                                                               # no key + declared v9 (the default): not a lie
+    assert any("nav_source: declared text" in m for m in gate(txt, _drop_ns=True, nav_source="text"))  # no key + declared text: refused (a mutation that lets an absent key pass for text turns this RED)
+    assert gate(["--nav-text-npz", str(world["nav"])], _drop_ns=True)                                  # no key does not excuse a text file named with source v9
+
+
+def test_nav_probe_reach_holds_with_the_nav_encoder_frozen(world):
+    """--freeze cond holds e_nav still; the probe asks whether the LOSS depends on it, on a copy (a frozen e_nav made autograd.grad raise: the otband fixture's --freeze S T adapter cond arm)."""
+    b, J = make_batch(world)
+    a = args(world)
+    info = {"nav_source": {"source": "v9", "join_nav_digest": hashlib.sha256(np.ascontiguousarray(J["nav"]).tobytes()).hexdigest()}}
+    m = build(J)
+    TR.freeze_groups(m, ["cond"])
+    res = TR.nav_source_probe(m, b, J, info, a)
+    assert res["pass"] is True and res["e_nav_frozen"] is True and res["e_nav_grad"] > 0.0
+    assert not any(p.requires_grad for p in m.e_nav.parameters())                                     # the caller's model stays frozen: only the copy was switched
+    assert TR.nav_source_probe(build(J), b, J, info, a)["e_nav_frozen"] is False                       # the control: an unfrozen model reads False
 
 
 def test_remove_a_flag_check_entry_is_refused_by_declared_vs_built(world, monkeypatch):

@@ -41,7 +41,8 @@ import numpy as np  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/")
 SCHEMA = "v8f-speedsub-t1-rec-v1"
-TOOL_SHA256 = "61e140edb9da01acbbba4eef81e74bbb68b57e2ff31842e05958759446d97397"
+TOOL_SHA256_RUN = "61e140edb9da01acbbba4eef81e74bbb68b57e2ff31842e05958759446d97397"     # the T1 tool the banked SPEEDSUB_T1 rollouts ran (PREREG section 3; v8f_speedsub_t1_pin.py keeps this pin)
+TOOL_SHA256 = "180044eb28246ba94a18366ed337f061ec659d6667496c0f88a4a325a0d65c93"         # the tool at the tip: PREREG_V8F_STRAT1 added default-off --nav-variant / --dump-nav / ctx_logits; on this rig's argv it writes the 61e140ed tool's bytes (59 arrays + the result JSON, MEASURED 2026-11-16, raw/2026-11-16-v8f-strat1/build/evidence/t1_identity/)
 MODES = ("identity", "egoc", "egoshufc", "identity_l", "egol")
 MODE_LIMIT = {"identity": "causal", "egoc": "causal", "egoshufc": "causal", "identity_l": "logged", "egol": "logged"}
 SUBSTITUTING = ("egoc", "egoshufc", "egol")
