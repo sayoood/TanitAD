@@ -1,0 +1,2826 @@
+{
+ "tool": "diag_read.py",
+ "evidence_class": "MEASURED (ours; banked T1 tick dumps, zero training, CPU)",
+ "tier": "T1-kin tick 0 (heads) / T1-kin trajectory cells (TAC-LAT, TAC-LON), 141 episodes / 2,399 windows",
+ "estimator": "paired episode-cluster bootstrap, B=2000, seed 0, taniteval.ci resampler (F:/TanitAD-scratch/otband_read/tree/taniteval/taniteval/ci.py); 'another draw of EPISODES' only",
+ "addendum_sha256": "44dade04f24ffe54ba119d76ddbedcaa87f89ec330a6134421b2ed45b763d163",
+ "inputs_sha256": {
+  "join_eval141.npz": "f0ea722f59c1a4d8ba81ce7f9b204dd3a28950fc1c16778f63c2962786e5206a",
+  "ticks_DS-B_s0-B_m10_causal_heads.npz": "6cfcb9264a585dfd0b028b55e1b6df903fc781569800f83584979b73444267b2",
+  "ticks_DS-U_s0-B_m10_causal_heads.npz": "a5395b9ce11ee4459e09f6a31adf5b0f66a4770a13b7bf971ef2d176152b31d7",
+  "ticks_DS-B_rep-B_m10_causal_heads.npz": "021b82301c6e8240f0cefd9c1f41080fc2900270296107b0849ed00304d37583",
+  "ticks_DS-B_s1-B_m10_causal_heads.npz": "88dd9570001d5c516bb325d33aa9946de0e7d9773edc22cde7a14618ce0ee44e",
+  "ticks_DS-U_s1-B_m10_causal_heads.npz": "de82e371f236ba4efd94bc624779c28d26f8f6389cc65bb7a9ff9ec3479422f9",
+  "ticks_DS-B_s0-A_m10_causal_heads.npz": "39bbd3cfe7173a75fb22ff6d349fa46a702bef6b6068b8c3f98e36d762004d95",
+  "ticks_DS-U_s0-A_m10_causal_heads.npz": "05f13f40cad16f68037b8c12fff23483ef15f71b31099c88f5062b64e7354127",
+  "ticks_DS-B_rep-A_m10_causal_heads.npz": "9da71b8bcba152647106fcedbec8c43aca396503736b4f3a0938e588ffcc7e6f",
+  "ticks_DS-B_s1-A_m10_causal_heads.npz": "c79d56882445a2dd16d79c84fa55731afc28570d372f571e4e2b4e4d4a9fea9e",
+  "ticks_DS-U_s1-A_m10_causal_heads.npz": "0eb5786cf6f0b26c73e9f3493e845519198d57e310de79a1f470219f5db8ce38",
+  "strat_platform_by_clip.npz": "b18705db6a2665e324a4ce4d1e7364c57305c15a34a770a5a6274ef1e2d148ee",
+  "strat_labels_table.npz": "8055a321df6db1725ea17abde2999d48bcb68d43f1a480a69ed42dd0cf184eff"
+ },
+ "f1": {
+  "n_windows": 2399,
+  "n_episodes": 141,
+  "threshold": 0.5,
+  "support": {
+   "FOLLOW_LANE": {
+    "n_scored_windows": 2107,
+    "n_pos_windows": 1910,
+    "n_pos_episodes": 139,
+    "source": "geometry"
+   },
+   "TURN_L": {
+    "n_scored_windows": 2320,
+    "n_pos_windows": 47,
+    "n_pos_episodes": 9,
+    "source": "geometry"
+   },
+   "TURN_R": {
+    "n_scored_windows": 2320,
+    "n_pos_windows": 150,
+    "n_pos_episodes": 22,
+    "source": "geometry"
+   },
+   "YIELD_FOR_TURN_L": {
+    "n_scored_windows": 2107,
+    "n_pos_windows": 11,
+    "n_pos_episodes": 3,
+    "source": "geometry"
+   },
+   "YIELD_FOR_TURN_R": {
+    "n_scored_windows": 2107,
+    "n_pos_windows": 10,
+    "n_pos_episodes": 2,
+    "source": "geometry"
+   },
+   "YIELD": {
+    "n_scored_windows": 695,
+    "n_pos_windows": 85,
+    "n_pos_episodes": 17,
+    "source": "vlm"
+   },
+   "STOP_POINT": {
+    "n_scored_windows": 2246,
+    "n_pos_windows": 131,
+    "n_pos_episodes": 25,
+    "source": "geometry"
+   },
+   "SPEED_BAND": {
+    "n_scored_windows": 0,
+    "n_pos_windows": 0,
+    "n_pos_episodes": 0,
+    "source": "geometry"
+   },
+   "CORRIDOR_OFFSET": {
+    "n_scored_windows": 695,
+    "n_pos_windows": 120,
+    "n_pos_episodes": 24,
+    "source": "vlm"
+   },
+   "EVADE_IN_CORRIDOR": {
+    "n_scored_windows": 695,
+    "n_pos_windows": 110,
+    "n_pos_episodes": 22,
+    "source": "vlm"
+   },
+   "OVERTAKE_VEHICLE": {
+    "n_scored_windows": 695,
+    "n_pos_windows": 20,
+    "n_pos_episodes": 4,
+    "source": "vlm"
+   },
+   "MERGE": {
+    "n_scored_windows": 695,
+    "n_pos_windows": 25,
+    "n_pos_episodes": 5,
+    "source": "vlm"
+   },
+   "GAP_TARGET": {
+    "n_scored_windows": 695,
+    "n_pos_windows": 60,
+    "n_pos_episodes": 12,
+    "source": "vlm"
+   },
+   "REACT_ON_ONCOMING": {
+    "n_scored_windows": 695,
+    "n_pos_windows": 50,
+    "n_pos_episodes": 10,
+    "source": "vlm"
+   },
+   "TAKE_EXIT_L": {
+    "n_scored_windows": 695,
+    "n_pos_windows": 0,
+    "n_pos_episodes": 0,
+    "source": "vlm"
+   },
+   "TAKE_EXIT_R": {
+    "n_scored_windows": 695,
+    "n_pos_windows": 30,
+    "n_pos_episodes": 6,
+    "source": "vlm"
+   },
+   "TRAFFIC_LIGHT_REACT": {
+    "n_scored_windows": 695,
+    "n_pos_windows": 0,
+    "n_pos_episodes": 0,
+    "source": "vlm"
+   },
+   "TRAFFIC_LIGHT_REACT_RED": {
+    "n_scored_windows": 720,
+    "n_pos_windows": 65,
+    "n_pos_episodes": 8,
+    "source": "vlm"
+   },
+   "TRAFFIC_LIGHT_REACT_YELLOW": {
+    "n_scored_windows": 695,
+    "n_pos_windows": 15,
+    "n_pos_episodes": 3,
+    "source": "vlm"
+   },
+   "TRAFFIC_LIGHT_REACT_GREEN": {
+    "n_scored_windows": 695,
+    "n_pos_windows": 75,
+    "n_pos_episodes": 15,
+    "source": "vlm"
+   },
+   "LANE_CHANGE_L": {
+    "n_scored_windows": 695,
+    "n_pos_windows": 15,
+    "n_pos_episodes": 3,
+    "source": "vlm"
+   },
+   "LANE_CHANGE_R": {
+    "n_scored_windows": 695,
+    "n_pos_windows": 10,
+    "n_pos_episodes": 2,
+    "source": "vlm"
+   }
+  },
+  "excluded_n0": [
+   {
+    "class": "SPEED_BAND",
+    "n_pos": 0,
+    "n_scored_windows": 0
+   },
+   {
+    "class": "TAKE_EXIT_L",
+    "n_pos": 0,
+    "n_scored_windows": 695
+   },
+   {
+    "class": "TRAFFIC_LIGHT_REACT",
+    "n_pos": 0,
+    "n_scored_windows": 695
+   }
+  ],
+  "macro_geometry": [
+   "FOLLOW_LANE",
+   "TURN_L",
+   "TURN_R",
+   "YIELD_FOR_TURN_L",
+   "YIELD_FOR_TURN_R",
+   "STOP_POINT"
+  ],
+  "macro_vlm": [
+   "YIELD",
+   "CORRIDOR_OFFSET",
+   "EVADE_IN_CORRIDOR",
+   "OVERTAKE_VEHICLE",
+   "MERGE",
+   "GAP_TARGET",
+   "REACT_ON_ONCOMING",
+   "TAKE_EXIT_R",
+   "TRAFFIC_LIGHT_REACT_RED",
+   "TRAFFIC_LIGHT_REACT_YELLOW",
+   "TRAFFIC_LIGHT_REACT_GREEN",
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R"
+  ],
+  "scoring": "window scored for class c where goal_w bit c is set at join row off[ci]+t0; pred = t_goal_prob at tick 0 > 0.5",
+  "K_oracle": {
+   "every_supported_class_f1_is_1": true,
+   "min_f1": 1.0
+  },
+  "rows": {},
+  "pairs": {
+   "B": {
+    "U-B_s0": {
+     "VLM": {
+      "a": 0.11004860516980643,
+      "b": 0.13974479600885045,
+      "delta": -0.029696190839044026,
+      "lo": -0.07842182421710854,
+      "hi": 0.02080631150343041,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "GEO": {
+      "a": 0.5278269266607065,
+      "b": 0.5298779506363677,
+      "delta": -0.002051023975661148,
+      "lo": -0.12228053848267743,
+      "hi": 0.057405963537237224,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "FOLLOW_LANE": {
+      "a": 0.9704865727200213,
+      "b": 0.9725013220518244,
+      "delta": -0.002014749331803123,
+      "lo": -0.007073470290582087,
+      "hi": 0.002882281398741878,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TURN_L": {
+      "a": 0.7567567567567568,
+      "b": 0.8076923076923077,
+      "delta": -0.05093555093555091,
+      "lo": -0.14093357386766311,
+      "hi": 0.009097855973745846,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TURN_R": {
+      "a": 0.7396449704142012,
+      "b": 0.7407407407407407,
+      "delta": -0.0010957703265395136,
+      "lo": -0.04603661032700276,
+      "hi": 0.04204971487580184,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "YIELD_FOR_TURN_L": {
+      "a": 0.3076923076923077,
+      "b": 0.5333333333333333,
+      "delta": -0.22564102564102562,
+      "lo": -0.6666666666666666,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 105
+     },
+     "YIELD_FOR_TURN_R": {
+      "a": 0.2857142857142857,
+      "b": 0.0,
+      "delta": 0.2857142857142857,
+      "lo": 0.0,
+      "hi": 0.4444444444444444,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 275
+     },
+     "YIELD": {
+      "a": 0.10101010101010101,
+      "b": 0.12631578947368421,
+      "delta": -0.025305688463583206,
+      "lo": -0.07143029675638371,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "STOP_POINT": {
+      "a": 0.10666666666666667,
+      "b": 0.125,
+      "delta": -0.018333333333333326,
+      "lo": -0.06217352640213101,
+      "hi": 0.022755686237512843,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "CORRIDOR_OFFSET": {
+      "a": 0.22784810126582278,
+      "b": 0.30409356725146197,
+      "delta": -0.0762454659856392,
+      "lo": -0.1470229445800481,
+      "hi": -0.0128770397603803,
+      "separated": true,
+      "negative_separated": true,
+      "n_nonfinite_draws": 0
+     },
+     "EVADE_IN_CORRIDOR": {
+      "a": 0.4,
+      "b": 0.43820224719101125,
+      "delta": -0.03820224719101123,
+      "lo": -0.16999835906653607,
+      "hi": 0.10619225922235734,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "OVERTAKE_VEHICLE": {
+      "a": 0.0,
+      "b": 0.18181818181818182,
+      "delta": -0.18181818181818182,
+      "lo": -0.5714285714285714,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 20
+     },
+     "MERGE": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 11
+     },
+     "GAP_TARGET": {
+      "a": 0.2564102564102564,
+      "b": 0.11428571428571428,
+      "delta": 0.14212454212454212,
+      "lo": -0.17967239662839318,
+      "hi": 0.41032608695652134,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "REACT_ON_ONCOMING": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TAKE_EXIT_R": {
+      "a": 0.0,
+      "b": 0.125,
+      "delta": -0.125,
+      "lo": -0.3333333333333333,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 2
+     },
+     "TRAFFIC_LIGHT_REACT_RED": {
+      "a": 0.41904761904761906,
+      "b": 0.4418604651162791,
+      "delta": -0.02281284606866002,
+      "lo": -0.3030571095571095,
+      "hi": 0.3117908407382086,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TRAFFIC_LIGHT_REACT_YELLOW": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 98
+     },
+     "TRAFFIC_LIGHT_REACT_GREEN": {
+      "a": 0.02631578947368421,
+      "b": 0.0851063829787234,
+      "delta": -0.05879059350503919,
+      "lo": -0.17700421603403302,
+      "hi": 0.05970149253731343,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "LANE_CHANGE_L": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 114
+     },
+     "LANE_CHANGE_R": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 273
+     }
+    },
+    "U-B_s1": {
+     "VLM": {
+      "a": 0.11795029701897283,
+      "b": 0.12257383415288797,
+      "delta": -0.00462353713391514,
+      "lo": -0.0468019759749465,
+      "hi": 0.03660876114391036,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "GEO": {
+      "a": 0.5733159417323138,
+      "b": 0.5494726345514697,
+      "delta": 0.023843307180844153,
+      "lo": -0.056203984893729304,
+      "hi": 0.07337824574209059,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "FOLLOW_LANE": {
+      "a": 0.9699525566684238,
+      "b": 0.9741561181434599,
+      "delta": -0.004203561475036088,
+      "lo": -0.011957127293863844,
+      "hi": 0.002695313749853372,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TURN_L": {
+      "a": 0.7102803738317757,
+      "b": 0.8155339805825242,
+      "delta": -0.10525360675074857,
+      "lo": -0.2505568186687888,
+      "hi": -0.008244224432932967,
+      "separated": true,
+      "negative_separated": true,
+      "n_nonfinite_draws": 0
+     },
+     "TURN_R": {
+      "a": 0.7320261437908496,
+      "b": 0.7604790419161677,
+      "delta": -0.028452898125318038,
+      "lo": -0.08516719513216467,
+      "hi": 0.03572990994932753,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "YIELD_FOR_TURN_L": {
+      "a": 0.5333333333333333,
+      "b": 0.5333333333333333,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 105
+     },
+     "YIELD_FOR_TURN_R": {
+      "a": 0.2857142857142857,
+      "b": 0.0,
+      "delta": 0.2857142857142857,
+      "lo": 0.0,
+      "hi": 0.4444444444444444,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 275
+     },
+     "YIELD": {
+      "a": 0.0625,
+      "b": 0.041666666666666664,
+      "delta": 0.020833333333333336,
+      "lo": -0.09412319644839068,
+      "hi": 0.1663025889967637,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "STOP_POINT": {
+      "a": 0.2085889570552147,
+      "b": 0.21333333333333335,
+      "delta": -0.004744376278118634,
+      "lo": -0.13737343213509914,
+      "hi": 0.1268818653984222,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "CORRIDOR_OFFSET": {
+      "a": 0.27672955974842767,
+      "b": 0.267515923566879,
+      "delta": 0.00921363618154869,
+      "lo": -0.17948255867782184,
+      "hi": 0.2104179556022494,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "EVADE_IN_CORRIDOR": {
+      "a": 0.5139664804469274,
+      "b": 0.4375,
+      "delta": 0.07646648044692739,
+      "lo": -0.07806737575058907,
+      "hi": 0.23074042808437475,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "OVERTAKE_VEHICLE": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 20
+     },
+     "MERGE": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 11
+     },
+     "GAP_TARGET": {
+      "a": 0.0,
+      "b": 0.15151515151515152,
+      "delta": -0.15151515151515152,
+      "lo": -0.4444444444444444,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "REACT_ON_ONCOMING": {
+      "a": 0.0,
+      "b": 0.038461538461538464,
+      "delta": -0.038461538461538464,
+      "lo": -0.12121212121212122,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TAKE_EXIT_R": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 2
+     },
+     "TRAFFIC_LIGHT_REACT_RED": {
+      "a": 0.5567010309278351,
+      "b": 0.42424242424242425,
+      "delta": 0.13245860668541082,
+      "lo": -0.08501031991744064,
+      "hi": 0.35398462131784336,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TRAFFIC_LIGHT_REACT_YELLOW": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 98
+     },
+     "TRAFFIC_LIGHT_REACT_GREEN": {
+      "a": 0.12345679012345678,
+      "b": 0.23255813953488372,
+      "delta": -0.10910134941142693,
+      "lo": -0.31575709177719213,
+      "hi": 0.10990021008403356,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "LANE_CHANGE_L": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 114
+     },
+     "LANE_CHANGE_R": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 273
+     }
+    },
+    "floor_Brep-B_s0": {
+     "VLM": {
+      "a": 0.15295858633498366,
+      "b": 0.13974479600885045,
+      "delta": 0.013213790326133207,
+      "lo": -0.025415800488796846,
+      "hi": 0.05984689313986842,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "GEO": {
+      "a": 0.5417093908242661,
+      "b": 0.5298779506363677,
+      "delta": 0.01183144018789839,
+      "lo": -0.12842936587517473,
+      "hi": 0.03638591237560556,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "FOLLOW_LANE": {
+      "a": 0.9695364238410596,
+      "b": 0.9725013220518244,
+      "delta": -0.0029648982107647326,
+      "lo": -0.007640762481948271,
+      "hi": 0.0010900399674190658,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TURN_L": {
+      "a": 0.75,
+      "b": 0.8076923076923077,
+      "delta": -0.05769230769230771,
+      "lo": -0.14414630977130985,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TURN_R": {
+      "a": 0.7159763313609467,
+      "b": 0.7407407407407407,
+      "delta": -0.02476440937979396,
+      "lo": -0.06570664352827574,
+      "hi": 0.01188114114242171,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "YIELD_FOR_TURN_L": {
+      "a": 0.625,
+      "b": 0.5333333333333333,
+      "delta": 0.09166666666666667,
+      "lo": 0.0,
+      "hi": 0.12727272727272732,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 105
+     },
+     "YIELD_FOR_TURN_R": {
+      "a": 0.1,
+      "b": 0.0,
+      "delta": 0.1,
+      "lo": 0.0,
+      "hi": 0.25,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 275
+     },
+     "YIELD": {
+      "a": 0.061224489795918366,
+      "b": 0.12631578947368421,
+      "delta": -0.06509129967776585,
+      "lo": -0.18379395987300798,
+      "hi": 0.041878694903838734,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "STOP_POINT": {
+      "a": 0.08974358974358974,
+      "b": 0.125,
+      "delta": -0.035256410256410256,
+      "lo": -0.09784851061636778,
+      "hi": 0.009385004832941754,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "CORRIDOR_OFFSET": {
+      "a": 0.44680851063829785,
+      "b": 0.30409356725146197,
+      "delta": 0.14271494338683588,
+      "lo": 0.018819149917020123,
+      "hi": 0.28194151645061993,
+      "separated": true,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "EVADE_IN_CORRIDOR": {
+      "a": 0.4943820224719101,
+      "b": 0.43820224719101125,
+      "delta": 0.05617977528089885,
+      "lo": -0.07302731839601674,
+      "hi": 0.21295641400218326,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "OVERTAKE_VEHICLE": {
+      "a": 0.09523809523809523,
+      "b": 0.18181818181818182,
+      "delta": -0.08658008658008659,
+      "lo": -0.23809523809523808,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 20
+     },
+     "MERGE": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 11
+     },
+     "GAP_TARGET": {
+      "a": 0.16666666666666666,
+      "b": 0.11428571428571428,
+      "delta": 0.052380952380952375,
+      "lo": -0.00826873385012919,
+      "hi": 0.16746168193982633,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "REACT_ON_ONCOMING": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TAKE_EXIT_R": {
+      "a": 0.0,
+      "b": 0.125,
+      "delta": -0.125,
+      "lo": -0.3333333333333333,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 2
+     },
+     "TRAFFIC_LIGHT_REACT_RED": {
+      "a": 0.37362637362637363,
+      "b": 0.4418604651162791,
+      "delta": -0.06823409148990545,
+      "lo": -0.26087131063131613,
+      "hi": 0.2727584059775839,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TRAFFIC_LIGHT_REACT_YELLOW": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 98
+     },
+     "TRAFFIC_LIGHT_REACT_GREEN": {
+      "a": 0.35051546391752575,
+      "b": 0.0851063829787234,
+      "delta": 0.26540908093880233,
+      "lo": 0.08817946775574732,
+      "hi": 0.42470711495671365,
+      "separated": true,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "LANE_CHANGE_L": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 114
+     },
+     "LANE_CHANGE_R": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 273
+     }
+    },
+    "self_U_s0": {
+     "VLM": {
+      "a": 0.11004860516980643,
+      "b": 0.11004860516980643,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "GEO": {
+      "a": 0.5278269266607065,
+      "b": 0.5278269266607065,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "FOLLOW_LANE": {
+      "a": 0.9704865727200213,
+      "b": 0.9704865727200213,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TURN_L": {
+      "a": 0.7567567567567568,
+      "b": 0.7567567567567568,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TURN_R": {
+      "a": 0.7396449704142012,
+      "b": 0.7396449704142012,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "YIELD_FOR_TURN_L": {
+      "a": 0.3076923076923077,
+      "b": 0.3076923076923077,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 105
+     },
+     "YIELD_FOR_TURN_R": {
+      "a": 0.2857142857142857,
+      "b": 0.2857142857142857,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 275
+     },
+     "YIELD": {
+      "a": 0.10101010101010101,
+      "b": 0.10101010101010101,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "STOP_POINT": {
+      "a": 0.10666666666666667,
+      "b": 0.10666666666666667,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "CORRIDOR_OFFSET": {
+      "a": 0.22784810126582278,
+      "b": 0.22784810126582278,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "EVADE_IN_CORRIDOR": {
+      "a": 0.4,
+      "b": 0.4,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "OVERTAKE_VEHICLE": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 20
+     },
+     "MERGE": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 11
+     },
+     "GAP_TARGET": {
+      "a": 0.2564102564102564,
+      "b": 0.2564102564102564,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "REACT_ON_ONCOMING": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TAKE_EXIT_R": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 2
+     },
+     "TRAFFIC_LIGHT_REACT_RED": {
+      "a": 0.41904761904761906,
+      "b": 0.41904761904761906,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TRAFFIC_LIGHT_REACT_YELLOW": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 98
+     },
+     "TRAFFIC_LIGHT_REACT_GREEN": {
+      "a": 0.02631578947368421,
+      "b": 0.02631578947368421,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "LANE_CHANGE_L": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 114
+     },
+     "LANE_CHANGE_R": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 273
+     }
+    }
+   },
+   "A": {
+    "U-B_s0": {
+     "VLM": {
+      "a": 0.09778638191153818,
+      "b": 0.12574117520688335,
+      "delta": -0.02795479329534517,
+      "lo": -0.07581112980726788,
+      "hi": 0.015586098559251006,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "GEO": {
+      "a": 0.5668763413050631,
+      "b": 0.5927702843454057,
+      "delta": -0.025893943040342537,
+      "lo": -0.06165767982277867,
+      "hi": 0.0035900512675938576,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "FOLLOW_LANE": {
+      "a": 0.9721854304635762,
+      "b": 0.9784550709406201,
+      "delta": -0.006269640477043925,
+      "lo": -0.012274114657460967,
+      "hi": -0.0013715539869492543,
+      "separated": true,
+      "negative_separated": true,
+      "n_nonfinite_draws": 0
+     },
+     "TURN_L": {
+      "a": 0.8113207547169812,
+      "b": 0.8444444444444444,
+      "delta": -0.03312368972746327,
+      "lo": -0.18752722905227978,
+      "hi": 0.09017447021764027,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TURN_R": {
+      "a": 0.7288629737609329,
+      "b": 0.7584097859327217,
+      "delta": -0.029546812171788783,
+      "lo": -0.07246889864323268,
+      "hi": 0.007906419232397415,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "YIELD_FOR_TURN_L": {
+      "a": 0.7058823529411765,
+      "b": 0.7058823529411765,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 105
+     },
+     "YIELD_FOR_TURN_R": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 275
+     },
+     "YIELD": {
+      "a": 0.10204081632653061,
+      "b": 0.13186813186813187,
+      "delta": -0.029827315541601257,
+      "lo": -0.0816765394792591,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "STOP_POINT": {
+      "a": 0.1830065359477124,
+      "b": 0.2694300518134715,
+      "delta": -0.08642351586575911,
+      "lo": -0.20370417761563767,
+      "hi": 0.014694681766243969,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "CORRIDOR_OFFSET": {
+      "a": 0.2222222222222222,
+      "b": 0.22929936305732485,
+      "delta": -0.0070771408351026355,
+      "lo": -0.14307369873322462,
+      "hi": 0.10030560647847472,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "EVADE_IN_CORRIDOR": {
+      "a": 0.4431137724550898,
+      "b": 0.36024844720496896,
+      "delta": 0.08286532525012086,
+      "lo": -0.09294967647053722,
+      "hi": 0.23971554641739098,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "OVERTAKE_VEHICLE": {
+      "a": 0.0,
+      "b": 0.3333333333333333,
+      "delta": -0.3333333333333333,
+      "lo": -0.8888888888888888,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 20
+     },
+     "MERGE": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 11
+     },
+     "GAP_TARGET": {
+      "a": 0.06153846153846154,
+      "b": 0.0,
+      "delta": 0.06153846153846154,
+      "lo": 0.0,
+      "hi": 0.19047619047619047,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "REACT_ON_ONCOMING": {
+      "a": 0.0,
+      "b": 0.0392156862745098,
+      "delta": -0.0392156862745098,
+      "lo": -0.125,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TAKE_EXIT_R": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 2
+     },
+     "TRAFFIC_LIGHT_REACT_RED": {
+      "a": 0.4166666666666667,
+      "b": 0.49572649572649574,
+      "delta": -0.07905982905982906,
+      "lo": -0.22942399495009272,
+      "hi": 0.02511007263885877,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TRAFFIC_LIGHT_REACT_YELLOW": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 98
+     },
+     "TRAFFIC_LIGHT_REACT_GREEN": {
+      "a": 0.02564102564102564,
+      "b": 0.0449438202247191,
+      "delta": -0.01930279458369346,
+      "lo": -0.07007174022089932,
+      "hi": 0.009476674724236604,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "LANE_CHANGE_L": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 114
+     },
+     "LANE_CHANGE_R": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 273
+     }
+    },
+    "U-B_s1": {
+     "VLM": {
+      "a": 0.11074514161505936,
+      "b": 0.14136023503908857,
+      "delta": -0.03061509342402921,
+      "lo": -0.07283805607688462,
+      "hi": 0.011160129439922558,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "GEO": {
+      "a": 0.6072944009301781,
+      "b": 0.48335027510265083,
+      "delta": 0.12394412582752723,
+      "lo": -0.001891242474662399,
+      "hi": 0.17555302379091864,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "FOLLOW_LANE": {
+      "a": 0.9738992881624045,
+      "b": 0.9739679200631081,
+      "delta": -6.863190070360847e-05,
+      "lo": -0.005931326143282381,
+      "hi": 0.006432443461934941,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TURN_L": {
+      "a": 0.7628865979381443,
+      "b": 0.7578947368421053,
+      "delta": 0.004991861096038996,
+      "lo": -0.10172628442030766,
+      "hi": 0.09570712157400309,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TURN_R": {
+      "a": 0.7625,
+      "b": 0.75,
+      "delta": 0.012499999999999956,
+      "lo": -0.03284611339281117,
+      "hi": 0.0648698301442773,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "YIELD_FOR_TURN_L": {
+      "a": 0.625,
+      "b": 0.16666666666666666,
+      "delta": 0.45833333333333337,
+      "lo": 0.0,
+      "hi": 0.6666666666666666,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 105
+     },
+     "YIELD_FOR_TURN_R": {
+      "a": 0.2857142857142857,
+      "b": 0.0,
+      "delta": 0.2857142857142857,
+      "lo": 0.0,
+      "hi": 0.4444444444444444,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 275
+     },
+     "YIELD": {
+      "a": 0.045454545454545456,
+      "b": 0.11320754716981132,
+      "delta": -0.06775300171526587,
+      "lo": -0.15979155297440406,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "STOP_POINT": {
+      "a": 0.23376623376623376,
+      "b": 0.25157232704402516,
+      "delta": -0.017806093277791396,
+      "lo": -0.11824378822193359,
+      "hi": 0.08637677596243835,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "CORRIDOR_OFFSET": {
+      "a": 0.37037037037037035,
+      "b": 0.35294117647058826,
+      "delta": 0.01742919389978209,
+      "lo": -0.12498679276786914,
+      "hi": 0.15742186676134146,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "EVADE_IN_CORRIDOR": {
+      "a": 0.4845360824742268,
+      "b": 0.574468085106383,
+      "delta": -0.08993200263215623,
+      "lo": -0.22347865273853373,
+      "hi": 0.030171249023289125,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "OVERTAKE_VEHICLE": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 20
+     },
+     "MERGE": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 11
+     },
+     "GAP_TARGET": {
+      "a": 0.0,
+      "b": 0.15384615384615385,
+      "delta": -0.15384615384615385,
+      "lo": -0.4444444444444444,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "REACT_ON_ONCOMING": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TAKE_EXIT_R": {
+      "a": 0.0,
+      "b": 0.0625,
+      "delta": -0.0625,
+      "lo": -0.18181818181818182,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 2
+     },
+     "TRAFFIC_LIGHT_REACT_RED": {
+      "a": 0.5393258426966292,
+      "b": 0.3902439024390244,
+      "delta": 0.1490819402576048,
+      "lo": 0.0,
+      "hi": 0.4312151570216084,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 1
+     },
+     "TRAFFIC_LIGHT_REACT_YELLOW": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 98
+     },
+     "TRAFFIC_LIGHT_REACT_GREEN": {
+      "a": 0.0,
+      "b": 0.19047619047619047,
+      "delta": -0.19047619047619047,
+      "lo": -0.4127070393374741,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "LANE_CHANGE_L": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 114
+     },
+     "LANE_CHANGE_R": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 273
+     }
+    },
+    "floor_Brep-B_s0": {
+     "VLM": {
+      "a": 0.15311276559230225,
+      "b": 0.12574117520688335,
+      "delta": 0.027371590385418892,
+      "lo": -0.006767213162584502,
+      "hi": 0.06212077904995425,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "GEO": {
+      "a": 0.5880322869782743,
+      "b": 0.5927702843454057,
+      "delta": -0.00473799736713143,
+      "lo": -0.16668804712678667,
+      "hi": 0.06639332484614084,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "FOLLOW_LANE": {
+      "a": 0.9713223579394583,
+      "b": 0.9784550709406201,
+      "delta": -0.007132713001161806,
+      "lo": -0.013628777757368652,
+      "hi": -0.0017251266961297775,
+      "separated": true,
+      "negative_separated": true,
+      "n_nonfinite_draws": 0
+     },
+     "TURN_L": {
+      "a": 0.780952380952381,
+      "b": 0.8444444444444444,
+      "delta": -0.06349206349206349,
+      "lo": -0.17927633362343243,
+      "hi": 0.014431477372198017,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TURN_R": {
+      "a": 0.7257142857142858,
+      "b": 0.7584097859327217,
+      "delta": -0.032695500218435924,
+      "lo": -0.08092131911630364,
+      "hi": 0.008733844490673855,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "YIELD_FOR_TURN_L": {
+      "a": 0.7058823529411765,
+      "b": 0.7058823529411765,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 105
+     },
+     "YIELD_FOR_TURN_R": {
+      "a": 0.15384615384615385,
+      "b": 0.0,
+      "delta": 0.15384615384615385,
+      "lo": 0.0,
+      "hi": 0.5,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 275
+     },
+     "YIELD": {
+      "a": 0.08333333333333333,
+      "b": 0.13186813186813187,
+      "delta": -0.04853479853479854,
+      "lo": -0.18181994690615377,
+      "hi": 0.07407407407407407,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "STOP_POINT": {
+      "a": 0.19047619047619047,
+      "b": 0.2694300518134715,
+      "delta": -0.07895386133728105,
+      "lo": -0.22721888908035076,
+      "hi": 0.07108288039923602,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "CORRIDOR_OFFSET": {
+      "a": 0.23225806451612904,
+      "b": 0.22929936305732485,
+      "delta": 0.002958701458804197,
+      "lo": -0.13626209793649444,
+      "hi": 0.126715518162453,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "EVADE_IN_CORRIDOR": {
+      "a": 0.3803680981595092,
+      "b": 0.36024844720496896,
+      "delta": 0.02011965095454027,
+      "lo": -0.09234287111763267,
+      "hi": 0.13554386936445484,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "OVERTAKE_VEHICLE": {
+      "a": 0.18181818181818182,
+      "b": 0.3333333333333333,
+      "delta": -0.1515151515151515,
+      "lo": -0.31746031746031744,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 20
+     },
+     "MERGE": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 11
+     },
+     "GAP_TARGET": {
+      "a": 0.029850746268656716,
+      "b": 0.0,
+      "delta": 0.029850746268656716,
+      "lo": 0.0,
+      "hi": 0.09414565826330516,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "REACT_ON_ONCOMING": {
+      "a": 0.0,
+      "b": 0.0392156862745098,
+      "delta": -0.0392156862745098,
+      "lo": -0.125,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TAKE_EXIT_R": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TRAFFIC_LIGHT_REACT_RED": {
+      "a": 0.5263157894736842,
+      "b": 0.49572649572649574,
+      "delta": 0.03058929374718844,
+      "lo": -0.25792121663913176,
+      "hi": 0.22132034632034592,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TRAFFIC_LIGHT_REACT_YELLOW": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 98
+     },
+     "TRAFFIC_LIGHT_REACT_GREEN": {
+      "a": 0.5565217391304348,
+      "b": 0.0449438202247191,
+      "delta": 0.5115779189057157,
+      "lo": 0.31167388167388166,
+      "hi": 0.6716003307113282,
+      "separated": true,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "LANE_CHANGE_L": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 114
+     },
+     "LANE_CHANGE_R": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 273
+     }
+    },
+    "self_U_s0": {
+     "VLM": {
+      "a": 0.09778638191153818,
+      "b": 0.09778638191153818,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "GEO": {
+      "a": 0.5668763413050631,
+      "b": 0.5668763413050631,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "FOLLOW_LANE": {
+      "a": 0.9721854304635762,
+      "b": 0.9721854304635762,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TURN_L": {
+      "a": 0.8113207547169812,
+      "b": 0.8113207547169812,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TURN_R": {
+      "a": 0.7288629737609329,
+      "b": 0.7288629737609329,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "YIELD_FOR_TURN_L": {
+      "a": 0.7058823529411765,
+      "b": 0.7058823529411765,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 105
+     },
+     "YIELD_FOR_TURN_R": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 275
+     },
+     "YIELD": {
+      "a": 0.10204081632653061,
+      "b": 0.10204081632653061,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "STOP_POINT": {
+      "a": 0.1830065359477124,
+      "b": 0.1830065359477124,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "CORRIDOR_OFFSET": {
+      "a": 0.2222222222222222,
+      "b": 0.2222222222222222,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "EVADE_IN_CORRIDOR": {
+      "a": 0.4431137724550898,
+      "b": 0.4431137724550898,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "OVERTAKE_VEHICLE": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 20
+     },
+     "MERGE": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 11
+     },
+     "GAP_TARGET": {
+      "a": 0.06153846153846154,
+      "b": 0.06153846153846154,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "REACT_ON_ONCOMING": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TAKE_EXIT_R": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 2
+     },
+     "TRAFFIC_LIGHT_REACT_RED": {
+      "a": 0.4166666666666667,
+      "b": 0.4166666666666667,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "TRAFFIC_LIGHT_REACT_YELLOW": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 98
+     },
+     "TRAFFIC_LIGHT_REACT_GREEN": {
+      "a": 0.02564102564102564,
+      "b": 0.02564102564102564,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 0
+     },
+     "LANE_CHANGE_L": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 114
+     },
+     "LANE_CHANGE_R": {
+      "a": 0.0,
+      "b": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "negative_separated": false,
+      "n_nonfinite_draws": 273
+     }
+    }
+   }
+  },
+  "K_self": {
+   "stage_B_all_keys_delta_0_ci_0": true
+  },
+  "label": "NOT-DILUTION",
+  "groups_lose_at_both_seeds": {
+   "VLM": false,
+   "GEO": false
+  },
+  "per_class_stage_B_f1": {
+   "FOLLOW_LANE": {
+    "B_s0": 0.9725013220518244,
+    "U_s0": 0.9704865727200213,
+    "B_rep": 0.9695364238410596,
+    "B_s1": 0.9741561181434599,
+    "U_s1": 0.9699525566684238
+   },
+   "TURN_L": {
+    "B_s0": 0.8076923076923077,
+    "U_s0": 0.7567567567567568,
+    "B_rep": 0.75,
+    "B_s1": 0.8155339805825242,
+    "U_s1": 0.7102803738317757
+   },
+   "TURN_R": {
+    "B_s0": 0.7407407407407407,
+    "U_s0": 0.7396449704142012,
+    "B_rep": 0.7159763313609467,
+    "B_s1": 0.7604790419161677,
+    "U_s1": 0.7320261437908496
+   },
+   "YIELD_FOR_TURN_L": {
+    "B_s0": 0.5333333333333333,
+    "U_s0": 0.3076923076923077,
+    "B_rep": 0.625,
+    "B_s1": 0.5333333333333333,
+    "U_s1": 0.5333333333333333
+   },
+   "YIELD_FOR_TURN_R": {
+    "B_s0": 0.0,
+    "U_s0": 0.2857142857142857,
+    "B_rep": 0.1,
+    "B_s1": 0.0,
+    "U_s1": 0.2857142857142857
+   },
+   "YIELD": {
+    "B_s0": 0.12631578947368421,
+    "U_s0": 0.10101010101010101,
+    "B_rep": 0.061224489795918366,
+    "B_s1": 0.041666666666666664,
+    "U_s1": 0.0625
+   },
+   "STOP_POINT": {
+    "B_s0": 0.125,
+    "U_s0": 0.10666666666666667,
+    "B_rep": 0.08974358974358974,
+    "B_s1": 0.21333333333333335,
+    "U_s1": 0.2085889570552147
+   },
+   "CORRIDOR_OFFSET": {
+    "B_s0": 0.30409356725146197,
+    "U_s0": 0.22784810126582278,
+    "B_rep": 0.44680851063829785,
+    "B_s1": 0.267515923566879,
+    "U_s1": 0.27672955974842767
+   },
+   "EVADE_IN_CORRIDOR": {
+    "B_s0": 0.43820224719101125,
+    "U_s0": 0.4,
+    "B_rep": 0.4943820224719101,
+    "B_s1": 0.4375,
+    "U_s1": 0.5139664804469274
+   },
+   "OVERTAKE_VEHICLE": {
+    "B_s0": 0.18181818181818182,
+    "U_s0": 0.0,
+    "B_rep": 0.09523809523809523,
+    "B_s1": 0.0,
+    "U_s1": 0.0
+   },
+   "MERGE": {
+    "B_s0": 0.0,
+    "U_s0": 0.0,
+    "B_rep": 0.0,
+    "B_s1": 0.0,
+    "U_s1": 0.0
+   },
+   "GAP_TARGET": {
+    "B_s0": 0.11428571428571428,
+    "U_s0": 0.2564102564102564,
+    "B_rep": 0.16666666666666666,
+    "B_s1": 0.15151515151515152,
+    "U_s1": 0.0
+   },
+   "REACT_ON_ONCOMING": {
+    "B_s0": 0.0,
+    "U_s0": 0.0,
+    "B_rep": 0.0,
+    "B_s1": 0.038461538461538464,
+    "U_s1": 0.0
+   },
+   "TAKE_EXIT_R": {
+    "B_s0": 0.125,
+    "U_s0": 0.0,
+    "B_rep": 0.0,
+    "B_s1": 0.0,
+    "U_s1": 0.0
+   },
+   "TRAFFIC_LIGHT_REACT_RED": {
+    "B_s0": 0.4418604651162791,
+    "U_s0": 0.41904761904761906,
+    "B_rep": 0.37362637362637363,
+    "B_s1": 0.42424242424242425,
+    "U_s1": 0.5567010309278351
+   },
+   "TRAFFIC_LIGHT_REACT_YELLOW": {
+    "B_s0": 0.0,
+    "U_s0": 0.0,
+    "B_rep": 0.0,
+    "B_s1": 0.0,
+    "U_s1": 0.0
+   },
+   "TRAFFIC_LIGHT_REACT_GREEN": {
+    "B_s0": 0.0851063829787234,
+    "U_s0": 0.02631578947368421,
+    "B_rep": 0.35051546391752575,
+    "B_s1": 0.23255813953488372,
+    "U_s1": 0.12345679012345678
+   },
+   "LANE_CHANGE_L": {
+    "B_s0": 0.0,
+    "U_s0": 0.0,
+    "B_rep": 0.0,
+    "B_s1": 0.0,
+    "U_s1": 0.0
+   },
+   "LANE_CHANGE_R": {
+    "B_s0": 0.0,
+    "U_s0": 0.0,
+    "B_rep": 0.0,
+    "B_s1": 0.0,
+    "U_s1": 0.0
+   }
+  }
+ },
+ "strata_layer": "country = clip-level modal of the STRAT labels table eval_country_id (valid, flag 0) [F:/TanitAD-scratch/strat1/read/inputs/strat_labels_table.npz, the STRAT1 read input; a per-frame label release layer]; platform = strat_platform_by_clip.npz eval_platform_id [same folder]. Corpus clip metadata for the 10k set (country, platform_class) lives in datascale/ds_select.py order_all_eligible.parquet.",
+ "strata": {
+  "K_RE": {
+   "U_s0-B_s0.TAC-LAT": {
+    "recomputed_delta": -0.050437682367653225,
+    "banked_delta": -0.050437682367653225,
+    "recomputed_lo_hi": [
+     -0.0738,
+     -0.0267
+    ],
+    "banked_lo_hi": [
+     -0.0738,
+     -0.0267
+    ],
+    "equal": true
+   },
+   "U_s0-B_s0.TAC-LON": {
+    "recomputed_delta": -0.037515631513130476,
+    "banked_delta": -0.037515631513130476,
+    "recomputed_lo_hi": [
+     -0.0755,
+     0.0017
+    ],
+    "banked_lo_hi": [
+     -0.0755,
+     0.0017
+    ],
+    "equal": true
+   },
+   "U_s1-B_s1.TAC-LAT": {
+    "recomputed_delta": -0.029178824510212586,
+    "banked_delta": -0.029178824510212586,
+    "recomputed_lo_hi": [
+     -0.0488,
+     -0.0108
+    ],
+    "banked_lo_hi": [
+     -0.0488,
+     -0.0108
+    ],
+    "equal": true
+   },
+   "U_s1-B_s1.TAC-LON": {
+    "recomputed_delta": -0.09587328053355565,
+    "banked_delta": -0.09587328053355565,
+    "recomputed_lo_hi": [
+     -0.1379,
+     -0.0567
+    ],
+    "banked_lo_hi": [
+     -0.1379,
+     -0.0567
+    ],
+    "equal": true
+   }
+  },
+  "strata": {
+   "country": [
+    {
+     "stratum": "Austria",
+     "n_windows": 153,
+     "n_episodes": 9,
+     "TAC-LAT_s0": {
+      "delta": 0.0,
+      "lo": -0.0327,
+      "hi": 0.0261,
+      "separated": false
+     },
+     "TAC-LAT_s1": {
+      "delta": 0.0,
+      "lo": -0.0588,
+      "hi": 0.0719,
+      "separated": false
+     },
+     "TAC-LON_s0": {
+      "delta": 0.006535947712418277,
+      "lo": -0.1176,
+      "hi": 0.1374,
+      "separated": false
+     },
+     "TAC-LON_s1": {
+      "delta": -0.065359477124183,
+      "lo": -0.2092,
+      "hi": 0.0719,
+      "separated": false
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "Belgium",
+     "n_windows": 136,
+     "n_episodes": 8,
+     "TAC-LAT_s0": {
+      "delta": -0.022058823529411686,
+      "lo": -0.0515,
+      "hi": 0.0,
+      "separated": false
+     },
+     "TAC-LAT_s1": {
+      "delta": -0.02941176470588236,
+      "lo": -0.0588,
+      "hi": -0.0074,
+      "separated": true
+     },
+     "TAC-LON_s0": {
+      "delta": 0.007352941176470562,
+      "lo": -0.0441,
+      "hi": 0.0809,
+      "separated": false
+     },
+     "TAC-LON_s1": {
+      "delta": -0.05882352941176472,
+      "lo": -0.1985,
+      "hi": 0.0956,
+      "separated": false
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "Bulgaria",
+     "n_windows": 17,
+     "n_episodes": 1,
+     "TAC-LAT_s0": null,
+     "TAC-LAT_s1": null,
+     "TAC-LON_s0": null,
+     "TAC-LON_s1": null,
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "Croatia",
+     "n_windows": 51,
+     "n_episodes": 3,
+     "TAC-LAT_s0": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false
+     },
+     "TAC-LAT_s1": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false
+     },
+     "TAC-LON_s0": {
+      "delta": 0.45098039215686275,
+      "lo": 0.0,
+      "hi": 0.9412,
+      "separated": false
+     },
+     "TAC-LON_s1": {
+      "delta": -0.2941176470588236,
+      "lo": -0.7059,
+      "hi": 0.0,
+      "separated": false
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "Czechia",
+     "n_windows": 17,
+     "n_episodes": 1,
+     "TAC-LAT_s0": null,
+     "TAC-LAT_s1": null,
+     "TAC-LON_s0": null,
+     "TAC-LON_s1": null,
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "Denmark",
+     "n_windows": 119,
+     "n_episodes": 7,
+     "TAC-LAT_s0": {
+      "delta": 0.025210084033613467,
+      "lo": -0.0756,
+      "hi": 0.1345,
+      "separated": false
+     },
+     "TAC-LAT_s1": {
+      "delta": -0.01680672268907557,
+      "lo": -0.042,
+      "hi": 0.0,
+      "separated": false
+     },
+     "TAC-LON_s0": {
+      "delta": -0.025210084033613467,
+      "lo": -0.2269,
+      "hi": 0.1765,
+      "separated": false
+     },
+     "TAC-LON_s1": {
+      "delta": -0.26890756302521013,
+      "lo": -0.5462,
+      "hi": 0.0084,
+      "separated": false
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "Estonia",
+     "n_windows": 68,
+     "n_episodes": 4,
+     "TAC-LAT_s0": {
+      "delta": -0.05882352941176472,
+      "lo": -0.1765,
+      "hi": 0.0,
+      "separated": false
+     },
+     "TAC-LAT_s1": {
+      "delta": -0.05882352941176472,
+      "lo": -0.1765,
+      "hi": 0.0,
+      "separated": false
+     },
+     "TAC-LON_s0": {
+      "delta": 0.32352941176470584,
+      "lo": 0.0294,
+      "hi": 0.6176,
+      "separated": true
+     },
+     "TAC-LON_s1": {
+      "delta": 0.11764705882352944,
+      "lo": 0.0,
+      "hi": 0.3088,
+      "separated": false
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "Finland",
+     "n_windows": 119,
+     "n_episodes": 7,
+     "TAC-LAT_s0": {
+      "delta": -0.01680672268907568,
+      "lo": -0.1008,
+      "hi": 0.0504,
+      "separated": false
+     },
+     "TAC-LAT_s1": {
+      "delta": -0.0672268907563025,
+      "lo": -0.2101,
+      "hi": 0.0588,
+      "separated": false
+     },
+     "TAC-LON_s0": {
+      "delta": 0.0672268907563025,
+      "lo": -0.0672,
+      "hi": 0.2017,
+      "separated": false
+     },
+     "TAC-LON_s1": {
+      "delta": 0.0,
+      "lo": -0.0924,
+      "hi": 0.1008,
+      "separated": false
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "France",
+     "n_windows": 136,
+     "n_episodes": 8,
+     "TAC-LAT_s0": {
+      "delta": -0.02941176470588236,
+      "lo": -0.125,
+      "hi": 0.0735,
+      "separated": false
+     },
+     "TAC-LAT_s1": {
+      "delta": -0.09558823529411764,
+      "lo": -0.2353,
+      "hi": 0.0221,
+      "separated": false
+     },
+     "TAC-LON_s0": {
+      "delta": -0.06617647058823528,
+      "lo": -0.3824,
+      "hi": 0.2208,
+      "separated": false
+     },
+     "TAC-LON_s1": {
+      "delta": -0.06617647058823528,
+      "lo": -0.1838,
+      "hi": 0.0588,
+      "separated": false
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "Germany",
+     "n_windows": 153,
+     "n_episodes": 9,
+     "TAC-LAT_s0": {
+      "delta": -0.05882352941176472,
+      "lo": -0.1111,
+      "hi": -0.0065,
+      "separated": true
+     },
+     "TAC-LAT_s1": {
+      "delta": -0.013071895424836555,
+      "lo": -0.0523,
+      "hi": 0.0261,
+      "separated": false
+     },
+     "TAC-LON_s0": {
+      "delta": -0.07189542483660127,
+      "lo": -0.1634,
+      "hi": 0.0131,
+      "separated": false
+     },
+     "TAC-LON_s1": {
+      "delta": -0.07189542483660133,
+      "lo": -0.2745,
+      "hi": 0.098,
+      "separated": false
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "Greece",
+     "n_windows": 85,
+     "n_episodes": 5,
+     "TAC-LAT_s0": {
+      "delta": 0.0,
+      "lo": -0.0353,
+      "hi": 0.0353,
+      "separated": false
+     },
+     "TAC-LAT_s1": {
+      "delta": 0.03529411764705892,
+      "lo": -0.0706,
+      "hi": 0.1765,
+      "separated": false
+     },
+     "TAC-LON_s0": {
+      "delta": -0.18823529411764706,
+      "lo": -0.3059,
+      "hi": -0.1176,
+      "separated": true
+     },
+     "TAC-LON_s1": {
+      "delta": -0.30588235294117644,
+      "lo": -0.4,
+      "hi": -0.2,
+      "separated": true
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": [
+      "TAC-LON"
+     ]
+    },
+    {
+     "stratum": "Hungary",
+     "n_windows": 34,
+     "n_episodes": 2,
+     "TAC-LAT_s0": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false
+     },
+     "TAC-LAT_s1": {
+      "delta": 0.02941176470588236,
+      "lo": 0.0,
+      "hi": 0.0588,
+      "separated": false
+     },
+     "TAC-LON_s0": {
+      "delta": 0.08823529411764708,
+      "lo": 0.0588,
+      "hi": 0.1176,
+      "separated": true
+     },
+     "TAC-LON_s1": {
+      "delta": -0.23529411764705888,
+      "lo": -0.4706,
+      "hi": 0.0,
+      "separated": false
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "Italy",
+     "n_windows": 136,
+     "n_episodes": 8,
+     "TAC-LAT_s0": {
+      "delta": -0.0808823529411764,
+      "lo": -0.1912,
+      "hi": 0.0368,
+      "separated": false
+     },
+     "TAC-LAT_s1": {
+      "delta": -0.03676470588235292,
+      "lo": -0.1618,
+      "hi": 0.0735,
+      "separated": false
+     },
+     "TAC-LON_s0": {
+      "delta": -0.08823529411764708,
+      "lo": -0.1765,
+      "hi": 0.0147,
+      "separated": false
+     },
+     "TAC-LON_s1": {
+      "delta": -0.12500000000000006,
+      "lo": -0.2794,
+      "hi": 0.0221,
+      "separated": false
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "Latvia",
+     "n_windows": 102,
+     "n_episodes": 6,
+     "TAC-LAT_s0": {
+      "delta": -0.22549019607843135,
+      "lo": -0.4316,
+      "hi": -0.0196,
+      "separated": true
+     },
+     "TAC-LAT_s1": {
+      "delta": -0.039215686274509776,
+      "lo": -0.1275,
+      "hi": 0.049,
+      "separated": false
+     },
+     "TAC-LON_s0": {
+      "delta": -0.05882352941176472,
+      "lo": -0.2353,
+      "hi": 0.0882,
+      "separated": false
+     },
+     "TAC-LON_s1": {
+      "delta": -0.2843137254901961,
+      "lo": -0.4412,
+      "hi": -0.1275,
+      "separated": true
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "Lithuania",
+     "n_windows": 51,
+     "n_episodes": 3,
+     "TAC-LAT_s0": {
+      "delta": 0.019607843137254832,
+      "lo": 0.0,
+      "hi": 0.0588,
+      "separated": false
+     },
+     "TAC-LAT_s1": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false
+     },
+     "TAC-LON_s0": {
+      "delta": -0.11764705882352944,
+      "lo": -0.4118,
+      "hi": 0.0588,
+      "separated": false
+     },
+     "TAC-LON_s1": {
+      "delta": -0.3137254901960784,
+      "lo": -0.5882,
+      "hi": -0.1176,
+      "separated": true
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "Luxembourg",
+     "n_windows": 17,
+     "n_episodes": 1,
+     "TAC-LAT_s0": null,
+     "TAC-LAT_s1": null,
+     "TAC-LON_s0": null,
+     "TAC-LON_s1": null,
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "Netherlands",
+     "n_windows": 189,
+     "n_episodes": 11,
+     "TAC-LAT_s0": {
+      "delta": -0.026455026455026398,
+      "lo": -0.1164,
+      "hi": 0.0582,
+      "separated": false
+     },
+     "TAC-LAT_s1": {
+      "delta": -0.08465608465608465,
+      "lo": -0.1316,
+      "hi": -0.0426,
+      "separated": true
+     },
+     "TAC-LON_s0": {
+      "delta": -0.042328042328042326,
+      "lo": -0.1518,
+      "hi": 0.0526,
+      "separated": false
+     },
+     "TAC-LON_s1": {
+      "delta": -0.06878306878306878,
+      "lo": -0.2698,
+      "hi": 0.0691,
+      "separated": false
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "Poland",
+     "n_windows": 119,
+     "n_episodes": 7,
+     "TAC-LAT_s0": {
+      "delta": -0.06722689075630262,
+      "lo": -0.1345,
+      "hi": 0.0,
+      "separated": false
+     },
+     "TAC-LAT_s1": {
+      "delta": -0.008403361344537785,
+      "lo": -0.1008,
+      "hi": 0.1008,
+      "separated": false
+     },
+     "TAC-LON_s0": {
+      "delta": -0.008403361344537785,
+      "lo": -0.0672,
+      "hi": 0.0672,
+      "separated": false
+     },
+     "TAC-LON_s1": {
+      "delta": 0.05882352941176472,
+      "lo": -0.2269,
+      "hi": 0.3193,
+      "separated": false
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "Portugal",
+     "n_windows": 102,
+     "n_episodes": 6,
+     "TAC-LAT_s0": {
+      "delta": -0.0980392156862745,
+      "lo": -0.2353,
+      "hi": 0.0,
+      "separated": false
+     },
+     "TAC-LAT_s1": {
+      "delta": 0.009803921568627416,
+      "lo": -0.0196,
+      "hi": 0.0392,
+      "separated": false
+     },
+     "TAC-LON_s0": {
+      "delta": 0.0,
+      "lo": -0.0784,
+      "hi": 0.0588,
+      "separated": false
+     },
+     "TAC-LON_s1": {
+      "delta": 0.0490196078431373,
+      "lo": -0.049,
+      "hi": 0.1471,
+      "separated": false
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "Romania",
+     "n_windows": 17,
+     "n_episodes": 1,
+     "TAC-LAT_s0": null,
+     "TAC-LAT_s1": null,
+     "TAC-LON_s0": null,
+     "TAC-LON_s1": null,
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    },
+    {
+     "stratum": "Spain",
+     "n_windows": 170,
+     "n_episodes": 10,
+     "TAC-LAT_s0": {
+      "delta": -0.12352941176470589,
+      "lo": -0.1824,
+      "hi": -0.0647,
+      "separated": true
+     },
+     "TAC-LAT_s1": {
+      "delta": -0.06470588235294117,
+      "lo": -0.1059,
+      "hi": -0.0235,
+      "separated": true
+     },
+     "TAC-LON_s0": {
+      "delta": -0.12941176470588234,
+      "lo": -0.2235,
+      "hi": -0.0529,
+      "separated": true
+     },
+     "TAC-LON_s1": {
+      "delta": -0.047058823529411764,
+      "lo": -0.1235,
+      "hi": 0.0412,
+      "separated": false
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": [
+      "TAC-LAT"
+     ]
+    },
+    {
+     "stratum": "Sweden",
+     "n_windows": 187,
+     "n_episodes": 11,
+     "TAC-LAT_s0": {
+      "delta": -0.10160427807486638,
+      "lo": -0.1818,
+      "hi": -0.0214,
+      "separated": true
+     },
+     "TAC-LAT_s1": {
+      "delta": -0.05882352941176472,
+      "lo": -0.1123,
+      "hi": -0.0053,
+      "separated": true
+     },
+     "TAC-LON_s0": {
+      "delta": -0.06417112299465244,
+      "lo": -0.1658,
+      "hi": 0.0374,
+      "separated": false
+     },
+     "TAC-LON_s1": {
+      "delta": -0.16042780748663105,
+      "lo": -0.2834,
+      "hi": -0.0428,
+      "separated": true
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": [
+      "TAC-LAT"
+     ]
+    },
+    {
+     "stratum": "United States",
+     "n_windows": 221,
+     "n_episodes": 13,
+     "TAC-LAT_s0": {
+      "delta": -0.0678733031674208,
+      "lo": -0.1448,
+      "hi": 0.0,
+      "separated": false
+     },
+     "TAC-LAT_s1": {
+      "delta": 0.009049773755656076,
+      "lo": -0.0271,
+      "hi": 0.0452,
+      "separated": false
+     },
+     "TAC-LON_s0": {
+      "delta": -0.11312217194570134,
+      "lo": -0.1991,
+      "hi": -0.0406,
+      "separated": true
+     },
+     "TAC-LON_s1": {
+      "delta": -0.0904977375565611,
+      "lo": -0.181,
+      "hi": 0.0,
+      "separated": false
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": []
+    }
+   ],
+   "platform": [
+    {
+     "stratum": "hyperion_8",
+     "n_windows": 1141,
+     "n_episodes": 67,
+     "TAC-LAT_s0": {
+      "delta": -0.04119193689745837,
+      "lo": -0.0729,
+      "hi": -0.0096,
+      "separated": true
+     },
+     "TAC-LAT_s1": {
+      "delta": -0.0236634531113058,
+      "lo": -0.0491,
+      "hi": 0.0009,
+      "separated": false
+     },
+     "TAC-LON_s0": {
+      "delta": -0.05609114811568794,
+      "lo": -0.1158,
+      "hi": -0.0017,
+      "separated": true
+     },
+     "TAC-LON_s1": {
+      "delta": -0.07800175284837862,
+      "lo": -0.1401,
+      "hi": -0.014,
+      "separated": true
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": [
+      "TAC-LON"
+     ]
+    },
+    {
+     "stratum": "hyperion_8.1",
+     "n_windows": 1258,
+     "n_episodes": 74,
+     "TAC-LAT_s0": {
+      "delta": -0.05882352941176472,
+      "lo": -0.093,
+      "hi": -0.0254,
+      "separated": true
+     },
+     "TAC-LAT_s1": {
+      "delta": -0.03418124006359302,
+      "lo": -0.0628,
+      "hi": -0.0079,
+      "separated": true
+     },
+     "TAC-LON_s0": {
+      "delta": -0.02066772655007948,
+      "lo": -0.0732,
+      "hi": 0.0342,
+      "separated": false
+     },
+     "TAC-LON_s1": {
+      "delta": -0.11208267090620028,
+      "lo": -0.1662,
+      "hi": -0.0588,
+      "separated": true
+     },
+     "FLAG_opposite_direction_both_seeds": [],
+     "same_direction_both_seeds_descriptive": [
+      "TAC-LAT"
+     ]
+    }
+   ]
+  },
+  "n_strata_read": {
+   "country": 23,
+   "platform": 2
+  },
+  "n_cells_read": 100
+ },
+ "wall_s": 114.28944253921509
+}
