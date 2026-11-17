@@ -1,0 +1,384 @@
+{
+ "chassis": "s1",
+ "started": "2026-11-17T09:29:07",
+ "C-IN": {
+  "vs_phase1_record": {
+   "ok": true,
+   "mismatches": {},
+   "n": 10
+  },
+  "vs_spec_constants": {
+   "ok": false,
+   "mismatches": {
+    "hwm_plan.py": {
+     "expected": "5a072272",
+     "actual": "5a0722719f7ce06c"
+    }
+   },
+   "n": 7
+  },
+  "regression_altered_expected": {
+   "ok": false,
+   "mismatches": {
+    "ckpt": {
+     "expected": "097e6017cffb1383",
+     "actual": "a97e6017cffb1383"
+    }
+   },
+   "n": 10
+  },
+  "ok": false
+ },
+ "C-TRAIN-ISO": {
+  "real": {
+   "ok": true,
+   "n_train_clips": 141,
+   "n_score_clips": 71,
+   "n_shared": 0,
+   "same_file": false
+  },
+  "regression_score_as_train": {
+   "ok": false,
+   "n_train_clips": 71,
+   "n_score_clips": 71,
+   "n_shared": 71,
+   "same_file": true
+  },
+  "ok": true,
+  "selection_windows_sha_equals_lonplan_record": true
+ },
+ "C-L4-IMG": {
+  "argv_to_built": {
+   "train/P": {
+    "ok": true,
+    "l2_image": "prim",
+    "l1_sub": "own"
+   },
+   "train/P23": {
+    "ok": true,
+    "l2_image": "prim23",
+    "l1_sub": "own"
+   },
+   "train/RS": {
+    "ok": true,
+    "l2_image": "prim",
+    "l1_sub": "donor"
+   },
+   "score/P": {
+    "ok": true,
+    "l2_image": "prim",
+    "l1_sub": "own"
+   },
+   "score/P23": {
+    "ok": true,
+    "l2_image": "prim23",
+    "l1_sub": "own"
+   },
+   "score/RS": {
+    "ok": true,
+    "l2_image": "prim",
+    "l1_sub": "donor"
+   }
+  },
+  "regressions": {
+   "ok": true,
+   "declared_mismatch": {
+    "refused": true,
+    "why": "declared l2_image 'off' != argv l2_image 'prim'"
+   },
+   "flag_not_named": {
+    "refused": true,
+    "why": "--l2-image is not named in the argv: its default (off) would disable the lever silently"
+   },
+   "preplanted_plan_file": {
+    "refused": true,
+    "why": "out folder F:/TanitAD-scratch/actrsp/lonplan/amend4/build/smoke_root/controls/_tmp_s1\\l4_pre is not empty (1 entries, 1 plan files: ['plans_hwm_oracle_s0.npz'])"
+   }
+  },
+  "ok": true
+ },
+ "C-OFF": {
+  "smoke16_vs_nothing_installed": {
+   "ok": true,
+   "keys": {
+    "plan_raw": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "cost1": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "a1_raw": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "decode_resid": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "iters1": {
+     "equal": true,
+     "maxabs": 0.0
+    }
+   }
+  },
+  "default_mode_is_off": {
+   "DEFAULT_MODE": "off",
+   "ok": true,
+   "keys": {
+    "plan_raw": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "cost1": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "a1_raw": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "decode_resid": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "iters1": {
+     "equal": true,
+     "maxabs": 0.0
+    }
+   }
+  },
+  "regression_default_prim": {
+   "ok": false,
+   "keys": {
+    "plan_raw": {
+     "equal": false,
+     "maxabs": 3.439340591430664
+    },
+    "cost1": {
+     "equal": false,
+     "maxabs": 14.130887985229492
+    },
+    "a1_raw": {
+     "equal": false,
+     "maxabs": 3.439340591430664
+    },
+    "decode_resid": {
+     "equal": false,
+     "maxabs": NaN,
+     "missing": true
+    },
+    "iters1": {
+     "equal": false,
+     "maxabs": 2.0
+    }
+   }
+  },
+  "train_batch0_vs_lonplan_banked_lam0": {
+   "ok": true,
+   "keys": {
+    "plan_raw": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "cost1": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "a1_raw": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "decode_resid": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "iters1": {
+     "equal": true,
+     "maxabs": 0.0
+    }
+   }
+  },
+  "score_A0_batch0_seed0_vs_banked": {
+   "ok": true,
+   "keys": {
+    "plan_raw": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "cost1": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "a1_raw": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "decode_resid": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "iters1": {
+     "equal": true,
+     "maxabs": 0.0
+    }
+   }
+  },
+  "score_A0_batch0_seed1_vs_banked": {
+   "ok": true,
+   "keys": {
+    "plan_raw": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "cost1": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "a1_raw": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "decode_resid": {
+     "equal": true,
+     "maxabs": 0.0
+    },
+    "iters1": {
+     "equal": true,
+     "maxabs": 0.0
+    }
+   }
+  },
+  "ok": true
+ },
+ "C-PRIM-ID": {
+  "real": {
+   "prim": {
+    "knots_equal_maxabs": 0.0,
+    "image_resid_fresh_max": 2.4249845864687813e-07,
+    "image_resid_fresh_median": 0.0,
+    "ok": true
+   },
+   "prim23": {
+    "knots_equal_maxabs": 0.0,
+    "image_resid_fresh_max": 2.612139837765426e-07,
+    "image_resid_fresh_median": 0.0,
+    "image_resid3_fresh_max": 2.10618424034692e-07,
+    "ok": true
+   }
+  },
+  "regressions": {
+   "PRIM-ID_a_shadow_not_installed": {
+    "knots_equal_maxabs": 0.0,
+    "image_resid_fresh_max": 1.1858316659927368,
+    "image_resid_fresh_median": 1.0461039543151855,
+    "ok": false
+   },
+   "PRIM-ID_b_knots_from_decode": {
+    "knots_equal_maxabs": 0.7088852822780609,
+    "image_resid_fresh_max": 2.2801289389917656e-07,
+    "image_resid_fresh_median": 0.0,
+    "ok": false
+   }
+  },
+  "ok": true
+ },
+ "C-L3ID": {
+  "real": {
+   "prim": {
+    "gen_state_equal": true,
+    "m3_maxabs": 0.0,
+    "cost3_maxabs": 0.0,
+    "ok": true
+   },
+   "prim23": {
+    "gen_state_equal": true,
+    "ok": true
+   },
+   "rs": {
+    "gen_state_equal": true,
+    "m3_maxabs": 0.0,
+    "cost3_maxabs": 0.0,
+    "ok": true
+   }
+  },
+  "regressions": {
+   "L3ID_noise_from_planner_generator": {
+    "gen_state_equal": false,
+    "m3_maxabs": 0.0,
+    "cost3_maxabs": 0.0,
+    "ok": false
+   }
+  },
+  "ok": true
+ },
+ "C-REACH": {
+  "real": {
+   "ok": true,
+   "grad_abs_sum": 93957.453125,
+   "zero_control": 0.0,
+   "iterate_moved_maxabs": 1.719670295715332
+  },
+  "regressions": {
+   "p_frozen": {
+    "ok": false,
+    "grad_abs_sum": 93957.453125,
+    "zero_control": 0.0,
+    "iterate_moved_maxabs": 0.0
+   }
+  },
+  "ok": true
+ },
+ "C-READBACK": {
+  "real": {
+   "equal": true,
+   "plan_equal": true,
+   "cost1_equal": true,
+   "n": 16,
+   "l2_image_used": "prim",
+   "arm": "hwm_oracle",
+   "seed": 0
+  },
+  "regression_read_back_at_off": {
+   "equal": false,
+   "plan_equal": false,
+   "cost1_equal": false,
+   "n": 16,
+   "l2_image_used": "off",
+   "arm": "hwm_oracle",
+   "seed": 0
+  },
+  "stamps": {
+   "plans_hwm_oracle_s0.npz": "prim"
+  },
+  "ok": true
+ },
+ "C-RS_batch0_train": {
+  "rs_minus_off_acc_0_2": 0.474035165735768,
+  "rs_minus_prim_acc_0_2": 0.4081534524259043,
+  "cost1_median": {
+   "off": 25.51363754272461,
+   "prim": 21.863311767578125,
+   "rs": 289.64759826660156
+  },
+  "donor_shift_ok": true,
+  "ok": true
+ },
+ "batch0_train_mechanism": {
+  "acc_mae_0_2": {
+   "off": 1.107391123074558,
+   "prim": 1.1732728363844216,
+   "prim23": 1.1394876057136571,
+   "rs": 1.5814262888103259
+  },
+  "image_resid_max": {
+   "prim": 2.4249845864687813e-07,
+   "prim23": 2.612139837765426e-07
+  },
+  "wall_s_per_window_incl_load": null
+ },
+ "ok": false,
+ "wall_s": 662.3,
+ "finished": "2026-11-17T09:40:09"
+}
