@@ -656,7 +656,7 @@ def s_design() -> None:
     # registered here and it rides the launch token as a DATA flag (the file's sha256 is fingerprinted at the gate and re-measured by `verify` before every launch).  Nothing earlier carries it.
     ck("IV AMENDMENT YAW: refe_p7 REQUIRES --ego-yaw-table (any value) and fingerprints it as a data flag; refe_p6 and the earlier profiles carry neither",
        P7["required_flags"].get("--ego-yaw-table", "ABSENT") is None and "--ego-yaw-table" in P7["data_flags"] and "--ego-yaw-table" not in P6["required_flags"] and "--ego-yaw-table" not in P6["data_flags"]
-       and not any("--ego-yaw-table" in (prof.get("required_flags") or {}) or "--ego-yaw-table" in (prof.get("data_flags") or ()) for nm, prof in L.PROFILES.items() if nm != "refe_p7" and not nm.startswith("refe_p5c")),
+       and not any("--ego-yaw-table" in (prof.get("required_flags") or {}) or "--ego-yaw-table" in (prof.get("data_flags") or ()) for nm, prof in L.PROFILES.items() if nm != "refe_p7" and not nm.startswith(("refe_p5c", "refe_field_p7"))),   # P5-C and the field arms are P7 grafts: they carry the table
        str(P7["required_flags"].get("--ego-yaw-table", "ABSENT")))
     ck("IV AMENDMENT YAW: refe_p7 registers NO sha256 for the table (it exists only after the pod builds it): no `ego_yaw_sha256` key, so the data manifest is the binding", "ego_yaw_sha256" not in P7)
     ck("IV the pin procedure's tool ships beside the gate (refe/p7_pins.py) and the gate names it", (HERE / "p7_pins.py").is_file() and "p7_pins.py" in (HERE / "launch_gate.py").read_text(encoding="utf-8"))

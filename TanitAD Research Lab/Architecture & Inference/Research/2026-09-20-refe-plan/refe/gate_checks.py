@@ -2230,7 +2230,7 @@ def p5c_live_rows(cap, build_cap, profile) -> tuple:
     ds = banks[0]
     if profile.get("p5c_arm") != "C1":
         if ds.traj_label is not None:
-            reasons.append(f"(h) arm {profile.get('p5c_arm')} must not carry a label table, but the live train bank holds one ({ds.traj_label_sha256})")
+            reasons.append(f"(h) arm {profile.get('p5c_arm') or profile.get('p7field_arm')} must not carry a label table, but the live train bank holds one ({ds.traj_label_sha256})")
         det["isolation"] = "no table (control arm)"
         return reasons, det
     if ds.traj_label is None or cap.model is None:
@@ -2345,7 +2345,7 @@ def check_live(argv: list, cap, profile: dict, arm=None, rehearsal=False, contro
             det["aux_reach"] = {k: (v if k in ("ran", "labelled", "tap", "score_to_head_grads_all_none") else {"loss": v["loss"], "groups": v["groups"]}) for k, v in ar.items()}
             if not reasons:
                 reasons += judge_aux_reach(ar, cap.args.w_aux_drv, cap.args.aux_drv_tap)
-    if profile.get("p5c_rules"):
+    if profile.get("p5c_rules") or profile.get("p7field_rules"):        # P5-C arms AND the P7 field arms F/C (P7 grafts: the same (f) warm-start identity; (h) a non-C1 arm carries no table)
         rs_, dt_ = p5c_live_rows(cap, build_cap, profile)         # PREREG_P5C 10.2 (f) warm-start identity and (h) lever isolation on the real model
         reasons += rs_
         det["p5c"] = dt_
@@ -2690,7 +2690,7 @@ def check_clock(argv: list, b, profile: dict, arm=None, rehearsal=False) -> dict
                 reasons.append(f"step-0 bank has {bl.get('n_scenes')} scenes != registered {exp['epoch_len']}")
         # P7-WIRE-INTEGRATE-2: the bank's CONTENT.  A tuple count cannot tell two same-size banks apart; the trainer's own `targets_sha256` of the SAME files the build just loaded can.  Only a profile that
         # registers `targets_sha256_by_bank` (refe_p7) is asked; refe_p6 has no such key and takes none of these lines (its G-CLOCK evidence is byte-for-byte what it was).
-        want_sha, how_sha = clock_bank_sha256(argv, exp, required=bool(profile.get("p7_rules") or profile.get("p5c_rules")))
+        want_sha, how_sha = clock_bank_sha256(argv, exp, required=bool(profile.get("p7_rules") or profile.get("p5c_rules") or profile.get("p7field_rules")))
         if how_sha is not None:
             import gate_token as GT_
             tg = (GT_.flag_values(argv, "--targets") or [None])[0]

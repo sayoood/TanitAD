@@ -564,6 +564,123 @@ def p5c_refusals(prof: dict, argv: list) -> list:
     return out
 
 
+# ============================================================================================ P7-graft field-loss arms F and C (PREREG_AUX_FIELD_LOSS_P7_DRAFT; gaps G1, G2, G6 of LAUNCH_GATE_GAPS_FIELDP7.md)
+# TWO profiles, cloned from `refe_p5c_c0` (the P5-C machinery; no profile above is edited): `refe_field_p7` = F (`--w-field` EXACTLY FIELD_P7_W) and `refe_field_p7_ctrl` = C (`--w-field` EXACTLY 0.0), the P7 graft
+# at the P5-C recipe (P7 base, 2,000 steps, lr 5e-5, no head, no label table) plus the field flags.  C is F's OWN control, NOT P5-C's C0 (C0 carries no --field-labels).  The template is `p7field_argv(arm)`:
+#   argv(F) - argv(C0) = {--w-field (0.0 -> 2.0), --field-labels, --field-margin, --field-interp, --out}; argv(C) - argv(C0) = {--field-labels, --field-margin, --field-interp, --out}  (C0 already names --w-field 0.0).
+# The profiles do NOT set `p5c_rules` (that hook would run `p5c_refusals`, which refuses the field flags as strangers, and `test_p5c_profile.chk_untouched` pins `p5c_rules` to the three P5-C profiles); they set
+# `p7field_rules`, which `profile_refusals` routes to `p7field_refusals`.  What it asserts that `required_flags` cannot: the argv's flag SET and every non-path lever equal the template; the PINS are registered
+# (base checkpoint, field label store sha256 + keys, refe/field_loss.py sha256, w) and match the shipped bytes / the loader's own pin; the 2,000-step schedule on the P7 bank by count AND content; a fresh --out.
+# NOT done here (outside G1/G2/G6): G3 the store on the pod (the MM ships it), G4 replicates, G5 the pod chain + post-gate, G7 the real-bank reach re-run.  G5's gate-RUN side IS wired (MM 2026-11-17): gate_checks.check_live routes
+# `p7field_rules` to p5c_live_rows ((f) warm-start identity, (h) no table), run_checks builds the capture for G-LIVE (need_b), G-CLOCK requires the bank content pin; chk_live_wiring pins all three.
+FIELD_P7_W = 2.0                                  # --w-field of arm F: MM-ratified pre-data 2026-11-17, PI "Approve F+C" 2026-11-17; frozen, the launch gate may only veto it (field_p7/WEIGHT_FIELDP7.md, raw/weight_rule_p7_cpu.json)
+FIELD_P7_STORE_SHA256 = "4a17db673b1548ba35724ab848a7dc551e4b0bc1e49c57ae93e6357454bf287a"      # the FULL aux label store (103,139 keys): aux_drivable_head.PINNED_STORE_SHA256, which train.py:664 hard-pins for --field-labels
+FIELD_P7_STORE_KEYS = 103139
+FIELD_P7_LOSS_SHA256 = "e29d91c349539ba366c73739fd2fe7fc6f1e7a6a015c4c0749df5f15df36c994"       # refe/field_loss.py (LF bytes), re-hashed from the tip export 2026-11-17; test_field_loss.py ZZTEST_PASS 42 at this hash
+FIELD_P7_ARM_NAME = {"F": "refe_field_p7", "C": "refe_field_p7_ctrl"}
+FIELD_P7_ARM_W = {"F": FIELD_P7_W, "C": 0.0}
+FIELD_P7_LABELS_DEFAULT = "/workspace/data/refe_navtrain/aux_label_store_full"       # the pod path of the full store beside P7's own (G3: shipped by the MM)
+FIELD_P7_PATH_FLAGS = P5C_PATH_FLAGS + ("--field-labels",)
+
+
+def p7field_argv(arm: str, paths: dict | None = None) -> list:
+    """The arm's launch argv TEMPLATE: `p5c_argv("C0")` (P7's ARGS + the card's edits, no head, no table, `--w-field 0.0`) with the field flags added after `--w-field`, `--w-field` = the arm's weight and its own `--out`."""
+    if arm not in FIELD_P7_ARM_NAME:
+        raise ValueError(f"arm {arm!r}")
+    P = dict(P5C_DEFAULT_PATHS, **{k: v for k, v in (paths or {}).items() if k != "field_labels"})
+    a = p5c_argv("C0", paths=P)
+    i = a.index("--w-field")
+    a[i + 1] = repr(float(FIELD_P7_ARM_W[arm]))
+    a[i + 2:i + 2] = ["--field-labels", (paths or {}).get("field_labels", FIELD_P7_LABELS_DEFAULT), "--field-margin", FIELD_REGISTERED["--field-margin"], "--field-interp", FIELD_REGISTERED["--field-interp"]]
+    j = a.index("--out")
+    a[j + 1] = f"{P['out_root']}/p7field_{arm.lower()}"
+    return a
+
+
+def p7field_profile(arm: str) -> dict:
+    """The arm's profile (see the block comment): `refe_p5c_c0` with the table-free P5-C recipe, plus the field term."""
+    c0 = PROFILES["refe_p5c_c0"]
+    req = dict(c0["required_flags"])
+    req.update({"--w-field": repr(float(FIELD_P7_ARM_W[arm])), "--field-labels": None, **FIELD_REGISTERED})
+    forb = tuple(c0["forbidden_flags"]) + (("--field-shuffle-seed",) if "--field-shuffle-seed" not in c0["forbidden_flags"] else ())
+    prof = {k: v for k, v in c0.items() if k not in ("p5c_rules", "p5c_arm", "p5c_base")}
+    prof.update({"name": FIELD_P7_ARM_NAME[arm], "p7field_rules": True, "p7field_arm": arm, "field_arm": arm, "data_flags": tuple(c0["data_flags"]) + ("--field-labels",),
+                 "suite": list(c0["suite"]) + FIELD_SUITE_EXTRA + [{"script": "test_field_p7_profile.py", "args": ["--fast"], "token": "ZZFIELDP7PROF_PASS"}],
+                 "forbidden_flags": forb, "required_flags": req, "live_terms": P6_TERMS + ("field_L",), "field_min_coverage": 0.999,
+                 "field_w": FIELD_P7_ARM_W[arm], "field_store_sha256": FIELD_P7_STORE_SHA256, "field_store_keys": FIELD_P7_STORE_KEYS, "field_loss_sha256": FIELD_P7_LOSS_SHA256})
+    return prof
+
+
+for _farm in ("F", "C"):                          # NOT `_arm`: that module name (the P5-C loop variable above) must keep its value
+    PROFILES[FIELD_P7_ARM_NAME[_farm]] = p7field_profile(_farm)
+
+
+def p7field_refusals(prof: dict, argv: list) -> list:
+    """What `required_flags` cannot say for a P7-graft field arm: registered pins (and their match to the shipped bytes / the loader's pin), the arm's flag set and levers == `p7field_argv(arm)`, the schedule and bank, a fresh `--out`."""
+    import hashlib
+    out, name, arm = [], prof["name"], prof.get("p7field_arm")
+    if arm not in FIELD_P7_ARM_NAME or FIELD_P7_ARM_NAME[arm] != name:
+        return [f"{name}: p7field_rules without a known arm ({arm!r})"]
+    if not _p5c_hex64(prof.get("init_from_sha256")):    # p7field: the P7 graft base pin (same check as P5-C; text kept distinct for the P5-C mutation harness)
+        out.append(f"{name}: the base checkpoint's sha256 is not REGISTERED (init_from_sha256 = {prof.get('init_from_sha256')!r}; P5C_BASE_SHA256): an unpinned base is never launched from")
+    if prof.get("field_w") != FIELD_P7_ARM_W[arm] or type(prof.get("field_w")) is not float:
+        out.append(f"{name}: the registered weight field_w = {prof.get('field_w')!r}, arm {arm} registers {FIELD_P7_ARM_W[arm]!r} (FIELD_P7_W = 2.0 is the MM-ratified, PI-approved value; the gate may only veto it)")
+    if not _p5c_hex64(prof.get("field_store_sha256")):
+        out.append(f"{name}: the field label store's sha256 is not REGISTERED (field_store_sha256 = {prof.get('field_store_sha256')!r}; FIELD_P7_STORE_SHA256)")
+    if type(prof.get("field_store_keys")) is not int or prof.get("field_store_keys") <= 0:
+        out.append(f"{name}: the field label store's key count is not REGISTERED (field_store_keys = {prof.get('field_store_keys')!r}; FIELD_P7_STORE_KEYS)")
+    if not _p5c_hex64(prof.get("field_loss_sha256")):
+        out.append(f"{name}: refe/field_loss.py's sha256 is not REGISTERED (field_loss_sha256 = {prof.get('field_loss_sha256')!r}; FIELD_P7_LOSS_SHA256)")
+    else:                                                                       # the token binds SHIPPED bytes: re-hash the module beside this gate (LF-normalised, so a CRLF checkout cannot flip it)
+        try:
+            got = hashlib.sha256((HERE / "field_loss.py").read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+        except OSError as e:
+            got = f"unreadable: {e}"
+        if got != prof["field_loss_sha256"]:
+            out.append(f"{name}: refe/field_loss.py hashes to {got}, the profile registers {prof['field_loss_sha256']} (the shipped L_field is not the one this arm was registered with)")
+    if _p5c_hex64(prof.get("field_store_sha256")):                              # the loader's OWN pin (train.py:664 -> AuxLabelSource) must equal the registered one: else --field-labels would be refused on the pod
+        try:
+            AUXH = importlib.import_module("aux_drivable_head")
+            if (AUXH.PINNED_STORE_SHA256, AUXH.PINNED_STORE_KEYS) != (prof["field_store_sha256"], prof.get("field_store_keys")):
+                out.append(f"{name}: the loader pins store {AUXH.PINNED_STORE_SHA256} / {AUXH.PINNED_STORE_KEYS} keys, the profile registers {prof['field_store_sha256']} / {prof.get('field_store_keys')}")
+        except Exception as e:                                                  # noqa: BLE001
+            out.append(f"{name}: the loader's store pin could not be read ({type(e).__name__}: {e}); the registered store pin is unverified")
+    exp = prof.get("expect_schedule") or {}
+    if not (exp.get("epochs") == 0 and exp.get("steps") == P5C_STEPS and exp.get("epoch_len") == P7_SCENES):
+        out.append(f"{name}: the registered schedule {exp.get('epochs')} epochs / {exp.get('steps')} steps / epoch_len {exp.get('epoch_len')} is not the recipe's 2,000 steps over {P7_SCENES} scenes")
+    tg = (GT.flag_values(argv, "--targets") or [None])[0]
+    bank = Path(str(tg).rstrip("/\\")).name if tg else None
+    for key, what in (("n_tuples_by_bank", "tuple count"), ("targets_sha256_by_bank", "content sha256")):
+        reg = exp.get(key)
+        if not isinstance(reg, dict) or bank not in reg:
+            out.append(f"{name}: --targets {tg!r} names bank {bank!r}, which has no registered {what} ({key}): the P7 bank is pinned by count AND content")
+    if exp.get("targets_sha256_by_bank") and not all(_p5c_hex64(h) for h in exp["targets_sha256_by_bank"].values()):
+        out.append(f"{name}: a registered targets_sha256 is not 64 lowercase hex digits")
+    want = {f: v for f, v in GT.flag_pairs(p7field_argv(arm))}
+    got_: dict = {}
+    for f, v in GT.flag_pairs(argv):
+        got_.setdefault(f, []).append(v)
+    for f in sorted(set(want) - set(got_) - {"--resume"}):
+        out.append(f"{name}: the argv does not carry {f}, which arm {arm}'s argv carries (the arm's lever set is exactly the recipe's: nothing dropped)")
+    for f in sorted(set(got_) - set(want) - {"--resume"}):
+        out.append(f"{name}: the argv carries {f} {' '.join(got_[f][0])}, which arm {arm}'s argv does not (F and C differ from P5-C's C0 by the field flags alone)")
+    for f, vs in sorted(got_.items()):
+        if len(vs) > 1:
+            out.append(f"{name}: {f} is carried {len(vs)} times")
+        elif f in want and f not in FIELD_P7_PATH_FLAGS and f != "--resume":
+            w, g = want[f], vs[0]
+            same = len(w) == len(g) and all((float(a) == float(b)) if re.fullmatch(r"-?[0-9.eE+-]+", a) and re.fullmatch(r"-?[0-9.eE+-]+", b) else a == b for a, b in zip(w, g))
+            if not same:
+                out.append(f"{name}: arm {arm} fixes {f} {' '.join(w)}; the argv has {f} {' '.join(g)}")
+    lab = (GT.flag_values(argv, "--field-labels") or [None])[0]
+    if not lab:
+        out.append(f"{name}: arm {arm} needs --field-labels <the full pinned store>")
+    ow = (GT.flag_values(argv, "--out") or [None])[0]
+    if ow and (Path(str(ow)) / "ckpt_last.pt").exists():    # p7field: a fresh --out (same check as P5-C; text kept distinct for the P5-C mutation harness)
+        out.append(f"{name}: --out {ow} already holds ckpt_last.pt: a field arm starts FRESH (fresh AdamW; a seeded checkpoint would resume an old optimiser)")
+    return out
+
+
 # the replicate = refe_p2 (same checks, same G-P2GATE sub-check, same data flags, same forbidden flags, same P2 levers asserted) + `--seed 1` required + the WHOLE argv pinned + its own chain test in G-SUITE
 PROFILES["refe_p2rep"] = {**PROFILES["refe_p2"], "name": "refe_p2rep", "suite": SUITE + [{"script": "test_p2rep_chain.py", "token": "ZZTEST_PASS"}],
                           "required_flags": {**PROFILES["refe_p2"]["required_flags"], "--seed": str(P2REP_SEED)}, "pinned_argv": tuple(P2REP_ARGV)}
@@ -1208,6 +1325,8 @@ def profile_refusals(prof: dict, argv: list) -> list:
         out += p7_refusals(prof, argv)
     if prof.get("p5c_rules"):
         out += p5c_refusals(prof, argv)
+    if prof.get("p7field_rules"):
+        out += p7field_refusals(prof, argv)
     if prof.get("field_arm"):
         got = GT.flag_values(argv, "--w-field")
         try:
@@ -1859,6 +1978,7 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
         _log_gpu_reserved("before G-CKPT")
         ckpt_ev = C.check_ckpt(s_argv, work / "ckpt", prof2, arm=arm, rehearsal=rehearsal)
     need_b = any(c in want for c in ("G-DVB", "G-CLOCK")) or bool("G-LIVE" in want and prof.get("p5c_rules"))        # P5-C: G-LIVE (f) reads the build capture's step-0 digest
+    need_b = need_b or bool("G-LIVE" in want and prof.get("p7field_rules"))      # the P7 field arms: G-LIVE (f) reads the same step-0 digest (G5)
     need_s = any(c in want for c in ("G-LIVE", "G-EVAL", "G-DVB", "G-LIVE-LAB"))
     b = C.instrumented_run(b_argv, mode="build", work=work / "build", arm=arm) if need_b else None
     if b is not None:
