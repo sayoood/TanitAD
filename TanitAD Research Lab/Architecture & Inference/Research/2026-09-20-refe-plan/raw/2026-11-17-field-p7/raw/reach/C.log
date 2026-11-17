@@ -1,0 +1,31 @@
+  NAV MODE: command -- the student is conditioned on the discrete navigation command (the paper's input), not on goal points
+  ABLATION: the PDM loss reaches the backbone LoRA (REFe's extra detach removed)
+  trunk: loaded 366 tensors from E:/Projects/TanitAD/data/backbones/dinov3-vitl16 (missing 0, unused 0)
+  WARM START (PREREG_P2): 643 tensors from F:/TanitAD_p7read/run/model_final.pt (refe-full-v1, sha256 2613fc17b9e5)
+  REFe vitl16 322.08 M total / 19.00 M trainable (5.90 %)  device=cpu
+  WTA reach: at most 1 of 64 proposals updated per step (1.6 %)
+  scorer bank: NONE -- the scorer falls back to the zero PLACEHOLDER and proposal selection stays arbitrary
+  targets: 1 rows from ['targets_rank0.jsonl']  per rank {0: 1}
+  images: 1/1 tuples resolve ALL cameras under E:/Projects/TanitAD/data/refe_m5/pixels  (7,600 loose frames indexed, 0 containers, 0.2 s)
+  calib: 1/1 tuples carry their own rig (1 distinct rigs) <- E:/Projects/TanitAD/data/refe_m5/calib_table.json
+  scenes: 1 over 1 tuples  (rows per scene: 1 x 1)
+  NAV COMMAND (P6): sources {'goal_rule': 1}  (row = NAVSIM driving_command carried by the bank; goal_rule = nav_command.goal_to_command, MEASURED 0.90 agreement with NAVSIM on navtest -- below SPEC_P6 D6's 95 % bar)
+  EGO YAW (WP YAW): ego[4] <- 10 x ego_pose.angular_rate_z for 1/1 rows (44,304 table tokens, sha256 517c6413fe35, rad/s, CCW-positive (z up), ego body frame)  <- E:/Projects/TanitAD-artifacts/yawrate_wp/tables/ego_yaw_navtrain_devbox.json.gz
+  L_field labels: 1/1 rows (100.000 %) have a stored SDF  <- E:/Projects/TanitAD-artifacts/aux_drivable/label_store  (store_sha256 4a17db673b15, 103,139 keys)
+  bank: 1 tuples in 1 scenes   epoch = one pass over 1 scenes   batch 1   training
+  optimiser: AdamW lr 5e-05 wd 0.01  schedule: cosine -> 0 over 1 steps
+  score-loss normaliser: 1.0000 covered candidates/sample x batch (CONSTANT, so --accum is exactly equivalent to one large batch)
+FIELDP7_REACH {"w_field": 0.0, "calls": 0, "grad_sha256": "0ed4a8fe80279991"}
+  traj_head     trainable    4 none    0 nonzero    4 abs_sum 4695.19
+  dec           trainable   72 none    0 nonzero   72 abs_sum 5575.26
+  queries       trainable    1 none    0 nonzero    1 abs_sum 64.8797
+  scene_proj    trainable    2 none    0 nonzero    2 abs_sum 1115.48
+  reg_compress  trainable   14 none    0 nonzero   14 abs_sum 5066.15
+  registers     trainable    1 none    0 nonzero    1 abs_sum 44.5317
+  cmd_embed     trainable    1 none    0 nonzero    1 abs_sum 1.55125
+  ego_enc       trainable    4 none    0 nonzero    4 abs_sum 1028.7
+  pos3d_mlp     trainable    4 none    0 nonzero    4 abs_sum 756.821
+  backbone      trainable   96 none    0 nonzero   96 abs_sum 178.291
+  score_q_mlp   trainable    4 none    0 nonzero    0 abs_sum 0
+  score_dec     trainable   72 none    0 nonzero    0 abs_sum 0
+  score_head    trainable    2 none    0 nonzero    0 abs_sum 0
