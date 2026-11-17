@@ -1,0 +1,120 @@
+{
+ "tag": "R35_s1",
+ "tier": "T0 world-model diagnostic; TRAIN, in-sample for R35 and for RA; feasibility record, never a result",
+ "inputs": {
+  "ckpt": {
+   "path": "C:/Users/Admin/t2v8f_pulls/ladder_R35_s1/ckpt_last.pt",
+   "sha256": "a97e6017cffb13830dacd04e1ea108fa8534bc3ab3007b8f536f01ac0846f881"
+  },
+  "latents_train": {
+   "path": "F:/TanitAD-scratch/hwm_plan/latents_train_R35_s1.pt",
+   "sha256": "692eb0021a4b39295a52589ab2b7f2de0a45615345bca7a7acea62101d32708a"
+  },
+  "selection_windows": {
+   "path": "F:/TanitAD-scratch/actrsp/lonplan/sel_s1/selection_windows.npz",
+   "sha256": "a8c6835b9672ff53e4e66b8ebdde376c05d84a9663dae701d9a11fbebadc3b3b"
+  },
+  "readout": {
+   "path": "C:/Users/Admin/AppData/Local/Temp/claude/4ac3a056b343bb35/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/ra/readout_K10_R35_s1.pt",
+   "sha256": "a6d252aa405f624a7cea4129a7f7d65ba5c047045d88e89b340a8abb935bb495"
+  },
+  "score_windows_s1_eid_only": {
+   "path": "F:/TanitAD-scratch/actrsp/lonplan/score_windows_s1/windows.npz",
+   "sha256": "8833e2923c1781d7678f8483775487db476117e3ddd563a444d2d122334061f0"
+  },
+  "script": {
+   "path": "F:\\TanitAD-scratch\\actrsp\\lonplan\\amend5\\ra5_gate.py",
+   "sha256": "7ef0934ba3cd8d6bbe0d8f46c6b3dea15f0d7833585c5eb0a1f2999a0bdb1470"
+  }
+ },
+ "C_RA_FIT": {
+  "n_pairs": 8306,
+  "n_clips": 141,
+  "n_pairs_record": 8306,
+  "lambda": 0.1,
+  "max_abs_dW": 1.7542442035676023e-09,
+  "max_abs_W": 0.028172191111768104,
+  "max_abs_dmu": 3.837528905759058e-10,
+  "max_abs_dsd": 1.036163821410696e-09,
+  "abs_dym": 0.0,
+  "train_clips_in_score_episodes": 0,
+  "n_score_episodes": 71,
+  "n_score_windows": 994,
+  "s_cal_swap_heldout_frozen": [
+   0.2032336668600536,
+   0.012692756354036425
+  ]
+ },
+ "gain_terciles": {
+  "low": {
+   "n": 188,
+   "g_range": [
+    -0.1214,
+    0.1296
+   ],
+   "RA_ORACLE_minus_HOLD_mean": 0.7956,
+   "HOLD_acc_mae": 0.218
+  },
+  "mid": {
+   "n": 188,
+   "g_range": [
+    0.13,
+    0.3163
+   ],
+   "RA_ORACLE_minus_HOLD_mean": 0.6438,
+   "HOLD_acc_mae": 0.3117
+  },
+  "high": {
+   "n": 188,
+   "g_range": [
+    0.3168,
+    0.9483
+   ],
+   "RA_ORACLE_minus_HOLD_mean": 0.3175,
+   "HOLD_acc_mae": 0.3599
+  }
+ },
+ "gates": {
+  "q50": {
+   "g_min": 0.2267,
+   "share_gated_in": 0.5,
+   "minus_HOLD": [
+    0.1998,
+    [
+     0.1604,
+     0.2423
+    ]
+   ]
+  },
+  "q75": {
+   "g_min": 0.3642,
+   "share_gated_in": 0.25,
+   "minus_HOLD": [
+    0.0721,
+    [
+     0.0476,
+     0.1004
+    ]
+   ]
+  },
+  "q90": {
+   "g_min": 0.5156,
+   "share_gated_in": 0.1011,
+   "minus_HOLD": [
+    0.0214,
+    [
+     0.0087,
+     0.0373
+    ]
+   ]
+  }
+ },
+ "RA_ORACLE_minus_HOLD": [
+  0.5856,
+  [
+   0.525,
+   0.6512
+  ]
+ ],
+ "wall_s": 29.0
+}
