@@ -3181,6 +3181,45 @@ def recover_probe(model, batch, cfg, rec) -> dict:
     return res
 
 
+def _dagger_nav_s_check(batch, pert, sel, sel_rows, rec, changed) -> dict:
+    """``dagger_probe``'s ``nav_s`` clause (PREREG_V8F_CKPT120, MM ruling part 1 deviation 3): ``nav_s`` is NOT in ``DG.REBUILT`` (that partition is frozen by name) but ``DG.swap_rows`` rebuilds its channel 3 on the
+    selected rows. Same keys, shape and dtype; an unselected row is bit-identical; channels 0-2 (token) and 4 (validity) are bit-identical on EVERY row; channel 3 of a selected row equals the nav rule recomputed here
+    from the logged ``nav_s`` and the bank record's own arc (a real frame sharing NOW's token and validity, an own kinematic row behind it: ``clip(nav_s[NOW, 3] + own arc behind NOW / 100, 0, 3)``; NOW itself and every
+    other frame as logged), to 1e-6. Returns the counts the gate records."""
+    import torch
+    ns0, ns1 = batch["nav_s"], pert["nav_s"]
+    if ns1.shape != ns0.shape or ns1.dtype != ns0.dtype:
+        raise AssertionError(f"dagger probe: nav_s changed shape / dtype under the swap ({tuple(ns0.shape)} {ns0.dtype} -> {tuple(ns1.shape)} {ns1.dtype})")
+    rows_ch = changed(ns1, ns0)
+    if bool(rows_ch[~sel].any()):
+        raise AssertionError("dagger probe: nav_s changed on a row the swap did not select")
+    keep = [0, 1, 2, 4]
+    if not bool(torch.equal(ns1[..., keep], ns0[..., keep])):
+        raise AssertionError("dagger probe: nav_s channels 0-2 / 4 (token, validity) changed under the swap: the swap rebuilds channel 3 (the countdown) only")
+    F = int(ns0.shape[1])
+    r = ns0[sel_rows]
+    same = (r[..., :3].argmax(-1) == r[:, -1:, :3].argmax(-1)) & (r[..., 4] == r[:, -1:, 4])
+    own_idx = torch.from_numpy(np.asarray(rec["j"]).astype(np.int64))[:, None] - (F - 1) + torch.arange(F)[None]
+    own_ok = (own_idx >= 1) & torch.isfinite(torch.from_numpy(np.ascontiguousarray(rec["p10f"]))).all(-1)
+    arc = torch.from_numpy(np.ascontiguousarray(rec["arc"]))
+    back = arc[:, -1:] - arc
+    rule = D.EgoPerturb._hist_valid(batch, sel_rows).cpu() & same.cpu() & own_ok & (torch.ones_like(own_ok) if DG.NAV_REBUILD_INVALID else (r[..., 4] > 0).cpu())
+    want3 = torch.where(rule, (r[:, -1:, 3].double().cpu() + back.double() / 100.0).clamp(0.0, 3.0).to(ns0.dtype), r[..., 3].cpu())
+    got3 = ns1[sel_rows][..., 3].cpu()
+    err = (got3.double() - want3.double()).abs()
+    bad = err > 1e-6
+    if bool(bad.any()):
+        raise AssertionError(f"dagger probe: nav_s channel 3 differs from the nav rule on {int(bad.sum())} of {int(bad.numel())} frames of the selected rows (max abs err {float(err.max())}; rule: a real frame sharing NOW's token and validity is "
+                             "rebuilt from the own arc, NOW and every other frame stay as logged): the countdown is not the one the evaluator wrappers dead-reckon")
+    return {"rows_changed": int(rows_ch.sum()), "ch3_frames_changed": int(changed_frames(got3, r[..., 3].cpu())), "ch3_frames_rebuilt_by_rule": int(rule.sum()), "ch3_max_abs_err": float(err.max()),
+            "token_validity_bit_identical": True, "unselected_rows_bit_identical": True}
+
+
+def changed_frames(x, y) -> int:
+    """Number of (row, frame) cells where two float tensors differ."""
+    return int((x != y).sum())
+
+
 def dagger_probe(model, batch, cfg, dag) -> dict:
     """G-LIVE for DAgger (PREREG_V8F_DAGGER section 6): the swapped own-state tensors REACH THE LOSS THE TRAINER BACKPROPAGATES -- read from the BUILT model's own ``loss`` on the real probe batch (a COPY, its own
     seeds), through the SAME ``dag.apply`` the training loop calls, at p = 1. With the lever off (the default) there is nothing to prove and nothing runs (the pre-change model and loss).
@@ -3252,9 +3291,11 @@ def dagger_probe(model, batch, cfg, dag) -> dict:
         req = need & ~base_rest if k == "base" else need
         if not bool(ch[k][req].all()):
             raise AssertionError(f"dagger probe: {k} is unchanged on {int((~ch[k][req]).sum())} of {int(req.sum())} selected rows: the swap did not reach it")
-    kept_moved = sorted(k for k in batch if k not in DG.REBUILT and k != "lab_s" and pert[k] is not batch[k])
+    kept_moved = sorted(k for k in batch if k not in DG.REBUILT and k != "lab_s" and k not in M.NAV_S_KEYS and pert[k] is not batch[k])      # nav_s is checked below, on its own rule: the swap rebuilds its channel 3 (PREREG_V8F_CKPT120)
     if kept_moved:
         raise AssertionError(f"dagger probe: {kept_moved} are not the same objects after the swap: targets, labels and kept inputs must not be touched")
+    if "nav_s" in batch:                                                         # H2 arms (--nav-strat on): the swap rebuilds nav_s channel 3 by the nav rule and touches nothing else; checked as strictly as nav / lab_s.rc
+        res["nav_s"] = _dagger_nav_s_check(batch, pert, sel, sel_rows, rec, changed)
     ls0, ls1 = batch["lab_s"], pert["lab_s"]
     if set(ls0) != set(ls1) or [k for k in ls0 if k != "rc" and ls1[k] is not ls0[k]]:
         raise AssertionError(f"dagger probe: lab_s changed in more than rc ({sorted(k for k in ls0 if k != 'rc' and ls1.get(k) is not ls0[k])}): rc is the one label tensor re-expressed")
