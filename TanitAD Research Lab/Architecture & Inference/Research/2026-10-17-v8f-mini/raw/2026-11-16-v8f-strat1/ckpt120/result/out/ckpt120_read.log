@@ -1,0 +1,75 @@
+[ckpt120 read] start 2026-11-17T21:25:27Z
+commit free 9.10 GB >= 8.0 after 0 min
+.............................                                            [100%]
+29 passed in 91.55s (0:01:31)
+22:32:14 H1_s0 causal rc 0 ok 313 s
+22:37:00 H1_s1 causal rc 0 ok 286 s
+22:42:40 H2_s0 causal rc 0 ok 340 s
+22:47:51 H2_s1 causal rc 0 ok 308 s
+22:53:10 H1_rep causal rc 0 ok 256 s
+22:59:46 R1_s0 causal rc 0 ok 394 s
+23:06:18 R2_s0 causal rc 0 ok 389 s
+23:11:26 H1_s0 k9b rc 0 ok 303 s
+23:15:58 H1_s1 k9b rc 0 ok 269 s
+23:25:09 H2_s0 k9b rc 0 ok 307 s
+23:33:15 H2_s1 k9b rc 0 ok 483 s
+23:39:35 H1_rep k9b rc 0 ok 378 s
+23:44:53 R1_s0 k9b rc 0 ok 316 s
+23:51:09 R2_s0 k9b rc 0 ok 373 s
+23:51:40 H1_s0 real rc 0 ok 29 s
+23:52:19 H1_s0 donor rc 0 ok 38 s
+23:52:51 H1_s0 zero rc 0 ok 32 s
+23:53:24 H1_s1 real rc 0 ok 30 s
+23:53:57 H1_s1 donor rc 0 ok 33 s
+23:54:26 H1_s1 zero rc 0 ok 28 s
+23:54:56 H2_s0 real rc 0 ok 29 s
+23:55:40 H2_s0 donor rc 0 ok 43 s
+23:56:07 H2_s0 zero rc 0 ok 28 s
+23:56:41 H2_s1 real rc 0 ok 32 s
+23:57:27 H2_s1 donor rc 0 ok 46 s
+23:57:59 H2_s1 zero rc 0 ok 32 s
+23:58:35 H1_rep real rc 0 ok 34 s
+23:59:13 H1_rep donor rc 0 ok 38 s
+23:59:51 H1_rep zero rc 0 ok 37 s
+00:00:32 R1_s0 real rc 0 ok 39 s
+00:01:11 R1_s0 donor rc 0 ok 39 s
+00:01:46 R1_s0 zero rc 0 ok 35 s
+00:02:24 R2_s0 real rc 0 ok 35 s
+00:03:13 R2_s0 donor rc 0 ok 50 s
+00:03:50 R2_s0 zero rc 0 ok 37 s
+commit free 7.82 GB >= 5.5 after 0 min
+Traceback (most recent call last):
+  File "F:\TanitAD-scratch\strat1\read\ckpt120\c120_read.py", line 571, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "F:\TanitAD-scratch\strat1\read\ckpt120\c120_read.py", line 561, in main
+    rep = read(a)
+  File "F:\TanitAD-scratch\strat1\read\ckpt120\c120_read.py", line 355, in read
+    glat, glon = geom.labels(dg["g"])
+                 ~~~~~~~~~~~^^^^^^^^^
+  File "F:\TanitAD-scratch\strat1\read\theory\otband\read\read_otband.py", line 113, in labels
+    from tanitad.refs.refc_tactical import factor_from_kinematics
+  File "F:\TanitAD-scratch\strat1\read\ckpt120\tree\taniteval\taniteval\stack_guard.py", line 338, in find_spec
+    self._violate(fullname, bad)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "F:\TanitAD-scratch\strat1\read\ckpt120\tree\taniteval\taniteval\stack_guard.py", line 364, in _violate
+    raise StackShadowError(msg)
+taniteval.stack_guard.StackShadowError: \u26d4 STACK SHADOWING — `tanitad` would be imported from
+    ['F:\\TanitAD-scratch\\strat1\\read\\tree\\stack\\tanitad\\__init__.py', 'F:\\TanitAD-scratch\\strat1\\read\\tree\\stack\\tanitad']
+  but the pinned stack root is
+    F:\TanitAD-scratch\strat1\read\ckpt120\tree\stack   (intent: sys.path)
+  This is the defect that publishes a PLAUSIBLE WRONG NUMBER rather
+  than an error: 28 taniteval modules used to sys.path.insert(0,
+  '/root/TanitAD/stack'), and on pod2 that tree is pre-v5.
+  \u21d2 export TANITEVAL_STACK_OVERRIDE=<the stack you mean> BEFORE python3 starts,
+    and make sure no other stack tree precedes it on sys.path.
+    (sys.path[0:4] = ['F:/TanitAD-scratch/strat1/read/tree/stack', 'F:/TanitAD-scratch/strat1/read/tree/taniteval', 'F:\\TanitAD-scratch\\strat1\\read\\theory\\otband\\read', 'F:\\TanitAD-scratch\\strat1\\read/theory/obd/read'])
+  To downgrade deliberately: TANITEVAL_STACK_GUARD=warn — it is recorded in the
+  guard's report() so no artifact can hide it.
+ZZ STRAT1 CKPT120 READ FAIL ZZ c120_read.py (a control failed or an input is missing; see RESULT_CKPT120.json problems); failed steps before it:
+[ckpt120 read] reader-only re-run (stack-guard fix) 2026-11-17T23:06:42Z
+.............................                                            [100%]
+29 passed in 101.37s (0:01:41)
+commit free 8.25 GB >= 5.5 after 0 min
+WROTE F:/TanitAD-scratch/strat1/read/ckpt120/out/RESULT_CKPT120.json | FINAL | {'H1': 'S120-PARTIAL', 'H2': 'S120-FOLLOWS'} | problems: 0 | 158.9 s
+ZZ STRAT1 CKPT120 READ DONE ZZ
