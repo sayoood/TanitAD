@@ -1,0 +1,776 @@
+--- a/stack/tanitad/models/hjepa.py
++++ b/stack/tanitad/models/hjepa.py
+@@ -48,6 +48,7 @@
+ from __future__ import annotations
+ 
+ import copy
++import hashlib
+ import math
+ from dataclasses import dataclass, field
+ from typing import Callable, Mapping, Optional, Sequence
+@@ -469,6 +470,7 @@
+     rollout_w: float = 1.0     # PREREG_V8F_LADDER: weight of the k-step term in the level's loss (constant over training: no schedule); used only when ``rollout_k`` > 1
+     rsp_w: float = 0.0         # PREREG_V8F_ACTRSP: weight of the action-response term :meth:`HJEPAStack.response_loss` in the level's loss (level 1 only). 0.0 = the term is NOT built = every earlier build, bit for bit (no key, no op)
+     rsp_delta: tuple = (0.42, 0.24)   # PREREG_V8F_ACTRSP: the contrast size per action channel in WM units (1 sd of acceleration / 2.0 and yaw rate / 0.4 on R35's TRAIN windows); used only when ``rsp_w`` > 0
++    rsp_readout: str = "idm"   # PREREG_V8F_ACTRSP Amendment 2 (Option B, `--wm-rsp-readout`): "idm" = the level-1 IDM head on pairs, four contrasts (the a13f6f16 term, bit for bit); "fixed_k" = a FROZEN linear readout of the K-step endpoint, acceleration channel only, two contrasts, a constant slope (needs :meth:`HJEPAStack.set_rsp_probe`)
+ 
+ 
+ @dataclass
+@@ -572,6 +574,12 @@
+             torch.manual_seed((base_seed * 1_000_003 + 101 * (i + 1)) % (2 ** 63 - 1))
+             return mk(c.window)
+ 
++    def set_rsp_probe(self, w: Tensor, s_cal: float) -> None:
++        """PREREG_V8F_ACTRSP Amendment 2: the FIXED readout of the ``fixed_k`` response term. ``w`` (D,) = the frozen ridge's weights over the standardised endpoint displacement divided by its scale (so the read difference of two endpoints is
++        ``(z+ - z-) @ w``), ``s_cal`` the pre-registered transition-only slope. Non-persistent buffers: not in the state dict, no parameter, no random draw (the WM init does not move)."""
++        self.register_buffer("rsp_probe_w", w.detach().clone().float(), persistent=False)
++        self.register_buffer("rsp_probe_s", torch.tensor(float(s_cal), dtype=torch.float64), persistent=False)   # float64: the pre-registered constant is stored exactly
++
+     # ---- bookkeeping ----------------------------------------------------------------------
+     @property
+     def n_levels(self) -> int:
+@@ -599,6 +607,8 @@
+                 row.update(rollout_k=c.rollout_k, rollout_stride=c.rollout_stride, rollout_w=c.rollout_w)
+             if lv == 1 and c.rsp_w > 0.0:                                 # PREREG_V8F_ACTRSP: present only when moved (a flag-off stack keeps its key set); the G-DVB reader is :meth:`built_rsp` (the loss's own run), not this config echo
+                 row.update(rsp_w=c.rsp_w, rsp_delta=tuple(c.rsp_delta), rsp_k=RSP_K, rsp_stride=RSP_STRIDE, rsp_ctx=RSP_CTX)
++                if c.rsp_readout != "idm":                                # Amendment 2: present only when moved (an idm-readout stack keeps the a13f6f16 key set)
++                    row.update(rsp_readout=c.rsp_readout)
+             out[lv] = row
+         return out
+ 
+@@ -849,6 +859,8 @@
+         loss = mean (G - I)^2. No new parameter and no random draw. Gradient reaches ``predictors[0]`` and ``act_embed`` only.
+ 
+         ``z`` ``(B, T, D)`` level-1 states, ``a`` ``(B, T - 1, 2)`` the level-1 actions in WM units. Returns ``loss`` and ``diag`` (detached: ``rsp_g_aa``, ``rsp_g_ww``, ``rsp_g_aw``, ``rsp_g_wa``, ``rsp_s_a``, ``rsp_s_w``)."""
++        if c.rsp_readout == "fixed_k":                                                   # Amendment 2 (Option B): the frozen-readout, acceleration-only, two-contrast form
++            return self._response_loss_fixed_k(z, a, c)
+         b_, t_, _ = z.shape
+         K = RSP_K
+         idx = torch.arange(0, t_ - K, RSP_STRIDE, device=z.device)                    # anchors 0, 10, .. 80 at T = 91: each K-step stretch lies inside the window
+@@ -882,15 +894,44 @@
+         diag = {"rsp_g_aa": gd[..., 0, 0].mean(), "rsp_g_ww": gd[..., 1, 1].mean(), "rsp_g_aw": gd[..., 0, 1].mean(), "rsp_g_wa": gd[..., 1, 0].mean(), "rsp_s_a": slope[0].detach(), "rsp_s_w": slope[1].detach()}
+         return {"loss": loss, "diag": diag}
+ 
++    def _response_loss_fixed_k(self, z: Tensor, a: Tensor, c: "LevelConfig") -> dict:
++        """PREREG_V8F_ACTRSP Amendment 2 (Option B). Anchors, K, context and the batched :meth:`rollout` call are the a13f6f16 term's, but only the ACCELERATION channel is contrasted (two contrasts, +/- ``rsp_delta[0]``), and the read is the FROZEN
++        linear readout ``rsp_probe_w`` of the K-step endpoint (no head, no batch slope): ``G = (z_K+ - z_K-) @ w / (2 delta_a s)`` with the constant ``s`` of :meth:`set_rsp_probe`; loss = mean (G - 1)^2. No random draw. Gradient reaches ``predictors[0]``
++        and ``act_embed`` only (the anchor state is detached; the readout is a buffer)."""
++        t_ = z.shape[1]
++        K = RSP_K
++        idx = torch.arange(0, t_ - K, RSP_STRIDE, device=z.device)
++        if idx.numel() == 0:
++            raise ValueError(f"window of {t_} states is too short for the action-response term (needs > {K})")
++        pos = idx[:, None] + torch.arange(K, device=z.device)[None, :]
++        base = a[:, pos]                                                             # (B, A, K, 2)
++        z0 = z[:, idx].detach()
++        dlt = torch.as_tensor(c.rsp_delta, dtype=base.dtype, device=base.device)
++        e = base.new_zeros(2, 2)
++        e[0, 0], e[1, 0] = 1.0, -1.0                                                 # accp, accm
++        a2 = base[None] + (e * dlt)[:, None, None, None, :]                          # (2, B, A, K, 2)
++        zh = self.rollout(1, z0[None].expand(2, -1, -1, -1), a2, context=RSP_CTX)   # (2, B, A, K, D)
++        w = self.rsp_probe_w.to(zh.dtype)
++        s = self.rsp_probe_s.to(zh.dtype)
++        end = zh[..., -1, :]                                                         # the K-step endpoint
++        g = ((end[0] - end[1]) @ w) / (2.0 * dlt[0] * s)                             # (B, A)
++        loss = (g - 1.0).pow(2).mean()
++        return {"loss": loss, "diag": {"rsp_g_aa": g.detach().mean(), "rsp_s_a": s.detach()}}
++
+     def states_per_level(self, n_frames: int) -> list:
+         """States per level for a window of ``n_frames`` level-1 frames, MEASURED by running :meth:`encode` on zeros."""
+         c1 = self.cfg[0]
+         with torch.no_grad():
+             dev = next(self.parameters()).device
+-            e = self.encode(torch.zeros(1, n_frames, c1.latent_dim, device=dev), torch.zeros(1, n_frames - 1, c1.action_dim, device=dev))
++            e = self.encode(torch.zeros(1, n_frames, c1.latent_dim, device=dev, dtype=next(self.parameters()).dtype), torch.zeros(1, n_frames - 1, c1.action_dim, device=dev, dtype=next(self.parameters()).dtype))
+         return [int(t.shape[1]) for t in e.z]
+ 
+     def built_rollout(self, n_frames: int, batch: int = 2) -> dict:
++        """PREREG_V8F_ACTRSP Amendment 2: the G-DVB reader of :meth:`_built_rollout`, run on a float64 COPY (as :meth:`built_rsp` is). On a TRAINED world model (a fine-tune start) the level losses are large and the float32 difference
++        ``level - other terms`` blurs the measured weight beyond the gate's 1e-4 (MEASURED on a 3-step synthetic checkpoint: level 3 read 0.99985 for a declared 1.0). A fresh init reads 1.0 either way."""
++        return copy.deepcopy(self).double()._built_rollout(n_frames, batch)
++
++    def _built_rollout(self, n_frames: int, batch: int = 2) -> dict:
+         """PREREG_V8F_LADDER, the G-DVB reader for the k-step lever: what the BUILT loss does, measured by running it. A forward hook counts the predictor calls made INSIDE :meth:`rollout` (a wrapper marks the
+         span) while :meth:`loss` runs once on noise for a window of ``n_frames`` frames, with the global RNG forked (the probe moves no training stream). Per level: ``k`` = predictor calls in the free run
+         (0 = no free-run term was built), ``anchors`` = the free run's anchor count, ``ctx_passed`` = the context handed to ``rollout``, ``ctx_built`` = ``predictor.pos`` rows (the BUILT parameter shape),
+@@ -917,8 +958,8 @@
+             with torch.no_grad(), torch.random.fork_rng(devices=[]):
+                 torch.manual_seed(0)
+                 dev = next(self.parameters()).device                         # drawn on the CPU and moved: fork_rng(devices=[]) forks only the CPU stream
+-                z1 = torch.randn(batch, n_frames, c1.latent_dim).to(dev)
+-                a = torch.randn(batch, n_frames - 1, c1.action_dim).to(dev)
++                z1 = torch.randn(batch, n_frames, c1.latent_dim).to(dev, next(self.parameters()).dtype)
++                a = torch.randn(batch, n_frames - 1, c1.action_dim).to(dev, next(self.parameters()).dtype)
+                 self.eval()
+                 out = self.loss(z1, a)
+         finally:
+@@ -970,6 +1011,10 @@
+                 other = other + c1.rollout_w * out["rollout/L1"]
+             res["w_in_loss_rsp"] = float((out["level/L1"] - other) / out["rsp/L1"])
+         res["rsp_term"] = None if "rsp/L1" not in out else float(out["rsp/L1"])
++        res["readout"] = c1.rsp_readout if "rsp/L1" in out else None                                # Amendment 2: what the BUILT loss read through
++        if c1.rsp_readout == "fixed_k" and hasattr(m, "rsp_probe_w"):
++            res["s_cal"] = float(m.rsp_probe_s)
++            res["w_sha256"] = hashlib.sha256(self.rsp_probe_w.detach().cpu().float().numpy().tobytes()).hexdigest()   # the SINGLE-precision weights of the live buffer (not the float64 copy)
+         return res
+ 
+     def goal_cost(self, z_pred: Tensor, goal: Tensor, level: int, last_k: Optional[int] = None) -> Tensor:
+--- a/stack/tanitad/models/v8f_mini.py
++++ b/stack/tanitad/models/v8f_mini.py
+@@ -27,6 +27,7 @@
+ from __future__ import annotations
+ 
+ import ast
++import hashlib
+ import inspect
+ import json
+ import math
+@@ -211,6 +212,10 @@
+     wm_gamma: float = 100.0
+     wm_gamma_levels: tuple = ()        # PREREG_V8F_ACTSENS (`--wm-idm-gamma G1 G2 G3`): the IDM weight of each WM level. () = (wm_gamma,) x 3 = every earlier arm, bit for bit (changes the loss weight only, never a parameter shape)
+     wm_rsp_w: float = 0.0              # PREREG_V8F_ACTRSP (`--wm-rsp-w`): the weight of the level-1 action-response term (HJEPAStack.response_loss). 0.0 = the term is NOT built = every earlier arm, bit for bit (no key, no op, no parameter); > 0 needs wm b and kin_mode yaw (the contrast sizes are WM units of the yaw-rate channel)
++    wm_rsp_readout: str = "idm"        # PREREG_V8F_ACTRSP Amendment 2 (`--wm-rsp-readout`): "idm" = the a13f6f16 term (default, bit for bit); "fixed_k" = Option B's frozen K-step linear readout, acceleration channel only (needs wm_rsp_w > 0, the probe, wm_freeze_proj "on")
++    wm_rsp_probe: str = ""             # Amendment 2 (`--wm-rsp-probe`): the path of the frozen readout file (readout_K10_R35_s{k}.pt); "" unless fixed_k
++    wm_rsp_probe_sha256: str = ""      # Amendment 2 (`--wm-rsp-probe-sha256`): the file's sha256; the build refuses a mismatch
++    wm_freeze_proj: str = "off"        # Amendment 2 (`--wm-freeze-proj`): "on" freezes `wm.proj` (the readout is valid in R35's latent space only; the trainer's `freeze_all_but_wm` reads it); "off" = every earlier arm
+     p_gt_start: float = 1.0
+     p_gt_end: float = 0.2
+     max_age_t: int = 2
+@@ -292,6 +297,19 @@
+             raise ValueError("wm_rsp_w > 0 needs wm b (the level-1 IDM head is the readout): a lever that is declared and builds nothing")
+         if wr > 0.0 and self.kin_mode != "yaw":
+             raise ValueError(f"wm_rsp_w > 0 needs kin_mode yaw (the contrast sizes are WM units of the yaw-rate channel), got {self.kin_mode!r}")
++        if self.wm_rsp_readout not in ("idm", "fixed_k"):                          # PREREG_V8F_ACTRSP Amendment 2
++            raise ValueError(f"wm_rsp_readout must be 'idm' or 'fixed_k', got {self.wm_rsp_readout!r}")
++        if self.wm_freeze_proj not in ("off", "on"):
++            raise ValueError(f"wm_freeze_proj must be 'off' or 'on', got {self.wm_freeze_proj!r}")
++        if self.wm_rsp_readout == "fixed_k":
++            if not wr > 0.0:
++                raise ValueError("wm_rsp_readout fixed_k needs wm_rsp_w > 0: a readout with no term is a lever that is declared and builds nothing")
++            if self.wm_freeze_proj != "on":
++                raise ValueError("wm_rsp_readout fixed_k needs wm_freeze_proj on: the readout is valid in the checkpoint's latent space only")
++            if not (self.wm_rsp_probe and len(self.wm_rsp_probe_sha256) == 64):
++                raise ValueError("wm_rsp_readout fixed_k needs wm_rsp_probe and a 64-hex wm_rsp_probe_sha256")
++        elif self.wm_rsp_probe or self.wm_rsp_probe_sha256:
++            raise ValueError("wm_rsp_probe / wm_rsp_probe_sha256 are named but wm_rsp_readout is not fixed_k: a lever that is declared and does nothing")
+         for nm in ("wm_rollout_k", "wm_rollout_stride", "wm_ctx"):               # PREREG_V8F_LADDER: three ints >= 1 (one per WM level)
+             v = getattr(self, nm)
+             if not (isinstance(v, (tuple, list)) and len(v) == 3 and all(isinstance(x, int) and not isinstance(x, bool) and x >= 1 for x in v)):
+@@ -686,6 +704,29 @@
+     return m
+ 
+ 
++def load_rsp_probe(path: str, sha256: str, dim: int):
++    """PREREG_V8F_ACTRSP Amendment 2: read the frozen K = 10 readout file of ``amend1_kstep.py`` (``readout_K10_R35_s{k}.pt``). REFUSES a file whose sha256 is not ``sha256``, whose K is not 10, or whose acceleration ridge (``RA``) does not
++    read a ``dim``-wide displacement to ONE channel. Returns ``(w, s_cal)``: ``w = RA.W[:, 0] / RA.sd`` (so ``(z+ - z-) @ w`` is the ridge's read difference of two endpoints; the mean and the anchor state cancel) and ``s_cal`` = the held-out
++    swap slope of the acceleration channel (``s_cal_swap_heldout[0]``), a pre-registered constant."""
++    h = hashlib.sha256()
++    with open(path, "rb") as fh:
++        for blk in iter(lambda: fh.read(1 << 20), b""):
++            h.update(blk)
++    if h.hexdigest() != sha256:
++        raise ValueError(f"wm_rsp_probe {path!r}: sha256 {h.hexdigest()} != the declared {sha256}")
++    ck = torch.load(path, map_location="cpu", weights_only=False)
++    if int(ck.get("K", -1)) != 10:
++        raise ValueError(f"wm_rsp_probe {path!r}: K = {ck.get('K')!r}, the term reads the K = 10 endpoint")
++    ra = ck["RA"]
++    W, sd = np.asarray(ra["W"], dtype=np.float64), np.asarray(ra["sd"], dtype=np.float64)
++    if W.shape != (dim, 1) or sd.shape != (dim,) or not (np.isfinite(W).all() and np.isfinite(sd).all() and (sd > 0).all()):
++        raise ValueError(f"wm_rsp_probe {path!r}: RA.W {W.shape} / RA.sd {sd.shape}, need ({dim}, 1) / ({dim},), finite, sd > 0")
++    s_cal = float(ck["s_cal_swap_heldout"][0])
++    if not (math.isfinite(s_cal) and s_cal > 0.0):
++        raise ValueError(f"wm_rsp_probe {path!r}: s_cal {s_cal!r} must be a finite number > 0")
++    return torch.tensor(W[:, 0] / sd, dtype=torch.float32), s_cal
++
++
+ class WMAux(nn.Module):
+     """M2: the H-JEPA world-model auxiliary (``tanitad.models.hjepa``), levels z1 / z2 / z3 on the O / T / S cycles
+     (0.2 s / 0.4 s / 0.8 s on the cache grid -- the nearest multiples to 0.1 / 0.5 / 1.0 s). a = without IDM
+@@ -706,10 +747,12 @@
+         K = int(cfg.wm_k)
+         up = lambda i: dict(window=K, dilation=cfg.wm_strides[i], causal_pad=True) if K > 1 else {}      # K = 1: LevelConfig's defaults, i.e. the earlier build
+         lad = lambda i: dict(context=int(cfg.wm_ctx[i]), rollout_k=int(cfg.wm_rollout_k[i]), rollout_stride=int(cfg.wm_rollout_stride[i]), rollout_w=float(cfg.wm_rollout_w))   # noqa: E731  PREREG_V8F_LADDER: (3, 3, 3) / (1, 1, 1) = LevelConfig's defaults, i.e. the earlier build
+-        lv = [mk(gl[0], action_dim=2, act_embed_dim=32, **lad(0), **(dict(rsp_w=float(cfg.wm_rsp_w), rsp_delta=RSP_DELTA) if float(cfg.wm_rsp_w) > 0.0 else {})),   # PREREG_V8F_ACTRSP: level 1 only; absent = LevelConfig's rsp_w 0.0
++        lv = [mk(gl[0], action_dim=2, act_embed_dim=32, **lad(0), **(dict(rsp_w=float(cfg.wm_rsp_w), rsp_delta=RSP_DELTA, **({"rsp_readout": "fixed_k"} if cfg.wm_rsp_readout == "fixed_k" else {})) if float(cfg.wm_rsp_w) > 0.0 else {})),   # PREREG_V8F_ACTRSP: level 1 only; absent = LevelConfig's rsp_w 0.0
+ 
+               mk(gl[1], action_dim=32, stride=cfg.wm_strides[0], **up(0), **lad(1)), mk(gl[2], action_dim=32, stride=cfg.wm_strides[1], **up(1), **lad(2))]
+         self.stack = HJEPAStack(lv, sigreg_projections=256)
++        if cfg.wm_rsp_readout == "fixed_k":                                          # Amendment 2: the frozen readout, loaded after every parameter-bearing module of the stack exists (no random draw: the WM init does not move)
++            self.stack.set_rsp_probe(*load_rsp_probe(cfg.wm_rsp_probe, cfg.wm_rsp_probe_sha256, cfg.wm_dim))
+         self.proj = nn.Sequential(nn.LayerNorm(cfg.d), nn.Linear(cfg.d, cfg.wm_dim))
+         self.gamma = gamma
+         self.ch1_scale = CH1_SCALE[cfg.kin_mode]
+--- a/stack/scripts/v8f_mini_train.py
++++ b/stack/scripts/v8f_mini_train.py
+@@ -127,6 +127,9 @@
+     # PREREG_V8F_ACTRSP: `lever:wm_rsp_w` = the weight the BUILT loss really gives the level-1 action-response term (WMAux.built_rsp: the loss run once on noise, (level/L1 - every other level-1 term) / rsp/L1, never the config that built it) AND the term's
+     # own geometry read off its rollout call (anchors, K, contrasts, context) AND HJEPAStack.built_levers()[1]["rsp_w"] -> bad_wm_rsp -> `selfcheck.json levers.wm_rsp_readback` (written when the argv NAMES the flag).
+     "wm_rsp_w": "lever:wm_rsp_w",
++    # PREREG_V8F_ACTRSP Amendment 2 (Option B): `lever:wm_rsp_readout` (also `wm_rsp_probe`, `wm_rsp_probe_sha256`) = the readout the BUILT loss reads through (HJEPAStack.built_levers()[1]["rsp_readout"] and WMAux.built_rsp: readout, contrast count 2, s_cal, the sha256 of the live probe weights, each compared with the probe FILE re-read here) -> bad_wm_rsp; `lever:wm_init_from_ckpt_wm` = the loader record (every wm.* tensor loaded, read back equal) -> bad_wm_only; `lever:wm_freeze_proj` = requires_grad of wm.proj.* read back from the BUILT model -> bad_wm_freeze.
++    "wm_rsp_readout": "lever:wm_rsp_readout", "wm_rsp_probe": "lever:wm_rsp_readout", "wm_rsp_probe_sha256": "lever:wm_rsp_readout",
++    "wm_init_from_ckpt_wm": "lever:wm_init_from_ckpt_wm", "wm_freeze_proj": "lever:wm_freeze_proj",
+     # PREREG_V8F_LADDER: `lever:wm_rollout_k` = the predictor calls the BUILT loss makes inside HJEPAStack.rollout, per level (WMAux.built_ladder: a forward-hook count while the loss runs, never the config that built it);
+     # `lever:wm_rollout_stride` = the free run's anchor count the built loss produces; `lever:wm_rollout_w` = (level loss - its other terms) / the k-step term; `lever:wm_ctx` = the predictor's parameter-shape context (pos.shape[0])
+     # AND the context the free run is handed; `data:wm_windows` = the kind, F, first t and pooled flag READ BACK from the BUILT dataset (data_info["wm_windows"]) -> bad_wm_ladder.
+@@ -338,6 +341,14 @@
+     ap.add_argument("--wm-rsp-w", dest="wm_rsp_w", type=float, default=0.0,
+                     help="PREREG_V8F_ACTRSP: the weight of the level-1 action-response term (the WM's answer to +/- one sd of each action channel, read through the level-1 IDM head and matched to the identity gain). Default 0.0 = the term is not built = every earlier "
+                          "arm, bit for bit (no key, no op, no parameter). The card fixes 1.0. Needs --wm b, --kin-mode yaw and --wm-only. Read back from the BUILT loss (HJEPAStack.built_rsp), not from the config")
++    ap.add_argument("--wm-rsp-readout", dest="wm_rsp_readout", choices=("idm", "fixed_k"), default="idm",
++                    help="PREREG_V8F_ACTRSP Amendment 2: the readout of the response term. idm (default) = the a13f6f16 term, bit for bit. fixed_k = Option B: a FROZEN linear readout of the K = 10 endpoint, acceleration channel only, two contrasts, a constant slope. Needs --wm-rsp-w > 0, --wm-rsp-probe, --wm-rsp-probe-sha256 and --wm-freeze-proj on")
++    ap.add_argument("--wm-rsp-probe", dest="wm_rsp_probe", default="", help="Amendment 2: the readout file (readout_K10_R35_s{k}.pt of amend1_kstep.py). Only with --wm-rsp-readout fixed_k")
++    ap.add_argument("--wm-rsp-probe-sha256", dest="wm_rsp_probe_sha256", default="", help="Amendment 2: the readout file sha256 (64 hex); the build refuses a mismatch")
++    ap.add_argument("--wm-init-from-ckpt-wm", dest="wm_init_from_ckpt_wm", choices=("off", "on"), default="off",
++                    help="Amendment 2: on = the WM-only start loads EVERY tensor of --init-ckpt including wm.* (a fine-tune of the checkpoint world model); off (default) = the WM is re-initialised under --seed (every earlier WM-only arm). Needs --wm-only and --init-ckpt")
++    ap.add_argument("--wm-freeze-proj", dest="wm_freeze_proj", choices=("off", "on"), default="off",
++                    help="Amendment 2: on = wm.proj (LayerNorm + Linear, adapter -> level-1 latent) is frozen, so the latent space the frozen readout lives in cannot move. Needs --wm-only. Default off = every earlier arm")
+     ap.add_argument("--wm-rollout-k", dest="wm_rollout_k", type=int, nargs=3, default=None, metavar=("K1", "K2", "K3"),
+                     help="PREREG_V8F_LADDER: free-run steps of the k-step loss per WM level (through HJEPAStack.rollout, on top of the teacher-forced one-step loss). Absent = (1, 1, 1) = every earlier arm, bit for bit. "
+                          "A level with k > 1 needs hmax >= k x (its cumulative stride) + 1 frames. Needs --wm a|b")
+@@ -428,6 +439,7 @@
+     return M.V8FMiniConfig(d=a.d, ff=2 * a.d, hist=a.hist, hmax=hmax, window_start=a.window_start, n_q=a.n_q, nb=a.nb, navonly=lv["navonly"],
+                            wm_strides=declared_wm_strides(a),                                             # PREREG_V8F_LFS: the ONE line that applies --wm-strides (a mutation deletes it)
+                            wm_gamma_levels=declared_wm_idm_gamma(a),                                      # PREREG_V8F_ACTSENS: the ONE line that applies --wm-idm-gamma (mutation M1 deletes it)
++                           wm_rsp_readout=a.wm_rsp_readout, wm_rsp_probe=a.wm_rsp_probe, wm_rsp_probe_sha256=a.wm_rsp_probe_sha256, wm_freeze_proj=a.wm_freeze_proj,   # Amendment 2: the line that applies the Option B flags (MR11-MR13 unwire them)
+                            wm_rsp_w=float(a.wm_rsp_w),                                                    # PREREG_V8F_ACTRSP: the ONE line that applies --wm-rsp-w (mutation MR1 deletes it)
+                            consistency=lv["consistency"], wm=lv["wm"], n_tok=40 if a.grid == "pool4x10" else 160,
+                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
+@@ -822,10 +834,14 @@
+     return name.startswith("wm.")
+ 
+ 
+-def freeze_all_but_wm(model) -> None:
+-    """PREREG_V8F_MRATE: the WM-only mode trains the world model and nothing else. Called BEFORE the optimiser is built (its decay / nodecay lists filter on requires_grad)."""
++def is_wm_proj_param(name: str) -> bool:
++    return name.startswith("wm.proj.")
++
++
++def freeze_all_but_wm(model, freeze_proj: bool = False) -> None:
++    """PREREG_V8F_MRATE: the WM-only mode trains the world model and nothing else. Called BEFORE the optimiser is built (its decay / nodecay lists filter on requires_grad). ``freeze_proj`` (Amendment 2, ``--wm-freeze-proj on``): ``wm.proj`` stays frozen too."""
+     for n, p in model.named_parameters():
+-        p.requires_grad_(is_wm_param(n))
++        p.requires_grad_(is_wm_param(n) and not (freeze_proj and is_wm_proj_param(n)))
+ 
+ 
+ #: the INIT_CKPT_MATCH keys a WM-ONLY start does not compare: ``hmax`` (it only sizes the WM sequence: M2b 16, MRATE 28) and, PREREG_V8F_LFS, ``wm_strides`` (the WM is re-initialised, none of the checkpoint's WM tensors is loaded, and
+@@ -833,7 +849,7 @@
+ WM_ONLY_NOT_COMPARED = ("hmax", "wm_strides")
+ 
+ 
+-def load_wm_only_init(path, model, cfg, seed: int, apply: bool = True) -> dict:
++def load_wm_only_init(path, model, cfg, seed: int, apply: bool = True, init_wm: bool = False) -> dict:
+     """Start state of a WM-only run (PREREG_V8F_MRATE, the Master Mind's reading of 2026-11-07 13:09). Hash the file; REFUSE a checkpoint whose architecture config differs from the BUILT one in any ``INIT_CKPT_MATCH`` key EXCEPT
+     ``hmax`` (M2b trained at 16, this arm at 28: hmax only sizes the WM sequence); then, if ``apply``, load EVERY non-``wm.`` tensor strictly (the missing keys are exactly the model's ``wm.*`` keys, nothing is unexpected), READ THEM BACK
+     (``n_mismatch_after_load``), and replace the world model by a FRESH ``WMAux`` built right after ``torch.manual_seed(seed)`` (none of the checkpoint's WM tensors is loaded; ``wm_params_equal_to_ckpt`` counts the shape-matching float
+@@ -846,16 +862,29 @@
+     if not isinstance(ck, dict) or "model" not in ck or not isinstance(ck.get("cfg"), dict):
+         raise ValueError("not a v8f_mini_train checkpoint (no 'model' / 'cfg')")
+     norm = lambda v: tuple(v) if isinstance(v, (list, tuple)) else v          # noqa: E731
+-    diff = {k: (norm(ck["cfg"][k]), norm(getattr(cfg, k))) for k in INIT_CKPT_MATCH if k not in WM_ONLY_NOT_COMPARED and k in ck["cfg"] and norm(ck["cfg"][k]) != norm(getattr(cfg, k))}
++    skip = ("hmax",) if init_wm else WM_ONLY_NOT_COMPARED                      # Amendment 2: a fine-tune of the checkpoint's own WM compares its strides too (only hmax, which only sizes the sequence, is exempt)
++    diff = {k: (norm(ck["cfg"][k]), norm(getattr(cfg, k))) for k in INIT_CKPT_MATCH if k not in skip and k in ck["cfg"] and norm(ck["cfg"][k]) != norm(getattr(cfg, k))}
+     if diff:
+-        raise ValueError("config mismatch between the checkpoint and the model this argv builds (checkpoint vs built; " + " and ".join(WM_ONLY_NOT_COMPARED) + " are not compared): " + "; ".join(f"{k}: {v[0]!r} != {v[1]!r}" for k, v in sorted(diff.items())))
++        raise ValueError("config mismatch between the checkpoint and the model this argv builds (checkpoint vs built; " + " and ".join(skip) + " are not compared): " + "; ".join(f"{k}: {v[0]!r} != {v[1]!r}" for k, v in sorted(diff.items())))
+     sd = ck["model"]
+     rec = {"path": os.path.abspath(path), "sha256": h.hexdigest(), "applied": bool(apply), "skipped": None if apply else "resume", "n_tensors": len(sd), "n_mismatch_after_load": None,
+-           "source_step": ck.get("step"), "source_arm": ck.get("arm"), "source_seed": ck.get("seed"), "source_argv_sha": ck.get("argv_sha"), "mode": "wm_only",
++           "source_step": ck.get("step"), "source_arm": ck.get("arm"), "source_seed": ck.get("seed"), "source_argv_sha": ck.get("argv_sha"), "mode": "wm_only_init_wm" if init_wm else "wm_only", "init_wm": bool(init_wm),
+            "hmax_ckpt": ck["cfg"].get("hmax"), "hmax_built": cfg.hmax, "wm_strides_ckpt": norm(ck["cfg"].get("wm_strides")), "wm_strides_built": norm(cfg.wm_strides),      # PREREG_V8F_LFS: the WM is fresh, so its strides are the argv's
+            "wm_loaded_from_ckpt": 0, "wm_reinit_seed": None, "wm_params_equal_to_ckpt": None}
+     if not apply:
+         return rec
++    if init_wm:                                                                # Amendment 2: EVERY tensor of the checkpoint, wm.* included, strictly; read back
++        res = model.load_state_dict(sd, strict=False)
++        if res.unexpected_keys or res.missing_keys:
++            raise ValueError(f"--wm-init-from-ckpt-wm: the checkpoint and the built model disagree on keys: missing {sorted(res.missing_keys)[:6]}, unexpected {sorted(res.unexpected_keys)[:6]}")
++        cur = model.state_dict()
++        rec["n_mismatch_after_load"] = sum(1 for k in sd if not torch.equal(cur[k].detach().cpu(), sd[k].detach().cpu()))
++        old = {k: v for k, v in sd.items() if is_wm_param(k)}
++        rec["wm_loaded_from_ckpt"] = len(old)
++        rec["wm_params_equal_to_ckpt"] = sum(1 for n, q in cur.items() if is_wm_param(n) and n in old and torch.equal(old[n].detach().cpu(), q.detach().cpu()))     # state-dict keys (parameters AND buffers)
++        rec["n_wm_params"] = sum(1 for n in cur if is_wm_param(n))
++        rec["proj_sha256"] = hashlib.sha256(b"".join(sd[k].detach().cpu().contiguous().numpy().tobytes() for k in sorted(sd) if is_wm_proj_param(k))).hexdigest()
++        return rec
+     rest = {k: v for k, v in sd.items() if not is_wm_param(k)}
+     res = model.load_state_dict(rest, strict=False)
+     wm_keys = sorted(k for k in model.state_dict() if is_wm_param(k))
+@@ -909,10 +938,22 @@
+     if a.arm != "M2b":
+         bad.append(f"wm_only: arm {a.arm} (the card trains the world model of M2b)")
+     names = [n for n, p in model.named_parameters() if p.requires_grad]
+-    wm_names = [n for n, _ in model.named_parameters() if is_wm_param(n)]
++    wm_names = [n for n, _ in model.named_parameters() if is_wm_param(n) and not (a.wm_freeze_proj == "on" and is_wm_proj_param(n))]      # Amendment 2: --wm-freeze-proj on removes wm.proj from the trainable set
+     if not wm_names or sorted(names) != sorted(wm_names):
+         bad.append(f"wm_only: trainable parameters are not exactly the WM's ({len(names)} trainable, {len(wm_names)} WM; stray: {sorted(set(names) - set(wm_names))[:4]})")
+-    if rec.get("applied"):
++    if bool(rec.get("init_wm")) != (a.wm_init_from_ckpt_wm == "on"):
++        bad.append(f"lever wm_init_from_ckpt_wm: declared {a.wm_init_from_ckpt_wm} but the loader record says init_wm {rec.get('init_wm')!r}")
++    if rec.get("applied") and a.wm_init_from_ckpt_wm == "on":          # Amendment 2: a fine-tune: every tensor loaded and read back equal, no WM re-initialisation
++        n_wm = sum(1 for n in model.state_dict() if is_wm_param(n))
++        if rec.get("n_mismatch_after_load") != 0:
++            bad.append(f"lever wm_init_from_ckpt_wm: after the load {rec.get('n_mismatch_after_load')} of {rec.get('n_tensors')} tensors differ from the checkpoint's")
++        if not (rec.get("wm_loaded_from_ckpt") == n_wm and rec.get("wm_params_equal_to_ckpt") == n_wm and n_wm > 0):
++            bad.append(f"lever wm_init_from_ckpt_wm: {rec.get('wm_loaded_from_ckpt')} WM tensors loaded and {rec.get('wm_params_equal_to_ckpt')} equal the checkpoint's, the built WM has {n_wm} parameters")
++        if rec.get("wm_reinit_seed") is not None:
++            bad.append("lever wm_init_from_ckpt_wm: on, but the WM was re-initialised under a seed")
++        if rec.get("mode") != "wm_only_init_wm":
++            bad.append(f"lever wm_init_from_ckpt_wm: the start state was loaded in mode {rec.get('mode')!r}")
++    elif rec.get("applied"):
+         if rec.get("wm_loaded_from_ckpt") != 0:
+             bad.append(f"wm_only: {rec.get('wm_loaded_from_ckpt')} world-model tensors were loaded from the checkpoint (the card re-initialises the WM)")
+         if rec.get("wm_reinit_seed") != a.seed:
+@@ -1553,7 +1594,10 @@
+     """PREREG_V8F_ACTRSP: the record ``selfcheck.json`` carries (``levers.wm_rsp_readback``) when the argv NAMES ``--wm-rsp-w``: the weight the argv DECLARED, the BUILT LevelConfig's, and what the BUILT loss measures (``WMAux.built_rsp``)."""
+     st = model.wm.stack if model.wm is not None else None
+     return {"declared": float(a.wm_rsp_w), "built_config": None if st is None else float(st.built_levers()[1].get("rsp_w", 0.0)),
+-            "built": None if model.wm is None else model.wm.built_rsp(cfg.hmax), "hmax": cfg.hmax}
++            "built": None if model.wm is None else model.wm.built_rsp(cfg.hmax), "hmax": cfg.hmax,
++            "declared_readout": a.wm_rsp_readout, "built_readout": None if st is None else st.built_levers()[1].get("rsp_readout", "idm"),
++            "freeze_proj_declared": a.wm_freeze_proj, "wm_proj_requires_grad": sorted({bool(p.requires_grad) for n, p in model.named_parameters() if is_wm_proj_param(n)}),
++            "init_from_ckpt_wm_declared": a.wm_init_from_ckpt_wm}
+ 
+ 
+ def bad_wm_rsp(a, cfg, model) -> list:
+@@ -1572,8 +1616,22 @@
+             bad.append(f"lever wm_rsp_w: --wm-rsp-w {w} needs --kin-mode yaw (got {a.kin_mode}): the contrast sizes are WM units of the yaw-rate channel")
+         if not a.wm_only:
+             bad.append(f"lever wm_rsp_w: --wm-rsp-w {w} needs --wm-only (the term is a world-model objective on the frozen adapter)")
++    ro = a.wm_rsp_readout                                                       # Amendment 2: the Option B flags are refused when they would do nothing
++    if ro == "fixed_k":
++        if not w > 0.0:
++            bad.append("lever wm_rsp_readout: fixed_k needs --wm-rsp-w > 0 (a readout with no term builds nothing)")
++        if a.wm_freeze_proj != "on":
++            bad.append("lever wm_rsp_readout: fixed_k needs --wm-freeze-proj on (the readout is valid in the checkpoint latent space only)")
++        if a.wm_init_from_ckpt_wm != "on":
++            bad.append("lever wm_rsp_readout: fixed_k needs --wm-init-from-ckpt-wm on (the readout is valid for the checkpoint world model, not a re-initialised one)")
++        if not (a.wm_rsp_probe and len(a.wm_rsp_probe_sha256) == 64):
++            bad.append("lever wm_rsp_readout: fixed_k needs --wm-rsp-probe and a 64-hex --wm-rsp-probe-sha256")
++    elif a.wm_rsp_probe or a.wm_rsp_probe_sha256:
++        bad.append("lever wm_rsp_readout: --wm-rsp-probe / --wm-rsp-probe-sha256 are named but the readout is idm: a lever that is declared and does nothing")
+     if lv["wm"] == "off" or model.wm is None:
+         return bad
++    if cfg.wm_rsp_readout != ro:
++        bad.append(f"lever wm_rsp_readout: declared {ro} but the built config holds {cfg.wm_rsp_readout}")
+     levers = model.wm.stack.built_levers()
+     row = levers[1]
+     if abs(float(cfg.wm_rsp_w) - w) > 1e-12:
+@@ -1589,9 +1647,49 @@
+     if not (isinstance(got, float) and got == got and abs(got - w) <= 1e-6 * max(1.0, abs(w))):
+         bad.append(f"lever wm_rsp_w: declared {w} but the BUILT loss gives the response term the weight {got!r} (measured: (level/L1 - every other level-1 term) / rsp/L1)")
+     anchors = len(range(0, cfg.hmax - 10, 10))
+-    for k, want in (("calls", 1), ("contrasts", 4), ("k", 10), ("ctx_passed", 1), ("anchors", anchors)):
++    for k, want in (("calls", 1), ("contrasts", 2 if ro == "fixed_k" else 4), ("k", 10), ("ctx_passed", 1), ("anchors", anchors)):
+         if r.get(k) != want:
+-            bad.append(f"lever wm_rsp_w: the BUILT term's {k} = {r.get(k)!r}, the card fixes {want} (hmax {cfg.hmax})")
++            bad.append(f"lever wm_rsp_w: the BUILT term's {k} = {r.get(k)!r}, the card fixes {want} (hmax {cfg.hmax}, readout {ro})")
++    built_ro = row.get("rsp_readout", "idm")
++    if built_ro != ro or r.get("readout") != ro:
++        bad.append(f"lever wm_rsp_readout: declared {ro} but the BUILT LevelConfig holds {built_ro!r} and the BUILT loss reads through {r.get('readout')!r}")
++    if ro == "fixed_k":                                                         # the live buffers equal the FILE the argv names (re-read here, sha256 checked by the loader)
++        try:
++            w_file, s_file = M.load_rsp_probe(a.wm_rsp_probe, a.wm_rsp_probe_sha256, cfg.wm_dim)
++        except Exception as e:                                                  # noqa: BLE001
++            return bad + [f"lever wm_rsp_readout: the probe file does not load: {type(e).__name__}: {str(e)[:300]}"]
++        if r.get("w_sha256") != hashlib.sha256(w_file.numpy().tobytes()).hexdigest():
++            bad.append("lever wm_rsp_readout: the BUILT readout weights are not the probe file's")
++        if not (isinstance(r.get("s_cal"), float) and abs(r["s_cal"] - s_file) <= 1e-12):
++            bad.append(f"lever wm_rsp_readout: the BUILT slope {r.get('s_cal')!r} is not the probe file's {s_file!r}")
++    return bad
++
++
++def bad_wm_freeze(a, cfg, model, data_info) -> list:
++    """PREREG_V8F_ACTRSP Amendment 2, G-DVB for ``--wm-freeze-proj``: read the frozen set back from the BUILT model's ``requires_grad``. ``on``: needs ``--wm-only``; every ``wm.proj.*`` tensor is frozen and every other ``wm.*`` tensor trains; with
++    ``--wm-init-from-ckpt-wm on`` the live ``wm.proj`` equals the checkpoint's (sha256 of the loader record). ``off``: no ``wm.proj`` tensor is frozen."""
++    bad = []
++    on = a.wm_freeze_proj == "on"
++    if on and not a.wm_only:
++        bad.append("lever wm_freeze_proj: on needs --wm-only: a lever that is declared and does nothing")
++    if model.wm is None:
++        return bad
++    proj = [(n, p) for n, p in model.named_parameters() if is_wm_proj_param(n)]
++    if not proj:
++        return bad + (["lever wm_freeze_proj: the built model has no wm.proj parameter"] if on else [])
++    for n, p in proj:
++        if p.requires_grad == on:
++            bad.append(f"lever wm_freeze_proj: declared {a.wm_freeze_proj} but {n} requires_grad is {p.requires_grad}")
++    if on and a.wm_only:
++        stray = [n for n, p in model.named_parameters() if is_wm_param(n) and not is_wm_proj_param(n) and not p.requires_grad]
++        if stray:
++            bad.append(f"lever wm_freeze_proj: WM tensors other than wm.proj are frozen: {stray[:4]}")
++        rec = (data_info or {}).get("wm_only") or {}
++        if rec.get("applied") and rec.get("proj_sha256"):
++            sd = model.state_dict()
++            now = hashlib.sha256(b"".join(sd[k].detach().cpu().contiguous().numpy().tobytes() for k in sorted(sd) if is_wm_proj_param(k))).hexdigest()
++            if now != rec["proj_sha256"]:
++                bad.append("lever wm_freeze_proj: the live wm.proj is not the checkpoint's")
+     return bad
+ 
+ 
+@@ -1606,6 +1704,7 @@
+     bad += bad_wm_ladder(a, cfg, model, data_info)                                               # PREREG_V8F_LADDER: the seven ladder flags read back from the BUILT loss / predictor shapes / dataset
+     bad += bad_wm_strides(a, cfg, model)                                                         # PREREG_V8F_LFS: --wm-strides read back from the BUILT WM modules (and the >= 2 transitions per level rule)
+     bad += bad_wm_idm_gamma(a, cfg, model)                                                       # PREREG_V8F_ACTSENS: --wm-idm-gamma read back from the BUILT LevelConfigs (HJEPAStack.built_levers)
++    bad += bad_wm_freeze(a, cfg, model, data_info)                                              # PREREG_V8F_ACTRSP Amendment 2: --wm-freeze-proj read back from requires_grad
+     bad += bad_wm_rsp(a, cfg, model)                                                             # PREREG_V8F_ACTRSP: --wm-rsp-w read back from the BUILT loss (HJEPAStack.built_rsp) and the BUILT LevelConfig
+     bad += bad_wm_sampler(a, cfg, model, data_info)                                              # PREREG_V8F_DIVRS: --wm-sampler read back from the BUILT sampler (edges, cap, cell table)
+     bad += bad_lead(a, model, data_info)                                                         # PREREG_LEVELHEAD_A2: --lead-head / --w-lead / --aux-cond read back from the BUILT model and the built label arrays
+@@ -3242,13 +3341,13 @@
+         try:
+             _apply = not (os.path.exists(os.path.join(a.out, "ckpt_last.pt")) and not a.no_resume)
+             if a.wm_only:                                            # PREREG_V8F_MRATE: the non-WM tensors load strictly and bit-equal, hmax is not compared, the WM is re-initialised under --seed
+-                info["init_ckpt"] = info["wm_only"] = load_wm_only_init(a.init_ckpt, model, cfg, a.seed, apply=_apply)
++                info["init_ckpt"] = info["wm_only"] = load_wm_only_init(a.init_ckpt, model, cfg, a.seed, apply=_apply, init_wm=(a.wm_init_from_ckpt_wm == "on"))
+             else:
+                 info["init_ckpt"] = load_init_ckpt(a.init_ckpt, model, cfg, apply=_apply)
+         except Exception as e:                                       # noqa: BLE001  a missing / foreign / mismatched checkpoint is a REFUSAL, not a crash
+             raise SystemExit(f"ZZDVB-REFUSEDZZ init-ckpt {a.init_ckpt}: {type(e).__name__}: {str(e)[:600]}")
+     if a.wm_only:
+-        freeze_all_but_wm(model)                                     # PREREG_V8F_MRATE: BEFORE the optimiser below (its decay / nodecay lists filter on requires_grad); bad_wm_only reads the frozen set back
++        freeze_all_but_wm(model, a.wm_freeze_proj == "on")          # PREREG_V8F_MRATE (Amendment 2: + wm.proj when --wm-freeze-proj on): BEFORE the optimiser below (its decay / nodecay lists filter on requires_grad); bad_wm_only reads the frozen set back
+     dag = make_dagger(a, J, wins, clips, info)                       # PREREG_V8F_DAGGER: off by default (no bank read); with a bank: load + K-B2 + K-B3 + COVERAGE here, a refusal stops the launch before the gate
+     rcv = make_recover(a, J, wins, store, clips, info)               # PREREG_RECOVER_FT: off by default (--recover-p 0: no bank read, no table built); with the empirical law: bank load + K-B3 + the deviation table from THIS trainer's TRAIN store here, a refusal stops the launch before the gate
+     t2b = make_t2bank(a, info)                                       # PREREG_T2_DAGGER: off by default (--t2-bank-p 0: no bank read); with a bank: load + sha256 here, a refusal stops the launch before the gate
+@@ -3393,7 +3492,7 @@
+         levers["wm_strides_readback"] = wm_strides_readback(a, cfg, model)
+     if a.wm_idm_gamma is not None:                                       # PREREG_V8F_ACTSENS: lever-NAMED launches only: declared vs the BUILT per-level IDM weights
+         levers["wm_idm_gamma_readback"] = wm_idm_gamma_readback(a, cfg, model)
+-    if a.wm_rsp_w != 0.0:                                                # PREREG_V8F_ACTRSP: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT weight and geometry
++    if a.wm_rsp_w != 0.0 or a.wm_freeze_proj != "off" or a.wm_init_from_ckpt_wm != "off":   # Amendment 2: the NULL arms name freeze / init without the term and carry the record too. PREREG_V8F_ACTRSP: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT weight and geometry
+         levers["wm_rsp_readback"] = wm_rsp_readback(a, cfg, model)
+     if wm_ladder_named(a):                                              # PREREG_V8F_LADDER: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT measurements
+         levers["wm_ladder_readback"] = wm_ladder_readback(a, cfg, model, info)
+--- /dev/null
++++ b/stack/tests/test_v8f_optb.py
+@@ -0,0 +1,331 @@
++"""PREREG_V8F_ACTRSP Amendment 2 (Option B): ``--wm-rsp-readout fixed_k``, ``--wm-rsp-probe(-sha256)``, ``--wm-init-from-ckpt-wm``, ``--wm-freeze-proj``.
++
++Reachability from the caller (argparse -> make_config -> V8FMiniConfig -> WMAux -> HJEPAStack.response_loss -> backward) is asserted by the trainer's own gate on the synthetic recipe; C9' is the analytic identity in float64.
++Every check has a deliberate-regression mutation (``mutate_optb.py``) that must turn the named test RED while the controls stay green.
++"""
++from __future__ import annotations
++
++import dataclasses
++import hashlib
++import json
++import sys
++from pathlib import Path
++
++import numpy as np
++import pytest
++import torch
++from torch import nn
++
++REPO = Path(__file__).resolve().parents[2]
++for p in (REPO / "stack", REPO / "taniteval", REPO / "stack" / "scripts"):
++    if str(p) not in sys.path:
++        sys.path.insert(0, str(p))
++from tanitad.models import hjepa as H  # noqa: E402
++from tanitad.models import v8f_mini as M  # noqa: E402
++import v8f_mini_train as TR  # noqa: E402
++
++torch.set_num_threads(1)
++BASE = ["--synthetic", "--batch", "16", "--d", "32", "--n-q", "2", "--kin-mode", "yaw", "--seed", "5", "--arm", "M2b", "--threads", "1", "--warmup", "2"]
++WMD = M.V8FMiniConfig.__dataclass_fields__["wm_dim"].default
++
++
++def write_probe(path: Path, seed=0, s=0.2, dim=WMD, k=10):
++    g = np.random.RandomState(seed)
++    torch.save({"tag": "T", "K": k, "lambda": 1.0, "RA": {"mu": g.randn(dim), "sd": np.abs(g.randn(dim)) + 0.5, "W": g.randn(dim, 1) * 0.1, "ym": np.zeros(1)}, "s_cal_swap_heldout": [s, 0.04]}, path)
++    return hashlib.sha256(path.read_bytes()).hexdigest()
++
++
++def cfg_of(**kw):
++    return M.V8FMiniConfig(d=32, ff=64, heads=4, n_q=2, depth_s=1, depth_t=1, depth_o=1, nb=6, wm="b", hmax=kw.pop("hmax", 28), kin_mode="yaw", **kw)
++
++
++@pytest.fixture(scope="module")
++def probe(tmp_path_factory):
++    f = tmp_path_factory.mktemp("optb_probe") / "readout.pt"
++    return {"path": str(f), "sha": write_probe(f)}
++
++
++def fk(probe, **kw):
++    return cfg_of(wm_rsp_w=1.0, wm_rsp_readout="fixed_k", wm_rsp_probe=probe["path"], wm_rsp_probe_sha256=probe["sha"], wm_freeze_proj="on", **kw)
++
++
++def build(cfg, seed=0):
++    torch.manual_seed(seed)
++    return M.WMAux(cfg)
++
++
++# ------------------------------------------------------------------------------------------------ defaults: every new flag is the a13f6f16 build when absent
++def test_off_defaults_are_the_earlier_build():
++    d = TR.build_parser()
++    assert (d.get_default("wm_rsp_readout"), d.get_default("wm_rsp_probe"), d.get_default("wm_rsp_probe_sha256"), d.get_default("wm_init_from_ckpt_wm"), d.get_default("wm_freeze_proj"), d.get_default("wm_rsp_w")) == ("idm", "", "", "off", "off", 0.0)
++    c = cfg_of()
++    assert (c.wm_rsp_readout, c.wm_rsp_probe, c.wm_rsp_probe_sha256, c.wm_freeze_proj) == ("idm", "", "", "off")
++    for f in ("wm_rsp_readout", "wm_rsp_probe", "wm_rsp_probe_sha256", "wm_init_from_ckpt_wm", "wm_freeze_proj"):
++        assert f in TR.FLAG_CHECKS
++
++
++def test_off_state_dict_keys_and_losses_equal_with_and_without_the_probe_buffers(probe):
++    a, b = build(cfg_of()), build(fk(probe))
++    assert list(a.state_dict()) == list(b.state_dict())                                          # the probe is a non-persistent buffer: no key, no parameter
++    assert all(torch.equal(a.state_dict()[k], b.state_dict()[k]) for k in a.state_dict())       # the WM init did not move
++    assert not any("rsp" in k for k in a.stack.built_levers()[1])
++
++
++# ------------------------------------------------------------------------------------------------ gradient reach, term alone, and its zero control
++def gsum(wm, prefix):
++    return sum(float(p.grad.abs().sum()) for n, p in wm.named_parameters() if n.startswith(prefix) and p.grad is not None)
++
++
++def term_grad(c):
++    wm = build(c)
++    g = torch.Generator().manual_seed(3)
++    am = torch.randn(2, c.hmax, c.d, generator=g, requires_grad=True)
++    act = torch.randn(2, c.hmax, 2, generator=g)
++    out = wm.forward_mean(am, act)
++    if "rsp/L1" in out:
++        (c.wm_rsp_w * out["rsp/L1"]).backward()
++    return wm, out, am
++
++
++def test_gradient_reaches_predictor_and_act_embed_and_exact_zero_elsewhere(probe):
++    wm, out, am = term_grad(fk(probe))
++    assert gsum(wm, "stack.predictors.0.") > 0.0 and gsum(wm, "stack.act_embed.") > 0.0
++    for pre in ("stack.idm_heads.", "proj.", "stack.predictors.1.", "stack.predictors.2.", "stack.encoders.", "stack.macro_encoders."):
++        assert gsum(wm, pre) == 0.0, pre
++    assert am.grad is None or float(am.grad.abs().sum()) == 0.0
++    assert not any(k.startswith("rsp_") and out[k].requires_grad for k in out) and "rsp_g_aa/L1" in out and "rsp_s_a/L1" in out
++
++
++def test_control_flag_off_has_no_term_and_reads_exactly_zero(probe):
++    wm, out, _ = term_grad(cfg_of())
++    assert "rsp/L1" not in out and not any(k.startswith("rsp_") for k in out)
++    assert gsum(wm, "stack.predictors.0.") == 0.0 and gsum(wm, "stack.act_embed.") == 0.0       # nothing ran backward: the control reads exactly 0.0
++
++
++# ------------------------------------------------------------------------------------------------ C9': analytic identity (float64) on a linear world
++D = 4
++
++
++class LinPred(nn.Module):
++    def __init__(self, W, B):
++        super().__init__()
++        self.W, self.B = nn.Parameter(W, requires_grad=False), nn.Parameter(B, requires_grad=False)
++
++    def forward(self, zc, ec):
++        return zc @ self.W.T + ec @ self.B.T
++
++
++def stub(W, B, w, s):
++    wm = build(cfg_of(wm_rsp_w=1.0))
++    st = wm.stack.double()
++    st.act_embed = nn.Identity()
++    st.predictors[0] = LinPred(W.double(), B.double())
++    st.set_rsp_probe(w.double(), s)
++    st.rsp_probe_w, st.rsp_probe_s = st.rsp_probe_w.double(), st.rsp_probe_s.double()
++    return st, dataclasses.replace(st.cfg[0], rsp_w=1.0, rsp_readout="fixed_k")
++
++
++def data(t=32, b=3):
++    g = torch.Generator().manual_seed(5)
++    return torch.randn(b, t, D, generator=g).double(), (torch.randn(b, t - 1, 2, generator=g) * 0.5).double()
++
++
++WV = torch.tensor([0.75, -0.25, 0.5, 0.25])            # exact in float32: the probe buffer is float32 by design
++BS = torch.tensor([[0.5, 0.25], [0.25, -0.5], [-0.25, 0.5], [0.125, 0.25]])
++K_ = H.RSP_K
++
++
++def test_c9p_matched_response_gives_loss_and_gradient_zero():
++    s = K_ * float(WV @ BS[:, 0])
++    st, c = stub(torch.eye(D), BS, WV, s)
++    for p in st.predictors[0].parameters():
++        p.requires_grad_(True)
++    z, a = data()
++    r = st.response_loss(z, a, c)
++    r["loss"].backward()
++    assert float(r["loss"]) < 1e-24 and max(float(p.grad.abs().max()) for p in st.predictors[0].parameters()) < 1e-12
++    assert abs(float(r["diag"]["rsp_g_aa"]) - 1.0) < 1e-12
++
++
++def test_c9p_B_zero_gives_loss_exactly_one_and_a_wrong_constant_slope_is_used_as_given():
++    z, a = data()
++    st, c = stub(torch.eye(D), torch.zeros(D, 2), WV, 0.3)
++    assert float(st.response_loss(z, a, c)["loss"]) == 1.0
++    s = K_ * float(WV @ BS[:, 0])
++    st, c = stub(torch.eye(D), BS, WV, 2.0 * s)                                                   # a constant slope doubled: G = 0.5 exactly, a batch slope would hide it (MR11)
++    r = st.response_loss(z, a, c)
++    assert abs(float(r["diag"]["rsp_g_aa"]) - 0.5) < 1e-12 and abs(float(r["loss"]) - 0.25) < 1e-12
++
++
++def test_c9p_state_and_action_history_do_not_move_the_matched_identity():
++    s = K_ * float(WV @ BS[:, 0])
++    st, c = stub(torch.eye(D), BS, WV, s)
++    g = torch.Generator().manual_seed(9)
++    z = torch.cumsum(torch.randn(3, 32, D, generator=g).double(), 1)                              # a state that carries history
++    a = torch.cumsum(torch.randn(3, 31, 2, generator=g).double() * 0.1, 1)                        # autocorrelated actions
++    assert float(st.response_loss(z, a, c)["loss"]) < 1e-24
++
++
++def test_c9p_geometry_one_call_two_contrasts_nine_anchors_ten_steps_context_one_endpoint_read(probe):
++    wm = build(fk(probe, hmax=91))
++    r = wm.built_rsp(91)
++    assert (r["calls"], r["contrasts"], r["anchors"], r["k"], r["ctx_passed"], r["readout"]) == (1, 2, 9, 10, 1, "fixed_k")
++    assert abs(r["w_in_loss_rsp"] - 1.0) < 1e-6 and abs(r["s_cal"] - 0.2) < 1e-12
++    s = K_ * float(WV @ BS[:, 0])
++    st, c = stub(0.875 * torch.eye(D), BS, WV, s)                                                   # W != I: per-step reads would differ from the endpoint read (MR14)
++    z, a = data()
++    g_end = float(st.response_loss(z, a, c)["diag"]["rsp_g_aa"])
++    assert abs(g_end - float(sum(0.875 ** (K_ - 1 - j) for j in range(K_)) / K_)) < 1e-9
++
++
++def test_c9p_a_flipped_contrast_or_a_scaled_delta_is_detected():
++    s = K_ * float(WV @ BS[:, 0])
++    st, c = stub(torch.eye(D), BS, WV, s)
++    z, a = data()
++    for dl in ((0.42, 0.24), (0.84, 0.24), (0.1, 0.24)):                                           # delta scales out of G in the matched case
++        assert float(st.response_loss(z, a, dataclasses.replace(c, rsp_delta=dl))["loss"]) < 1e-24
++    st2, _ = stub(torch.eye(D), -BS, WV, s)                                                       # a world with the opposite response: G = -1, loss 4
++    assert abs(float(st2.response_loss(z, a, c)["loss"]) - 4.0) < 1e-9
++
++
++# ------------------------------------------------------------------------------------------------ config and probe refusals
++def test_config_refusals(probe):
++    ok = dict(wm_rsp_w=1.0, wm_rsp_readout="fixed_k", wm_rsp_probe=probe["path"], wm_rsp_probe_sha256=probe["sha"], wm_freeze_proj="on")
++    cfg_of(**ok)
++    for bad in (dict(ok, wm_rsp_w=0.0), dict(ok, wm_freeze_proj="off"), dict(ok, wm_rsp_probe=""), dict(ok, wm_rsp_probe_sha256="ab"), dict(ok, wm_rsp_readout="x"),
++                dict(wm_rsp_w=1.0, wm_rsp_probe=probe["path"]), dict(wm_freeze_proj="maybe")):
++        with pytest.raises(ValueError):
++            cfg_of(**bad)
++
++
++def test_probe_sha_mismatch_one_changed_byte_wrong_K_are_refused(probe, tmp_path):
++    f = tmp_path / "p.pt"
++    f.write_bytes(Path(probe["path"]).read_bytes()[:-1] + bytes([Path(probe["path"]).read_bytes()[-1] ^ 1]))
++    with pytest.raises(ValueError, match="sha256"):
++        M.load_rsp_probe(str(f), probe["sha"], WMD)
++    with pytest.raises(ValueError, match="sha256"):
++        build(fk(dict(probe, path=str(f))))
++    g = tmp_path / "k5.pt"
++    sha = write_probe(g, k=5)
++    with pytest.raises(ValueError, match="K = 5"):
++        M.load_rsp_probe(str(g), sha, WMD)
++    with pytest.raises(ValueError, match="RA.W"):
++        M.load_rsp_probe(probe["path"], probe["sha"], WMD + 1)
++
++
++def test_probe_vector_is_W_over_sd(probe):
++    ck = torch.load(probe["path"], weights_only=False)
++    w, s = M.load_rsp_probe(probe["path"], probe["sha"], WMD)
++    assert torch.allclose(w.double(), torch.tensor(np.asarray(ck["RA"]["W"])[:, 0] / np.asarray(ck["RA"]["sd"]), dtype=torch.float64), atol=1e-6) and s == 0.2
++
++
++# ------------------------------------------------------------------------------------------------ the trainer's own gate on the synthetic recipe (caller reachability)
++WMF = ["--hmax", "25", "--wm-only", "--wm-strides", "2", "2", "--wm-rollout-k", "4", "3", "2", "--wm-rollout-stride", "2", "2", "1", "--wm-rollout-w", "1.0", "--wm-ctx", "3", "3", "3", "--wm-windows", "wmonly"]
++
++
++@pytest.fixture(scope="module")
++def init(tmp_path_factory, probe):
++    root = tmp_path_factory.mktemp("optb")
++    assert TR.main(["--out", str(root / "m2b"), *BASE, "--log-every", "1", "--ckpt-every", "100", "--steps", "2"]) == 0
++    rc = TR.main(["--out", str(root / "src"), *BASE, "--init-ckpt", str(root / "m2b" / "ckpt_last.pt"), *WMF, "--log-every", "1", "--ckpt-every", "100", "--steps", "3"])
++    assert rc == 0
++    return {"root": root, "ck": root / "src" / "ckpt_last.pt"}
++
++
++FT = ["--wm-init-from-ckpt-wm", "on", "--wm-freeze-proj", "on"]
++
++
++def rsp_flags(probe):
++    return ["--wm-rsp-w", "1.0", "--wm-rsp-readout", "fixed_k", "--wm-rsp-probe", probe["path"], "--wm-rsp-probe-sha256", probe["sha"]]
++
++
++def lgate(init, name, extra=(), more=(), steps=None):
++    try:
++        rc = TR.main(["--out", str(init["root"] / name), *BASE, "--init-ckpt", str(init["ck"]), *WMF, *extra, *more, *(["--steps", str(steps)] if steps else ["--selfcheck-only"])])
++    except SystemExit as e:
++        rc = e.code
++    except ValueError as e:
++        rc = f"ValueError: {e}"
++    return rc
++
++
++def sc_of(init, name):
++    return json.loads((init["root"] / name / "selfcheck.json").read_text(encoding="utf-8"))
++
++
++def test_gate_passes_for_the_rsp_arm_and_reads_the_built_readout_back(init, probe):
++    assert lgate(init, "g_rsp", FT, rsp_flags(probe)) == 0
++    sc = sc_of(init, "g_rsp")
++    rb = sc["levers"]["wm_rsp_readback"]
++    b = rb["built"]
++    assert rb["declared_readout"] == "fixed_k" == rb["built_readout"] and rb["wm_proj_requires_grad"] == [False] and rb["freeze_proj_declared"] == "on"
++    assert (b["calls"], b["contrasts"], b["k"], b["ctx_passed"], b["readout"]) == (1, 2, 10, 1, "fixed_k") and abs(b["w_in_loss_rsp"] - 1.0) < 1e-6 and abs(b["s_cal"] - 0.2) < 1e-12
++    info = sc["info"]["wm_only"]
++    assert info["init_wm"] is True and info["n_mismatch_after_load"] == 0 and info["wm_loaded_from_ckpt"] == info["wm_params_equal_to_ckpt"] > 0 and info["wm_reinit_seed"] is None
++    c3 = sc["live"]["c3"]
++    assert sc["live"]["pass"] is True and c3["pass"] is True and c3["level_L1_diff"] > 0.0 and "wm/rsp/L1" in sc["live_first"]
++
++
++def test_gate_passes_for_the_null_arm_without_the_term(init):
++    assert lgate(init, "g_null", FT) == 0
++    sc = sc_of(init, "g_null")
++    assert not any("rsp/" in k for k in sc["live"]["terms"]) and "c3" not in sc["live"]
++    assert sc["levers"]["wm_rsp_readback"]["wm_proj_requires_grad"] == [False] and sc["levers"]["wm_rsp_readback"]["declared_readout"] == "idm"
++    assert sc["levers"]["wm_rsp_readback"]["built"]["readout"] is None
++
++
++def test_gate_the_fine_tune_start_is_the_checkpoint_bit_for_bit_and_off_re_initialises(init):
++    assert lgate(init, "g_off", [], []) == 0
++    info = sc_of(init, "g_off")["info"]["wm_only"]
++    assert info["init_wm"] is False and info["wm_loaded_from_ckpt"] == 0 and info["wm_params_equal_to_ckpt"] == 0                  # the earlier arms: a fresh WM
++
++
++@pytest.mark.parametrize("extra,why", [
++    (["--wm-rsp-w", "1.0", "--wm-rsp-readout", "fixed_k", "--wm-init-from-ckpt-wm", "on", "--wm-freeze-proj", "on"], "probe"),
++    (["--wm-init-from-ckpt-wm", "on", "--wm-freeze-proj", "on", "--wm-rsp-probe", "x.pt"], "probe"),
++])
++def test_gate_refuses_incomplete_or_idle_readout_flags(init, extra, why):
++    rc = lgate(init, "r_" + str(abs(hash(tuple(extra)))), extra)
++    assert isinstance(rc, str) and ("wm_rsp_probe" in rc or "wm_rsp_readout" in rc or "probe" in rc), rc
++
++
++def test_gate_refuses_fixed_k_without_freeze_or_without_init_wm(init, probe):
++    rc = lgate(init, "r_nofreeze", ["--wm-init-from-ckpt-wm", "on"], rsp_flags(probe))
++    assert isinstance(rc, str) and "wm_freeze_proj" in rc, rc
++    rc = lgate(init, "r_noinit", ["--wm-freeze-proj", "on"], rsp_flags(probe))
++    assert isinstance(rc, str) and "wm-init-from-ckpt-wm" in rc, rc
++
++
++def test_gate_refuses_a_wrong_probe_sha_MR13(init, probe):
++    bad = dict(probe, sha="0" * 64)
++    rc = lgate(init, "r_sha", FT, rsp_flags(bad))
++    assert isinstance(rc, str) and "sha256" in rc, rc
++
++
++def test_gate_refuses_when_the_freeze_flag_is_parsed_but_proj_keeps_requires_grad_MR12(init, monkeypatch):
++    monkeypatch.setattr(TR, "freeze_all_but_wm", lambda model, freeze_proj=False: TR.freeze_all_but_wm.__wrapped__(model, False) if hasattr(TR.freeze_all_but_wm, "__wrapped__") else [p.requires_grad_(TR.is_wm_param(n)) for n, p in model.named_parameters()])
++    rc = lgate(init, "r_mr12", FT)
++    assert isinstance(rc, str) and "wm_freeze_proj" in rc, rc
++
++
++def test_gate_refuses_when_make_config_drops_the_readout_MR11(init, probe, monkeypatch):
++    orig = TR.make_config
++    monkeypatch.setattr(TR, "make_config", lambda a: dataclasses.replace(orig(a), wm_rsp_readout="idm", wm_rsp_probe="", wm_rsp_probe_sha256=""))
++    rc = lgate(init, "r_mr11", FT, rsp_flags(probe))
++    assert isinstance(rc, str) and "wm_rsp_readout" in rc, rc
++
++
++def test_gate_refuses_a_fine_tune_from_a_checkpoint_with_other_strides(init):
++    rc = lgate(init, "r_strides", FT, ["--wm-strides", "2", "3"])
++    assert isinstance(rc, str) and "wm_strides" in rc, rc
++
++
++# ------------------------------------------------------------------------------------------------ the frozen projection stays bit-equal in a real run, the rest trains
++def test_wm_proj_is_bit_equal_to_the_checkpoint_after_steps_and_the_rest_moved(init, probe):
++    assert lgate(init, "t_rsp", FT, rsp_flags(probe), steps=2) == 0
++    a = torch.load(init["ck"], map_location="cpu", weights_only=False)["model"]
++    b = torch.load(init["root"] / "t_rsp" / "ckpt_last.pt", map_location="cpu", weights_only=False)["model"]
++    proj = [k for k in a if k.startswith("wm.proj.")]
++    assert proj and all(torch.equal(a[k], b[k]) for k in proj)
++    moved = [k for k in a if k.startswith("wm.") and not k.startswith("wm.proj.") and a[k].is_floating_point() and not torch.equal(a[k], b[k])]
++    assert len(moved) > 10 and all(torch.equal(a[k], b[k]) for k in a if not k.startswith("wm."))
