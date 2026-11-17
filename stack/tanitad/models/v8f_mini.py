@@ -164,8 +164,24 @@ CTX_INIT_SEED = 20261116
 NAV_SOURCES = ("v9", "text")
 CTX_HEAD_MODES = ("off", "on")
 
+#: PREREG_V8F_CKPT120 (`--s-far`, `--w-ckpt-far`, `--s-far-lr-mult`, `--rc120-npz`, `--s-far-label-perm`, `--nav-strat`, `--nav-strat-variant`, `--s-adapter-detach`). ALL default OFF = the a4357e79 build bit for bit (state dict AND outputs).
+#: ``--s-far on`` builds ``s_far_out`` = Linear(512, 3) on the hidden layer of ``head_s`` (zero-initialised: the far point STARTS at the nominal arc FAR_ARC); S's output ``ckpt_far`` = (FAR_ARC, 0, 0) + o x ck_scale goes to the LOSS and the
+#: EVALUATOR only: it never reaches T, O or any goal path (T-ISO-FAR). ``--nav-strat on`` builds ``e_nav_s`` = Linear(5, d): ONE extra conditioning token of S ALONE (``b["nav_s"]``, the route text's next turn at any distance); T and O never read it.
+#: ``--s-adapter-detach on``: S's reader reads the adapter tokens (and the per-frame time table) DETACHED, so no S-side loss moves the shared adapter. ``--s-far-label-perm`` / ``--nav-strat-variant`` are DATA levers (the model never
+#: reads them; the checkpoint records them, as nav_source): the label derangement of the far arc / the donor nav_s of the R2 control.
+FAR_ARC = 120.0
+S_FAR_MODES = ("off", "on")
+S_FAR_LABEL_PERMS = ("off", "clip")
+NAV_STRAT_MODES = ("off", "on")
+NAV_STRAT_VARIANTS = ("real", "donor")
+S_ADAPTER_DETACH_MODES = ("off", "on")
+S_FAR_KEY_PREFIXES = ("s_far_out.",)
+NAV_S_KEY_PREFIXES = ("e_nav_s.",)
+NAV_S_INIT_SEED = 20261117
+#: the batch key the S-side route-text token adds to the inference inputs (only for a model built with ``--nav-strat on``). NOT in INFERENCE_INPUT_KEYS (pinned by tests that read other trainers' key sets), as STOK_KEYS.
+NAV_S_KEYS = frozenset({"nav_s"})
 #: every state-dict key a declared lever may ADD to an older checkpoint's key set (load_init_ckpt: EXACTLY these may be fresh)
-NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + ("e_stok.",) + CTX_KEY_PREFIXES      # PREREG_V8F_OTBAND adds the strategic-token embedding
+NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + ("e_stok.",) + CTX_KEY_PREFIXES + S_FAR_KEY_PREFIXES + NAV_S_KEY_PREFIXES      # PREREG_V8F_OTBAND adds the strategic-token embedding; PREREG_V8F_CKPT120 the far head and the S-side nav token
 #: identifiers the lead head's own code (``V8FMini._lead``) and the aux-token assembly (``V8FMini._aux_in``) must not mention (the level list + the lead labels): the head is VISION ONLY
 LEAD_FORBIDDEN_NAMES = LEVEL_FORBIDDEN_NAMES + ("lead_y", "lead_has", "lead_near", "lead_gap_h", "s_h", "pose_now")
 LEAD_ALLOWED_KEYS = frozenset({"frame_ok"})
@@ -260,6 +276,12 @@ class V8FMiniConfig:
     w_ctx: float = 0.0                 # PREREG_V8F_STRAT1 (`--w-ctx`): the weight of the weighted-mean context CE in the total. > 0 iff the head is on, exactly 0.0 iff off (checked by the trainer's bad_ctx)
     ctx_detach: str = "off"            # PREREG_V8F_STRAT1 (`--ctx-detach`): on = the head reads the adapter tokens DETACHED (the ctx loss then cannot move the shared adapter)
     nav_source: str = "v9"             # PREREG_V8F_STRAT1 (`--nav-source`): a DATA lever (v9 = the join's nav, text = the router-text nav); the model never reads it, the checkpoint records it (as window_start)
+    s_far: str = "off"                 # PREREG_V8F_CKPT120 (`--s-far`): off = nothing built (every earlier arm, bit for bit); on = the 120 m far-point head ``s_far_out`` on S's hidden layer (S_FAR_MODES)
+    w_ckpt_far: float = 0.0            # PREREG_V8F_CKPT120 (`--w-ckpt-far`): the weight of T["ckpt_far"] in the total. 0.0 is legal ONLY as the reachability zero control; the trainer's bad_sfar refuses ``--s-far on`` with 0.0 and a weight with the head off
+    s_far_label_perm: str = "off"      # PREREG_V8F_CKPT120 (`--s-far-label-perm`): a DATA lever (R1): the far labels of each train clip are a fixed derangement of clips. The model never reads it; the checkpoint records it
+    nav_strat: str = "off"             # PREREG_V8F_CKPT120 (`--nav-strat`): off = nothing built; on = ``e_nav_s``, ONE extra conditioning token of S alone, read from ``b["nav_s"]`` (NAV_STRAT_MODES)
+    nav_strat_variant: str = "real"    # PREREG_V8F_CKPT120 (`--nav-strat-variant`): a DATA lever (R2): ``donor`` = S's nav_s at TRAIN comes from a fixed derangement of clips. The model never reads it; the checkpoint records it
+    s_adapter_detach: str = "off"      # PREREG_V8F_CKPT120 (`--s-adapter-detach`): on = S's reader reads the adapter tokens (and the time table) detached (S_ADAPTER_DETACH_MODES)
     w_level: float = 0.0               # PREREG_V8F_LEVEL (`--w-level`): the weight of Huber(v_hat, logged speed) in the total. Must be > 0 with the head on and exactly 0.0 with it off (checked by the launch gate: a head with no loss, or a weight with no head, is refused)
 
     @property
@@ -301,6 +323,11 @@ class V8FMiniConfig:
             raise ValueError(f"w_ctx must be a finite number >= 0, got {self.w_ctx!r}")
         if self.nav_source not in NAV_SOURCES:
             raise ValueError(f"nav_source must be one of {NAV_SOURCES}, got {self.nav_source!r}")
+        for nm, modes in (("s_far", S_FAR_MODES), ("s_far_label_perm", S_FAR_LABEL_PERMS), ("nav_strat", NAV_STRAT_MODES), ("nav_strat_variant", NAV_STRAT_VARIANTS), ("s_adapter_detach", S_ADAPTER_DETACH_MODES)):
+            if getattr(self, nm) not in modes:
+                raise ValueError(f"{nm} must be one of {modes}, got {getattr(self, nm)!r}")
+        if not (math.isfinite(self.w_ckpt_far) and self.w_ckpt_far >= 0.0):
+            raise ValueError(f"w_ckpt_far must be a finite number >= 0, got {self.w_ckpt_far!r}")
         if self.aux_cond not in AUX_COND_MODES:
             raise ValueError(f"aux_cond must be one of {AUX_COND_MODES}, got {self.aux_cond!r}")
         if not (math.isfinite(self.w_lead) and self.w_lead >= 0.0):
@@ -899,7 +926,18 @@ class V8FMini(nn.Module):
             with torch.random.fork_rng(devices=[]):
                 torch.manual_seed(CTX_INIT_SEED)
                 self.ctx_head = _mlp(d, d, CTX_DIM)
+        self.s_far_out = None
+        if cfg.s_far == "on":                                              # PREREG_V8F_CKPT120: built LAST, zero-initialised (no RNG draw): the far point STARTS at the nominal (FAR_ARC, 0, 0); every module above and the global stream after it are the off model's
+            self.s_far_out = nn.Linear(2 * d, 3)
+            nn.init.zeros_(self.s_far_out.weight)
+            nn.init.zeros_(self.s_far_out.bias)
+        self.e_nav_s = None
+        if cfg.nav_strat == "on":                                          # PREREG_V8F_CKPT120: ONE extra conditioning token of S alone; default (non-zero) init under a forked RNG (it must carry signal from step 0; the global stream is the off model's)
+            with torch.random.fork_rng(devices=[]):
+                torch.manual_seed(NAV_S_INIT_SEED)
+                self.e_nav_s = nn.Linear(5, d)
         self.p_gt = 1.0
+        self._s_far_last = None                                            # run_s -> _forward hand-over of the far point (cleared on read); None unless --s-far on
 
     # ---- helpers -------------------------------------------------------------------------------------------
     def _ego(self, f8):
@@ -909,12 +947,16 @@ class V8FMini(nn.Module):
     def _at(x: Tensor, idx: Tensor) -> Tensor:                     # x [B, F, ...] -> x[b, idx[b]]
         return x[torch.arange(x.shape[0], device=x.device), idx]
 
-    def _scene(self, adapt: Tensor, ok: Tensor, last: Tensor):
-        """tokens [B, hist*n_tok, d] (+ pad mask) of the `hist` frames ending at index `last` [B]."""
+    def _scene(self, adapt: Tensor, ok: Tensor, last: Tensor, detach: bool = False):
+        """tokens [B, hist*n_tok, d] (+ pad mask) of the `hist` frames ending at index `last` [B]. ``detach`` (S under ``--s-adapter-detach on``): the adapter tokens AND the per-frame time table are read detached."""
         cfg = self.cfg
         pos = last[:, None] - (cfg.hist - 1 - torch.arange(cfg.hist, device=adapt.device))[None]
         g = torch.gather(adapt, 1, pos[:, :, None, None].expand(-1, -1, adapt.shape[2], adapt.shape[3]))
-        g = g + self.time[None, :, None, :]
+        if detach:
+            g = g.detach()
+            g = g + self.time.detach()[None, :, None, :]
+        else:
+            g = g + self.time[None, :, None, :]
         pad = ~torch.gather(ok, 1, pos)
         return g.flatten(1, 2), pad[:, :, None].expand(-1, -1, adapt.shape[2]).flatten(1)
 
@@ -974,13 +1016,25 @@ class V8FMini(nn.Module):
     def run_s(self, b, adapt, last_s, age_rel=None):
         cfg = self.cfg
         i = last_s
-        cond = torch.stack([self._ego(self._at(b["p10f"], i)), self.e_nav(self._at(b["nav"], i)),
-                            self.e_lim(torch.cat([b["limit"], b["limit_ok"][:, None].float()], -1))], 1)
-        sc, pad = (self._scene(adapt, b["frame_ok"], i) if not cfg.navonly else (None, None))
+        toks = [self._ego(self._at(b["p10f"], i)), self.e_nav(self._at(b["nav"], i)),
+                self.e_lim(torch.cat([b["limit"], b["limit_ok"][:, None].float()], -1))]
+        if self.e_nav_s is not None:                                       # PREREG_V8F_CKPT120: S's route-text token (T and O never read nav_s: run_t / run_o are untouched); absent = the three-token stack, bit for bit
+            toks.append(self.e_nav_s(self._at(b["nav_s"], i)))
+        cond = torch.stack(toks, 1)
+        sc, pad = ((self._scene(adapt, b["frame_ok"], i, detach=True) if cfg.s_adapter_detach == "on" else self._scene(adapt, b["frame_ok"], i)) if not cfg.navonly else (None, None))
         h = self.read_s(cond, sc, pad).flatten(1)
-        o = self.head_s(h).reshape(-1, 3, 3)
+        if self.s_far_out is None:
+            o = self.head_s(h).reshape(-1, 3, 3)
+        else:                                                              # PREREG_V8F_CKPT120: the two layers head_s is, split so the far layer reads the SAME hidden layer (head_s[2](head_s[1](head_s[0](h))) == head_s(h), bit for bit)
+            hid = self.head_s[1](self.head_s[0](h))
+            o = self.head_s[2](hid).reshape(-1, 3, 3)
+            self._s_far_last = self.ck_far_nom() + self.s_far_out(hid).float() * self.ck_scale      # [B, 3]: (x, y, psi) of the FAR_ARC checkpoint in S's tick frame
         ck = self.ck_nom[None] + o.float() * self.ck_scale
         return ck                                                          # [B, 3, 3] in S's tick-frame
+
+    def ck_far_nom(self) -> Tensor:
+        """The nominal far checkpoint (FAR_ARC, 0, 0) [3] on the model's device (a constant, NOT a buffer: no state-dict key)."""
+        return torch.tensor([FAR_ARC, 0.0, 0.0], device=self.ck_scale.device, dtype=self.ck_scale.dtype)
 
     def _stok_tok(self, b, last_s: Tensor) -> Tensor:
         """PREREG_V8F_OTBAND: T's strategic-token embedding ``e_stok([stok * ok, ok])`` [B, d], read at S's tick frame ``last_s`` (S's outputs are HELD: the same sample-and-hold as the checkpoints). The batch values are data
@@ -1076,6 +1130,8 @@ class V8FMini(nn.Module):
         # ---- S at its tick
         ck_s = self.run_s(b, adapt, last_s)
         out["ckpt"] = ck_s
+        if self.s_far_out is not None:                                  # PREREG_V8F_CKPT120: S's far point (loss + evaluator ONLY: never an input of T, O or a goal path); the hand-over is cleared on read
+            out["ckpt_far"], self._s_far_last = self._s_far_last, None
         ck_ok_pred = torch.ones(B, 3, device=dev)
         ck_src, ck_ok = ck_s, ck_ok_pred
         if use_labels and p_gt > 0:
@@ -1204,6 +1260,13 @@ class V8FMini(nn.Module):
         e = (out["ckpt"] - ls["rc"]).abs() / self.ck_scale
         e = torch.cat([e[..., :2].sum(-1, keepdim=True), e[..., 2:3]], -1).sum(-1)
         T["ckpt"] = (e * ok).sum() / ok.sum().clamp_min(1.0)
+        if cfg.s_far == "on":                                        # PREREG_V8F_CKPT120: computed ONLY when the head is built (off = no new tensor op, no new T key = the tip, bit for bit): the masked mean of |dx|/10 + |dy|/10 + |dpsi|/0.5 vs RC-A120
+            if "rc120" not in ls:
+                raise ValueError("s_far on but the batch carries no rc120 label (the trainer joins the RC-A120 table: --rc120-npz)")
+            okf = (ls["rc120_ok"] & ls["has"]).float()
+            ef = (out["ckpt_far"] - ls["rc120"]).abs() / self.ck_scale
+            ef = ef[..., :2].sum(-1) + ef[..., 2]
+            T["ckpt_far"] = (ef * okf).sum() / okf.sum().clamp_min(1.0)
         # T: masked BCE / partial-label CE / Huber at T's tick frame
         w = lt["goal_w"] * lt["has"][:, None].float()
         bce = F.binary_cross_entropy_with_logits(out["goal_logits"], lt["goal_y"], reduction="none")
@@ -1295,6 +1358,7 @@ class V8FMini(nn.Module):
         total = total + cfg.w_tac_traj * T["tac"] if cfg.w_tac_traj > 0.0 else total
         total = total + cfg.w_level * T["level"] if cfg.level_head == "on" else total          # PREREG_V8F_LEVEL: ONE line (a mutation deletes it); head off adds nothing: the tip's total
         total = total + cfg.w_lead * T["lead"] if cfg.lead_head == "on" else total             # PREREG_LEVELHEAD_A2: ONE line (a mutation deletes it); head off adds nothing: the tip's total
+        total = total + cfg.w_ckpt_far * T["ckpt_far"] if cfg.s_far == "on" else total         # PREREG_V8F_CKPT120: ONE line (a mutation deletes it); head off adds nothing: the tip's total
         total = total + cfg.w_ctx * T["ctx"] if cfg.ctx_heads == "on" else total               # PREREG_V8F_STRAT1: ONE line (a mutation deletes it); head off adds nothing: the tip's total
         if cfg.consistency:
             total = total + cfg.w_pen * sum(T[f"pen_{r}"] for r in RULES) + cfg.w_pen_self * sum(T[f"pens_{r}"] for r in RULES)
@@ -1346,6 +1410,10 @@ class V8FMini(nn.Module):
             g["STOK"] = [self.e_stok]                                               # PREREG_V8F_OTBAND: G-LIVE then requires its gradient
         if self.ctx_head is not None:
             g["CTX"] = [self.ctx_head]                                              # PREREG_V8F_STRAT1
+        if self.s_far_out is not None:
+            g["SFAR"] = [self.s_far_out]                                            # PREREG_V8F_CKPT120
+        if self.e_nav_s is not None:
+            g["NAVS"] = [self.e_nav_s]                                              # PREREG_V8F_CKPT120
         return g
 
     def built_levers(self) -> dict:
@@ -1400,6 +1468,18 @@ class V8FMini(nn.Module):
             lv["ctx_heads"], lv["w_ctx"], lv["ctx_detach"] = "on", cfg.w_ctx, cfg.ctx_detach
             lv["ctx_dim"] = int(self.ctx_head[2].out_features)
             lv["ctx_vision_only_source"] = not ctx_head_source_problems()
+        if self.s_far_out is not None:                                     # PREREG_V8F_CKPT120: present ONLY with the head built (an off model keeps the tip's key set)
+            lv["s_far"], lv["w_ckpt_far"], lv["s_far_arc_m"] = "on", cfg.w_ckpt_far, FAR_ARC
+            lv["s_far_zero_init"] = bool(float(self.s_far_out.weight.detach().abs().sum()) == 0.0 and float(self.s_far_out.bias.detach().abs().sum()) == 0.0)
+            lv["s_far_in"] = int(self.s_far_out.in_features)
+        if self.e_nav_s is not None:
+            lv["nav_strat"] = "on"
+        if cfg.s_adapter_detach == "on":
+            lv["s_adapter_detach"] = "on"
+        if cfg.s_far_label_perm != "off":
+            lv["s_far_label_perm"] = cfg.s_far_label_perm
+        if cfg.nav_strat_variant != "real":
+            lv["nav_strat_variant"] = cfg.nav_strat_variant
         if self.lead_head is not None or self.e_aux is not None:           # the BUILT wiring, read back by the gate (absent = the additive default with no head: a token declared with no head builds nothing and is refused)
             lv["aux_cond"] = "token" if self.e_aux is not None else "add"
             lv["aux_vision_only_source"] = not aux_source_problems()
@@ -1478,7 +1558,7 @@ def assert_no_situation_classifier_input(model: V8FMini | None = None, batch: di
         with torch.no_grad():
             keys = model.forward_infer(batch)["_keys_read"]
         model.train(was)
-        allowed = INFERENCE_INPUT_KEYS | (STOK_KEYS if getattr(model, "e_stok", None) is not None else frozenset())      # PREREG_V8F_OTBAND: the strategic token's two keys, for a model built with it
+        allowed = INFERENCE_INPUT_KEYS | (NAV_S_KEYS if getattr(model, "e_nav_s", None) is not None else frozenset()) | (STOK_KEYS if getattr(model, "e_stok", None) is not None else frozenset())      # PREREG_V8F_CKPT120: nav_s; PREREG_V8F_OTBAND: the strategic token's two keys, for a model built with it
         extra = keys - allowed
         assert not extra, f"inference reads keys outside the admissible set: {sorted(extra)}"
         assert not any(k.startswith("lab") or any(t in k for t in _FORBIDDEN_TOKENS) for k in keys)

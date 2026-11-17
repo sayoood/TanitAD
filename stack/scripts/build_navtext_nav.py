@@ -62,8 +62,9 @@ def _fill(t):
     return np.interp(np.arange(len(t)), np.flatnonzero(ok), t[ok]), int((~ok).sum())
 
 
-def clip_nav(cls_id, dist, flag, age, now_s, track, side, sign: int = -1):
-    """One clip. Returns (nav [n, 5] f32, nav_d [n] f32, clamp [n] bool, d_raw [n] f32). ``sign`` -1 = the countdown, +1 = the deliberate regression (distance PLUS travelled)."""
+def clip_nav(cls_id, dist, flag, age, now_s, track, side, sign: int = -1, ann_cut: bool = True):
+    """One clip. Returns (nav [n, 5] f32, nav_d [n] f32, clamp [n] bool, d_raw [n] f32). ``sign`` -1 = the countdown, +1 = the deliberate regression (distance PLUS travelled).
+    ``ann_cut`` False (PREREG_V8F_CKPT120 ``nav_s``): step 5 is d_ann = infinity, so the token is the text's TURN-class side at ANY distance (ch3 = clip(d / 100, 0, 3), ch4 = 1); True (the default) = STRAT1's rule, unchanged."""
     n = len(cls_id)
     nav = np.zeros((n, 5), np.float32)
     nav_d = np.full(n, np.nan, np.float32)
@@ -98,7 +99,7 @@ def clip_nav(cls_id, dist, flag, age, now_s, track, side, sign: int = -1):
             d = 0.0
         v_now = float(tr[r, 3]) if tr.shape[1] > 3 and np.isfinite(tr[r, 3]) else 0.0
         d_ann = max(D_ANN_MIN, D_ANN_PER_MS * v_now)
-        tok = sd if d <= d_ann else 0
+        tok = sd if (d <= d_ann or not ann_cut) else 0
         nav[j, tok] = 1.0
         nav[j, 3] = np.clip(d / 100.0, 0.0, 3.0)
         nav[j, 4] = 1.0
@@ -106,7 +107,7 @@ def clip_nav(cls_id, dist, flag, age, now_s, track, side, sign: int = -1):
     return nav, nav_d, clamp, d_raw
 
 
-def build_split(J, tab, split, tracks, sign: int = -1):
+def build_split(J, tab, split, tracks, sign: int = -1, ann_cut: bool = True):
     cls, dist, flag, age = (np.asarray(tab[f"{split}_{k}"]) for k in ("cls_id", "dist_m", "flag", "age_s"))
     side = side_of(tab["vocab"])
     N = int(J["off"][-1] + J["n"][-1])
@@ -116,7 +117,7 @@ def build_split(J, tab, split, tracks, sign: int = -1):
     d_raw = np.full(N, np.nan, np.float32)
     for c, (name, o, n) in enumerate(zip(np.asarray(J["clip"]).astype(str), J["off"], J["n"])):
         o, n = int(o), int(n)
-        a, b, cl, dr = clip_nav(cls[o:o + n], dist[o:o + n], flag[o:o + n], age[o:o + n], np.asarray(J["now_s"][o:o + n]), tracks[name], side, sign)
+        a, b, cl, dr = clip_nav(cls[o:o + n], dist[o:o + n], flag[o:o + n], age[o:o + n], np.asarray(J["now_s"][o:o + n]), tracks[name], side, sign, ann_cut)
         nav[o:o + n], nav_d[o:o + n], clamp[o:o + n], d_raw[o:o + n] = a, b, cl, dr
     return nav, nav_d, clamp, d_raw
 
@@ -140,12 +141,13 @@ def main(argv=None):
     ap.add_argument("--join-train", required=True)
     ap.add_argument("--join-eval", default="")
     ap.add_argument("--out", required=True, help="directory for navtext_nav.npz and navtext_nav_report.json")
+    ap.add_argument("--nav-s", action="store_true", help="PREREG_V8F_CKPT120: build the S-side channel nav_s (step 5 with d_ann = infinity: the next TURN-class side at any distance) as navtext_nav_s.npz / navtext_nav_s_report.json; default = STRAT1's navtext_nav.npz")
     a = ap.parse_args(argv)
     from tanitad.data import v8f_mini_data as D
     tab = np.load(a.navtok, allow_pickle=False)
     tracks = D.load_native_tracks(a.tracks)
     out, rep = {}, {"inputs": {"navtok_sha256": sha_file(a.navtok), "tracks_sha256": sha_file(a.tracks), "join_train_sha256": sha_file(a.join_train)},
-                    "rule": "BUILD_SPEC section 5 (countdown, d_ann = max(30, 6 v), UTURN none, bare text d = 0)"}
+                    "rule": "BUILD_SPEC section 5 (countdown, d_ann = max(30, 6 v), UTURN none, bare text d = 0)" if not a.nav_s else "BUILD_SPEC section 5 with step 5 d_ann = infinity (PREREG_V8F_CKPT120 nav_s: countdown, no announcement cut, UTURN none, bare text d = 0)"}
     for split, jp in (("train", a.join_train), ("eval", a.join_eval)):
         if not jp:
             continue
@@ -153,8 +155,8 @@ def main(argv=None):
         for k in ("clip", "off", "n"):
             if not np.array_equal(np.asarray(tab[f"{split}_{k}"]).astype(str) if k == "clip" else tab[f"{split}_{k}"], np.asarray(J[k]).astype(str) if k == "clip" else J[k]):
                 raise SystemExit(f"REFUSED: navtok {split}_{k} does not equal the join's (misaligned rows)")
-        nav, nav_d, clamp, d_raw = build_split(J, tab, split, tracks, -1)
-        plus = build_split(J, tab, split, tracks, +1)
+        nav, nav_d, clamp, d_raw = build_split(J, tab, split, tracks, -1, not a.nav_s)
+        plus = build_split(J, tab, split, tracks, +1, not a.nav_s)
         qa, qa_plus = clock_nav_qa(J, nav, nav_d, d_raw), clock_nav_qa(J, plus[0], plus[1], plus[3], "plus")
         ok = bool(qa["pass"] and not qa_plus["pass"])
         v9tok = np.where(J["nav"][:, 1] > 0, 1, np.where(J["nav"][:, 2] > 0, 2, 0))
@@ -164,11 +166,12 @@ def main(argv=None):
         if not ok:
             print(f"G-CLOCK-NAV FAILED on {split}: {rep[split]}", file=sys.stderr)
     os.makedirs(a.out, exist_ok=True)
-    out["meta_json"] = np.array(json.dumps({"rule": rep["rule"], "inputs": rep["inputs"], "left": LEFT, "right": RIGHT, "d_ann": [D_ANN_MIN, D_ANN_PER_MS]}))
-    dst = os.path.join(a.out, "navtext_nav.npz")
+    out["meta_json"] = np.array(json.dumps({"rule": rep["rule"], "inputs": rep["inputs"], "left": LEFT, "right": RIGHT, "d_ann": [D_ANN_MIN, D_ANN_PER_MS] if not a.nav_s else "inf"}))
+    stem = "navtext_nav_s" if a.nav_s else "navtext_nav"
+    dst = os.path.join(a.out, stem + ".npz")
     np.savez_compressed(dst, **out)
     rep["navtext_nav_sha256"] = sha_file(dst)
-    json.dump(rep, open(os.path.join(a.out, "navtext_nav_report.json"), "w"), indent=1)
+    json.dump(rep, open(os.path.join(a.out, stem + "_report.json"), "w"), indent=1)
     print(json.dumps({k: rep[k] for k in rep if k in ("train", "eval", "navtext_nav_sha256")}, indent=1)[:2500])
     return 0 if all(rep[s]["G-CLOCK-NAV_pass"] for s in ("train", "eval") if s in rep) else 2
 

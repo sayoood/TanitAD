@@ -119,6 +119,11 @@ FLAG_CHECKS = {
     "nav_source": "data:nav_source", "nav_text_npz": "path", "nav_text_sha256": "data:nav_text_sha256",
     "ctx_heads": "lever:ctx_heads", "w_ctx": "cfg:w_ctx", "ctx_labels": "path", "ctx_labels_sha256": "data:ctx_labels_sha256",
     "ctx_lr_mult": "opt:ctx_lr_mult", "ctx_detach": "lever:ctx_detach",
+    # PREREG_V8F_CKPT120: argv -> make_config -> the BUILT model / loss / optimiser groups / data arrays -> declared_vs_built (bad_sfar) -> ckpt120_probe (G-LIVE) -> the RC-A120 / nav_s columns of the batch the loss receives.
+    # `lever:s_far` = built_levers().get("s_far", "off") (s_far_out exists iff on); `cfg:w_ckpt_far` = the BUILT config's weight; `opt:s_far_lr_mult` = the optimiser groups sfar / sfar_nd; `data:rc120_sha256` / `data:nav_strat_sha256` = the
+    # files the data arrays were built from. NOT in the card's flag list: --nav-strat-npz / --nav-strat-sha256 (the nav_s table of the H2 lever has to come from somewhere).
+    "s_far": "lever:s_far", "w_ckpt_far": "cfg:w_ckpt_far", "s_far_lr_mult": "opt:s_far_lr_mult", "rc120_npz": "path", "rc120_sha256": "data:rc120_sha256", "s_far_label_perm": "lever:s_far_label_perm",
+    "nav_strat": "lever:nav_strat", "nav_strat_variant": "lever:nav_strat_variant", "nav_strat_npz": "path", "nav_strat_sha256": "data:nav_strat_sha256", "s_adapter_detach": "lever:s_adapter_detach",
     # PREREG_V8F_MRATE: `lever:wm_k` = equals built_levers().get("wm_k", 1) (the BUILT modules' window / dilation / causal pad, WMAux.built_k); `lever:wm_only` = the record the WM-only loader read back (bad_wm_only: non-WM tensors bit-equal to the checkpoint,
     # NO WM tensor loaded, the WM re-initialised under --seed, trainable == the WM's parameters exactly, every other lever at its default) -> wm_only_live_check (G-LIVE) + planner_identity_probe -> `model.wm_only_loss(b)` in the loop.
     "wm_k": "lever:wm_k", "wm_only": "lever:wm_only",
@@ -211,6 +216,25 @@ def build_parser():
                     help="PREREG_V8F_STRAT1: the context head's lr as a multiple of --lr (its own optimiser groups named ctx / ctx_nd). 1.0 (default) with the head off")
     ap.add_argument("--ctx-detach", dest="ctx_detach", choices=M.CTX_HEAD_MODES, default="off",
                     help="PREREG_V8F_STRAT1: off (default) = the context loss reaches the shared adapter (a declared training-time coupling); on = the head reads the tokens detached")
+    # ---- PREREG_V8F_CKPT120: S sets and follows the route at 120 m. Every default DISABLES the lever (the a4357e79 build, bit for bit); every flag has its FLAG_CHECKS entry and its clause in bad_sfar.
+    ap.add_argument("--s-far", dest="s_far", choices=M.S_FAR_MODES, default="off",
+                    help="PREREG_V8F_CKPT120: off (default) = nothing built. on = s_far_out = Linear(512, 3) on the hidden layer of head_s (zero-initialised: the far point starts at the nominal (120, 0, 0)); its output ckpt_far goes to the loss and the evaluator only, never to T or O")
+    ap.add_argument("--w-ckpt-far", dest="w_ckpt_far", type=float, default=0.0,
+                    help="PREREG_V8F_CKPT120: the weight of the far-point term (masked mean of |dx|/10 + |dy|/10 + |dpsi|/0.5 vs RC-A120). 0.0 with --s-far off; must be > 0 with it on (a head with no loss is refused; 0.0 is the reachability zero control, run by the probe, never by an arm). The card fixes 0.3333 = w_ckpt / 3")
+    ap.add_argument("--s-far-lr-mult", dest="s_far_lr_mult", type=float, default=1.0,
+                    help="PREREG_V8F_CKPT120: the far layer's lr as a multiple of --lr (its own optimiser groups named sfar / sfar_nd). 1.0 (default) with the head off; the card fixes 10")
+    ap.add_argument("--rc120-npz", dest="rc120_npz", default="", help="PREREG_V8F_CKPT120: the RC-A120 table (build_rc120_labels.py; train_rc120 / train_rc120_ok row-aligned to the join). Read iff --s-far on; '' when off")
+    ap.add_argument("--rc120-sha256", dest="rc120_sha256", default="", help="PREREG_V8F_CKPT120: sha256 of --rc120-npz (re-hashed at load; a mismatch is a refusal)")
+    ap.add_argument("--s-far-label-perm", dest="s_far_label_perm", choices=M.S_FAR_LABEL_PERMS, default="off",
+                    help="PREREG_V8F_CKPT120 (R1, the deliberate regression of the head): clip = the RC-A120 labels of each train clip are a fixed derangement of clips (seed 0), steps beyond the donor's length masked. The model never reads it; the checkpoint records it")
+    ap.add_argument("--nav-strat", dest="nav_strat", choices=M.NAV_STRAT_MODES, default="off",
+                    help="PREREG_V8F_CKPT120 (H2): off (default) = nothing built. on = S reads ONE extra conditioning token e_nav_s = Linear(5, d) of nav_s (the route text's next turn at any distance); T and O never read it")
+    ap.add_argument("--nav-strat-variant", dest="nav_strat_variant", choices=M.NAV_STRAT_VARIANTS, default="real",
+                    help="PREREG_V8F_CKPT120 (R2): donor = at TRAIN, S's nav_s comes from a fixed derangement of clips (seed 0); T, O and the tactical nav keep the real text")
+    ap.add_argument("--nav-strat-npz", dest="nav_strat_npz", default="", help="PREREG_V8F_CKPT120: the nav_s table (navtext_nav_s.npz, build_navtext_nav.py with no announcement cut; same layout as navtext_nav.npz). Read iff --nav-strat on")
+    ap.add_argument("--nav-strat-sha256", dest="nav_strat_sha256", default="", help="PREREG_V8F_CKPT120: sha256 of --nav-strat-npz (re-hashed at load; a mismatch is a refusal)")
+    ap.add_argument("--s-adapter-detach", dest="s_adapter_detach", choices=M.S_ADAPTER_DETACH_MODES, default="off",
+                    help="PREREG_V8F_CKPT120 (COSTS-FAR branch): on = S's reader reads the adapter tokens (and the time table) detached, so no S-side loss moves the shared adapter")
     # ---- PREREG_V8F_HACC_MC section 7 (O-RECOVER): an ego-state perturbation of the kinematic inputs; targets and labels are never touched. Every flag defaults to OFF (the defaults are
     # data.EGO_PERTURB_DEFAULTS), and every flag has its G-DVB entry in FLAG_CHECKS and its clause in bad_ego_perturb.
     ap.add_argument("--ego-perturb-p", dest="ego_perturb_p", type=float, default=D.EGO_PERTURB_DEFAULTS["p"],
@@ -456,6 +480,7 @@ def make_config(a) -> M.V8FMiniConfig:
                            level_head=a.level_head, w_level=a.w_level,
                            ctx_heads=a.ctx_heads, w_ctx=a.w_ctx, ctx_detach=a.ctx_detach, nav_source=a.nav_source,        # PREREG_V8F_STRAT1: the lines that apply the STRAT1 levers (a mutation deletes them)
                            lead_head=a.lead_head, w_lead=a.w_lead, aux_cond=a.aux_cond,
+                           s_far=a.s_far, w_ckpt_far=a.w_ckpt_far, s_far_label_perm=a.s_far_label_perm, nav_strat=a.nav_strat, nav_strat_variant=a.nav_strat_variant, s_adapter_detach=a.s_adapter_detach,      # PREREG_V8F_CKPT120: the lines that apply the CKPT120 levers (a mutation deletes them)
                            w_op=a.w_op, w_tac_traj=a.w_tac_traj,                      # PREREG_V8F_OTBAND: the lines that apply the band levers (a mutation deletes them)
                            stok_dim=(D.stok_dim_of(a.t_stok_dir) if a.t_stok_dir else 0))
 
@@ -782,7 +807,7 @@ def bad_init_ckpt(a, data_info) -> list:
     elif got.get("skipped") != "resume":
         bad.append(f"init_ckpt: declared but neither applied nor skipped for a resume ({got.get('skipped')!r})")
     if got.get("applied"):                                  # PREREG_V8F_LEVEL: only the declared lever's keys may be fresh, and a lever-ON argv must have declared them
-        if bool(got.get("declared_new_keys")) != (a.level_head == "on" or a.lead_head == "on" or bool(a.t_stok_dir) or a.ctx_heads == "on"):          # PREREG_LEVELHEAD_A2: the lead head adds keys too; PREREG_V8F_OTBAND: so does the token
+        if bool(got.get("declared_new_keys")) != (a.level_head == "on" or a.lead_head == "on" or bool(a.t_stok_dir) or a.ctx_heads == "on" or a.s_far == "on" or a.nav_strat == "on"):          # PREREG_V8F_CKPT120: the far head and the S-side nav token add keys; PREREG_LEVELHEAD_A2: the lead head adds keys too; PREREG_V8F_OTBAND: so does the token
             bad.append(f"init_ckpt: level_head {a.level_head} / lead_head {a.lead_head} / t_stok_dir {a.t_stok_dir!r} declared but the load declared new keys {got.get('declared_new_keys')}")
         if set(got.get("fresh_keys", [])) - set(got.get("declared_new_keys", [])):
             bad.append(f"init_ckpt: keys {sorted(set(got.get('fresh_keys', [])) - set(got.get('declared_new_keys', [])))} were left fresh but are not the declared lever's")
@@ -848,7 +873,8 @@ def load_init_ckpt(path, model, cfg, apply: bool = True) -> dict:
 WM_ONLY_DEFAULT_DESTS = ("navonly", "no_consistency", "cons_absent", "code_mix", "o_interface", "w_acc", "launch_intent_w", "level_head", "w_level", "lead_head", "w_lead", "aux_cond", "detach_upper",
                          "ego_perturb_p", "ego_perturb_yawrate_std", "dagger_p", "dagger_bank", "dagger_bank_sha256", "ego_perturb_with_dagger", "recover_p", "recover_dev_bank", "recover_dev_bank_sha256",
                          "encoder", "lora_lr", "frames_root", "accum", "enc_ckpt", "window_start", "w_op", "w_tac_traj", "t_stok_dir", "t_stok_shuffle", "freeze", "v10_md5",
-                         "ctx_heads", "w_ctx", "ctx_detach", "ctx_lr_mult", "ctx_labels", "ctx_labels_sha256", "nav_source", "nav_text_npz", "nav_text_sha256")
+                         "ctx_heads", "w_ctx", "ctx_detach", "ctx_lr_mult", "ctx_labels", "ctx_labels_sha256", "nav_source", "nav_text_npz", "nav_text_sha256",
+                         "s_far", "w_ckpt_far", "s_far_lr_mult", "rc120_npz", "rc120_sha256", "s_far_label_perm", "nav_strat", "nav_strat_variant", "nav_strat_npz", "nav_strat_sha256", "s_adapter_detach")
 
 
 def is_wm_param(name: str) -> bool:
@@ -1747,6 +1773,107 @@ def bad_ctx(a, model, data_info=None, opt=None) -> list:
     return bad
 
 
+def bad_sfar(a, model, data_info=None, opt=None) -> list:
+    """PREREG_V8F_CKPT120, G-DVB: the eleven CKPT120 flags read back from the BUILT model, optimiser groups and label / nav arrays. Empty = pass. Refused: a head on with no loss (w_ckpt_far 0), a weight with no head, an s_far_out key in an
+    off model (and a head-on model without one), a far head with no RC-A120 table / a table whose sha256 is not the declared one / one named with the head off, s_far_lr_mult with no head or not the lr the group holds, a label permutation
+    that was not applied (or declared with no head), nav_strat without its table / with a sha mismatch / whose variant was not applied, an e_nav_s that is built iff the lever is not on, s_adapter_detach not built, and a far head or nav_s
+    combined with a mode that never stages them (WM-only) or that moves S's frame without re-expressing the far label (ego perturbation, recovery, the T2 bank)."""
+    bad = []
+    info = data_info or {}
+    on = a.s_far == "on"
+    built = model.built_levers()
+    keys = [k for k in model.state_dict() if k.startswith(M.S_FAR_KEY_PREFIXES)]
+    if not (math.isfinite(a.w_ckpt_far) and a.w_ckpt_far >= 0.0):
+        bad.append(f"w_ckpt_far {a.w_ckpt_far!r} is not a finite number >= 0")
+    if built.get("s_far", "off") != a.s_far:
+        bad.append(f"lever s_far: declared {a.s_far} but built {built.get('s_far', 'off')}")
+    if model.cfg.w_ckpt_far != a.w_ckpt_far:
+        bad.append(f"cfg.w_ckpt_far: declared {a.w_ckpt_far} but built {model.cfg.w_ckpt_far}")
+    if on and not a.w_ckpt_far > 0.0:
+        bad.append("s_far on but w_ckpt_far is 0: a head with no loss is a lever that is declared and does nothing")
+    if not on and a.w_ckpt_far != 0.0:
+        bad.append(f"w_ckpt_far {a.w_ckpt_far} declared with --s-far off: a weight with no head")
+    if not on and keys:
+        bad.append(f"s_far off but the built model carries s_far_out keys {keys[:3]}")
+    if on and not keys:
+        bad.append("s_far on declared but no s_far_out was built")
+    if built.get("s_far_label_perm", "off") != a.s_far_label_perm:
+        bad.append(f"lever s_far_label_perm: declared {a.s_far_label_perm} but built {built.get('s_far_label_perm', 'off')}")
+    if not (math.isfinite(a.s_far_lr_mult) and a.s_far_lr_mult > 0.0):
+        bad.append(f"s_far_lr_mult {a.s_far_lr_mult!r} is not a finite number > 0")
+    if on:
+        rc = info.get("rc120")
+        if not a.rc120_npz or not os.path.exists(a.rc120_npz):
+            bad.append(f"s_far on declared but --rc120-npz {a.rc120_npz!r} does not exist")
+        if not rc:
+            bad.append("s_far on declared but no RC-A120 arrays were built")
+        else:
+            if not (a.rc120_sha256 and rc.get("sha256") == a.rc120_sha256):
+                bad.append(f"rc120: declared sha256 {a.rc120_sha256!r} but the loaded file is {rc.get('sha256')!r}")
+            if rc.get("perm") != a.s_far_label_perm:
+                bad.append(f"s_far_label_perm: declared {a.s_far_label_perm} but the arrays were built {rc.get('perm')!r}")
+            if a.s_far_label_perm == "clip" and not rc.get("n_ok_after_perm", 0) > 0:
+                bad.append("s_far_label_perm clip: no row survived the permutation (the donor map is empty)")
+            if a.s_far_label_perm == "off" and rc.get("n_ok_after_perm") != rc.get("n_ok_table"):
+                bad.append("s_far_label_perm off but the built labels differ from the table's valid count")
+        if opt is not None:
+            names = {g.get("name"): g for g in opt.param_groups if str(g.get("name", "")).startswith("sfar")}
+            held = {id(p) for g in names.values() for p in g["params"]}
+            if not names or held != {id(p) for p in model.s_far_out.parameters()}:
+                bad.append("the sfar optimiser groups do not hold exactly the far head's parameters")
+            for g in names.values():
+                if abs(g["lr"] - a.lr * a.s_far_lr_mult) > 1e-15 * max(1.0, a.lr) or g.get("lr_mult") != a.s_far_lr_mult:
+                    bad.append(f"s_far_lr_mult: declared {a.s_far_lr_mult} but the group {g.get('name')} holds lr {g['lr']} / lr_mult {g.get('lr_mult')}")
+    else:
+        if a.rc120_npz or a.rc120_sha256:
+            bad.append("s_far off but --rc120-npz / --rc120-sha256 are named: the file is not read, so it is declared and does nothing")
+        if a.s_far_label_perm != "off":
+            bad.append(f"s_far_label_perm {a.s_far_label_perm} declared with --s-far off: a label permutation with no head")
+        if a.s_far_lr_mult != 1.0:
+            bad.append(f"s_far_lr_mult {a.s_far_lr_mult} declared with --s-far off: a lever with no head")
+        if opt is not None and any(str(g.get("name", "")).startswith("sfar") for g in opt.param_groups):
+            bad.append("s_far off but the optimiser carries an sfar group")
+    # ---- nav_strat
+    ns_on = a.nav_strat == "on"
+    nkeys = [k for k in model.state_dict() if k.startswith(M.NAV_S_KEY_PREFIXES)]
+    if built.get("nav_strat", "off") != a.nav_strat:
+        bad.append(f"lever nav_strat: declared {a.nav_strat} but built {built.get('nav_strat', 'off')}")
+    if ns_on != bool(nkeys):
+        bad.append(f"nav_strat {a.nav_strat} declared but the built model carries e_nav_s keys {nkeys[:3]}")
+    if built.get("nav_strat_variant", "real") != a.nav_strat_variant:
+        bad.append(f"lever nav_strat_variant: declared {a.nav_strat_variant} but built {built.get('nav_strat_variant', 'real')}")
+    if ns_on:
+        nv = info.get("nav_strat")
+        if not a.nav_strat_npz or not os.path.exists(a.nav_strat_npz):
+            bad.append(f"nav_strat on declared but --nav-strat-npz {a.nav_strat_npz!r} does not exist")
+        if not nv:
+            bad.append("nav_strat on declared but no nav_s arrays were built")
+        else:
+            if not (a.nav_strat_sha256 and nv.get("sha256") == a.nav_strat_sha256):
+                bad.append(f"nav_strat: declared sha256 {a.nav_strat_sha256!r} but the loaded file is {nv.get('sha256')!r}")
+            if nv.get("variant") != a.nav_strat_variant:
+                bad.append(f"nav_strat_variant: declared {a.nav_strat_variant} but the arrays were built {nv.get('variant')!r}")
+            if a.nav_strat_variant == "donor" and not nv.get("n_rows_differ_from_real", 0) > 0:
+                bad.append("nav_strat_variant donor but zero rows differ from the real nav_s: the derangement did not happen")
+            if a.nav_strat_variant == "real" and nv.get("n_rows_differ_from_real") != 0:
+                bad.append("nav_strat_variant real but the built nav_s differs from the file's")
+    else:
+        if a.nav_strat_npz or a.nav_strat_sha256:
+            bad.append("nav_strat off but --nav-strat-npz / --nav-strat-sha256 are named: the file is not read, so it is declared and does nothing")
+        if a.nav_strat_variant != "real":
+            bad.append(f"nav_strat_variant {a.nav_strat_variant} declared with --nav-strat off: a variant with no token")
+    if built.get("s_adapter_detach", "off") != a.s_adapter_detach or model.cfg.s_adapter_detach != a.s_adapter_detach:
+        bad.append(f"lever s_adapter_detach: declared {a.s_adapter_detach} but built {built.get('s_adapter_detach', 'off')} / cfg {model.cfg.s_adapter_detach}")
+    if on or ns_on:
+        for flag, moved in (("--ego-perturb-p", getattr(a, "ego_perturb_p", 0.0) > 0.0), ("--recover-p", getattr(a, "recover_p", 0.0) > 0.0), ("--t2-bank-p", getattr(a, "t2_bank_p", 0.0) > 0.0),
+                            ("--ego-perturb-with-dagger", bool(getattr(a, "ego_perturb_with_dagger", False)))):
+            if moved:
+                bad.append(f"s_far / nav_strat on with {flag}: that stage moves S's frame or nav without re-expressing the RC-A120 label / nav_s (only the DAgger swap is handled: far_restage)")
+        if a.wm_only or a.wm_windows == "wmonly":
+            bad.append("s_far / nav_strat on with a WM-only argv: the far / nav_s columns are never staged")
+    return bad
+
+
 #: PREREG_V8F_STRAT1 (LABEL_SPEC section 4): a ctx variable whose valid share over the trained windows is below this is the wrong table (a stated guard, ESTIMATED from the 98.66 % all-clip coverage)
 CTX_MIN_VALID_SHARE = 0.98
 
@@ -1761,6 +1888,7 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
     bad += bad_wm_only(a, cfg, model, data_info)                                                 # PREREG_V8F_MRATE: --wm-k read back from the BUILT WM modules, --wm-only from the loader's record and the frozen set
     bad += bad_wm_ladder(a, cfg, model, data_info)                                               # PREREG_V8F_LADDER: the seven ladder flags read back from the BUILT loss / predictor shapes / dataset
     bad += bad_wm_strides(a, cfg, model)                                                         # PREREG_V8F_LFS: --wm-strides read back from the BUILT WM modules (and the >= 2 transitions per level rule)
+    bad += bad_sfar(a, model, data_info, opt)                                                   # PREREG_V8F_CKPT120: the eleven CKPT120 flags read back from the BUILT model / optimiser groups / label and nav_s arrays
     bad += bad_ctx(a, model, data_info, opt)                                                    # PREREG_V8F_STRAT1: the nine STRAT1 flags read back from the BUILT model / optimiser groups / label and nav arrays
     bad += bad_lead(a, model, data_info)                                                         # PREREG_LEVELHEAD_A2: --lead-head / --w-lead / --aux-cond read back from the BUILT model and the built label arrays
     bad += bad_oband(a, cfg, model, data_info)                                                   # PREREG_V8F_OTBAND: the band split, the band weights, the strategic token, --freeze and --v10-md5 read back from the BUILT model and data
@@ -1843,7 +1971,7 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
         bad.append(f"wm {lv['wm']} declared but built gamma {built['wm_idm_gamma']}")
     # optimiser read-back
     lrs = {g["lr"] for g in opt.param_groups}
-    want_lrs = {a.lr} | ({lora_lr_of(a)} if enc is not None else set()) | ({a.lr * a.ctx_lr_mult} if a.ctx_heads == "on" else set())
+    want_lrs = {a.lr} | ({lora_lr_of(a)} if enc is not None else set()) | ({a.lr * a.ctx_lr_mult} if a.ctx_heads == "on" else set()) | ({a.lr * a.s_far_lr_mult} if a.s_far == "on" else set())
     if lrs != want_lrs:
         bad.append(f"lr: declared {sorted(want_lrs)} but optimiser holds {sorted(lrs)}")
     if enc is not None:
@@ -2349,6 +2477,108 @@ def ctx_head_probe(model, batch, cfg, CL=None, a=None, rtol: float = 1e-3) -> di
     return res
 
 
+def far_restage(batch: dict, pose_s_logged) -> dict:
+    """PREREG_V8F_CKPT120: ``lab_s.rc120`` re-expressed in the sample's S frame after the DAgger swap moved ``pose_s`` (the same world point, ``DG.rc_frame_change`` = ``transform_ckpt``): EXACTLY the identity, and the SAME batch object, for a
+    batch whose ``pose_s`` the swap did not touch; a row whose two frames coincide bit for bit, and an entry that is not ``rc120_ok``, are left as they are. Never modifies ``batch``."""
+    if batch["pose_s"] is pose_s_logged or torch.equal(batch["pose_s"], pose_s_logged):
+        return batch
+    ls = batch["lab_s"]
+    moved = DG.rc_frame_change(ls["rc120"][:, None, :], ls["rc120_ok"][:, None], pose_s_logged, batch["pose_s"])[:, 0]
+    return {**batch, "lab_s": {**ls, "rc120": moved}}
+
+
+def ckpt120_probe(model, batch, cfg, a=None, rtol: float = 1e-3) -> dict:
+    """PREREG_V8F_CKPT120 G-LIVE (lever-on only), on the loop's own batch: (a) the BUILT loss's total moves by exactly ``w_ckpt_far`` x ``T["ckpt_far"]``; (b) ``s_far_out`` gets a non-zero gradient at ``w_ckpt_far`` and EXACTLY 0.0 at
+    ``w_ckpt_far = 0`` (control); (c) an ALL-MASKED ``rc120_ok`` gives term 0.0 and head gradient EXACTLY 0.0 (control); (d) ``--nav-strat on``: ``e_nav_s`` gets a non-zero gradient from S's loss, EXACTLY 0.0 when ``nav_s`` is not read
+    (the model's ``e_nav_s`` replaced by none) and T and O outputs are bit-identical when ``nav_s`` changes; (e) the far point reaches neither T nor O (bit-identical T / O outputs when ``s_far_out`` is perturbed); (f) the S-side loss puts
+    EXACTLY 0.0 on the shared adapter with ``--s-adapter-detach on`` and > 0 with it off (the far layer is first made non-zero: at its zero init the far term cannot reach the adapter at step 0)."""
+    if cfg.s_far != "on" and cfg.nav_strat != "on":
+        return {"skipped": "s_far and nav_strat off"}
+    res = {}
+    m = copy.deepcopy(model).cpu()
+    m.train()
+    adapter = [p for mod in (m.adapter, m.pos, m.time) for p in (mod.parameters() if isinstance(mod, torch.nn.Module) else [mod])]
+
+    def run(mm, b, w=None):
+        if w is not None:
+            mm.cfg.w_ckpt_far = w
+        torch.manual_seed(0)
+        return mm.loss(b, p_gt=0.5, gen=torch.Generator().manual_seed(0))["terms"]
+
+    def gabs(y, ps):
+        gr = torch.autograd.grad(y, ps, retain_graph=True, allow_unused=True)
+        return float(sum(float(x.abs().sum()) for x in gr if x is not None))
+    s_loss = lambda T_: T_["ckpt"] + (T_["ckpt_far"] if "ckpt_far" in T_ else 0.0)
+    if cfg.s_far == "on":
+        w = float(cfg.w_ckpt_far)
+        head = list(m.s_far_out.parameters())
+        T1, T0 = run(m, batch, w), run(m, batch, 0.0)
+        dtot, want = float(T1["total"] - T0["total"]), w * float(T1["ckpt_far"])
+        res["w_ckpt_far"], res["term_ckpt_far"], res["total_diff"], res["total_diff_expected"] = w, float(T1["ckpt_far"]), dtot, want
+        if not (float(T1["ckpt_far"]) > 0.0 and abs(dtot - want) <= rtol * max(abs(want), 1e-12)):
+            raise AssertionError(f"ckpt120 probe: the total moved by {dtot} but w_ckpt_far x term is {want}: the far term does not reach the total with its weight")
+        res["head_grad"] = gabs(run(m, batch, w)["total"], head)
+        res["control_head_grad_w0"] = gabs(run(m, batch, 0.0)["total"], head)
+        if not res["head_grad"] > 0.0:
+            raise AssertionError("ckpt120 probe: s_far_out receives no gradient at w_ckpt_far")
+        if res["control_head_grad_w0"] != 0.0:
+            raise AssertionError(f"ckpt120 probe: the head gradient at w_ckpt_far = 0 must read exactly 0.0, got {res['control_head_grad_w0']!r}")
+        b0 = {**batch, "lab_s": {**batch["lab_s"], "rc120_ok": torch.zeros_like(batch["lab_s"]["rc120_ok"])}}
+        Tm = run(m, b0, w)
+        res["control_allmasked_term"], res["control_allmasked_head_grad"] = float(Tm["ckpt_far"]), gabs(Tm["total"], head)
+        if res["control_allmasked_term"] != 0.0 or res["control_allmasked_head_grad"] != 0.0:
+            raise AssertionError(f"ckpt120 probe: an ALL-MASKED rc120_ok must read exactly 0.0 (term {res['control_allmasked_term']}, head grad {res['control_allmasked_head_grad']})")
+        m.eval()
+        with torch.no_grad():
+            m.s_far_out.weight.add_(0.05)
+            mu = copy.deepcopy(m)
+            mu.s_far_out.weight.add_(0.5)
+            oa, ob = m(batch, p_gt=0.0), mu(batch, p_gt=0.0)
+        m.train()
+        res["t_iso_far"] = bool(all(torch.equal(oa[k], ob[k]) for k in ("traj30", "traj60", "goal_logits", "lat_logits", "lon_logits", "code")) and not torch.equal(oa["ckpt_far"], ob["ckpt_far"]))
+        if not res["t_iso_far"]:
+            raise AssertionError("ckpt120 probe: the far point moved a T / O output (or did not move at all): T-ISO-FAR violated")
+        with torch.no_grad():
+            m.s_far_out.weight.zero_()
+    if cfg.nav_strat == "on":
+        head_n = list(m.e_nav_s.parameters())
+        T1 = run(m, batch, float(cfg.w_ckpt_far))
+        res["nav_s_grad"] = gabs(s_loss(T1), head_n)
+        if not res["nav_s_grad"] > 0.0:
+            raise AssertionError("ckpt120 probe: e_nav_s receives no gradient from S's loss")
+        b2 = {**batch, "nav_s": torch.zeros_like(batch["nav_s"])}
+        m.eval()
+        with torch.no_grad():
+            o1, o2 = m(batch, p_gt=0.0), m(b2, p_gt=0.0)
+        m.train()
+        res["nav_s_moves_s"] = not torch.equal(o1["ckpt"], o2["ckpt"])
+        s0, fixed = type(m).run_s.__get__(m), o1["ckpt"].detach()
+        m.run_s = lambda *a, **k: (s0(*a, **k), fixed)[1]                # S's output held FIXED: T and O may then move ONLY through a key they read themselves (nav_s is S's alone)
+        m.eval()
+        with torch.no_grad():
+            o3, o4 = m(batch, p_gt=0.0), m(b2, p_gt=0.0)
+        m.__dict__.pop("run_s", None)
+        m.train()
+        res["nav_s_t_o_identical"] = bool(all(torch.equal(o3[k], o4[k]) for k in ("traj30", "traj60", "goal_logits", "lat_logits", "lon_logits", "code")))
+        if not (res["nav_s_moves_s"] and res["nav_s_t_o_identical"]):
+            raise AssertionError(f"ckpt120 probe: nav_s must move S ({res['nav_s_moves_s']}) and leave every T / O output bit-identical ({res['nav_s_t_o_identical']})")
+        keys = set(m.forward_infer(batch)["_keys_read"])
+        res["nav_s_in_keys_read"] = "nav_s" in keys
+    if cfg.s_far == "on":                                        # (f) the adapter, with the far layer non-zero
+        with torch.no_grad():
+            m.s_far_out.weight.add_(0.05)
+        mA, mB = copy.deepcopy(m), copy.deepcopy(m)
+        mA.cfg.s_adapter_detach, mB.cfg.s_adapter_detach = "off", "on"
+        adA = [p for mod in (mA.adapter, mA.pos, mA.time) for p in (mod.parameters() if isinstance(mod, torch.nn.Module) else [mod])]
+        adB = [p for mod in (mB.adapter, mB.pos, mB.time) for p in (mod.parameters() if isinstance(mod, torch.nn.Module) else [mod])]
+        res["adapter_grad_s_detach_off"] = gabs(s_loss(run(mA, batch, float(cfg.w_ckpt_far))), adA)
+        res["control_adapter_grad_s_detach_on"] = gabs(s_loss(run(mB, batch, float(cfg.w_ckpt_far))), adB)
+        if not res["adapter_grad_s_detach_off"] > 0.0 or res["control_adapter_grad_s_detach_on"] != 0.0:
+            raise AssertionError(f"ckpt120 probe: the S-side loss must reach the adapter with --s-adapter-detach off ({res['adapter_grad_s_detach_off']}) and read EXACTLY 0.0 with it on ({res['control_adapter_grad_s_detach_on']})")
+    res["pass"] = True
+    return res
+
+
 def nav_source_probe(model, batch, J, info, a, hist_rows=None) -> dict:
     """PREREG_V8F_STRAT1 G-LIVE (EVERY argv; the control records source v9): (a) the digest of ``J["nav"]`` equals the declared source's (the npz's for text, the join's for v9); (b) text: ``n_text_ne_v9 > 0`` (zero =
     the overwrite did not happen), v9: == 0; (c) the probe batch's ``nav`` equals an independent read of the source rows at its history steps; (d) reach: the nav encoder gets a non-zero gradient and ``forward_infer``
@@ -2702,7 +2932,7 @@ def ego_perturb_probe(model, batch, cfg, ego, exclude=None) -> dict:
     with torch.no_grad():
         keys = set(m.forward_infer(batch)["_keys_read"])
     m.train()
-    stray = sorted(keys - set(D.EGO_PERTURB_REBUILT) - set(D.EGO_PERTURB_KEPT))
+    stray = sorted(keys - set(D.EGO_PERTURB_REBUILT) - set(D.EGO_PERTURB_KEPT) - set(M.NAV_S_KEYS))       # PREREG_V8F_CKPT120: nav_s (refused with the perturbation on in bad_sfar)
     if stray:
         raise AssertionError(f"ego probe: forward_infer reads {stray}, which is neither rebuilt nor kept by the perturbation: an input the perturbation leaves unaccounted for")
     res["keys_read"] = sorted(keys)
@@ -2834,7 +3064,7 @@ def recover_probe(model, batch, cfg, rec) -> dict:
     with torch.no_grad():
         keys = set(m.forward_infer(batch)["_keys_read"])
     m.train()
-    stray = sorted(keys - set(R.RECOVER_REBUILT) - set(D.EGO_PERTURB_KEPT))
+    stray = sorted(keys - set(R.RECOVER_REBUILT) - set(D.EGO_PERTURB_KEPT) - set(M.NAV_S_KEYS))           # PREREG_V8F_CKPT120: nav_s (refused with the recovery on in bad_sfar)
     if stray:
         raise AssertionError(f"recover probe: forward_infer reads {stray}, which is neither rebuilt nor kept by the perturbation: an input the perturbation leaves unaccounted for")
     res["keys_read"] = sorted(keys)
@@ -2987,7 +3217,7 @@ def dagger_probe(model, batch, cfg, dag) -> dict:
     with torch.no_grad():
         keys = set(m.forward_infer(batch)["_keys_read"])
     m.train()
-    stray = sorted(keys - set(DG.REBUILT) - set(DG.KEPT))
+    stray = sorted(keys - set(DG.REBUILT) - set(DG.KEPT) - set(M.NAV_S_KEYS))                  # PREREG_V8F_CKPT120: nav_s is a declared key; the swap rebuilds its channel 3 by the nav rule (v8f_dagger.swap_rows)
     if stray:
         raise AssertionError(f"dagger probe: forward_infer reads {stray}, which is neither replaced nor kept by the swap: an input the swap leaves unaccounted for")
     res["keys_read"] = sorted(keys)
@@ -3370,6 +3600,10 @@ def build_data(a, cfg):
     if a.nav_source == "text":
         J["nav"], J["nav_d"], rec_ = D.nav_text_arrays(J, a.nav_text_npz, a.nav_text_sha256, "train")          # PREREG_V8F_STRAT1: ONE line (a mutation deletes it, T-NAV-MUT)
         info["nav_source"].update(rec_)
+    if a.nav_strat == "on":                                                    # PREREG_V8F_CKPT120: S's route-text channel (read by S alone), joined onto J; ONE line each (a mutation deletes it)
+        J["nav_s"], info["nav_strat"] = D.nav_strat_arrays(J, a.nav_strat_npz, a.nav_strat_sha256, "train", a.nav_strat_variant)
+    if a.s_far == "on":                                                        # PREREG_V8F_CKPT120: the RC-A120 labels (R1: the clip derangement), joined onto J
+        J["rc120"], J["rc120_ok"], info["rc120"] = D.rc120_arrays(J, a.rc120_npz, a.rc120_sha256, "train", a.s_far_label_perm)
     excluded, n_ex_declared = [], 0
     if a.exclude:
         xlo, xhi = (int(x) for x in a.exclude.split(":"))
@@ -3595,12 +3829,16 @@ def main(argv=None):
         enc = make_encoder(a, dev)                     # AFTER the heads: it must not move their initialisation (the global RNG is restored inside)
         enc.set_checkpointing(a.enc_ckpt)
     ctx_ids = {id(p) for p in model.ctx_head.parameters()} if model.ctx_head is not None else set()      # PREREG_V8F_STRAT1: the head's own optimiser groups (empty with the head off = the tip's groups, bit for bit)
-    decay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim >= 2 and id(p) not in ctx_ids]
-    nodecay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim < 2 and id(p) not in ctx_ids]
+    sfar_ids = {id(p) for p in model.s_far_out.parameters()} if model.s_far_out is not None else set()   # PREREG_V8F_CKPT120: the far layer's own optimiser groups (empty with the head off = the tip's groups, bit for bit)
+    decay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim >= 2 and id(p) not in sfar_ids and id(p) not in ctx_ids]
+    nodecay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim < 2 and id(p) not in sfar_ids and id(p) not in ctx_ids]
     groups = [{"params": decay, "weight_decay": a.wd}, {"params": nodecay, "weight_decay": 0.0}]
     if ctx_ids:
         groups.append({"params": [p for p in model.ctx_head.parameters() if p.ndim >= 2], "weight_decay": a.wd, "lr": a.lr * a.ctx_lr_mult, "name": "ctx", "lr_mult": a.ctx_lr_mult})
         groups.append({"params": [p for p in model.ctx_head.parameters() if p.ndim < 2], "weight_decay": 0.0, "lr": a.lr * a.ctx_lr_mult, "name": "ctx_nd", "lr_mult": a.ctx_lr_mult})
+    if sfar_ids:
+        groups.append({"params": [p for p in model.s_far_out.parameters() if p.ndim >= 2], "weight_decay": a.wd, "lr": a.lr * a.s_far_lr_mult, "name": "sfar", "lr_mult": a.s_far_lr_mult})
+        groups.append({"params": [p for p in model.s_far_out.parameters() if p.ndim < 2], "weight_decay": 0.0, "lr": a.lr * a.s_far_lr_mult, "name": "sfar_nd", "lr_mult": a.s_far_lr_mult})
     if enc is not None:                                # the LoRA matrices (2-D: the same weight-decay rule as the heads), their own peak lr
         groups.append({"params": enc.lora_parameters(), "weight_decay": a.wd, "lr": lora_lr_of(a), "name": "lora", "lr_mult": lora_lr_of(a) / a.lr})
     opt = torch.optim.AdamW(groups, lr=a.lr)
@@ -3655,7 +3893,7 @@ def main(argv=None):
         ident = identity_probe(enc, probe_f, dev, chunk)
     model.to(dev)
     if a.wm_only:                                                          # PREREG_V8F_MRATE: the readers, heads and planner are frozen and never run; the probes that need their gradients are skipped (and recorded as skipped)
-        mix = ocut = accp = egop = dagp = recp = t2p = lvp = ldp = obp = cxp = nsp = {"skipped": "wm_only"}
+        mix = ocut = accp = egop = dagp = recp = t2p = lvp = ldp = obp = cxp = nsp = c120 = {"skipped": "wm_only"}
         lip = {"skipped": "wm_only", "launch_n": 0, "launch_eligible": 0}
         cmpp = {"skipped": "wm_only", "overlap": 0}
         adm = M.assert_no_situation_classifier_input(model.cpu().eval(), probe)
@@ -3717,6 +3955,10 @@ def main(argv=None):
         except (AssertionError, ValueError) as e:
             raise SystemExit(f"ZZDVB-REFUSEDZZ ctx-head: {e}")
         try:
+            c120 = ckpt120_probe(model, probe, cfg, a)           # PREREG_V8F_CKPT120: G-LIVE on the loop's own batch (off: nothing runs)
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ ckpt120: {e}")
+        try:
             nsp = nav_source_probe(model, probe, J, info, a)  # PREREG_V8F_STRAT1: EVERY argv: the nav the batch carries is the declared source's, the overwrite happened (text) or did not (v9), the channel reaches the model
         except (AssertionError, ValueError) as e:
             raise SystemExit(f"ZZDVB-REFUSEDZZ nav-source: {e}")
@@ -3768,6 +4010,11 @@ def main(argv=None):
         if info.get("stok"):
             sc["stok"] = info["stok"]
     sc["nav_source_probe"] = nsp                                        # PREREG_V8F_STRAT1: every argv (the control's records source v9); a tip selfcheck has none
+    if cfg.s_far == "on" or cfg.nav_strat == "on":                      # PREREG_V8F_CKPT120: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
+        sc["ckpt120_probe"] = c120
+        for k_ in ("rc120", "nav_strat"):
+            if info.get(k_):
+                sc[k_] = info[k_]
     if cfg.ctx_heads == "on":                                           # PREREG_V8F_STRAT1: lever-ON arms only
         sc["ctx_head_probe"] = cxp
         sc["ctx_labels"] = info["ctx_labels"]
@@ -3798,6 +4045,7 @@ def main(argv=None):
     level_on = cfg.level_head == "on"                              # PREREG_V8F_LEVEL: off (the default) = the loop runs no new line
     lead_on = cfg.lead_head == "on"                                # PREREG_LEVELHEAD_A2: off (the default) = the loop runs no new line
     ctx_on = cfg.ctx_heads == "on"                                 # PREREG_V8F_STRAT1: off (the default) = the loop runs no new line
+    far_on = cfg.s_far == "on"                                     # PREREG_V8F_CKPT120: off (the default) = the loop runs no new line
     launch_tot = {"rows": 0, "eligible": 0, "n": 0}                # ... run totals: rows seen, GT-valid rows (the along-track label exists), GT-launch rows; carried in the checkpoint of an arm that has the lever ON only
     launch_int = {"rows": 0, "eligible": 0, "n": 0}                # ... and since the last log line
     perf_rec = None                                                  # AMENDMENT_V8F_LORA_5: set only by a resume across --accum / --enc-ckpt under --resume-perf-levers
@@ -3840,6 +4088,10 @@ def main(argv=None):
             blob["nav_text_sha256"] = a.nav_text_sha256
         if ctx_on:
             blob["ctx_labels_sha256"] = a.ctx_labels_sha256
+        if far_on:                                                      # PREREG_V8F_CKPT120: lever-ON arms only
+            blob["rc120_sha256"], blob["s_far_label_perm"] = a.rc120_sha256, a.s_far_label_perm
+        if cfg.nav_strat == "on":
+            blob["nav_strat_sha256"], blob["nav_strat_variant"] = a.nav_strat_sha256, a.nav_strat_variant
         if a.wm_only:                                                   # WM-only arms only
             blob["wm_only"] = True
         if enc is not None:             # `model` keeps B's layout (the unchanged v8f_mini_eval.py loads it); the LoRA matrices travel beside it
@@ -3873,6 +4125,7 @@ def main(argv=None):
                     lead_lab = lead_stage(b, LL)
                 if ctx_on:                                             # PREREG_V8F_STRAT1: the ctx label of the LOGGED frame (clip index and step), taken BEFORE any ego stage (no swap rewrites feats)
                     ctx_lab = ctx_stage(b, CL)
+                pose_s_logged = b["pose_s"] if far_on else None         # PREREG_V8F_CKPT120: S's logged frame, before the swap moves it
                 if comp.on:                                            # AMEND1 section 1 (--ego-perturb-with-dagger): the swap is drawn first, the perturbation only on the samples the swap did not replace; the overlap is measured (exactly 0)
                     b = comp.apply(b, step)
                     for c_ in (ov_int, ov_tot):
@@ -3880,6 +4133,8 @@ def main(argv=None):
                 else:                                                  # every other argv: the two original lines, in their original order
                     b = ego.apply(b, step)                                 # O-RECOVER: the kinematic inputs of the selected samples are rebuilt from a perturbed ego state; targets and labels are untouched (off: `b` itself)
                     b = dag.apply(b, step)                                 # PREREG_V8F_DAGGER: the ego tensors of the selected samples are the model's OWN T1-kin state at the matched route point; targets and labels stay the human's (off: `b` itself)
+                if far_on:                                             # PREREG_V8F_CKPT120: the swapped rows' S frame moved; the RC-A120 label follows it (as lab_s.rc: DG.rc_frame_change). The identity for every row the swap did not touch
+                    b = far_restage(b, pose_s_logged)
                 if rcv.active:                                         # PREREG_RECOVER_FT (exclusive with the two stages above, refused otherwise): the ego tensors AND the target of the selected samples; p = 0 runs none of these lines
                     b_logged = b
                     b = rcv.apply(b, step)                                 # the ONE loop line that applies the recovery perturbation (a deleted line is caught by the guard below, by the counts and by the batch-level predicate)

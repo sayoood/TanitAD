@@ -369,6 +369,88 @@ def ctx_label_arrays(J: dict, path, expect_sha256: str, split: str = "train") ->
     return {"off": np.asarray(J["off"]), "y": y, "ok": okm, "sha256": sha, "n_valid": n_valid, "n_twilight_masked": n_twi}
 
 
+def derangement(n: int, seed: int = 0) -> np.ndarray:
+    """PREREG_V8F_CKPT120: a FIXED permutation of ``range(n)`` with NO fixed point (Sattolo's algorithm: one n-cycle), a pure function of (n, seed). n < 2 has no derangement and is refused."""
+    if n < 2:
+        raise ValueError(f"derangement: n = {n} < 2 has no derangement")
+    rng = np.random.default_rng(int(seed))
+    p = np.arange(n)
+    for i in range(n - 1, 0, -1):
+        j = int(rng.integers(0, i))                                # j in [0, i-1]: never i itself, so no element stays and the permutation is one cycle
+        p[i], p[j] = p[j], p[i]
+    return p
+
+
+def clip_donor_rows(J: dict, donor: np.ndarray):
+    """For the join's rows: ``(src_row [N] int64, in_range [N] bool)`` = row ``j`` of clip ``c`` -> row ``j`` of clip ``donor[c]`` (``in_range`` False where ``j`` is beyond the donor's length; ``src_row`` is then the donor's LAST row)."""
+    off, n = np.asarray(J["off"], np.int64), np.asarray(J["n"], np.int64)
+    N = int(off[-1] + n[-1])
+    src, inr = np.zeros(N, np.int64), np.zeros(N, bool)
+    for c in range(len(off)):
+        d = int(donor[c])
+        j = np.arange(int(n[c]))
+        src[off[c]:off[c] + n[c]] = off[d] + np.minimum(j, n[d] - 1)
+        inr[off[c]:off[c] + n[c]] = j < n[d]
+    return src, inr
+
+
+def rc120_arrays(J: dict, path, expect_sha256: str, split: str = "train", perm: str = "off"):
+    """PREREG_V8F_CKPT120 (card 2.1, 4): the RC-A120 table, ROW-ALIGNED to the join (step ``j`` of clip ``c`` is row ``off[c] + j``). Returns ``(rc120 [N, 3] float32 (x m, y m, psi rad), ok [N] bool, rec)``.
+    Re-hashes the file (an undeclared or mismatched sha256 is a refusal), refuses a shifted clip / off / n, asserts finite values where ``ok``. ``perm == "clip"`` (R1): the rows of clip ``c`` become those of clip ``donor[c]``
+    (a fixed derangement, seed 0) and a step beyond the donor's length is masked (ok False). ``rec`` = sha256, the digest of the table bytes AFTER the permutation, and the counts."""
+    sha = _sha256_file(path)
+    if not expect_sha256 or sha != expect_sha256:
+        raise ValueError(f"rc120_arrays: sha256 {sha} != declared {expect_sha256!r}")
+    with np.load(path, allow_pickle=False) as z:
+        _assert_table_aligned(z, J, split, "rc120_arrays")
+        rc = np.asarray(z[f"{split}_rc120"], np.float32)
+        ok = np.asarray(z[f"{split}_rc120_ok"]).astype(bool)
+    N = int(np.asarray(J["off"])[-1] + np.asarray(J["n"])[-1])
+    if rc.shape != (N, 3) or ok.shape != (N,):
+        raise ValueError(f"rc120_arrays: shapes {rc.shape} / {ok.shape} != ({N}, 3) / ({N},)")
+    if not np.isfinite(rc[ok]).all():
+        raise ValueError("rc120_arrays: NaN / inf in a valid row")
+    rc = np.where(ok[:, None], rc, 0.0).astype(np.float32)             # an invalid entry is a zero placeholder (as the join's rc)
+    n_ok_table = int(ok.sum())
+    if perm not in ("off", "clip"):
+        raise ValueError(f"rc120_arrays: perm {perm!r}")
+    if perm == "clip":
+        src, inr = clip_donor_rows(J, derangement(len(np.asarray(J["off"])), 0))
+        rc, ok = rc[src], ok[src] & inr
+        rc = np.where(ok[:, None], rc, 0.0).astype(np.float32)
+    rec = {"sha256": sha, "table_digest": hashlib.sha256(rc.tobytes() + ok.tobytes()).hexdigest(), "perm": perm, "n_rows": N, "n_ok_table": n_ok_table, "n_ok_after_perm": int(ok.sum())}
+    return rc, ok, rec
+
+
+def nav_strat_arrays(J: dict, path, expect_sha256: str, split: str = "train", variant: str = "real"):
+    """PREREG_V8F_CKPT120 (``--nav-strat``): S's route-text channel ``nav_s`` [N, 5] float32, ROW-ALIGNED to the join: the text rule of STRAT1 with NO announcement cut (the next TURN-class side at any distance; ch3 = clip(d / 100, 0, 3), ch4 = 1).
+    Same file layout and the same channel checks as :func:`nav_text_arrays` (``{split}_nav`` / ``{split}_nav_d``). ``variant == "donor"`` (R2, TRAIN only): the rows of clip ``c`` are those of clip ``donor[c]`` (a fixed derangement,
+    seed 0; beyond the donor's length its last row). Returns ``(nav_s, rec)``; ``rec`` carries the sha256, the digest of the bytes AFTER the variant, and ``n_rows_differ_from_real`` (0 for ``real``)."""
+    if variant not in ("real", "donor"):
+        raise ValueError(f"nav_strat_arrays: variant {variant!r}")
+    sha = _sha256_file(path)
+    if not expect_sha256 or sha != expect_sha256:
+        raise ValueError(f"nav_strat_arrays: sha256 {sha} != declared {expect_sha256!r}")
+    with np.load(path, allow_pickle=False) as z:
+        _assert_table_aligned(z, J, split, "nav_strat_arrays")
+        nav = np.asarray(z[f"{split}_nav"], np.float32)
+    N = int(np.asarray(J["off"])[-1] + np.asarray(J["n"])[-1])
+    if nav.shape != (N, 5):
+        raise ValueError(f"nav_strat_arrays: shape {nav.shape} != ({N}, 5)")
+    if not np.isfinite(nav).all():
+        raise ValueError("nav_strat_arrays: NaN / inf in the channels")
+    if not (np.isin(nav[:, :3], (0.0, 1.0)).all() and (nav[:, :3].sum(1) <= 1.0).all()):
+        raise ValueError("nav_strat_arrays: channels 0-2 are not one-hot / all-zero rows")
+    if nav[:, 3].min() < 0.0 or nav[:, 3].max() > 3.0 or not np.isin(nav[:, 4], (0.0, 1.0)).all():
+        raise ValueError("nav_strat_arrays: channel 3 outside [0, 3] or channel 4 not in {0, 1}")
+    real = nav
+    if variant == "donor":
+        src, _ = clip_donor_rows(J, derangement(len(np.asarray(J["off"])), 0))
+        nav = real[src]
+    rec = {"sha256": sha, "variant": variant, "nav_digest": hashlib.sha256(np.ascontiguousarray(nav).tobytes()).hexdigest(), "n_rows_differ_from_real": int((nav != real).any(1).sum())}
+    return nav, rec
+
+
 #: the nav-text channel ranges (the v9 nav's layout: ch0-2 one-hot FOLLOW / L / R or all zeros, ch3 = distance / 100 in [0, 3], ch4 = row-present)
 def nav_text_arrays(J: dict, path, expect_sha256: str, split: str = "train"):
     """PREREG_V8F_STRAT1 (BUILD_SPEC section 4): the text-derived nav, ROW-ALIGNED to the join. Returns ``(nav [N, 5] float32, nav_d [N] float32, rec)``. Re-hashes the file (refuses a mismatch or an undeclared sha),
@@ -693,7 +775,8 @@ def _lab_pack(J, i):
             "goal_w": np.array([(gw >> b) & 1 for b in range(22)], np.float32),
             "lat_cls": int(J["lat_cls"][i]), "lat_al": np.array([(int(J["lat_allowed"][i]) >> b) & 1 for b in range(5)], bool),
             "lon_cls": int(J["lon_cls"][i]), "lon_al": np.array([(int(J["lon_allowed"][i]) >> b) & 1 for b in range(7)], bool),
-            "cons": J["cons"][i], "rc": J["rc"][i], "rc_ok": J["rc_ok"][i], "lead_valid": int(J["lead_valid"][i])}
+            "cons": J["cons"][i], "rc": J["rc"][i], "rc_ok": J["rc_ok"][i], "lead_valid": int(J["lead_valid"][i]),
+            **({"rc120": J["rc120"][i], "rc120_ok": J["rc120_ok"][i]} if "rc120" in J else {})}      # PREREG_V8F_CKPT120: the RC-A120 label (absent from every earlier join = the earlier pack, bit for bit)
 
 
 WINDOW_START_ABSENT = -1       # the trainer flag's / the config field's default: "not set" = hist - 1, today's behaviour
@@ -768,6 +851,8 @@ class V8FMiniWindows:
         it["pose_now"] = d["pose"][t][:3].astype(np.float32)
         it["pose_t"] = d["pose"][t - a_t][:3].astype(np.float32)
         it["pose_s"] = d["pose"][t - a_s][:3].astype(np.float32)
+        if "nav_s" in J:                                          # PREREG_V8F_CKPT120: S's route-text channel of the hmax frames (read by S alone); absent from every earlier join = no key in the batch
+            it["nav_s"] = J["nav_s"][[self.row(ci, int(j)) for j in idc]]
         if self.stok is not None:                                 # PREREG_V8F_OTBAND: the strategic token of the hmax frames, read at S's tick by the model (sample-and-hold)
             if self.stok.length(clip) != T:
                 raise ValueError(f"{clip}: stok has {self.stok.length(clip)} rows, the cache clip {T} frames")
@@ -817,6 +902,8 @@ def collate(items: list) -> dict:
     out["p10_t"] = torch.as_tensor(np.stack([np.nan_to_num(it["p10_t"]) for it in items]), dtype=torch.float32)
     for k in ("a_t", "a_s", "t", "ci"):
         out[k] = torch.as_tensor([it[k] for it in items], dtype=torch.long)
+    if "nav_s" in items[0]:                                      # PREREG_V8F_CKPT120: present only when the join carries nav_s
+        out["nav_s"] = stack("nav_s", torch.float32)
     if "stok" in items[0]:                                       # PREREG_V8F_OTBAND: present only when a StokStore is attached
         out["stok"], out["stok_ok"] = stack("stok", torch.float32), stack("stok_ok", torch.bool)
     for nm in ("lab", "lab_t", "lab_s"):
@@ -829,6 +916,9 @@ def collate(items: list) -> dict:
                    "cons": torch.as_tensor(np.stack([x["cons"] for x in L])), "rc": torch.as_tensor(np.stack([x["rc"] for x in L])),
                    "rc_ok": torch.as_tensor(np.stack([x["rc_ok"] for x in L])),
                    "lead_valid": torch.as_tensor([x["lead_valid"] for x in L])}
+        if "rc120" in L[0]:                                      # PREREG_V8F_CKPT120: the far label, present only when the join carries it
+            out[nm]["rc120"] = torch.as_tensor(np.stack([x["rc120"] for x in L]))
+            out[nm]["rc120_ok"] = torch.as_tensor(np.stack([x["rc120_ok"] for x in L]))
     return out
 
 

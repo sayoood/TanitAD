@@ -541,7 +541,7 @@ def swap_rows(batch: dict, rows, rec: dict) -> dict:
     """The swapped tensors for ``rows`` (LongTensor [N] of batch positions) from the bank records ``rec`` (``DaggerBank.gather``, N records, aligned): a dict with the full ``REBUILT`` tensors (rows replaced, the
     others as they were) and ``lab_s`` (``rc`` re-expressed). ``batch`` is not modified. The rebuild is ORC's (``EgoPerturb._rebuilt``): the same P10 spelling for the base (``kdx_base`` of the kinematic triple in
     the yaw units), the same real-frame rule (``_hist_valid``: a padded or row-0 frame is not a row and keeps its logged value), the same nav rule (``_nav_masks``: token and validity equal NOW's) -- with the
-    replacement taken from the own state instead of scaled from the logged one."""
+    replacement taken from the own state instead of scaled from the logged one. A batch that carries ``nav_s`` (PREREG_V8F_CKPT120) also gets ``nav_s`` channel 3 rebuilt by the same nav rule."""
     import torch
     f64 = torch.float64
     dev, F, N = batch["p10f"].device, int(batch["p10f"].shape[1]), int(rows.numel())
@@ -574,6 +574,13 @@ def swap_rows(batch: dict, rows, rec: dict) -> dict:
     back = arc[:, -1:] - arc                                                                             # own arc from each history frame to NOW [m]
     nav3 = (nav_r[:, -1:, 3].to(f64) + back.to(f64) / 100.0).clamp(0.0, 3.0)                              # d_next grows backwards in time; NOW is the anchor
     new["nav"][rows, :, 3] = torch.where(nav_ok, nav3.to(nav_r.dtype), nav_r[..., 3])
+    if "nav_s" in batch:                                                                                 # PREREG_V8F_CKPT120 (MM ruling, part 1 deviation 3): S's route-text countdown follows the OWN arc by the SAME rule as nav ch3 above, on nav_s's own token / validity (NOW anchors; ch 0-2 and 4 untouched)
+        ns_r = batch["nav_s"][rows]
+        ns_same = (ns_r[..., :3].argmax(-1) == ns_r[:, -1:, :3].argmax(-1)) & (ns_r[..., 4] == ns_r[:, -1:, 4])
+        ns_ok = D.EgoPerturb._hist_valid(batch, rows) & ns_same & own_ok & (torch.ones_like(own_ok) if NAV_REBUILD_INVALID else ns_r[..., 4] > 0)
+        ns3 = (ns_r[:, -1:, 3].to(f64) + back.to(f64) / 100.0).clamp(0.0, 3.0)
+        new["nav_s"] = batch["nav_s"].clone()
+        new["nav_s"][rows, :, 3] = torch.where(ns_ok, ns3.to(ns_r.dtype), ns_r[..., 3])
     ls = batch["lab_s"]
     rc = ls["rc"].clone()
     rc[rows] = rc_frame_change(ls["rc"][rows], ls["rc_ok"][rows], batch["pose_s"][rows], new["pose_s"][rows])
@@ -592,6 +599,8 @@ def swap_item(it: dict, rec1: dict) -> dict:
     for k in REBUILT:
         out[k] = upd[k][0].numpy()
     out["lab_s"] = {**it["lab_s"], "rc": upd["lab_s"]["rc"][0].numpy()}
+    if "nav_s" in upd:                                                                                    # PREREG_V8F_CKPT120: the countdown rebuilt on the own arc (absent from every pre-CKPT120 item)
+        out["nav_s"] = upd["nav_s"][0].numpy()
     return out
 
 
