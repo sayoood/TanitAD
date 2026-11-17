@@ -1,0 +1,581 @@
+{
+ "chassis": "s0",
+ "controls": {
+  "C-RA-SHA": {
+   "green": {
+    "ok": true,
+    "refused": false,
+    "sha256": "edab7dce7b57f9ae21d90e5cc317c914aed432751fde7a7d4e6cf6af0748a6cf"
+   },
+   "regression": {
+    "ok": false,
+    "refused": true,
+    "why": "readout F:/TanitAD-scratch/actrsp/lonplan/amend5/controls/tmp_s0\\readout_flip.pt sha256 d342d16b9018 != the frozen edab7dce7b57"
+   },
+   "passed": true
+  },
+  "C-RA-FIT": {
+   "green": {
+    "n_pairs": 8306,
+    "n_clips": 141,
+    "n_pairs_record": 8306,
+    "n_clips_record": 141,
+    "max_abs_dW": 2.4181373830395314e-10,
+    "max_abs_dmu": 3.6727029794139665e-10,
+    "max_abs_dsd": 7.6422262962339e-10,
+    "abs_dym": 0.0,
+    "train_clips_in_score_episodes": 0,
+    "tol": 1e-08,
+    "ok": true
+   },
+   "regression": {
+    "n_pairs": 8307,
+    "n_clips": 141,
+    "n_pairs_record": 8306,
+    "n_clips_record": 141,
+    "max_abs_dW": 3.2406382356383115e-05,
+    "max_abs_dmu": 0.0001263055091136247,
+    "max_abs_dsd": 0.00011651715436378218,
+    "abs_dym": 6.294725402579502e-05,
+    "train_clips_in_score_episodes": 0,
+    "tol": 1e-08,
+    "ok": false
+   },
+   "passed": true,
+   "regression_planted_eid": {
+    "n_pairs": 8306,
+    "n_clips": 142,
+    "n_pairs_record": 8306,
+    "n_clips_record": 141,
+    "max_abs_dW": 2.4181373830395314e-10,
+    "max_abs_dmu": 3.6727029794139665e-10,
+    "max_abs_dsd": 7.6422262962339e-10,
+    "abs_dym": 0.0,
+    "train_clips_in_score_episodes": 1,
+    "tol": 1e-08,
+    "ok": false
+   }
+  },
+  "C-TRAIN-ISO": {
+   "green": {
+    "n_train_windows": 564,
+    "n_overlap_with_score_episodes": 0,
+    "path_equal": true,
+    "ok": true
+   },
+   "regression": {
+    "n_train_windows": 6,
+    "n_overlap_with_score_episodes": 1,
+    "path_equal": true,
+    "ok": false
+   },
+   "passed": true
+  },
+  "C-GRAD": {
+   "green": {
+    "min_abs_knots_1_10": 9.09596460729987,
+    "max_abs_knots_11_12": 0.0,
+    "max_abs_yaw": 0.0,
+    "ok": true
+   },
+   "regression": {
+    "min_abs_knots_1_10": 5.581117848759924,
+    "max_abs_knots_11_12": 11.939509503899313,
+    "max_abs_yaw": 0.0,
+    "ok": false
+   },
+   "passed": true,
+   "real_16_windows": {
+    "green": {
+     "min_abs_knots_1_10": 3.19130122079514e-05,
+     "max_abs_knots_11_12": 0.0,
+     "max_abs_yaw": 0.0,
+     "ok": true
+    },
+    "regression": {
+     "min_abs_knots_1_10": 2.206418866990134e-05,
+     "max_abs_knots_11_12": 0.038228075951337814,
+     "max_abs_yaw": 0.0,
+     "ok": false
+    },
+    "passed": true
+   }
+  },
+  "C-PLANT-i": {
+   "green": {
+    "max_cost": 1.8280779999038653e-05,
+    "median_cost": 5.890681323322803e-06,
+    "max_read_err_vs_target": 0.004275602881353535,
+    "plan_mean_minus_source_mean_max": 0.0003794568532144993,
+    "iterations": 90,
+    "analytic_cost_at_source_actions": 0.0,
+    "analytic_closed_form_read_err": 3.552713678800501e-15,
+    "ok": true
+   },
+   "regression": {
+    "max_cost": 0.0,
+    "median_cost": 0.0,
+    "max_read_err_vs_target": 5.329403712122659,
+    "plan_mean_minus_source_mean_max": 0.47298096156938374,
+    "iterations": 11,
+    "analytic_cost_at_source_actions": 0.0,
+    "analytic_closed_form_read_err": 3.552713678800501e-15,
+    "ok": false
+   },
+   "passed": true
+  },
+  "C-PLANT-ii-smoke": {
+   "green": {
+    "n": 64,
+    "median_cost": 8.309415377993901e-10,
+    "q90_cost": 6.25998772818549e-08,
+    "max_cost": 0.0032082186080515385,
+    "bar": 0.0001,
+    "ok": true
+   },
+   "regression": {
+    "n": 64,
+    "median_cost": 0.002503937343135476,
+    "q90_cost": 0.034081105515360845,
+    "max_cost": 0.20784172415733337,
+    "bar": 0.0001,
+    "ok": false
+   },
+   "passed": true
+  },
+  "C-YAW-ID": {
+   "green": {
+    "ok": true,
+    "per_mode": {
+     "l1": {
+      "yaw_1_30": 0.0,
+      "acc_11_30": 0.0,
+      "a1_raw": 0.0,
+      "cost1": 0.0,
+      "acc_1_10_moved": 2.7941973209381104,
+      "ok": true
+     },
+     "neg": {
+      "yaw_1_30": 0.0,
+      "acc_11_30": 0.0,
+      "a1_raw": 0.0,
+      "cost1": 0.0,
+      "acc_1_10_moved": 3.439340591430664,
+      "ok": true
+     },
+     "shuf": {
+      "yaw_1_30": 0.0,
+      "acc_11_30": 0.0,
+      "a1_raw": 0.0,
+      "cost1": 0.0,
+      "acc_1_10_moved": 3.430471420288086,
+      "ok": true
+     },
+     "oracle": {
+      "yaw_1_30": 0.0,
+      "acc_11_30": 0.0,
+      "a1_raw": 0.0,
+      "cost1": 0.0,
+      "acc_1_10_moved": 3.439340591430664,
+      "ok": true
+     }
+    }
+   },
+   "regression": {
+    "ok": false,
+    "write12": {
+     "yaw_1_30": 0.0,
+     "acc_11_30": 2.1981842517852783,
+     "a1_raw": 0.0,
+     "cost1": 0.0,
+     "acc_1_10_moved": 2.7941973209381104,
+     "ok": false
+    },
+    "write_yaw": {
+     "yaw_1_30": 0.2680349042415619,
+     "acc_11_30": 0.0,
+     "a1_raw": 0.0,
+     "cost1": 0.0,
+     "acc_1_10_moved": 2.7941973209381104,
+     "ok": false
+    }
+   },
+   "passed": true,
+   "regression_each_red": true
+  },
+  "C-OFF5": {
+   "green": {
+    "ok": true,
+    "files": {
+     "train/A0_s0": {
+      "ok": true,
+      "keys": {
+       "plan_raw": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "a1_raw": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "cost1": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "iters1": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "idx": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "decode_resid": {
+        "equal": true,
+        "maxabs": 0.0
+       }
+      },
+      "n": 564
+     },
+     "score/A0_s0": {
+      "ok": true,
+      "keys": {
+       "plan_raw": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "a1_raw": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "cost1": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "iters1": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "idx": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "decode_resid": {
+        "equal": true,
+        "maxabs": 0.0
+       }
+      },
+      "n": 994
+     },
+     "score/A0_s1": {
+      "ok": true,
+      "keys": {
+       "plan_raw": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "a1_raw": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "cost1": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "iters1": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "idx": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "decode_resid": {
+        "equal": true,
+        "maxabs": 0.0
+       }
+      },
+      "n": 994
+     },
+     "wrapper_file_train_A0_s0": {
+      "ok": true,
+      "keys": {
+       "plan_raw": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "a1_raw": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "cost1": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "iters1": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "idx": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "decode_resid": {
+        "equal": true,
+        "maxabs": 0.0
+       }
+      }
+     }
+    }
+   },
+   "regression": {
+    "ok": false,
+    "keys": {
+     "plan_raw": {
+      "equal": false,
+      "maxabs": 2.7941973209381104
+     },
+     "a1_raw": {
+      "equal": true,
+      "maxabs": 0.0
+     },
+     "cost1": {
+      "equal": true,
+      "maxabs": 0.0
+     },
+     "iters1": {
+      "equal": true,
+      "maxabs": 0.0
+     },
+     "idx": {
+      "equal": true,
+      "maxabs": 0.0
+     },
+     "decode_resid": {
+      "equal": true,
+      "maxabs": 0.0
+     }
+    }
+   },
+   "passed": true
+  },
+  "C-MEAN": {
+   "green": {
+    "ok": true,
+    "zero": {
+     "equal": true,
+     "maxabs": 0.0,
+     "ok": true
+    },
+    "guard": {
+     "ok": true,
+     "refused": false
+    }
+   },
+   "regression": {
+    "ok": false,
+    "guard_mutation": {
+     "ok": false,
+     "refused": true,
+     "why": "MEAN's shift does not come from the source file's knots (C-MEAN guard)"
+    }
+   },
+   "passed": true
+  },
+  "C-L4-RA": {
+   "green": {
+    "ok": true,
+    "argv": {
+     "ok": true,
+     "refused": false
+    },
+    "built": {
+     "ok": true,
+     "refused": false,
+     "built": {
+      "mode": "l1",
+      "src": "l1",
+      "kind": "ra",
+      "mirror": false,
+      "perm": false,
+      "readout_sha256": "edab7dce7b57f9ae21d90e5cc317c914aed432751fde7a7d4e6cf6af0748a6cf",
+      "mean_src": "none",
+      "src_key": "a1_raw"
+     }
+    },
+    "fresh": {
+     "ok": true,
+     "refused": false
+    }
+   },
+   "regression": {
+    "argv_mismatch": {
+     "ok": false,
+     "refused": true,
+     "why": "declared mode 'l1' != argv 'l2'"
+    },
+    "argv_unnamed": {
+     "ok": false,
+     "refused": true,
+     "why": "--ra-l1 is not named in the argv: its default would be a silent choice (--ra-l1 off disables the pass)"
+    },
+    "built_mismatch": {
+     "ok": false,
+     "refused": true,
+     "why": "built != declared: source key 'l2_prim_raw' != 'a1_raw'"
+    },
+    "preplanted": {
+     "ok": false,
+     "refused": true,
+     "why": "out folder F:/TanitAD-scratch/actrsp/lonplan/amend5/controls/tmp_s0/fresh_bad is not empty (1 entries: ['plans_hwm_oracle_s0.npz']); a pre-planted plans_*.npz is refused"
+    }
+   },
+   "passed": true
+  },
+  "C-IN": {
+   "green": {
+    "ok": true,
+    "inputs": {
+     "ckpt": {
+      "path": "C:/Users/Admin/t2v8f_pulls/ladder_R35_s0/ckpt_last.pt",
+      "sha256": "d920d62c6c391a61291b966a6af1783156b4351d25c7408913e4191daa0215cf",
+      "want": "d920d62c6c391a61291b966a6af1783156b4351d25c7408913e4191daa0215cf",
+      "equal": true
+     },
+     "windows": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/score/A0_s0/windows.npz",
+      "sha256": "371c753bcc3f28f1052c0e5e7e4898c0bbbed6140477b3338c8133a3632bdaee",
+      "want": "371c753bcc3f28f1052c0e5e7e4898c0bbbed6140477b3338c8133a3632bdaee",
+      "equal": true
+     },
+     "train_latents": {
+      "path": "F:/TanitAD-scratch/hwm_plan/latents_train_R35_s0.pt",
+      "sha256": "76a2d4f5482bd98670bab40ebbf4b3c85fde8ebf222596947fa16f0c7e82754c",
+      "want": "76a2d4f5482bd98670bab40ebbf4b3c85fde8ebf222596947fa16f0c7e82754c",
+      "equal": true
+     },
+     "readout": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/amend5/readout_in/readout_K10_R35_s0.pt",
+      "sha256": "edab7dce7b57f9ae21d90e5cc317c914aed432751fde7a7d4e6cf6af0748a6cf",
+      "want": "edab7dce7b57f9ae21d90e5cc317c914aed432751fde7a7d4e6cf6af0748a6cf",
+      "equal": true
+     },
+     "spec": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/amend5/AMEND_HWMPLAN_5.md",
+      "sha256": "de6f74773e110c49fcd37e1d9d851b15b5744fc6c32392b3f3c6a6ff8a124781",
+      "want": "de6f74773e110c49fcd37e1d9d851b15b5744fc6c32392b3f3c6a6ff8a124781",
+      "equal": true
+     },
+     "base_A0_s0": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/score/A0_s0/plans_hwm_oracle_s0.npz",
+      "sha256": "92763b92a17b1e801ac6e8b008d1d1d82e3aefe95d8254a14314d1380127f310",
+      "want": "92763b92a17b1e801ac6e8b008d1d1d82e3aefe95d8254a14314d1380127f310",
+      "equal": true
+     },
+     "base_A0_s1": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/score/A0_s0/plans_hwm_oracle_s1.npz",
+      "sha256": "9284125a301a3cc937e1f986c142ede0780ffd874279502d3175b0587479c529",
+      "want": "9284125a301a3cc937e1f986c142ede0780ffd874279502d3175b0587479c529",
+      "equal": true
+     }
+    }
+   },
+   "regression": {
+    "ok": false,
+    "inputs": {
+     "ckpt": {
+      "path": "C:/Users/Admin/t2v8f_pulls/ladder_R35_s0/ckpt_last.pt",
+      "sha256": "d920d62c6c391a61291b966a6af1783156b4351d25c7408913e4191daa0215cf",
+      "want": "d920d62c6c391a61291b966a6af1783156b4351d25c7408913e4191daa0215cf",
+      "equal": true
+     },
+     "windows": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/score/A0_s0/windows.npz",
+      "sha256": "371c753bcc3f28f1052c0e5e7e4898c0bbbed6140477b3338c8133a3632bdaee",
+      "want": "371c753bcc3f28f1052c0e5e7e4898c0bbbed6140477b3338c8133a3632bdaee",
+      "equal": true
+     },
+     "train_latents": {
+      "path": "F:/TanitAD-scratch/hwm_plan/latents_train_R35_s0.pt",
+      "sha256": "76a2d4f5482bd98670bab40ebbf4b3c85fde8ebf222596947fa16f0c7e82754c",
+      "want": "76a2d4f5482bd98670bab40ebbf4b3c85fde8ebf222596947fa16f0c7e82754c",
+      "equal": true
+     },
+     "readout": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/amend5/readout_in/readout_K10_R35_s0.pt",
+      "sha256": "edab7dce7b57f9ae21d90e5cc317c914aed432751fde7a7d4e6cf6af0748a6cf",
+      "want": "0000000000000000000000000000000000000000000000000000000000000000",
+      "equal": false
+     },
+     "spec": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/amend5/AMEND_HWMPLAN_5.md",
+      "sha256": "de6f74773e110c49fcd37e1d9d851b15b5744fc6c32392b3f3c6a6ff8a124781",
+      "want": "de6f74773e110c49fcd37e1d9d851b15b5744fc6c32392b3f3c6a6ff8a124781",
+      "equal": true
+     },
+     "base_A0_s0": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/score/A0_s0/plans_hwm_oracle_s0.npz",
+      "sha256": "92763b92a17b1e801ac6e8b008d1d1d82e3aefe95d8254a14314d1380127f310",
+      "want": "92763b92a17b1e801ac6e8b008d1d1d82e3aefe95d8254a14314d1380127f310",
+      "equal": true
+     },
+     "base_A0_s1": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/score/A0_s0/plans_hwm_oracle_s1.npz",
+      "sha256": "9284125a301a3cc937e1f986c142ede0780ffd874279502d3175b0587479c529",
+      "want": "9284125a301a3cc937e1f986c142ede0780ffd874279502d3175b0587479c529",
+      "equal": true
+     }
+    }
+   },
+   "passed": true,
+   "code_of_record_equal_A0_solver": true
+  },
+  "C-READBACK": {
+   "green": {
+    "ok": true,
+    "files": {
+     "A0_s0": {
+      "equal": true,
+      "plan_equal": true,
+      "cost1_equal": true,
+      "n": 64,
+      "lam_used": 0.0,
+      "arm": "hwm_oracle",
+      "seed": 0
+     },
+     "A0_s1": {
+      "equal": true,
+      "plan_equal": true,
+      "cost1_equal": true,
+      "n": 64,
+      "lam_used": 0.0,
+      "arm": "hwm_oracle",
+      "seed": 1
+     }
+    }
+   },
+   "regression": {
+    "ok": false,
+    "lam_override": {
+     "equal": false,
+     "plan_equal": false,
+     "cost1_equal": false,
+     "n": 64,
+     "lam_used": 10.0,
+     "arm": "hwm_oracle",
+     "seed": 0
+    }
+   },
+   "passed": true
+  },
+  "C-STRAT": {
+   "passed": true,
+   "rc": 0,
+   "tail": "{\n \"green\": {\n  \"rows_equal\": true,\n  \"n_rows\": 117,\n  \"replicate_equal\": true,\n  \"n_replicate\": 0,\n  \"tactical_equal\": true,\n  \"counts_equal\": true,\n  \"n_windows\": 994,\n  \"n_episodes\": 71,\n  \"paused\": false,\n  \"strategic_is_block\": true,\n  \"strategic_cells\": {\n   \"s_adh\": {\n    \"n_windows\": 12,\n    \"n_episodes\": 4,\n    \"label\": \"none\",\n    \"reason\": null\n   },\n   \"s_adh_deg\": {\n    \"n_windows\": 12,\n    \"n_episodes\": 4,\n    \"label\": \"none\",\n    \"reason\": null\n   },\n   \"s_false\": {\n    \"n_windows\": 856,\n    \"n_episodes\": 69,\n    \"label\": \"none\",\n    \"reason\": null\n   }\n  },\n  \"strategic_cells_have_n_or_reason\": true,\n  \"non_strategic_equal\": true,\n  \"strategic_computed\": true,\n  \"pass\": true\n },\n \"regression_arm_flagged\": true,\n \"regression\": {\n  \"rows_equal\": true,\n  \"n_rows\": 117,\n  \"replicate_equal\": true,\n  \"n_replicate\": 0,\n  \"tactical_equal\": true,\n  \"counts_equal\": true,\n  \"n_windows\": 994,\n  \"n_episodes\": 71,\n  \"paused\": true,\n  \"strategic_is_block\": false,\n  \"strategic_cells\": {},\n  \"strategic_cells_have_n_or_reason\": false,\n  \"non_strategic_equal\": true,\n  \"strategic_computed\": false,\n  \"pass\": false\n }\n}\n",
+   "note": "lonplan_cstrat.py: green = every non-STRATEGIC cell bit-equal to the code of record and the STRATEGIC cells computed; regression arm = the record's eval module reads PAUSED and is flagged; B = 200 here"
+  }
+ },
+ "wall_s": 256.2,
+ "red": [],
+ "ok": true
+}
