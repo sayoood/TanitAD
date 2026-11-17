@@ -369,6 +369,33 @@ def ctx_label_arrays(J: dict, path, expect_sha256: str, split: str = "train") ->
     return {"off": np.asarray(J["off"]), "y": y, "ok": okm, "sha256": sha, "n_valid": n_valid, "n_twilight_masked": n_twi}
 
 
+NAV_RB_VARIANTS = ("real", "zero")
+
+
+def nav_rb_arrays(J: dict, path, expect_sha256: str, split: str = "train", variant: str = "real"):
+    """PREREG_V8F_NAVRB2 (``--nav-rb``): the ROUNDABOUT state channel ``nav_rb`` [N, 1] float32 in {0, 1}, ROW-ALIGNED to the join (``build_navtext_nav_rb.py``: 1 iff the router row at the step is a flag-0
+    roundabout class). Re-hashes the file (refuses a mismatch or an undeclared sha), refuses a shifted clip / off / n, a wrong shape or a value outside {0, 1}. ``variant == "zero"`` (the zeroed-channel
+    control): every row 0.0. Returns ``(nav_rb, rec)``; ``rec`` carries the sha256, the variant, ``n_on`` (after the variant) and ``n_on_real``."""
+    if variant not in NAV_RB_VARIANTS:
+        raise ValueError(f"nav_rb_arrays: variant {variant!r}")
+    sha = _sha256_file(path)
+    if not expect_sha256 or sha != expect_sha256:
+        raise ValueError(f"nav_rb_arrays: sha256 {sha} != declared {expect_sha256!r}")
+    with np.load(path, allow_pickle=False) as z:
+        _assert_table_aligned(z, J, split, "nav_rb_arrays")
+        rb = np.asarray(z[f"{split}_nav_rb"], np.float32)
+    N = int(np.asarray(J["off"])[-1] + np.asarray(J["n"])[-1])
+    if rb.shape != (N, 1):
+        raise ValueError(f"nav_rb_arrays: shape {rb.shape} != ({N}, 1)")
+    if not np.isin(rb, (0.0, 1.0)).all():
+        raise ValueError("nav_rb_arrays: values outside {0, 1}")
+    real_on = int(rb.sum())
+    if variant == "zero":
+        rb = np.zeros_like(rb)
+    rec = {"sha256": sha, "variant": variant, "n_on": int(rb.sum()), "n_on_real": real_on, "digest": hashlib.sha256(np.ascontiguousarray(rb).tobytes()).hexdigest()}
+    return rb, rec
+
+
 #: the nav-text channel ranges (the v9 nav's layout: ch0-2 one-hot FOLLOW / L / R or all zeros, ch3 = distance / 100 in [0, 3], ch4 = row-present)
 def nav_text_arrays(J: dict, path, expect_sha256: str, split: str = "train"):
     """PREREG_V8F_STRAT1 (BUILD_SPEC section 4): the text-derived nav, ROW-ALIGNED to the join. Returns ``(nav [N, 5] float32, nav_d [N] float32, rec)``. Re-hashes the file (refuses a mismatch or an undeclared sha),
@@ -768,6 +795,8 @@ class V8FMiniWindows:
         it["pose_now"] = d["pose"][t][:3].astype(np.float32)
         it["pose_t"] = d["pose"][t - a_t][:3].astype(np.float32)
         it["pose_s"] = d["pose"][t - a_s][:3].astype(np.float32)
+        if "nav_rb" in J:                                         # PREREG_V8F_NAVRB2: the roundabout channel of the hmax frames, read with the nav; absent from every earlier join = no key in the batch
+            it["nav_rb"] = J["nav_rb"][[self.row(ci, int(j)) for j in idc]]
         if self.stok is not None:                                 # PREREG_V8F_OTBAND: the strategic token of the hmax frames, read at S's tick by the model (sample-and-hold)
             if self.stok.length(clip) != T:
                 raise ValueError(f"{clip}: stok has {self.stok.length(clip)} rows, the cache clip {T} frames")
@@ -817,6 +846,8 @@ def collate(items: list) -> dict:
     out["p10_t"] = torch.as_tensor(np.stack([np.nan_to_num(it["p10_t"]) for it in items]), dtype=torch.float32)
     for k in ("a_t", "a_s", "t", "ci"):
         out[k] = torch.as_tensor([it[k] for it in items], dtype=torch.long)
+    if "nav_rb" in items[0]:                                     # PREREG_V8F_NAVRB2: present only when the join carries nav_rb
+        out["nav_rb"] = stack("nav_rb", torch.float32)
     if "stok" in items[0]:                                       # PREREG_V8F_OTBAND: present only when a StokStore is attached
         out["stok"], out["stok_ok"] = stack("stok", torch.float32), stack("stok_ok", torch.bool)
     for nm in ("lab", "lab_t", "lab_s"):

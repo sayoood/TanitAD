@@ -119,6 +119,9 @@ FLAG_CHECKS = {
     "nav_source": "data:nav_source", "nav_text_npz": "path", "nav_text_sha256": "data:nav_text_sha256",
     "ctx_heads": "lever:ctx_heads", "w_ctx": "cfg:w_ctx", "ctx_labels": "path", "ctx_labels_sha256": "data:ctx_labels_sha256",
     "ctx_lr_mult": "opt:ctx_lr_mult", "ctx_detach": "lever:ctx_detach",
+    # PREREG_V8F_NAVRB2: argv -> make_config -> the BUILT model (e_nav_rb iff on) / the navrb optimiser group / the LOADED nav_rb array -> declared_vs_built (bad_navrb) -> navrb_probe (G-LIVE) -> the window item and
+    # collate -> V8FMini._nav_tok in S, T and O -> the total loss. With --nav-rb off (the default) nothing is built or read.
+    "nav_rb": "lever:nav_rb", "nav_rb_npz": "path", "nav_rb_sha256": "data:nav_rb_sha256", "nav_rb_variant": "data:nav_rb_variant", "nav_rb_lr_mult": "opt:nav_rb_lr_mult",
     # PREREG_V8F_MRATE: `lever:wm_k` = equals built_levers().get("wm_k", 1) (the BUILT modules' window / dilation / causal pad, WMAux.built_k); `lever:wm_only` = the record the WM-only loader read back (bad_wm_only: non-WM tensors bit-equal to the checkpoint,
     # NO WM tensor loaded, the WM re-initialised under --seed, trainable == the WM's parameters exactly, every other lever at its default) -> wm_only_live_check (G-LIVE) + planner_identity_probe -> `model.wm_only_loss(b)` in the loop.
     "wm_k": "lever:wm_k", "wm_only": "lever:wm_only",
@@ -211,6 +214,15 @@ def build_parser():
                     help="PREREG_V8F_STRAT1: the context head's lr as a multiple of --lr (its own optimiser groups named ctx / ctx_nd). 1.0 (default) with the head off")
     ap.add_argument("--ctx-detach", dest="ctx_detach", choices=M.CTX_HEAD_MODES, default="off",
                     help="PREREG_V8F_STRAT1: off (default) = the context loss reaches the shared adapter (a declared training-time coupling); on = the head reads the tokens detached")
+    # ---- PREREG_V8F_NAVRB2: the ROUNDABOUT state channel of the route-text nav. Every flag defaults to OFF (bit for bit the earlier trainer) and has its G-DVB entry in FLAG_CHECKS and its clause in bad_navrb.
+    ap.add_argument("--nav-rb", dest="nav_rb", choices=M.NAV_RB_MODES, default="off",
+                    help="PREREG_V8F_NAVRB2: off (default) = nothing built or read; on = e_nav_rb (Linear(1, d, bias=False), zero-init) ADDED to the nav token of S, T and O, fed by --nav-rb-npz")
+    ap.add_argument("--nav-rb-npz", dest="nav_rb_npz", default="", help="PREREG_V8F_NAVRB2: navtext_nav_rb.npz (build_navtext_nav_rb.py). Must exist iff --nav-rb on, must be '' iff off")
+    ap.add_argument("--nav-rb-sha256", dest="nav_rb_sha256", default="", help="PREREG_V8F_NAVRB2: sha256 of --nav-rb-npz (re-hashed at load; a mismatch is a refusal)")
+    ap.add_argument("--nav-rb-variant", dest="nav_rb_variant", choices=D.NAV_RB_VARIANTS, default="real",
+                    help="PREREG_V8F_NAVRB2: real (default) = the table; zero = every row 0.0 (the zeroed-channel control arm N1Z)")
+    ap.add_argument("--nav-rb-lr-mult", dest="nav_rb_lr_mult", type=float, default=1.0,
+                    help="PREREG_V8F_NAVRB2: e_nav_rb's lr as a multiple of --lr (its own optimiser group named navrb). 1.0 (default) with the channel off")
     # ---- PREREG_V8F_HACC_MC section 7 (O-RECOVER): an ego-state perturbation of the kinematic inputs; targets and labels are never touched. Every flag defaults to OFF (the defaults are
     # data.EGO_PERTURB_DEFAULTS), and every flag has its G-DVB entry in FLAG_CHECKS and its clause in bad_ego_perturb.
     ap.add_argument("--ego-perturb-p", dest="ego_perturb_p", type=float, default=D.EGO_PERTURB_DEFAULTS["p"],
@@ -455,6 +467,7 @@ def make_config(a) -> M.V8FMiniConfig:
                            detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, launch_intent_w=a.launch_intent_w,
                            level_head=a.level_head, w_level=a.w_level,
                            ctx_heads=a.ctx_heads, w_ctx=a.w_ctx, ctx_detach=a.ctx_detach, nav_source=a.nav_source,        # PREREG_V8F_STRAT1: the lines that apply the STRAT1 levers (a mutation deletes them)
+                           nav_rb=a.nav_rb,                                                                             # PREREG_V8F_NAVRB2: the line that applies --nav-rb (a mutation deletes it)
                            lead_head=a.lead_head, w_lead=a.w_lead, aux_cond=a.aux_cond,
                            w_op=a.w_op, w_tac_traj=a.w_tac_traj,                      # PREREG_V8F_OTBAND: the lines that apply the band levers (a mutation deletes them)
                            stok_dim=(D.stok_dim_of(a.t_stok_dir) if a.t_stok_dir else 0))
@@ -848,7 +861,8 @@ def load_init_ckpt(path, model, cfg, apply: bool = True) -> dict:
 WM_ONLY_DEFAULT_DESTS = ("navonly", "no_consistency", "cons_absent", "code_mix", "o_interface", "w_acc", "launch_intent_w", "level_head", "w_level", "lead_head", "w_lead", "aux_cond", "detach_upper",
                          "ego_perturb_p", "ego_perturb_yawrate_std", "dagger_p", "dagger_bank", "dagger_bank_sha256", "ego_perturb_with_dagger", "recover_p", "recover_dev_bank", "recover_dev_bank_sha256",
                          "encoder", "lora_lr", "frames_root", "accum", "enc_ckpt", "window_start", "w_op", "w_tac_traj", "t_stok_dir", "t_stok_shuffle", "freeze", "v10_md5",
-                         "ctx_heads", "w_ctx", "ctx_detach", "ctx_lr_mult", "ctx_labels", "ctx_labels_sha256", "nav_source", "nav_text_npz", "nav_text_sha256")
+                         "ctx_heads", "w_ctx", "ctx_detach", "ctx_lr_mult", "ctx_labels", "ctx_labels_sha256", "nav_source", "nav_text_npz", "nav_text_sha256",
+                         "nav_rb", "nav_rb_npz", "nav_rb_sha256", "nav_rb_variant", "nav_rb_lr_mult")
 
 
 def is_wm_param(name: str) -> bool:
@@ -1751,6 +1765,103 @@ def bad_ctx(a, model, data_info=None, opt=None) -> list:
 CTX_MIN_VALID_SHARE = 0.98
 
 
+#: PREREG_V8F_NAVRB2: the stages that move the ego frame or rebuild the nav with no rule for nav_rb (the recipe uses DAgger only, whose swap holds nav_rb as logged)
+NAVRB_REFUSED_WITH = ("ego_perturb_p", "recover_p", "t2_bank_p")
+
+
+def bad_navrb(a, model, data_info=None, opt=None) -> list:
+    """PREREG_V8F_NAVRB2: the five --nav-rb* flags read back from the BUILT model (e_nav_rb iff on, zero at init is the probe's), the LOADED channel array (sha256 re-hashed, variant applied) and the
+    optimiser groups (navrb holds lr x nav_rb_lr_mult and exactly e_nav_rb.weight). Off forbids every other nav-rb flag at a non-default value: a flag that does nothing is refused."""
+    bad, info = [], (data_info or {})
+    on = a.nav_rb == "on"
+    built = model.built_levers().get("nav_rb", "off")
+    if built != a.nav_rb or (model.e_nav_rb is not None) != on or model.cfg.nav_rb != a.nav_rb:
+        bad.append(f"lever nav_rb: declared {a.nav_rb} but built {built} (cfg {model.cfg.nav_rb}, module {'present' if model.e_nav_rb is not None else 'absent'})")
+    if not (math.isfinite(a.nav_rb_lr_mult) and a.nav_rb_lr_mult > 0.0):
+        bad.append(f"nav_rb_lr_mult {a.nav_rb_lr_mult!r} is not a finite number > 0")
+    rec = info.get("nav_rb")
+    if on:
+        if not a.nav_rb_npz or not os.path.exists(a.nav_rb_npz):
+            bad.append(f"nav_rb on but --nav-rb-npz {a.nav_rb_npz!r} does not exist")
+        if not rec or rec.get("sha256") != a.nav_rb_sha256 or not a.nav_rb_sha256:
+            bad.append(f"nav_rb: declared sha256 {a.nav_rb_sha256!r} but the loaded file is {(rec or {}).get('sha256')!r}")
+        if not rec or rec.get("variant") != a.nav_rb_variant:
+            bad.append(f"nav_rb_variant: declared {a.nav_rb_variant} but the loaded array is {(rec or {}).get('variant')!r}")
+        elif a.nav_rb_variant == "zero" and rec.get("n_on") != 0:
+            bad.append(f"nav_rb_variant zero but {rec.get('n_on')} rows are on")
+        elif a.nav_rb_variant == "real" and not rec.get("n_on", 0) > 0:
+            bad.append("nav_rb_variant real but no row is on: the channel would carry nothing")
+        for k in NAVRB_REFUSED_WITH:
+            if float(getattr(a, k, 0.0) or 0.0) > 0.0:
+                bad.append(f"--nav-rb on with --{k.replace('_', '-')} {getattr(a, k)}: that stage has no rule for nav_rb (PREREG_V8F_NAVRB2 uses DAgger only)")
+        if getattr(a, "ego_perturb_with_dagger", False):
+            bad.append("--nav-rb on with --ego-perturb-with-dagger: the composed stage has no rule for nav_rb")
+        if opt is not None:
+            gs = [g for g in opt.param_groups if g.get("name") == "navrb"]
+            ids = {id(p) for p in model.e_nav_rb.parameters()} if model.e_nav_rb is not None else set()
+            if len(gs) != 1 or {id(p) for p in gs[0]["params"]} != ids:
+                bad.append("nav_rb on but the optimiser has no single navrb group holding exactly e_nav_rb's parameters")
+            elif abs(gs[0]["lr"] - a.lr * a.nav_rb_lr_mult) > 1e-15 * max(1.0, a.lr) or gs[0].get("lr_mult") != a.nav_rb_lr_mult:
+                bad.append(f"nav_rb_lr_mult: declared {a.nav_rb_lr_mult} but the navrb group holds lr {gs[0]['lr']} / lr_mult {gs[0].get('lr_mult')}")
+            other = [g for g in opt.param_groups if g.get("name") != "navrb" and ids & {id(p) for p in g["params"]}]
+            if other:
+                bad.append("e_nav_rb's parameters are also in another optimiser group")
+    else:
+        if a.nav_rb_npz or a.nav_rb_sha256 or a.nav_rb_variant != "real" or a.nav_rb_lr_mult != 1.0:
+            bad.append("--nav-rb off with --nav-rb-npz / --nav-rb-sha256 / --nav-rb-variant / --nav-rb-lr-mult named at a non-default value: the channel is not read, so they are declared and do nothing")
+        if rec is not None:
+            bad.append("--nav-rb off but a nav_rb array was loaded")
+        if opt is not None and any(g.get("name") == "navrb" for g in opt.param_groups):
+            bad.append("--nav-rb off but the optimiser carries a navrb group")
+    return bad
+
+
+def navrb_probe(model, batch, cfg) -> dict:
+    """PREREG_V8F_NAVRB2 G-LIVE (reachability from the caller): on a COPY of the model, (a) forward_infer reads ``nav_rb``; (b) the step-0 identity: with e_nav_rb at its zero init, every forward output
+    is bit-identical under the real channel and the channel zeroed; (c) the total loss gives e_nav_rb.weight a gradient > 0 on the real batch (ones planted on a copy when the batch's read frames carry none,
+    recorded); (d) the zero control: the channel all 0.0 gives EXACTLY 0.0. Raises AssertionError on any failure."""
+    import copy
+    import torch
+    if model.e_nav_rb is None:
+        raise AssertionError("navrb probe: the model has no e_nav_rb (the probe runs only for --nav-rb on)")
+    m = copy.deepcopy(model).cpu()
+    b = {k: (v.cpu() if hasattr(v, "cpu") else ({kk: vv.cpu() if hasattr(vv, "cpu") else vv for kk, vv in v.items()} if isinstance(v, dict) else v)) for k, v in batch.items()}
+    res = {"init_weight_abs_sum": float(m.e_nav_rb.weight.detach().abs().sum()), "n_on_batch": int(b["nav_rb"].sum())}
+    m.eval()
+    with torch.no_grad():
+        res["keys_read_has_nav_rb"] = "nav_rb" in m.forward_infer(b)["_keys_read"]
+        if res["init_weight_abs_sum"] == 0.0:
+            o1 = m.forward_infer(b)
+            o0 = m.forward_infer({**b, "nav_rb": torch.zeros_like(b["nav_rb"])})
+            res["step0_identity"] = all(torch.equal(o1[k], o0[k]) for k in o1 if isinstance(o1.get(k), torch.Tensor))
+        else:
+            res["step0_identity"] = None                                            # a resumed / trained weight: the identity is a step-0 property only
+    m.train()
+    planted = False
+    if res["n_on_batch"] == 0:
+        b = {**b, "nav_rb": torch.ones_like(b["nav_rb"])}
+        planted = True
+    res["planted"] = planted
+
+    def grad(bb):
+        m.zero_grad(set_to_none=True)
+        t = m.loss(bb, p_gt=0.5, gen=torch.Generator().manual_seed(0))["terms"]["total"]
+        g = torch.autograd.grad(t, [m.e_nav_rb.weight], allow_unused=True)[0]
+        return 0.0 if g is None else float(g.abs().sum())
+    res["e_nav_rb_grad"] = grad(b)
+    res["control_e_nav_rb_grad_zero_channel"] = grad({**b, "nav_rb": torch.zeros_like(b["nav_rb"])})
+    if not res["keys_read_has_nav_rb"]:
+        raise AssertionError("navrb probe: forward_infer does not read nav_rb")
+    if res["step0_identity"] is False:
+        raise AssertionError("navrb probe: at the zero init the outputs differ under the real and the zeroed channel")
+    if not res["e_nav_rb_grad"] > 0.0:
+        raise AssertionError(f"navrb probe: e_nav_rb.weight gets gradient {res['e_nav_rb_grad']!r} from the total loss (must be > 0)")
+    if res["control_e_nav_rb_grad_zero_channel"] != 0.0:
+        raise AssertionError(f"navrb probe: the zero-channel control reads {res['control_e_nav_rb_grad_zero_channel']!r} (must be exactly 0.0)")
+    res["pass"] = True
+    return res
+
+
 def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None, rec=None, t2b=None) -> list:
     """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
     bad = bad_encoder(a, enc, data_info)
@@ -1761,6 +1872,7 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
     bad += bad_wm_only(a, cfg, model, data_info)                                                 # PREREG_V8F_MRATE: --wm-k read back from the BUILT WM modules, --wm-only from the loader's record and the frozen set
     bad += bad_wm_ladder(a, cfg, model, data_info)                                               # PREREG_V8F_LADDER: the seven ladder flags read back from the BUILT loss / predictor shapes / dataset
     bad += bad_wm_strides(a, cfg, model)                                                         # PREREG_V8F_LFS: --wm-strides read back from the BUILT WM modules (and the >= 2 transitions per level rule)
+    bad += bad_navrb(a, model, data_info, opt)                                                  # PREREG_V8F_NAVRB2: the five --nav-rb* flags read back from the BUILT model / navrb group / loaded channel array
     bad += bad_ctx(a, model, data_info, opt)                                                    # PREREG_V8F_STRAT1: the nine STRAT1 flags read back from the BUILT model / optimiser groups / label and nav arrays
     bad += bad_lead(a, model, data_info)                                                         # PREREG_LEVELHEAD_A2: --lead-head / --w-lead / --aux-cond read back from the BUILT model and the built label arrays
     bad += bad_oband(a, cfg, model, data_info)                                                   # PREREG_V8F_OTBAND: the band split, the band weights, the strategic token, --freeze and --v10-md5 read back from the BUILT model and data
@@ -1843,7 +1955,7 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
         bad.append(f"wm {lv['wm']} declared but built gamma {built['wm_idm_gamma']}")
     # optimiser read-back
     lrs = {g["lr"] for g in opt.param_groups}
-    want_lrs = {a.lr} | ({lora_lr_of(a)} if enc is not None else set()) | ({a.lr * a.ctx_lr_mult} if a.ctx_heads == "on" else set())
+    want_lrs = {a.lr} | ({lora_lr_of(a)} if enc is not None else set()) | ({a.lr * a.ctx_lr_mult} if a.ctx_heads == "on" else set()) | ({a.lr * a.nav_rb_lr_mult} if a.nav_rb == "on" else set())
     if lrs != want_lrs:
         bad.append(f"lr: declared {sorted(want_lrs)} but optimiser holds {sorted(lrs)}")
     if enc is not None:
@@ -1912,6 +2024,8 @@ def live_check(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> dict:
     declared_dead = [n for n in acc if cfg.wm == "a" and ".idm_heads." in n]
     if cfg.o_interface == "cut":                  # PREREG_V8F_FLAT: O reads a constant code, so e_code.weight receives EXACTLY 0.0 (its bias still trains): declared dead, and G-LIVE REQUIRES the zero
         declared_dead += [n for n in acc if n == "e_code.weight"]
+    if cfg.nav_rb == "on" and "nav_rb" in batch and float(batch["nav_rb"].abs().sum()) == 0.0:
+        declared_dead += [n for n in acc if n.startswith("e_nav_rb.")]        # PREREG_V8F_NAVRB2: a batch with no roundabout frame (the zeroed-channel arm N1Z): dead by construction; declared_dead_but_alive then demands EXACTLY 0.0
     dead = sorted(n for n, g in acc.items() if g == 0.0)
     unexpected_dead = sorted(set(dead) - set(declared_dead))
     declared_dead_alive = sorted(n for n in declared_dead if acc[n] != 0.0)
@@ -1923,7 +2037,8 @@ def live_check(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> dict:
            "n_trainable": len(acc), "groups_grad": {g: float(sum(v for n, v in acc.items() if n.startswith(pre)))
                                                    for g, pre in (("adapter", "adapter"), ("S", "read_s"), ("T", "read_t"),
                                                                   ("O", "read_o"), ("head_s", "head_s"), ("head_o", "head_o"),
-                                                                  ("wm", "wm.")) + ((("CTX", "ctx_head"),) if cfg.ctx_heads == "on" else ())}}
+                                                                  ("wm", "wm.")) + ((("CTX", "ctx_head"),) if cfg.ctx_heads == "on" else ())
+                                                   + ((("NAVRB", "e_nav_rb"),) if cfg.nav_rb == "on" else ())}}
     ok = (not missing and not extra_pen and not unexpected_dead and not declared_dead_alive
           and res["control_prior_grad_sum"] == 0.0 and head_first > 0.0)
     res["pass"] = bool(ok)
@@ -2987,7 +3102,7 @@ def dagger_probe(model, batch, cfg, dag) -> dict:
     with torch.no_grad():
         keys = set(m.forward_infer(batch)["_keys_read"])
     m.train()
-    stray = sorted(keys - set(DG.REBUILT) - set(DG.KEPT))
+    stray = sorted(keys - set(DG.REBUILT) - set(DG.KEPT) - M.NAV_RB_KEYS)          # PREREG_V8F_NAVRB2: nav_rb has no distance part, so the swap holds it as logged (kept_moved below asserts the same object)
     if stray:
         raise AssertionError(f"dagger probe: forward_infer reads {stray}, which is neither replaced nor kept by the swap: an input the swap leaves unaccounted for")
     res["keys_read"] = sorted(keys)
@@ -3370,6 +3485,8 @@ def build_data(a, cfg):
     if a.nav_source == "text":
         J["nav"], J["nav_d"], rec_ = D.nav_text_arrays(J, a.nav_text_npz, a.nav_text_sha256, "train")          # PREREG_V8F_STRAT1: ONE line (a mutation deletes it, T-NAV-MUT)
         info["nav_source"].update(rec_)
+    if a.nav_rb == "on":
+        J["nav_rb"], info["nav_rb"] = D.nav_rb_arrays(J, a.nav_rb_npz, a.nav_rb_sha256, "train", a.nav_rb_variant)      # PREREG_V8F_NAVRB2: ONE line (a mutation deletes it)
     excluded, n_ex_declared = [], 0
     if a.exclude:
         xlo, xhi = (int(x) for x in a.exclude.split(":"))
@@ -3595,12 +3712,15 @@ def main(argv=None):
         enc = make_encoder(a, dev)                     # AFTER the heads: it must not move their initialisation (the global RNG is restored inside)
         enc.set_checkpointing(a.enc_ckpt)
     ctx_ids = {id(p) for p in model.ctx_head.parameters()} if model.ctx_head is not None else set()      # PREREG_V8F_STRAT1: the head's own optimiser groups (empty with the head off = the tip's groups, bit for bit)
-    decay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim >= 2 and id(p) not in ctx_ids]
-    nodecay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim < 2 and id(p) not in ctx_ids]
+    navrb_ids = {id(p) for p in model.e_nav_rb.parameters()} if model.e_nav_rb is not None else set()      # PREREG_V8F_NAVRB2: e_nav_rb in its own group (empty with the channel off = the tip's groups, bit for bit)
+    decay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim >= 2 and id(p) not in navrb_ids and id(p) not in ctx_ids]
+    nodecay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim < 2 and id(p) not in ctx_ids and id(p) not in navrb_ids]
     groups = [{"params": decay, "weight_decay": a.wd}, {"params": nodecay, "weight_decay": 0.0}]
     if ctx_ids:
         groups.append({"params": [p for p in model.ctx_head.parameters() if p.ndim >= 2], "weight_decay": a.wd, "lr": a.lr * a.ctx_lr_mult, "name": "ctx", "lr_mult": a.ctx_lr_mult})
         groups.append({"params": [p for p in model.ctx_head.parameters() if p.ndim < 2], "weight_decay": 0.0, "lr": a.lr * a.ctx_lr_mult, "name": "ctx_nd", "lr_mult": a.ctx_lr_mult})
+    if navrb_ids:
+        groups.append({"params": list(model.e_nav_rb.parameters()), "weight_decay": a.wd, "lr": a.lr * a.nav_rb_lr_mult, "name": "navrb", "lr_mult": a.nav_rb_lr_mult})
     if enc is not None:                                # the LoRA matrices (2-D: the same weight-decay rule as the heads), their own peak lr
         groups.append({"params": enc.lora_parameters(), "weight_decay": a.wd, "lr": lora_lr_of(a), "name": "lora", "lr_mult": lora_lr_of(a) / a.lr})
     opt = torch.optim.AdamW(groups, lr=a.lr)
@@ -3654,6 +3774,7 @@ def main(argv=None):
         live = live_check_lora(model, enc, probe_f, cfg, a, dev, chunk)
         ident = identity_probe(enc, probe_f, dev, chunk)
     model.to(dev)
+    nrp = None                                                             # PREREG_V8F_NAVRB2: the navrb probe record (set below for --nav-rb on)
     if a.wm_only:                                                          # PREREG_V8F_MRATE: the readers, heads and planner are frozen and never run; the probes that need their gradients are skipped (and recorded as skipped)
         mix = ocut = accp = egop = dagp = recp = t2p = lvp = ldp = obp = cxp = nsp = {"skipped": "wm_only"}
         lip = {"skipped": "wm_only", "launch_n": 0, "launch_eligible": 0}
@@ -3720,6 +3841,11 @@ def main(argv=None):
             nsp = nav_source_probe(model, probe, J, info, a)  # PREREG_V8F_STRAT1: EVERY argv: the nav the batch carries is the declared source's, the overwrite happened (text) or did not (v9), the channel reaches the model
         except (AssertionError, ValueError) as e:
             raise SystemExit(f"ZZDVB-REFUSEDZZ nav-source: {e}")
+        if a.nav_rb == "on":
+            try:
+                nrp = navrb_probe(model, probe, cfg)      # PREREG_V8F_NAVRB2: G-LIVE on the loop's own batch: the channel is read, the step-0 identity, gradient > 0, the zero-channel control EXACTLY 0.0
+            except (AssertionError, ValueError, KeyError) as e:
+                raise SystemExit(f"ZZDVB-REFUSEDZZ nav-rb: {e}")
     levers = model.built_levers()
     levers["ego_perturb"] = ego.built_levers()                        # recorded like every other lever (selfcheck.json, summary.json, the checkpoint)
     levers["dagger"] = dag.built_levers()                             # PREREG_V8F_DAGGER: what was BUILT (the bank's path and sha256 included) ...
@@ -3755,6 +3881,8 @@ def main(argv=None):
           "steps_total": total, "S_steps_per_epoch_100pct": S, "info": info, "argv_sha": argv_sha(argv)}
     sc["ego_perturb_probe"] = egop
     sc["dagger_probe"] = dagp
+    if a.nav_rb == "on":
+        sc["navrb_probe"] = nrp                                       # PREREG_V8F_NAVRB2: lever-ON arms only (an off arm's selfcheck keeps its key set)
     sc["ego_dagger_compose_probe"] = cmpp
     sc["recover_probe"] = recp
     sc["t2bank_probe"] = t2p
@@ -3836,6 +3964,8 @@ def main(argv=None):
             blob["recover"], blob["recover_totals"] = rcv.built_levers(), dict(rec_tot)
         if launch_on:                                                   # lever-ON arms only: a flag-off checkpoint keeps its key set
             blob["launch_totals"] = dict(launch_tot)
+        if a.nav_rb == "on":                                            # PREREG_V8F_NAVRB2: lever-ON arms only
+            blob["nav_rb_sha256"], blob["nav_rb_variant"] = a.nav_rb_sha256, a.nav_rb_variant
         if a.nav_source == "text":                                      # PREREG_V8F_STRAT1: lever-ON arms only
             blob["nav_text_sha256"] = a.nav_text_sha256
         if ctx_on:

@@ -165,7 +165,11 @@ NAV_SOURCES = ("v9", "text")
 CTX_HEAD_MODES = ("off", "on")
 
 #: every state-dict key a declared lever may ADD to an older checkpoint's key set (load_init_ckpt: EXACTLY these may be fresh)
-NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + ("e_stok.",) + CTX_KEY_PREFIXES      # PREREG_V8F_OTBAND adds the strategic-token embedding
+NAV_RB_MODES = ("off", "on")
+#: PREREG_V8F_NAVRB2: the ROUNDABOUT state channel of the route-text nav (``--nav-rb``): its state-dict prefix and its batch key (read with the nav, for a model built with it; NOT in INFERENCE_INPUT_KEYS, which tests pin)
+NAV_RB_KEY_PREFIXES = ("e_nav_rb.",)
+NAV_RB_KEYS = frozenset({"nav_rb"})
+NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + ("e_stok.",) + CTX_KEY_PREFIXES + NAV_RB_KEY_PREFIXES      # PREREG_V8F_OTBAND adds the strategic-token embedding
 #: identifiers the lead head's own code (``V8FMini._lead``) and the aux-token assembly (``V8FMini._aux_in``) must not mention (the level list + the lead labels): the head is VISION ONLY
 LEAD_FORBIDDEN_NAMES = LEVEL_FORBIDDEN_NAMES + ("lead_y", "lead_has", "lead_near", "lead_gap_h", "s_h", "pose_now")
 LEAD_ALLOWED_KEYS = frozenset({"frame_ok"})
@@ -259,6 +263,7 @@ class V8FMiniConfig:
     ctx_heads: str = "off"             # PREREG_V8F_STRAT1 (`--ctx-heads`): off = nothing built (every earlier arm, bit for bit); on = the vision-only context head (CTX_VARS, CTX_DIM logits)
     w_ctx: float = 0.0                 # PREREG_V8F_STRAT1 (`--w-ctx`): the weight of the weighted-mean context CE in the total. > 0 iff the head is on, exactly 0.0 iff off (checked by the trainer's bad_ctx)
     ctx_detach: str = "off"            # PREREG_V8F_STRAT1 (`--ctx-detach`): on = the head reads the adapter tokens DETACHED (the ctx loss then cannot move the shared adapter)
+    nav_rb: str = "off"                # PREREG_V8F_NAVRB2 (`--nav-rb`): off = nothing built (every earlier arm, bit for bit); on = e_nav_rb, Linear(1, d, bias=False), zero-init, ADDED to e_nav(nav) in S, T and O
     nav_source: str = "v9"             # PREREG_V8F_STRAT1 (`--nav-source`): a DATA lever (v9 = the join's nav, text = the router-text nav); the model never reads it, the checkpoint records it (as window_start)
     w_level: float = 0.0               # PREREG_V8F_LEVEL (`--w-level`): the weight of Huber(v_hat, logged speed) in the total. Must be > 0 with the head on and exactly 0.0 with it off (checked by the launch gate: a head with no loss, or a weight with no head, is refused)
 
@@ -299,6 +304,8 @@ class V8FMiniConfig:
             raise ValueError(f"ctx_detach must be one of {CTX_HEAD_MODES}, got {self.ctx_detach!r}")
         if not (math.isfinite(self.w_ctx) and self.w_ctx >= 0.0):
             raise ValueError(f"w_ctx must be a finite number >= 0, got {self.w_ctx!r}")
+        if self.nav_rb not in NAV_RB_MODES:
+            raise ValueError(f"nav_rb must be one of {NAV_RB_MODES}, got {self.nav_rb!r}")
         if self.nav_source not in NAV_SOURCES:
             raise ValueError(f"nav_source must be one of {NAV_SOURCES}, got {self.nav_source!r}")
         if self.aux_cond not in AUX_COND_MODES:
@@ -899,9 +906,21 @@ class V8FMini(nn.Module):
             with torch.random.fork_rng(devices=[]):
                 torch.manual_seed(CTX_INIT_SEED)
                 self.ctx_head = _mlp(d, d, CTX_DIM)
+        self.e_nav_rb = None
+        if cfg.nav_rb == "on":                                             # PREREG_V8F_NAVRB2: built LAST under a forked RNG (no draw reaches the global stream) and zeroed: x + 0.0 == x, so the step-0 forward is the off model's
+            with torch.random.fork_rng(devices=[]):
+                self.e_nav_rb = nn.Linear(1, d, bias=False)
+            nn.init.zeros_(self.e_nav_rb.weight)
         self.p_gt = 1.0
 
     # ---- helpers -------------------------------------------------------------------------------------------
+    def _nav_tok(self, b, i):
+        """The nav conditioning token of S, T and O: ``e_nav(nav)``, plus ``e_nav_rb(nav_rb)`` for a model built with the roundabout channel (PREREG_V8F_NAVRB2; a batch with no ``nav_rb`` key is then a KeyError, never a silent zero)."""
+        t = self.e_nav(self._at(b["nav"], i))
+        if self.e_nav_rb is not None:
+            t = t + self.e_nav_rb(self._at(b["nav_rb"], i).to(self.e_nav_rb.weight.dtype))
+        return t
+
     def _ego(self, f8):
         return self.e_ego(self.prior.standardise(f8))
 
@@ -974,7 +993,7 @@ class V8FMini(nn.Module):
     def run_s(self, b, adapt, last_s, age_rel=None):
         cfg = self.cfg
         i = last_s
-        cond = torch.stack([self._ego(self._at(b["p10f"], i)), self.e_nav(self._at(b["nav"], i)),
+        cond = torch.stack([self._ego(self._at(b["p10f"], i)), self._nav_tok(b, i),
                             self.e_lim(torch.cat([b["limit"], b["limit_ok"][:, None].float()], -1))], 1)
         sc, pad = (self._scene(adapt, b["frame_ok"], i) if not cfg.navonly else (None, None))
         h = self.read_s(cond, sc, pad).flatten(1)
@@ -992,7 +1011,7 @@ class V8FMini(nn.Module):
     def run_t(self, b, adapt, last_t, ck_t, ck_ok, stok_tok=None):
         cfg = self.cfg
         i = last_t
-        toks = [self._ego(self._at(b["p10f"], i)), self.e_nav(self._at(b["nav"], i)),
+        toks = [self._ego(self._at(b["p10f"], i)), self._nav_tok(b, i),
                 self.e_lim(torch.cat([b["limit"], b["limit_ok"][:, None].float()], -1)),
                 self._ck_cond(ck_t, ck_ok)]
         if stok_tok is not None:                                        # PREREG_V8F_OTBAND: the strategic token, ONE extra conditioning token of T (absent = the earlier four-token stack, bit for bit)
@@ -1018,7 +1037,7 @@ class V8FMini(nn.Module):
             ego_tok = ego_tok + self.e_level(self._level(b, adapt, i)[1][:, None])
         if self.e_lead is not None:                                     # PREREG_LEVELHEAD_A2 (--aux-cond add): the same form for the lead head, e_lead([sigmoid(logit), gap_hat].detach()) ADDED to the ego token, zero-init
             ego_tok = ego_tok + self.e_lead(self._lead(b, adapt, i)[2])
-        toks = [ego_tok, self.e_nav(self._at(b["nav"], i)),
+        toks = [ego_tok, self._nav_tok(b, i),
                 self.e_lim(torch.cat([b["limit"], b["limit_ok"][:, None].float()], -1)),
                 self._ck_cond(ck_o, ck_ok), self.e_code(code), self.e_age(ages)]
         if self.e_aux is not None:                                      # PREREG_LEVELHEAD_A2 (--aux-cond token): ONE extra conditioning token built from both heads' detached outputs (default init: the step-0 forward differs from the init's by construction)
@@ -1346,6 +1365,8 @@ class V8FMini(nn.Module):
             g["STOK"] = [self.e_stok]                                               # PREREG_V8F_OTBAND: G-LIVE then requires its gradient
         if self.ctx_head is not None:
             g["CTX"] = [self.ctx_head]                                              # PREREG_V8F_STRAT1
+        if self.e_nav_rb is not None:
+            g["NAVRB"] = [self.e_nav_rb]                                            # PREREG_V8F_NAVRB2: G-LIVE then requires its gradient
         return g
 
     def built_levers(self) -> dict:
@@ -1366,6 +1387,7 @@ class V8FMini(nn.Module):
                 "window_start": cfg.window_start_effective,                  # Amendment 1: the EFFECTIVE first-window step (hist - 1 when the flag is absent)
                 "prior_frozen": not any(p.requires_grad for p in self.prior.parameters()),
                 "residual_zero_init": bool(float(self.head_o[2].weight.detach().abs().sum()) == 0.0),
+                "nav_rb": "on" if self.e_nav_rb is not None else "off",       # PREREG_V8F_NAVRB2: the BUILT roundabout channel (e_nav_rb exists iff on)
                 "params": {k: gp(v) for k, v in self.trainable_groups().items()},
                 "n_params_trainable": int(sum(p.numel() for p in self.parameters() if p.requires_grad)),
                 "w": {"w_pen": cfg.w_pen if cfg.consistency else 0.0, "w_pen_self": cfg.w_pen_self if cfg.consistency else 0.0,
@@ -1479,6 +1501,7 @@ def assert_no_situation_classifier_input(model: V8FMini | None = None, batch: di
             keys = model.forward_infer(batch)["_keys_read"]
         model.train(was)
         allowed = INFERENCE_INPUT_KEYS | (STOK_KEYS if getattr(model, "e_stok", None) is not None else frozenset())      # PREREG_V8F_OTBAND: the strategic token's two keys, for a model built with it
+        allowed = allowed | (NAV_RB_KEYS if getattr(model, "e_nav_rb", None) is not None else frozenset())                 # PREREG_V8F_NAVRB2: the roundabout channel, for a model built with it
         extra = keys - allowed
         assert not extra, f"inference reads keys outside the admissible set: {sorted(extra)}"
         assert not any(k.startswith("lab") or any(t in k for t in _FORBIDDEN_TOKENS) for k in keys)

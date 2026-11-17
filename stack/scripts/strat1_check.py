@@ -32,9 +32,14 @@ BASE_ARGVS = "E:/Projects/TanitAD-artifacts/dagland/motion_c/theory/obd/box2/fro
 BASE_SHA256 = None            # pinned by the MM when the frozen file is copied into the chain's folder (UNVERIFIED here: read in place)
 STRAT_LABELS_SHA256 = "8055a321df6db1725ea17abde2999d48bcb68d43f1a480a69ed42dd0cf184eff"
 NINE = ("--nav-source", "--nav-text-npz", "--nav-text-sha256", "--ctx-heads", "--w-ctx", "--ctx-labels", "--ctx-labels-sha256", "--ctx-lr-mult", "--ctx-detach")
-KINDS = ("C0", "N1", "S1", "S1d")
-NAV_KINDS = ("N1", "S1", "S1d")                                           # the arms that read the text nav
-CTX_KINDS = ("S1", "S1d")                                                 # the arms with the ctx heads on; S1d = S1 with --ctx-detach on (PREREG_V8F_STRAT1 SEEDS read COSTS-HEADS)
+KINDS = ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z")
+#: PREREG_V8F_NAVRB2: the R kinds = the base kind + the five --nav-rb flags (N1R / S1R / S1dR: the real channel; N1Z: the same argv with the channel all 0.0, a same-seed N1 replicate with the new code)
+RB_BASE = {"N1R": "N1", "S1R": "S1", "S1dR": "S1d", "N1Z": "N1"}
+RB_KINDS = tuple(RB_BASE)
+RB_FLAGS = ("--nav-rb", "--nav-rb-npz", "--nav-rb-sha256", "--nav-rb-variant", "--nav-rb-lr-mult")
+RB_LR_MULT = "10"                                                         # card section 0, item 2 (MM ruling 2)
+NAV_KINDS = ("N1", "S1", "S1d") + RB_KINDS                                # the arms that read the text nav
+CTX_KINDS = ("S1", "S1d", "S1R", "S1dR")                                  # the arms with the ctx heads on; S1d = S1 with --ctx-detach on (PREREG_V8F_STRAT1 SEEDS read COSTS-HEADS)
 SEEDS = {"s0": {"base": "OBD-CTL_s0"}, "s1": {"base": "OBD-CTL_s1"}, "rep": {"base": "OBD-CTL_s0", "seed": "2"},      # rep = init 0, bank s0, dagger-seed 0, seed 2 (OBD-NULL_rep's form)
          "s10": {"base": "OBD-CTL_s0", "seed": "10"}, "s11": {"base": "OBD-CTL_s1", "seed": "11"}}      # PREREG_V8F_STRAT1 SEEDS-DISAGREE: seed 10 = init 0 (bank s0), seed 11 = init 1 (bank s1), rep's form; PI go 2026-11-16
 RUN_STEPS = 3000
@@ -53,9 +58,14 @@ def flag_value(toks, name):
     return toks[toks.index(name) + 1] if name in toks else None
 
 
-def render(kind, seed, root, out, nav_npz="", ctx_npz="", base_argvs=BASE_ARGVS, cache_dir=None):
+def base_kind(kind):
+    """The STRAT1 kind an R kind extends (N1R -> N1); a STRAT1 kind is its own base."""
+    return RB_BASE.get(kind, kind)
+
+
+def render(kind, seed, root, out, nav_npz="", ctx_npz="", base_argvs=BASE_ARGVS, cache_dir=None, rb_npz=""):
     """The frozen argv of an arm: the OBD-CTL argv of that seed, box-2 paths mapped under ``root`` (the pod layout: ``root/runs/v8f_mini_full/X`` -> ``root/X``, the tracks next to ``root``, the cache at ``cache_dir``), plus the nine
-    STRAT1 flags (ALL named, the control included)."""
+    STRAT1 flags (ALL named, the control included). An R kind (PREREG_V8F_NAVRB2) renders its base kind's argv byte for byte and APPENDS the five --nav-rb flags (``rb_npz`` = the channel table); no other kind's argv moves."""
     assert kind in KINDS and seed in SEEDS
     base = json.load(open(base_argvs, encoding="utf-8"))[SEEDS[seed]["base"]]["argv"]
     r = root.rstrip("/")
@@ -68,9 +78,12 @@ def render(kind, seed, root, out, nav_npz="", ctx_npz="", base_argvs=BASE_ARGVS,
     t[t.index("--out") + 1] = out
     if "seed" in SEEDS[seed]:
         t[t.index("--seed") + 1] = SEEDS[seed]["seed"]
-    nav = ["--nav-source", "text", "--nav-text-npz", nav_npz, "--nav-text-sha256", sha_file(nav_npz) if os.path.exists(nav_npz) else "<sha of navtext_nav.npz>"] if kind in NAV_KINDS else         ["--nav-source", "v9", "--nav-text-npz", "", "--nav-text-sha256", ""]
-    ctx = ["--ctx-heads", "on", "--w-ctx", "0.5", "--ctx-labels", ctx_npz, "--ctx-labels-sha256", STRAT_LABELS_SHA256, "--ctx-lr-mult", "10", "--ctx-detach", "on" if kind == "S1d" else "off"] if kind in CTX_KINDS else         ["--ctx-heads", "off", "--w-ctx", "0", "--ctx-labels", "", "--ctx-labels-sha256", "", "--ctx-lr-mult", "1", "--ctx-detach", "off"]
-    return t + nav + ctx
+    bk = base_kind(kind)
+    nav = ["--nav-source", "text", "--nav-text-npz", nav_npz, "--nav-text-sha256", sha_file(nav_npz) if os.path.exists(nav_npz) else "<sha of navtext_nav.npz>"] if bk in NAV_KINDS else         ["--nav-source", "v9", "--nav-text-npz", "", "--nav-text-sha256", ""]
+    ctx = ["--ctx-heads", "on", "--w-ctx", "0.5", "--ctx-labels", ctx_npz, "--ctx-labels-sha256", STRAT_LABELS_SHA256, "--ctx-lr-mult", "10", "--ctx-detach", "on" if bk == "S1d" else "off"] if bk in CTX_KINDS else         ["--ctx-heads", "off", "--w-ctx", "0", "--ctx-labels", "", "--ctx-labels-sha256", "", "--ctx-lr-mult", "1", "--ctx-detach", "off"]
+    rb = ["--nav-rb", "on", "--nav-rb-npz", rb_npz, "--nav-rb-sha256", sha_file(rb_npz) if rb_npz and os.path.exists(rb_npz) else "<sha of navtext_nav_rb.npz>",
+          "--nav-rb-variant", "zero" if kind == "N1Z" else "real", "--nav-rb-lr-mult", RB_LR_MULT] if kind in RB_KINDS else []
+    return t + nav + ctx + rb
 
 
 def argv_sha(toks):
@@ -80,6 +93,7 @@ def argv_sha(toks):
 def gate_problems(kind, toks, sc, steps=RUN_STEPS):
     """The G-DVB + G-LIVE read of a selfcheck.json against its argv. [] = pass."""
     bad = []
+    bk = base_kind(kind)
     miss = [f for f in NINE if f not in toks]
     if miss:
         bad.append(f"the argv does not name {miss}: a flag whose default disables it must be named")
@@ -93,13 +107,13 @@ def gate_problems(kind, toks, sc, steps=RUN_STEPS):
     nsp = sc.get("nav_source_probe") or {}
     if not nsp.get("pass"):
         bad.append("nav_source_probe missing or not pass")
-    want_src = "text" if kind in NAV_KINDS else "v9"
+    want_src = "text" if bk in NAV_KINDS else "v9"
     if nsp.get("source") != want_src or flag_value(toks, "--nav-source") != want_src:
         bad.append(f"nav source: arm {kind} needs {want_src}, probe read {nsp.get('source')}, argv {flag_value(toks, '--nav-source')}")
     if (nsp.get("n_text_ne_v9", 0) > 0) != (want_src == "text"):
         bad.append(f"n_text_ne_v9 {nsp.get('n_text_ne_v9')} is inconsistent with source {want_src}")
-    on = kind in CTX_KINDS
-    want_det = "on" if kind == "S1d" else "off"
+    on = bk in CTX_KINDS
+    want_det = "on" if bk == "S1d" else "off"
     if flag_value(toks, "--ctx-detach") != want_det or lv.get("ctx_detach", "off") != want_det:
         bad.append(f"ctx_detach: arm {kind} needs {want_det}, argv {flag_value(toks, '--ctx-detach')}, built {lv.get('ctx_detach', 'off')}")
     if lv.get("ctx_heads", "off") != ("on" if on else "off") or flag_value(toks, "--ctx-heads") != ("on" if on else "off"):
@@ -111,8 +125,8 @@ def gate_problems(kind, toks, sc, steps=RUN_STEPS):
         if cp.get("control_head_grad_w0") != 0.0 or cp.get("control_allmasked_head_grad") != 0.0 or cp.get("control_adapter_grad_detach_on") != 0.0:
             bad.append("a ctx exact-0.0 control is not exactly 0.0")
         ag = cp.get("adapter_grad_ctx")                                  # S1: the ctx loss reaches the shared adapter (> 0); S1d: exactly 0.0 (the detach)
-        if not isinstance(ag, (int, float)) or (ag != 0.0 if kind == "S1d" else not ag > 0.0):
-            bad.append(f"adapter_grad_ctx {ag!r}: arm {kind} needs " + ("exactly 0.0" if kind == "S1d" else "> 0.0"))
+        if not isinstance(ag, (int, float)) or (ag != 0.0 if bk == "S1d" else not ag > 0.0):
+            bad.append(f"adapter_grad_ctx {ag!r}: arm {kind} needs " + ("exactly 0.0" if bk == "S1d" else "> 0.0"))
         if not (live.get("groups_grad") or {}).get("CTX", 0.0) > 0.0:
             bad.append("G-LIVE: the CTX group has no gradient")
         if float(lv.get("w_ctx", 0)) != float(flag_value(toks, "--w-ctx")) or lv.get("ctx_dim") != 41 or not lv.get("ctx_vision_only_source"):
@@ -126,6 +140,59 @@ def gate_problems(kind, toks, sc, steps=RUN_STEPS):
             bad.append(f"inherited probe {k} is missing or skipped")
     if "--detach-upper" not in toks or (sc.get("otband_probe") or {}).get("detach_upper") is not True:      # the BUILT value: the otband probe records cfg.detach_upper and, when it is on,
         bad.append("--detach-upper is not built (the OBD-CTL recipe)")                                       # asserts O's terms put no gradient on S / T (levers has no such key: reading it refused every real mint)
+    bad += rb_gate_problems(kind, toks, sc)
+    return bad
+
+
+def rb_gate_problems(kind, toks, sc):
+    """PREREG_V8F_NAVRB2 G-DVB / G-LIVE for the channel: an R kind names all five flags, builds the lever, and reads the probe's controls (gradient > 0, the zero channel EXACTLY 0.0, the step-0 identity); N1Z reads the all-zero
+    channel (gradient EXACTLY 0.0 and the weight declared dead). A non-R kind names none, builds nothing and carries no probe."""
+    bad = []
+    lv, live, info = sc.get("levers", {}), sc.get("live", {}), sc.get("info") or {}
+    if kind not in RB_KINDS:
+        if any(f in toks for f in RB_FLAGS):
+            bad.append(f"a {kind} argv names a --nav-rb flag")
+        if lv.get("nav_rb", "off") != "off" or "navrb_probe" in sc or info.get("nav_rb") is not None:
+            bad.append(f"a {kind} arm builds or probes the nav_rb channel")
+        return bad
+    miss = [f for f in RB_FLAGS if f not in toks]
+    if miss:
+        bad.append(f"the argv does not name {miss}: a flag whose default disables it must be named")
+    zero = kind == "N1Z"
+    want_var = "zero" if zero else "real"
+    if flag_value(toks, "--nav-rb") != "on" or lv.get("nav_rb") != "on":
+        bad.append(f"nav_rb: arm {kind} needs on, argv {flag_value(toks, '--nav-rb')}, built {lv.get('nav_rb')}")
+    if flag_value(toks, "--nav-rb-variant") != want_var:
+        bad.append(f"nav_rb_variant: arm {kind} needs {want_var}, argv {flag_value(toks, '--nav-rb-variant')}")
+    if flag_value(toks, "--nav-rb-lr-mult") != RB_LR_MULT:
+        bad.append(f"nav_rb_lr_mult: the card says {RB_LR_MULT}, argv {flag_value(toks, '--nav-rb-lr-mult')}")
+    rec = info.get("nav_rb") or {}
+    if rec.get("sha256") != flag_value(toks, "--nav-rb-sha256") or not rec.get("sha256"):
+        bad.append("info.nav_rb.sha256 differs from the argv --nav-rb-sha256 (or is missing)")
+    if rec.get("variant") != want_var:
+        bad.append(f"info.nav_rb.variant {rec.get('variant')!r} != {want_var}")
+    if zero and rec.get("n_on") != 0:
+        bad.append(f"N1Z: the loaded channel has {rec.get('n_on')} rows on (must be 0)")
+    if not zero and not (rec.get("n_on") or 0) > 0:
+        bad.append(f"{kind}: the loaded channel has no row on")
+    pr = sc.get("navrb_probe") or {}
+    if not pr.get("pass"):
+        bad.append("navrb_probe missing or not pass")
+    if pr.get("step0_identity") is not True:
+        bad.append(f"navrb_probe.step0_identity {pr.get('step0_identity')!r} (must be True at the zero init)")
+    if pr.get("keys_read_has_nav_rb") is not True:
+        bad.append("navrb_probe: forward_infer does not read nav_rb")
+    g = pr.get("e_nav_rb_grad")
+    if not isinstance(g, (int, float)) or not g > 0.0:
+        bad.append(f"navrb_probe.e_nav_rb_grad {g!r} (must be > 0)")
+    if pr.get("control_e_nav_rb_grad_zero_channel") != 0.0:
+        bad.append(f"navrb_probe zero-channel control {pr.get('control_e_nav_rb_grad_zero_channel')!r} (must be exactly 0.0)")
+    ng = (live.get("groups_grad") or {}).get("NAVRB")
+    if zero:
+        if ng != 0.0 or "e_nav_rb.weight" not in (live.get("declared_dead") or []):
+            bad.append(f"N1Z: live NAVRB group grad {ng!r} (must be exactly 0.0) and e_nav_rb.weight must be declared dead")
+    elif not isinstance(ng, (int, float)) or not ng > 0.0:
+        bad.append(f"G-LIVE: the NAVRB group has no gradient ({ng!r})")
     return bad
 
 
@@ -138,7 +205,19 @@ def moved_identity(init_sd, fin_sd, kind):
         if ks and all(torch.equal(init_sd[k], fin_sd[k]) for k in ks):
             bad.append(f"group {g} did not move")
     ck = [k for k in fin_sd if k.startswith("ctx_head.")]
-    if kind in CTX_KINDS:
+    rb = [k for k in fin_sd if k.startswith("e_nav_rb.")]                      # PREREG_V8F_NAVRB2: the channel weight starts at EXACTLY 0.0 (it is not in the M2b init)
+    if kind in RB_KINDS:
+        w = fin_sd.get("e_nav_rb.weight")
+        if w is None:
+            bad.append(f"{kind} checkpoint has no e_nav_rb.weight")
+        elif kind == "N1Z":
+            if not bool((w == 0).all()):
+                bad.append("N1Z: e_nav_rb.weight moved off 0.0 (the channel was all zero)")
+        elif not bool((w != 0).any()):
+            bad.append(f"{kind}: e_nav_rb.weight did not move off its zero init")
+    elif rb:
+        bad.append(f"e_nav_rb keys {rb[:2]} in a {kind} checkpoint")
+    if base_kind(kind) in CTX_KINDS:
         if not ck:
             bad.append(f"{kind} checkpoint has no ctx_head keys")
         else:                                                           # the head's seeded init (CTX_INIT_SEED, forked RNG) is the fresh start state: it must have moved
@@ -171,9 +250,9 @@ def geval(ckpt_path, selfcheck_levers=None):
     except Exception as e:                                              # noqa: BLE001
         return [f"strict load failed: {type(e).__name__}: {str(e)[:200]}"], rec
     lv = m.built_levers()
-    rec["built_levers"] = {k: lv[k] for k in lv if k.startswith(("ctx", "w_ctx"))}
+    rec["built_levers"] = {k: lv[k] for k in lv if k.startswith(("ctx", "w_ctx", "nav_rb"))}
     if selfcheck_levers is not None:
-        for k in [k for k in set(lv) | set(selfcheck_levers) if k.startswith(("ctx", "w_ctx")) or k in ("navonly", "wm", "detach_upper")]:
+        for k in [k for k in set(lv) | set(selfcheck_levers) if k.startswith(("ctx", "w_ctx")) or k in ("navonly", "wm", "detach_upper", "nav_rb")]:
             if lv.get(k) != selfcheck_levers.get(k):
                 bad.append(f"built lever {k}: evaluator {lv.get(k)!r} vs selfcheck {selfcheck_levers.get(k)!r}")
     if ck["cfg"].get("ctx_heads") == "on":
@@ -182,7 +261,25 @@ def geval(ckpt_path, selfcheck_levers=None):
             bad.append("regression arm: a cfg that drops ctx_heads was NOT refused (the evaluator would silently skip the head)")
         except Exception:                                               # noqa: BLE001
             rec["regression_arm_refused"] = True
+    if ck["cfg"].get("nav_rb") == "on":                                  # PREREG_V8F_NAVRB2: a cfg that drops the channel from a channel checkpoint must be refused (strict load: unexpected e_nav_rb.weight)
+        try:
+            build({**ck["cfg"], "nav_rb": "off"})
+            bad.append("regression arm: a cfg that drops nav_rb was NOT refused (the evaluator would silently skip the channel)")
+        except Exception:                                               # noqa: BLE001
+            rec["regression_arm_nav_rb_refused"] = True
     return bad, rec
+
+
+def hyg_rb():
+    """PREREG_V8F_NAVRB2 G-HYG: the channel's config refuses a bad mode and an unknown key."""
+    from tanitad.models import v8f_mini as M
+    n = 0
+    for kw in (dict(nav_rb="maybe"), dict(nav_rbz="on")):
+        try:
+            M.V8FMiniConfig(**kw)
+        except (ValueError, TypeError):
+            n += 1
+    return [] if n == 2 else [f"only {n} of 2 bad nav_rb configs were refused"]
 
 
 def hyg():
@@ -204,6 +301,7 @@ def hyg():
 TOKEN_SCHEMA = "strat1-gate-token-v1"
 WRITTEN_BY = "strat1_check.py mint"
 DATA_FLAGS = ("--v9-train", "--lead-train", "--speed-train", "--join-train", "--p10", "--tracks", "--nav-text-npz", "--ctx-labels", "--init-ckpt")
+DATA_FLAGS_RB = ("--nav-rb-npz",)                                           # PREREG_V8F_NAVRB2: bound only when the argv names it (an R kind); kept out of DATA_FLAGS so no STRAT1 fixture or token moves
 REQUIRED_CHECKS = ("G-HYG", "G-DVB", "G-LIVE", "G-CLOCK", "G-EVAL", "G-CKPT", "G-SUITE")
 TREE_DIRS = (("stack", "tanitad"), ("stack", "scripts"), ("stack", "tests"), ("taniteval",))
 TREE_EXT = (".py", ".txt", ".json", ".sh")
@@ -247,7 +345,7 @@ def tree_manifest_sha(root):
 def data_binding(toks):
     """Every data input the argv names: its size, sha256 and md5 (recomputed now). Returns (dict, problems). A named path that does not exist is a problem; an empty value is not named."""
     d, bad = {}, []
-    for fl in DATA_FLAGS:
+    for fl in DATA_FLAGS + DATA_FLAGS_RB:
         v = flag_value(toks, fl)
         if not v:
             continue
@@ -284,6 +382,8 @@ def data_binding(toks):
     cl = flag_value(toks, "--ctx-labels")
     if cl and flag_value(toks, "--ctx-labels-sha256") != d.get("--ctx-labels", {}).get("sha256"):
         bad.append("--ctx-labels-sha256 differs from the sha256 of the ctx label file")
+    if flag_value(toks, "--nav-rb-npz") and flag_value(toks, "--nav-rb-sha256") != d.get("--nav-rb-npz", {}).get("sha256"):
+        bad.append("--nav-rb-sha256 differs from the sha256 of the nav_rb npz")
     return d, bad
 
 
@@ -307,7 +407,7 @@ def suite_problems(path, commit):
 
 def nav_report_problems(kind, nav_npz, report_path):
     """G-CLOCK-NAV: the nav builder's report must read PASS on train and eval, its regression arm must FAIL, and it must describe this npz."""
-    if kind not in NAV_KINDS:
+    if base_kind(kind) not in NAV_KINDS:
         return []
     try:
         r = json.load(open(report_path, encoding="utf-8"))
@@ -324,7 +424,26 @@ def nav_report_problems(kind, nav_npz, report_path):
     return bad
 
 
-def binding(kind, toks, root, commit, suite_path, trainer=None, nav_report=""):
+def rb_report_problems(kind, rb_npz, report_path):
+    """PREREG_V8F_NAVRB2 G-CLOCK-RB: the channel builder's report must read PASS on train and eval, its regression arm (state read 5 steps = 1 s ahead) must FAIL, and it must describe this npz. Only R kinds read it."""
+    if kind not in RB_KINDS:
+        return []
+    try:
+        r = json.load(open(report_path, encoding="utf-8"))
+    except (OSError, ValueError):
+        return ["no nav_rb builder report"]
+    bad = []
+    for sp in ("train", "eval"):
+        if not r.get(sp, {}).get("G-CLOCK-RB_pass"):
+            bad.append(f"G-CLOCK-RB {sp} is not pass")
+        if r.get(sp, {}).get("G-CLOCK-RB_regression_arm_shift_5", {}).get("pass") is not False:
+            bad.append(f"G-CLOCK-RB {sp} regression arm did not fail as required")
+    if r.get("navtext_nav_rb_sha256") != sha_file(rb_npz):
+        bad.append("the nav_rb report describes a different npz")
+    return bad
+
+
+def binding(kind, toks, root, commit, suite_path, trainer=None, nav_report="", rb_report=""):
     """Everything the token binds, recomputed NOW. Returns (dict, problems)."""
     d, bad = data_binding(toks)
     tr = trainer or os.path.join(root, TRAINER_REL)
@@ -335,10 +454,14 @@ def binding(kind, toks, root, commit, suite_path, trainer=None, nav_report=""):
     bad = list(bad) + sbad
     if nav_report:
         bad += nav_report_problems(kind, flag_value(toks, "--nav-text-npz"), nav_report)
+    if kind in RB_KINDS:
+        bad += rb_report_problems(kind, flag_value(toks, "--nav-rb-npz"), rb_report) if rb_report else ["no nav_rb builder report named for an R kind"]
     b = {"kind": kind, "commit": commit, "argv_sha256": argv_sha(toks), "data": d, "tree_manifest_sha256": tree_manifest_sha(root),
          "trainer_sha256": sha_file(tr) if os.path.isfile(tr) else None, "gsuite_result_sha256": ssha,
          "checker_sha256": sha_file(os.path.abspath(__file__)),
          "nav_report_sha256": sha_file(nav_report) if nav_report and os.path.isfile(nav_report) else None}
+    if kind in RB_KINDS:                                                       # R kinds only: a STRAT1 kind's token body keeps its key set
+        b["nav_rb_report_sha256"] = sha_file(rb_report) if rb_report and os.path.isfile(rb_report) else None
     if b["trainer_sha256"] is None:
         bad.append("trainer not found")
     return b, bad
@@ -363,7 +486,7 @@ def write_token(path, b, checks, selfcheck_sha):
     return tok
 
 
-def token_problems(token_path, kind, toks, root, commit, suite_path, selfcheck_path="", trainer=None, nav_report=""):
+def token_problems(token_path, kind, toks, root, commit, suite_path, selfcheck_path="", trainer=None, nav_report="", rb_report=""):
     """[] iff a token written by ``mint`` still binds this arm kind, commit, argv, every data file, the tree, the trainer, the checker and the G-SUITE result. Each differing key is named."""
     try:
         tok = json.load(open(token_path, encoding="utf-8"))
@@ -377,7 +500,7 @@ def token_problems(token_path, kind, toks, root, commit, suite_path, selfcheck_p
     miss = [c for c in REQUIRED_CHECKS if not (tok.get("checks", {}).get(c) or {}).get("pass")]
     if miss:
         p.append(f"token checks not PASS: {miss}")
-    want, bad = binding(kind, toks, root, commit, suite_path, trainer, nav_report)
+    want, bad = binding(kind, toks, root, commit, suite_path, trainer, nav_report, rb_report)
     p += list(bad)
     for k, v in want.items():
         if k == "data":
@@ -455,21 +578,26 @@ def mint(tag, kind, seed, a):
     out = os.path.join(rd, "train")
     os.makedirs(gd, exist_ok=True)
     frozen = os.path.join(a.inputs, "frozen", "argvs_obd.json")             # the frozen OBD-CTL argvs, shipped to the pod with the other inputs (the dev-box path is not there)
-    toks = render(kind, seed, a.inputs, out, os.path.join(a.inputs, "strat1", "navtext_nav.npz"), os.path.join(a.inputs, "strat1", "strat_labels_table.npz"), base_argvs=frozen, cache_dir=a.cache_dir)
+    toks = render(kind, seed, a.inputs, out, os.path.join(a.inputs, "strat1", "navtext_nav.npz"), os.path.join(a.inputs, "strat1", "strat_labels_table.npz"), base_argvs=frozen, cache_dir=a.cache_dir,
+                  rb_npz=os.path.join(a.inputs, "strat1", "navtext_nav_rb.npz") if kind in RB_KINDS else "")
     if a.steps != RUN_STEPS:                                                  # a timing pilot: the SAME argv with --steps moved (nothing else), its own token
         toks = _with(toks, steps=a.steps)
     json.dump(toks, open(os.path.join(rd, "argv.json"), "w", encoding="utf-8"))
     nav_report = os.path.join(a.inputs, "strat1", "navtext_nav_report.json")
-    b, bad = binding(kind, toks, a.root, a.commit, a.suite, nav_report=nav_report if kind in NAV_KINDS else "")
+    rb_report = os.path.join(a.inputs, "strat1", "navtext_nav_rb_report.json") if kind in RB_KINDS else ""
+    b, bad = binding(kind, toks, a.root, a.commit, a.suite, nav_report=nav_report if base_kind(kind) in NAV_KINDS else "", rb_report=rb_report)
     if bad:
         return ["binding: " + x for x in bad]
     trainer = os.path.join(a.root, TRAINER_REL)
     env = {"PYTHONPATH": os.path.join(a.root, "stack") + os.pathsep + a.root, "CUDA_VISIBLE_DEVICES": a.gpu, "HF_HUB_DISABLE_XET": "1"}
     checks = {"G-SUITE": {"pass": True, "result_sha256": b["gsuite_result_sha256"]}, "frozen_argvs_sha256": {"pass": True, "sha256": sha_file(frozen)}}
-    h = hyg()
+    h = hyg() + (hyg_rb() if kind in RB_KINDS else [])
     checks["G-HYG"] = {"pass": not h, "problems": h}
-    if kind in NAV_KINDS:
+    if base_kind(kind) in NAV_KINDS:
         checks["G-CLOCK"] = {"pass": True, "nav_report_sha256": b["nav_report_sha256"], "note": "G-CLOCK-NAV read from the builder report (train + eval PASS, regression arm FAILS); ctx label alignment asserts run inside the trainer's selfcheck"}
+        if kind in RB_KINDS:
+            checks["G-CLOCK"]["nav_rb_report_sha256"] = b["nav_rb_report_sha256"]
+            checks["G-CLOCK"]["note"] += "; G-CLOCK-RB read from the nav_rb builder report (train + eval PASS, regression arm FAILS)"
     else:
         checks["G-CLOCK"] = {"pass": True, "note": "control: no new label clock; the inherited label clock is the OBD-CTL recipe's"}
     # selfcheck-only on the exact argv (--out moved to the gate folder)
@@ -536,9 +664,10 @@ def run_arm(tag, kind, a):
     except (OSError, ValueError):
         print(f"REFUSED {tag}: no argv.json")
         return 2
-    nav_report = os.path.join(a.inputs, "strat1", "navtext_nav_report.json") if kind in NAV_KINDS else ""
+    nav_report = os.path.join(a.inputs, "strat1", "navtext_nav_report.json") if base_kind(kind) in NAV_KINDS else ""
+    rb_report = os.path.join(a.inputs, "strat1", "navtext_nav_rb_report.json") if kind in RB_KINDS else ""
     trainer = a.trainer or os.path.join(a.root, TRAINER_REL)
-    bad = token_problems(os.path.join(rd, "gate", "gate_token.json"), kind, toks, a.root, a.commit, a.suite, os.path.join(rd, "gate", "selfcheck.json"), trainer, nav_report)
+    bad = token_problems(os.path.join(rd, "gate", "gate_token.json"), kind, toks, a.root, a.commit, a.suite, os.path.join(rd, "gate", "selfcheck.json"), trainer, nav_report, rb_report)
     if bad:
         print(f"REFUSED {tag}: " + "; ".join(bad))
         return 2
@@ -555,7 +684,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("argv"); p.add_argument("kind", choices=KINDS); p.add_argument("seed", choices=tuple(SEEDS)); p.add_argument("--root", required=True); p.add_argument("--out", required=True)
-    p.add_argument("--nav-npz", default=""); p.add_argument("--ctx-npz", default="")
+    p.add_argument("--nav-npz", default=""); p.add_argument("--ctx-npz", default=""); p.add_argument("--rb-npz", default="")
     p = sub.add_parser("gate"); p.add_argument("kind", choices=KINDS); p.add_argument("--selfcheck", required=True); p.add_argument("--argv-json", required=True)
     p = sub.add_parser("post"); p.add_argument("kind", choices=KINDS); p.add_argument("--init", required=True); p.add_argument("--final", required=True)
     p = sub.add_parser("geval"); p.add_argument("--ckpt", required=True); p.add_argument("--selfcheck", default="")
@@ -568,7 +697,7 @@ def main(argv=None):
     p = sub.add_parser("suite"); p.add_argument("--base-junit", required=True); p.add_argument("--new-junit", required=True); p.add_argument("--base-commit", required=True); p.add_argument("--new-commit", required=True); p.add_argument("--out", required=True)
     a = ap.parse_args(argv)
     if a.cmd == "argv":
-        print(json.dumps(render(a.kind, a.seed, a.root, a.out, a.nav_npz, a.ctx_npz)))
+        print(json.dumps(render(a.kind, a.seed, a.root, a.out, a.nav_npz, a.ctx_npz, rb_npz=a.rb_npz)))
         return 0
     if a.cmd == "gate":
         bad = gate_problems(a.kind, json.load(open(a.argv_json, encoding="utf-8")), json.load(open(a.selfcheck, encoding="utf-8")))

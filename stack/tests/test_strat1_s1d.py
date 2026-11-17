@@ -123,7 +123,7 @@ def test_existing_arm_argv_sha_is_unchanged(key, tmp_path):
 
 
 def test_kinds_and_seeds_include_s1d():
-    assert REAL.KINDS == ("C0", "N1", "S1", "S1d") and set(REAL.SEEDS) >= {"s0", "s1", "s10", "s11"}
+    assert REAL.KINDS[:4] == ("C0", "N1", "S1", "S1d") and set(REAL.SEEDS) >= {"s0", "s1", "s10", "s11"}
 
 
 def test_s1d_binding_and_token_run(rig, tmp_path):
@@ -155,13 +155,13 @@ def _mutant(tmp_path, name, old, new):
 
 
 MUTATIONS = {
-    "kinds_drop_s1d": ('KINDS = ("C0", "N1", "S1", "S1d")', 'KINDS = ("C0", "N1", "S1")'),
-    "render_detach_off": ('"--ctx-detach", "on" if kind == "S1d" else "off"]', '"--ctx-detach", "off"]'),
-    "ctx_kinds_drop_s1d": ('CTX_KINDS = ("S1", "S1d")', 'CTX_KINDS = ("S1",)'),
-    "nav_kinds_drop_s1d": ('NAV_KINDS = ("N1", "S1", "S1d")', 'NAV_KINDS = ("N1", "S1")'),
+    "kinds_drop_s1d": ('KINDS = ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z")', 'KINDS = ("C0", "N1", "S1", "N1R", "S1R", "S1dR", "N1Z")'),
+    "render_detach_off": ('"--ctx-detach", "on" if bk == "S1d" else "off"]', '"--ctx-detach", "off"]'),
+    "ctx_kinds_drop_s1d": ('CTX_KINDS = ("S1", "S1d", "S1R", "S1dR")', 'CTX_KINDS = ("S1", "S1R", "S1dR")'),
+    "nav_kinds_drop_s1d": ('NAV_KINDS = ("N1", "S1", "S1d") + RB_KINDS', 'NAV_KINDS = ("N1", "S1") + RB_KINDS'),
     "gate_drop_detach_check": ('if flag_value(toks, "--ctx-detach") != want_det or lv.get("ctx_detach", "off") != want_det:', 'if False:'),
-    "gate_drop_adapter_grad_check": ('if not isinstance(ag, (int, float)) or (ag != 0.0 if kind == "S1d" else not ag > 0.0):', 'if False:'),
-    "post_drop_s1d": ('    if kind in CTX_KINDS:\n        if not ck:', '    if kind == "S1":\n        if not ck:'),
+    "gate_drop_adapter_grad_check": ('if not isinstance(ag, (int, float)) or (ag != 0.0 if bk == "S1d" else not ag > 0.0):', 'if False:'),
+    "post_drop_s1d": ('    if base_kind(kind) in CTX_KINDS:\n        if not ck:', '    if base_kind(kind) == "S1":\n        if not ck:'),
 }
 EXPECT_RED = {"kinds_drop_s1d": "render", "render_detach_off": "render", "ctx_kinds_drop_s1d": "render", "nav_kinds_drop_s1d": "nav",
               "gate_drop_detach_check": "gate", "gate_drop_adapter_grad_check": "gate", "post_drop_s1d": "post"}
