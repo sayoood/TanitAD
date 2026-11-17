@@ -49,8 +49,9 @@ def test_composer_and_committed_files_carry_25_for_K2M1N20_and_1_for_everything_
         assert w_of(doc(v)["argv"]) == ["1.0"], v
     assert W in doc("K2M1N20")["argv"] and doc("K2M1N20")["lever"]["w_map_hires"] == 25.0
     assert PREREG_SHA in doc("K2M1N20")["lever"]["w_map_hires_redose"] and "PREREG_K2_REDOSE_2026-11-10" in doc("K2M1N20")["lever"]["w_map_hires_redose"]
-    assert MK.REDOSE_PREREG_SHA256 == PREREG_SHA and MK.MAP_W_REDOSE == {"K2M1N20": 25.0, "K2DC": 25.0}   # K2DC (fd225446, PREREG_K2DC): K2M1N20's re-dose
+    assert MK.REDOSE_PREREG_SHA256 == PREREG_SHA and MK.MAP_W_REDOSE == {"K2M1N20": 25.0, "K2DC": 25.0, "K2DC02": 25.0}   # K2DC02 (PREREG_E2TAIL section 5) likewise; K2DC (fd225446, PREREG_K2DC): K2M1N20's re-dose
     assert_k2m1n20_is_25(doc("K2DC")["argv"])                     # as its INITIAL weight; the share controller moves it within [1, 25] from row 250
+    assert_k2m1n20_is_25(doc("K2DC02")["argv"])
 
 
 def test_W_COST_weight_is_unchanged_by_the_redose():
