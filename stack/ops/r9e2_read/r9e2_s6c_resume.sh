@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# r9e2_s6c_resume.sh -- DEV-BOX side of the refcv9 E2 read: score the four MAPSEL traces (K2, K0 x inference seeds 0, 1) with s6c_dev.py, then INPUTS -> the verdict.  E2-S6C-WIRE, 2026-11-08.
+# r9e2_s6c_resume.sh -- DEV-BOX side of the refcv9 E2 read: score the four MAPSEL traces (K2, K0 x inference seeds 0, 1) with s6c_dev.py, the PAIRED box AP@2 m record (clause (b)), then INPUTS -> the verdict.  E2-S6C-WIRE, 2026-11-08.
 # NEW file.  Pairs with r9e2_roll.sh, which STOPS (exit 5, marker ZZR9E2ROLL-AWAIT-S6CZZ) when the four S6c files are missing.
 #
 #   Why off Thor: s6c_dev.py -> mapsel_score.py opens the banked refcv8 eval artifacts (battery/step48852ema_pf: dump_s*/refcv6_extras.npz, s6_s*, panel_s*; the
@@ -41,6 +41,12 @@ for A in K2 K0; do
     ev S6C-DONE "$A seed $S $F"
   done
 done
+# clause (b) (PI 2026-11-17, "not separated worse"): the PAIRED box AP@2 m record K2 - K0 on the roll's DEV windows, at the gate both EVAL_*.json recorded (the gates file is Thor-only).
+# One record serves both inference seeds (perception is deterministic).  Needs $RD/dump_K2/perc_det.pkl + dump_K0/perc_det.pkl (pulled with the read dir); no GPU.
+[ "$DRY" = 1 ] || { [ -s "$RD/dump_K2/perc_det.pkl" ] && [ -s "$RD/dump_K0/perc_det.pkl" ] || abort NO-PERC-DET "pull $RD/dump_K2/perc_det.pkl and dump_K0/perc_det.pkl (the box AP@2 m paired read needs them)"; }
+X "$PY" -X utf8 "$OPS/r9e2_box_paired.py" --rd "$RD" --split "$R9E2_SPLIT" --eval-script "$(dirname "$R9E2_VERDICT")/r9_e1_eval.py" --out "$RD/BOX_PAIRED.json"; rc=$?
+if [ "$DRY" != 1 ]; then [ "$rc" = 0 ] && [ -s "$RD/BOX_PAIRED.json" ] || abort BOX-PAIRED-FAILED "rc=$rc (the judge would read clause (b) NOT-COMPUTABLE)"; fi
+ev BOX-PAIRED-DONE "$RD/BOX_PAIRED.json"
 X "$PY" -X utf8 "$OPS/r9e2_inputs.py" --rd "$RD" --out "$RD/INPUTS.json" --k2-label K2 --k0-label K0 --s6c-dir "$S6D"; rc=$?
 if [ "$DRY" != 1 ]; then [ "$rc" = 0 ] && [ -s "$RD/INPUTS.json" ] || abort INPUTS-FAILED "rc=$rc"; fi
 ev INPUTS-WRITTEN "$RD/INPUTS.json"

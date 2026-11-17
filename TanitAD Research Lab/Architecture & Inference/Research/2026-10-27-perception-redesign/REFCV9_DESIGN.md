@@ -326,9 +326,13 @@ variance: **C1 = C0's flags with training seed 1**. Keep a lever iff its primary
 
 * **E2** (init refcv8 EMA-48,852, full config incl. planner, 6,000 steps, WSD with decay over the last 1,000): **K0** refcv8's
   recipe continued; **K2** every E1 winner + W-MAP-1 / W-MAP-2 / W-BOX + the carried planner levers; **K3** (optional) K2 with
-  the agent head retired. Read on DEV at inference seeds 0 and 1: **GO iff** K2 beats K0 in point estimate on the map primary,
-  on box AP@2 m and on the planner's sidewalk rate (S6c-DEV), no four-family row is separated worse, and a partial W4 preview
-  (K2 vs its camera-blind) is separated. NO-GO ⇒ diagnose and fix before the 214 h are spent (Rule Zero: the NO-GO names the
+  the agent head retired. Read on DEV at inference seeds 0 and 1: **GO iff** K2 beats K0 in point estimate on the map primary
+  and on the planner's sidewalk rate (S6c-DEV), K2 is **not separated worse** than K0 on box AP@2 m (paired episode-cluster
+  bootstrap over episodes), no four-family row is separated worse, and a partial W4 preview (K2 vs its camera-blind) is separated.
+  *Clause (b) amended by the PI on 2026-11-17 ("Not separated worse"); it was "K2 beats K0 in point estimate" before. The point
+  rule had become a coin flip on a tie: K2 - K0 box AP was +0.00057, +0.0070, -0.00004 (paired CI [-0.0077, +0.0080]) and -0.0039
+  across E2, E2-RAW, E2-TAIL and WISE-ENC. Verdicts computed before the ruling stand as written. The D1 early-branch test below is
+  unchanged.* NO-GO ⇒ diagnose and fix before the 214 h are spent (Rule Zero: the NO-GO names the
   failing clause and the next lever, it does not end the programme item).
 * **E3, the full run:** a 50-step smoke (MEASURED s/step, `w_map` share check, G-LIVE), the `refcv9-full` gate, then 73,280
   steps. **D1 early branch** at stable step 30,000 decayed over 6,000 steps, read on DEV: continue iff D1's map primary and box

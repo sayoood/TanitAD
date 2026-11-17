@@ -1,5 +1,8 @@
 """test_r9_e2_verdict.py -- the E2 GO / NO-GO judge (REFCV9_DESIGN 4.4), on SYNTHETIC JSONs.  CPU only, no model, no GPU.
 
+Clause (b) is "K2 NOT SEPARATED WORSE than K0" on box AP@2 m (PI 2026-11-17), read from the paired ``box_paired`` record: a tie PASSES, an interval entirely below 0 FAILS,
+K2 better PASSES, an absent / non-finite record is NOT-COMPUTABLE (never the old point rule).
+
 The GO case; one RED arm per clause (a)-(e) that must flip to NO-GO NAMING THAT clause (and no other); seed 1 failing alone; a missing family;
 a NOT-COMPUTABLE clause is NO-GO (never dropped); STRATEGIC is PAUSED (never a pass, never omitted); the per-window row form goes through taniteval.ci.
 """
@@ -32,7 +35,8 @@ def good_docs():
                      "TACTICAL": {"decision_acc": row(0.02, "higher")}}}
     cb = {"rows": {"ade_m": row(-0.5, "lower", True), "LONGITUDINAL": row(-0.3, "lower", True),
                    "LATERAL": row(-0.2, "lower", True), "TACTICAL": row(0.1, "higher", True)}}
-    return {"eval_k2": eval_k2, "eval_k0": eval_k0, "s6c_k2": {"rate": 0.08, "n": 400}, "s6c_k0": {"rate": 0.18, "n": 400}, "families": fams, "camblind": cb}
+    box_paired = {"better": "higher", "delta": 0.07, "lo": 0.02, "hi": 0.12, "separated": True}              # K2 separated BETTER than K0 on box AP@2 m
+    return {"eval_k2": eval_k2, "eval_k0": eval_k0, "box_paired": box_paired, "s6c_k2": {"rate": 0.08, "n": 400}, "s6c_k0": {"rate": 0.18, "n": 400}, "families": fams, "camblind": cb}
 
 
 def write(tmp, docs_by_seed):
@@ -66,7 +70,7 @@ def test_go_case(tmp_path):
 
 
 def flip_a(d): d["eval_k2"]["nearfield"]["ci"][V.MAP_KEY]["point"] = 0.50            # below K0's 0.55
-def flip_b(d): d["eval_k2"]["boxes"]["ap2m_all"]["point"] = 0.30                      # below K0's 0.33
+def flip_b(d): d["box_paired"].update(delta=-0.09, lo=-0.14, hi=-0.03, separated=True)   # paired interval ENTIRELY below 0: separated worse
 def flip_c(d): d["s6c_k2"]["rate"] = 0.20                                             # above K0's 0.18 (lower is better)
 def flip_d(d): d["families"]["rows"]["LATERAL"]["curv_err"] = row(0.05, "lower", True)   # separated WORSE (lower is better, delta > 0)
 def flip_e(d): d["camblind"]["rows"]["TACTICAL"] = row(0.01, "higher", False)         # not separated vs camera-blind
@@ -136,3 +140,74 @@ def test_per_window_rows_use_ci_paired_bootstrap(tmp_path):
     r2 = V.row_read({"a": b, "b": a, "eid": eid, "better": "lower"})
     assert r2["ok"] and r2["separated_better"] and not r2["separated_worse"]
     assert V.row_read({"a": [1.0], "b": [1.0, 2.0], "eid": [0], "better": "lower"})["ok"] is False        # unaligned => refused, not guessed
+
+
+def _b(tmp, rec, seed_docs=None):
+    d = good_docs()
+    d["box_paired"] = rec
+    (tmp).mkdir(exist_ok=True)
+    return run(tmp, both(d))
+
+
+def _status_b(v):
+    return {c["id"]: c["status"] for c in v["clauses"]}["b"]
+
+
+def test_clause_b_tie_passes_not_separated_worse(tmp_path):
+    """A tie (delta ~0, CI spans 0) and even a NEGATIVE point delta whose CI reaches 0 PASS: the PI's 'not separated worse'."""
+    for i, rec in enumerate(({"better": "higher", "delta": 0.0004, "lo": -0.03, "hi": 0.03, "separated": False},
+                             {"better": "higher", "delta": -0.02, "lo": -0.05, "hi": 0.01, "separated": False})):
+        rc, v, md = _b(tmp_path / f"t{i}", rec)
+        assert rc == 0 and v["verdict"] == "GO" and _status_b(v) == "PASS", v["failing_clauses"]
+        assert "not separated worse" in v["clauses"][1]["per_seed"]["0"]["detail"]
+
+
+def test_clause_b_fails_only_when_the_ci_is_entirely_below_zero(tmp_path):
+    rc, v, _ = _b(tmp_path / "w", {"better": "higher", "delta": -0.06, "lo": -0.10, "hi": -0.01, "separated": True})
+    assert rc == 1 and [f["id"] for f in v["failing_clauses"]] == ["b"] and v["failing_clauses"][0]["status"] == "FAIL" and v["failing_clauses"][0]["seeds"] == ["0", "1"]
+    rc, v, _ = _b(tmp_path / "edge", {"better": "higher", "delta": -0.06, "lo": -0.10, "hi": 0.0, "separated": False})          # hi == 0: the interval reaches 0 => not separated
+    assert rc == 0 and _status_b(v) == "PASS"
+
+
+def test_clause_b_k2_better_passes_and_reports_the_point_delta(tmp_path):
+    rc, v, _ = _b(tmp_path / "k", {"better": "higher", "delta": 0.07, "lo": 0.02, "hi": 0.12, "separated": True})
+    assert rc == 0 and _status_b(v) == "PASS"
+    c = v["clauses"][1]["per_seed"]["0"]
+    assert c["delta"] == 0.07 and "delta=+0.07" in c["detail"] and "estimator" in c and "paired" in c["estimator"]
+
+
+@pytest.mark.parametrize("rec", [None, {}, {"better": "higher", "delta": float("nan"), "lo": -0.1, "hi": 0.1},
+                                 {"better": "higher", "delta": 0.01, "lo": None, "hi": 0.1}, {"better": "lower", "delta": 0.01, "lo": -0.1, "hi": 0.1},
+                                 {"better": "higher", "delta": 0.01, "lo": -0.1, "hi": 0.1, "undefined": True}])
+def test_clause_b_missing_or_nonfinite_record_is_not_computable(tmp_path, rec):
+    d = good_docs()
+    if rec is None:
+        del d["box_paired"]                                                                       # key absent altogether
+    else:
+        d["box_paired"] = rec
+    rc, v, _ = run(tmp_path, both(d))
+    assert rc == 1 and [(f["id"], f["status"]) for f in v["failing_clauses"]] == [("b", "NOT-COMPUTABLE")]
+
+
+def test_RED_the_old_point_rule_would_flip_the_tie_case(tmp_path):
+    """Deliberate regression: a tie whose point K2 < K0 FAILED the old rule (K2 > K0 on points); the amended judge PASSES it, and the old rule, applied to
+    the same numbers, still FAILS -- so a revert of clause (b) to point_clause is caught."""
+    tie = {"better": "higher", "delta": -0.004, "lo": -0.05, "hi": 0.04, "separated": False}
+    rc, v, _ = _b(tmp_path / "tie", tie)
+    assert rc == 0 and _status_b(v) == "PASS"
+    old = V.point_clause("b", 0.33 + tie["delta"], 0.33, True, "boxes.ap2m_all.point")
+    assert old["status"] == "FAIL"
+    # revert the clause to the point rule inside the judge: the same tie input must now fail the GO
+    real = V.box_paired_clause
+    try:
+        V.box_paired_clause = lambda rec: V.point_clause("b", 0.33 + rec["delta"], 0.33, True, "boxes.ap2m_all.point")
+        rc2, v2, _ = _b(tmp_path / "tie2", tie)
+    finally:
+        V.box_paired_clause = real
+    assert rc2 == 1 and [f["id"] for f in v2["failing_clauses"]] == ["b"]
+
+
+def test_rule_text_and_clause_name_record_the_amendment():
+    assert "clause (b) amended by the PI 2026-11-17: not separated worse" in V.RULE
+    assert dict(V.CLAUSES)["b"].startswith("box AP@2 m head output no NMS: K2 not separated worse than K0")
+    assert "paired" in V.EST["b"] and "NOT SEPARATED WORSE" in V.__doc__

@@ -445,6 +445,7 @@ def _write_reads(rd, k2_beats=True):
     for s in ("0", "1"):
         _w(rd / f"families_s{s}.json", fam)
         _w(rd / f"camblind_s{s}.json", cb)
+    _w(rd / "BOX_PAIRED.json", {"better": "higher", "delta": 0.3, "lo": 0.2, "hi": 0.4, "separated": True})       # clause (b), PI 2026-11-17: the paired box AP@2 m record
 
 
 def _s6c(d, label, seed, rate, trace_label=None, infer_seed=None):
@@ -472,6 +473,19 @@ def test_inputs_writer_matches_the_judges_schema_and_a_missing_s6c_is_null(tmp_p
     out = tmp_path / "INPUTS.json"
     assert INP.main(["--rd", str(rd), "--out", str(out), "--s6c-dir", str(_all_s6c(tmp_path / "s6c"))]) == 0
     assert json.loads(out.read_text(encoding="utf-8"))["not_built"] == []
+
+
+def test_box_paired_lands_on_both_seeds_and_a_missing_one_is_null_so_the_judge_reads_b_not_computable(tmp_path):
+    rd = tmp_path / "read"
+    _write_reads(rd)
+    inp = INP.build_inputs(rd, s6c_dir=_all_s6c(tmp_path / "s6c"))
+    assert all(r["box_paired"].replace("\\", "/").endswith("/BOX_PAIRED.json") for r in inp["seeds"].values()) and inp["not_built"] == []
+    assert V.build(inp)["verdict"] == "GO"
+    (rd / "BOX_PAIRED.json").unlink()
+    inp = INP.build_inputs(rd, s6c_dir=_all_s6c(tmp_path / "s6c"))
+    assert inp["not_built"] == ["seed0.box_paired", "seed1.box_paired"]
+    v = V.build(inp)
+    assert {c["id"]: c["status"] for c in v["clauses"]}["b"] == "NOT-COMPUTABLE" and v["verdict"] == "NO-GO"
 
 
 def test_the_s6c_files_land_per_seed_and_per_arm(tmp_path):
@@ -824,6 +838,10 @@ def _resume_structure(out):
     last_sc = max((i for i, ln in enumerate(dry) if "s6c_dev.py" in ln), default=-1)
     if len(inp) != 1 or len(ver) != 1 or not (last_sc < inp[0] < ver[0]) or "--s6c-dir /pull/read/s6c" not in dry[inp[0]]:
         bad.append("inputs-then-verdict-after-all-scorings")
+    bx = [i for i, ln in enumerate(dry) if "r9e2_box_paired.py" in ln]
+    if len(bx) != 1 or not (last_sc < bx[0] < (inp[0] if inp else -1)) or not all(
+            x in dry[bx[0]] for x in ("--rd /pull/read", "--split /pull/split.json", "--eval-script /pull/r9_e1_eval.py", "--out /pull/read/BOX_PAIRED.json")):
+        bad.append("box-paired-before-inputs")
     return bad
 
 
@@ -849,6 +867,7 @@ def test_resume_script_refuses_each_unset_pin(tmp_path, pin):
     ('T="$MS/E2_${A}_mapsel/trace_s$S.npz"', 'T="$MS/E2_K2_mapsel/trace_s$S.npz"', "s6c-K0-s0"),    # K0 scored from K2's trace
     ('--s6c-dir "$S6D"', '--s6c-k2 /x', "inputs-then-verdict-after-all-scorings"),                # the old single-file switch
     ('for A in K2 K0; do', 'for A in K2; do', "four-scorings"),                                   # a missing arm
+    ('--out "$RD/BOX_PAIRED.json"; rc=$?', '--out "$RD/OTHER.json"; rc=$?', "box-paired-before-inputs"),     # the paired box read dropped / mis-aimed
 ])
 def test_RED_each_mutation_of_the_resume_script_makes_its_structure_check_fail(tmp_path, old, new, claim):
     text = RESUME.read_text(encoding="utf-8")

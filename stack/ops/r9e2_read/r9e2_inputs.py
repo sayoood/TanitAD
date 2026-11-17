@@ -7,6 +7,8 @@ Per inference seed S (the judge REQUIRES exactly seeds 0 AND 1) the five judge i
 
     eval_k2  = EVAL_K2.json        eval_k0  = EVAL_K0.json            (r9_e1_eval.py single-arm evals; perception is deterministic => the same file for both seeds)
     families = families_s<S>.json  camblind = camblind_s<S>.json      (r9_e2_families.py --mode families / --mode camblind, ONE call per seed)
+    box_paired = BOX_PAIRED.json (r9e2_box_paired.py: the PAIRED box AP@2 m record K2 - K0 for clause (b), PI 2026-11-17 "not separated worse"; perception is deterministic, so
+                 ONE file is stamped on both seeds and it says so).  Absent => ``null`` and the judge reads clause (b) NOT-COMPUTABLE (never the old point rule).
     s6c_k2   = S6C_<k2 label>_s<S>.json   s6c_k0 = S6C_<k0 label>_s<S>.json   inside ``--s6c-dir`` (s6c_dev.py's flat JSON, ONE FILE PER ARM PER SEED)
 
 S6c (the planner sidewalk rate, ``s6c_dev.py`` on that arm's MAPSEL roll at that inference seed) is PER SEED AND PER ARM: seeds 0 and 1 are two separate rolls (H-ESTIM-SEED-1), so
@@ -26,7 +28,8 @@ from pathlib import Path
 
 SCHEMA = "r9e2-inputs-v1"
 JUDGE_SEEDS = ("0", "1")
-SEED_KEYS = ("eval_k2", "eval_k0", "s6c_k2", "s6c_k0", "families", "camblind")
+SEED_KEYS = ("eval_k2", "eval_k0", "s6c_k2", "s6c_k0", "families", "camblind", "box_paired")
+BOX_PAIRED_NAME = "BOX_PAIRED.json"
 
 
 def _sha256(p: Path) -> str:
@@ -67,19 +70,21 @@ def build_inputs(rd, seeds=JUDGE_SEEDS, s6c_dir=None, k2_label="K2", k0_label="K
     missing = [str(p) for p in required.values() if not p.is_file()] + [str(p) for d in per_seed.values() for p in d.values() if not p.is_file()]
     if missing:
         raise SystemExit("[r9e2_inputs] REFUSED: required judge input(s) missing: " + ", ".join(missing))
+    box_p = rd / BOX_PAIRED_NAME
     seeds_out, shas = {}, {}
     not_built = []
     for s in JUDGE_SEEDS:
         row = {"eval_k2": str(required["eval_k2"]), "eval_k0": str(required["eval_k0"]), "s6c_k2": _str(_s6c_file(s6c_dir, k2_label, s)),
-               "s6c_k0": _str(_s6c_file(s6c_dir, k0_label, s)), "families": str(per_seed[s]["families"]), "camblind": str(per_seed[s]["camblind"])}
+               "s6c_k0": _str(_s6c_file(s6c_dir, k0_label, s)), "families": str(per_seed[s]["families"]), "camblind": str(per_seed[s]["camblind"]),
+               "box_paired": str(box_p) if box_p.is_file() else None}
         assert tuple(row) == SEED_KEYS
         seeds_out[s] = row
-        not_built += [f"seed{s}.{k}" for k in ("s6c_k2", "s6c_k0") if row[k] is None]
+        not_built += [f"seed{s}.{k}" for k in ("s6c_k2", "s6c_k0", "box_paired") if row[k] is None]
         for k, v in row.items():
             if v:
                 shas[v] = _sha256(Path(v))
     return {"schema": SCHEMA, "k2_label": k2_label, "k0_label": k0_label, "seeds": seeds_out, "not_built": not_built,
-            "provenance": {"sha256": shas, "note": "s6c_* null = that arm/seed has no S6c-DEV file; the judge reads clause (c) NOT-COMPUTABLE"}}
+            "provenance": {"sha256": shas, "note": "s6c_* null = that arm/seed has no S6c-DEV file (clause (c) NOT-COMPUTABLE); box_paired null = no BOX_PAIRED.json (clause (b) NOT-COMPUTABLE)"}}
 
 
 def _str(p):

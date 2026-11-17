@@ -6,7 +6,10 @@
 GO iff, at EVERY inference seed, ALL FIVE clauses PASS (REFCV9_DESIGN 4.4, verbatim in ``RULE``):
   (a) MAP      K2 beats K0 in POINT estimate on the map primary ``nf_swedge_prec_lv_5_20`` (higher better; ``r9_e1_eval.py`` single-arm eval JSON,
                ``nearfield.ci.<key>.point``; T0 label level).
-  (b) BOX      K2 beats K0 in point estimate on box AP@2 m, head output, NO post-hoc NMS (``boxes.ap2m_all.point``; T0).
+  (b) BOX      K2 NOT SEPARATED WORSE than K0 on box AP@2 m, head output, NO post-hoc NMS (PI 2026-11-17, "Not separated worse"; T0): PASS unless the PAIRED
+               episode-cluster bootstrap interval of K2 - K0 on ``boxes.ap2m_all`` lies ENTIRELY below 0 (higher is better).  Read from the per-seed ``box_paired`` record
+               (``r9e2_box_paired.py`` -> BOX_PAIRED.json, ``{delta, lo, hi, separated, better:"higher"}``); the point delta is reported as information.  An absent / non-finite
+               record is NOT-COMPUTABLE -- never a silent fall-back to the old point rule.  Banked verdicts produced under the old point rule are NOT re-scored.
   (c) S6c      K2 beats K0 (LOWER) on the planner's sidewalk rate on S6c-DEV (``rate``, or MAPSEL's ``map_compliance.S6c.arms.BASE.off_drivable.rate``; T1).
   (d) FAMILIES no four-family row is SEPARATED WORSE (K2 - K0, paired episode-cluster bootstrap over EPISODES; T1).  LONGITUDINAL / LATERAL / TACTICAL are
                read row by row; STRATEGIC is PAUSED (PI 2026-09-19, PI_DECISION_QUEUE ITEM 25): reported as PAUSED, never a pass, never omitted.
@@ -24,7 +27,7 @@ record says so (``identical_inputs``) instead of presenting two draws.  The pair
 
 INPUTS.json::
     {"k2_label": "K2", "k0_label": "K0",
-     "seeds": {"0": {"eval_k2": p, "eval_k0": p, "s6c_k2": p, "s6c_k0": p, "families": p, "camblind": p},
+     "seeds": {"0": {"eval_k2": p, "eval_k0": p, "s6c_k2": p, "s6c_k0": p, "families": p, "camblind": p, "box_paired": p},
                "1": {...}}}
 ``families`` = ``{"rows": {"LONGITUDINAL": {row_id: row}, "LATERAL": {...}, "TACTICAL": {...}, "STRATEGIC": {...optional, ignored}}}``;
 ``camblind`` = ``{"rows": {"ade_m": row, "LONGITUDINAL": row, "LATERAL": row, "TACTICAL": row}}`` (delta = K2 - CAMERA-BLIND).
@@ -43,19 +46,20 @@ MAP_KEY = "nf_swedge_prec_lv_5_20"
 FAMILIES = ("LONGITUDINAL", "LATERAL", "TACTICAL")
 STRATEGIC_PAUSED = ("PAUSED (PI 2026-09-19, PI_DECISION_QUEUE ITEM 25): the strategic layer is switched off until tactical and operative drive with high "
                     "quality; reported PAUSED -- never a pass, never omitted, never extended to the other families.")
-CLAUSES = (("a", "MAP primary nf_swedge_prec_lv_5_20: K2 > K0 (point)"), ("b", "box AP@2 m head output no NMS: K2 > K0 (point)"),
+CLAUSES = (("a", "MAP primary nf_swedge_prec_lv_5_20: K2 > K0 (point)"), ("b", "box AP@2 m head output no NMS: K2 not separated worse than K0 (paired, episodes)"),
            ("c", "planner sidewalk rate S6c-DEV: K2 < K0 (point)"), ("d", "no four-family row separated worse (paired, episodes)"),
            ("e", "W4 preview: K2 separated BETTER than camera-blind on ade_m + each family primary"))
 TIER = {"a": "T0 (label level)", "b": "T0 (label level)", "c": "T1 self-action open loop (S6c-DEV)", "d": "T1 self-action open loop", "e": "T1 self-action open loop"}
-EST = {"a": "single-arm point (episode-cluster bootstrap in the eval JSON)", "b": "paired episode-cluster bootstrap (point compared)", "c": "point (S6c rate)",
+EST = {"a": "single-arm point (episode-cluster bootstrap in the eval JSON)", "b": "taniteval.ci paired episode-cluster bootstrap, B 2000 seed 0, over EPISODES (not separated worse; point delta informational)", "c": "point (S6c rate)",
        "d": "taniteval.ci paired episode-cluster bootstrap, B 2000 seed 0, over EPISODES", "e": "taniteval.ci paired episode-cluster bootstrap, B 2000 seed 0, over EPISODES"}
 NEXT = {"a": "map primary lever: M1/M3 representation + w_map share (REFCV9_DESIGN 4.3), re-read nf_swedge_prec_lv_5_20",
         "b": "box lever: B2 perspective aux / B3 quality-aware presence + DN / B4 queries (REFCV9_DESIGN 4.3), re-read AP@2 m",
         "c": "planner wiring: W-MAP-2 projection / W-BOX tokens + gates (C8), re-read S6c sidewalk rate",
         "d": "the separated-worse row(s) named in the clause: diagnose that family before the 214 h are spent",
         "e": "the planner does not read the camera beyond what the camera-blind already gets: W4 fails => wiring / grounding lever (C8) first"}
-RULE = ("GO iff K2 beats K0 in point estimate on the map primary, box AP@2 m and the planner's S6c sidewalk rate, no four-family row is separated worse, "
-        "and a partial W4 preview (K2 vs camera-blind) is separated -- at inference seeds 0 and 1 (REFCV9_DESIGN 4.4).")
+RULE = ("GO iff K2 beats K0 in point estimate on the map primary and the planner's S6c sidewalk rate, K2 is not separated worse than K0 on box AP@2 m, "
+        "no four-family row is separated worse, and a partial W4 preview (K2 vs camera-blind) is separated -- at inference seeds 0 and 1 (REFCV9_DESIGN 4.4) "
+        "(clause (b) amended by the PI 2026-11-17: not separated worse).")
 
 
 def _ci():
@@ -101,6 +105,20 @@ def point_clause(cid, k2, k0, higher_better, where) -> dict:
     win = (k2 > k0) if higher_better else (k2 < k0)
     return _clause(cid, "PASS" if win else "FAIL", f"{where}: K2={k2:.6g} K0={k0:.6g} delta={k2 - k0:+.6g} ({'higher' if higher_better else 'lower'} is better)",
                    k2=k2, k0=k0, delta=k2 - k0)
+
+
+def box_paired_clause(rec) -> dict:
+    """Clause (b), PI 2026-11-17: PASS unless the paired interval of K2 - K0 on box AP@2 m is ENTIRELY below 0 (higher is better).  Absent / non-finite / wrong-direction = NOT-COMPUTABLE."""
+    if (not isinstance(rec, dict) or rec.get("better") != "higher" or rec.get("undefined") or not all(_fin(rec.get(k)) for k in ("delta", "lo", "hi"))
+            or rec["lo"] > rec["hi"]):
+        return _clause("b", "NOT-COMPUTABLE", "box_paired record absent / non-finite / undefined / not `better: higher` (no fall-back to the point rule)",
+                       record=rec if isinstance(rec, dict) else None)
+    worse = rec["hi"] < 0
+    return _clause("b", "FAIL" if worse else "PASS",
+                   f"box AP@2 m K2 - K0: delta={rec['delta']:+.6g} paired CI [{rec['lo']:.6g}, {rec['hi']:.6g}] -> "
+                   + ("SEPARATED WORSE (interval entirely below 0)" if worse else "not separated worse (interval reaches 0 or above)")
+                   + f"; K2 higher by point={rec['delta'] > 0} (information only){'; degenerate interval' if rec.get('degenerate') else ''}",
+                   delta=rec["delta"], lo=rec["lo"], hi=rec["hi"], separated_worse=worse, separated_better=bool(rec["lo"] > 0))
 
 
 def row_read(row, boot=2000, seed=0) -> dict:
@@ -180,10 +198,11 @@ def judge_seed(paths: dict) -> dict:
     s0, _ = _load(paths.get("s6c_k0"))
     fam, _ = _load(paths.get("families"))
     cb, _ = _load(paths.get("camblind"))
+    bp, _ = _load(paths.get("box_paired"))
     rate = lambda s: (s.get("rate") if isinstance(s, dict) and "rate" in s else                                   # noqa: E731
                       _dig(s, "map_compliance", "S6c", "arms", "BASE", "off_drivable", "rate"))
     cl = [point_clause("a", _dig(ev2, "nearfield", "ci", MAP_KEY, "point"), _dig(ev0, "nearfield", "ci", MAP_KEY, "point"), True, "nearfield.ci." + MAP_KEY + ".point"),
-          point_clause("b", _dig(ev2, "boxes", "ap2m_all", "point"), _dig(ev0, "boxes", "ap2m_all", "point"), True, "boxes.ap2m_all.point"),
+          box_paired_clause(bp),
           point_clause("c", rate(s2), rate(s0), False, "S6c-DEV sidewalk (off_drivable) rate")]
     cd, fam_rep = families_clause(fam)
     ce, w4_rep = w4_clause(cb)
