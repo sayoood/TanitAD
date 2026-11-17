@@ -1,0 +1,118 @@
+{
+ "S_U_union": 15392,
+ "S_B": 4791,
+ "ue_steps": 61568,
+ "checker": "/root/dscale10k/block3/study/dscale10k_check.py",
+ "checker_sha256": "89fd80a6fc95acbf82826578d137150218a6b4139c91c24c85fe1dc7c8244f70",
+ "rows": [
+  {
+   "case": "UE_s0 argv diff vs B_s0",
+   "problems": [],
+   "REFUSED": false,
+   "expected": "PASS",
+   "ok": true
+  },
+  {
+   "case": "BL_s0 argv diff vs B_s0",
+   "problems": [],
+   "REFUSED": false,
+   "expected": "PASS",
+   "ok": true
+  },
+  {
+   "case": "UE_s0 C-STEPS (union dry record)",
+   "problems": [],
+   "REFUSED": false,
+   "expected": "PASS",
+   "ok": true
+  },
+  {
+   "case": "BL_s0 C-STEPS (B dry record + union record u_rec)",
+   "problems": [],
+   "REFUSED": false,
+   "expected": "PASS",
+   "ok": true
+  },
+  {
+   "case": "REGRESSION BL_s0 at 19,164",
+   "problems": [
+    "BL_s0 runs 19164 steps, 4 x S_U of the union record = 61568"
+   ],
+   "REFUSED": true,
+   "expected": "REFUSED",
+   "ok": true
+  },
+  {
+   "case": "REGRESSION BL_s0 at 61,569",
+   "problems": [
+    "BL_s0 runs 61569 steps, 4 x S_U of the union record = 61568"
+   ],
+   "REFUSED": true,
+   "expected": "REFUSED",
+   "ok": true
+  },
+  {
+   "case": "REGRESSION UE_s0 at 61,569",
+   "problems": [
+    "UE_s0 runs 61569 steps, 4 x S_U of the union record = 61568"
+   ],
+   "REFUSED": true,
+   "expected": "REFUSED",
+   "ok": true
+  },
+  {
+   "case": "REGRESSION BL_s0, target from the B record (no u_rec)",
+   "problems": [
+    "BL_s0: the union S_U is not recorded (UE: the dry build of the union arm; BL: the union dry record u_rec, U_s0's, is required: the B record's S_U is the B set's)"
+   ],
+   "REFUSED": true,
+   "expected": "REFUSED",
+   "ok": true
+  },
+  {
+   "case": "REGRESSION BL_s0, the B record passed as u_rec (19,164 target)",
+   "problems": [
+    "BL_s0: the record the target is read from has n_clips 4512, not the union's 14512 (a target from the B record)"
+   ],
+   "REFUSED": true,
+   "expected": "REFUSED",
+   "ok": true
+  },
+  {
+   "case": "REGRESSION BL_s0, evidence ue_steps 19,164 vs 61,568",
+   "problems": [
+    "BL_s0: the pair's step count 19164 is not 4 x S_U of the union record (61568)"
+   ],
+   "REFUSED": true,
+   "expected": "REFUSED",
+   "ok": true
+  },
+  {
+   "case": "REGRESSION BL_s0 argv diff pinned (--steps 61,569 vs ue_steps)",
+   "problems": [
+    "flag --steps reads ['61569'], the card pins ['61568'] for BL_s0"
+   ],
+   "REFUSED": true,
+   "expected": "REFUSED",
+   "ok": true
+  },
+  {
+   "case": "REGRESSION UE_s0 without --steps",
+   "problems": [
+    "UE_s0 stage A has no --steps (the card pins ['61568'])"
+   ],
+   "REFUSED": true,
+   "expected": "REFUSED",
+   "ok": true
+  }
+ ],
+ "pass": true,
+ "argv_file_sha256": {
+  "UE_s0.A": "1f358372493b011bfc98b77773f0dc3e11b45e3a5cc9462aa47156ac3220228f",
+  "BL_s0.A": "11b42563e761a4e3077a3feaf378de17fda271f565ca7b65830ce7ef6d8cc694"
+ },
+ "argv_sha256_checker": {
+  "UE_s0.A": "03565c558216a4b9dcbeb724a93fd5a3eeec8b71b6495f919e49105901df2b5c",
+  "BL_s0.A": "0522aa3c9dd5327ab9868b0a09e55889a999e15f6f225a9a00a700b881e025fb"
+ }
+}
