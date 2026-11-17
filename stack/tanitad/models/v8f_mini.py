@@ -1387,12 +1387,13 @@ class V8FMini(nn.Module):
                 "window_start": cfg.window_start_effective,                  # Amendment 1: the EFFECTIVE first-window step (hist - 1 when the flag is absent)
                 "prior_frozen": not any(p.requires_grad for p in self.prior.parameters()),
                 "residual_zero_init": bool(float(self.head_o[2].weight.detach().abs().sum()) == 0.0),
-                "nav_rb": "on" if self.e_nav_rb is not None else "off",       # PREREG_V8F_NAVRB2: the BUILT roundabout channel (e_nav_rb exists iff on)
                 "params": {k: gp(v) for k, v in self.trainable_groups().items()},
                 "n_params_trainable": int(sum(p.numel() for p in self.parameters() if p.requires_grad)),
                 "w": {"w_pen": cfg.w_pen if cfg.consistency else 0.0, "w_pen_self": cfg.w_pen_self if cfg.consistency else 0.0,
                       "w_wm": cfg.w_wm if self.wm is not None else 0.0,
                       "w_tac": cfg.w_tac, "w_cons": cfg.w_cons}}                       # PREREG_V8F_WC: T's constraint term is w_tac x w_cons
+        if self.e_nav_rb is not None:
+            lv["nav_rb"] = "on"          # PREREG_V8F_NAVRB2: the BUILT roundabout channel; the key is ABSENT when off, so an off model's levers equal the tip's (checkers read .get("nav_rb", "off"))
         if self.wm is not None and any(k > 1 for k in self.wm.built_k()["k"]):      # PREREG_V8F_MRATE: present ONLY with a multi-frame WM built (a W0 model keeps its key set); the gate reads built.get("wm_k", 1)
             bk = self.wm.built_k()
             lv["wm_k"], lv["wm_k_levels"], lv["wm_dilation_levels"], lv["wm_causal_pad_levels"] = max(bk["k"]), bk["k"], bk["dilation"], bk["causal_pad"]

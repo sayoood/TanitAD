@@ -161,7 +161,7 @@ def test_z1_on_at_zero_init_is_the_off_model_and_leaves_the_rng_alone(world):
     assert torch.equal(s_off, s_on)
     assert float(m_on.e_nav_rb.weight.abs().sum()) == 0.0 and m_on.e_nav_rb.bias is None and tuple(m_on.e_nav_rb.weight.shape) == (32, 1)
     assert check_equal(m_off, m_on, b, extra_keys=("e_nav_rb.weight",)) == []
-    assert m_on.built_levers()["nav_rb"] == "on" and m_off.built_levers()["nav_rb"] == "off"
+    assert m_on.built_levers()["nav_rb"] == "on" and "nav_rb" not in m_off.built_levers()
 
 
 def test_z1_mutation_no_fork_rng_moves_the_global_stream(world):
