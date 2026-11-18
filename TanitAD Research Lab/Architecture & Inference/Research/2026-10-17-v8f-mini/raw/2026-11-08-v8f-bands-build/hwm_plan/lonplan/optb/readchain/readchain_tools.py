@@ -79,7 +79,7 @@ def cmd_evidence(a):
     B = torch.load(os.path.join(a.bank, "ckpt_last.pt"), map_location="cpu", weights_only=False)
     wev, wp = C.weights_identity(A["model"], B["model"])
     aev, ap_ = C.adam_state_problems(B)
-    want = a.expect_adam
+    want = a.expect_adam if a.expect_adam is not None else C.N_WM_PARAMS - C.N_PROJ_TENSORS   # MM ruling 2026-11-18 (MM_RULINGS_POSTCHECK.md): 129 = 133 wm.* parameters - 4 wm.proj; bound to the checker's constants
     if not (aev.get("n_group_params") == want and aev.get("n_with_state") == want):
         ap_.append(f"C5: {aev.get('n_with_state')!r} of {aev.get('n_group_params')!r} optimiser tensors have Adam state, wanted {want}")
     pk = sorted(k for k in A["model"] if k.startswith("wm.proj."))
@@ -169,7 +169,7 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
     e = sub.add_parser("evidence")
     e.add_argument("--tag", required=True); e.add_argument("--bank", required=True); e.add_argument("--out", required=True)
-    e.add_argument("--init-dir", default="C:/Users/Admin/t2v8f_pulls"); e.add_argument("--expect-adam", type=int, default=141)
+    e.add_argument("--init-dir", default="C:/Users/Admin/t2v8f_pulls"); e.add_argument("--expect-adam", type=int, default=None)
     e.add_argument("--lever", default=None, choices=[None, "rsp", "null"]); e.add_argument("--init", type=int, default=None); e.add_argument("--dry", action="store_true")
     d = sub.add_parser("delta"); d.add_argument("--ckpt", required=True)
     b = sub.add_parser("bandmet"); b.add_argument("--ia", required=True); b.add_argument("--chassis", type=int, required=True); b.add_argument("--tag", required=True); b.add_argument("--out", required=True)

@@ -77,3 +77,17 @@ def test_tree_manifest_matches_and_detects_a_change(tmp_path):
     sys.path.insert(0, HERE)
     import optb_route as R
     assert R.check_tree_manifest() == 1865
+
+
+def test_main_refuses_a_tree_that_is_not_the_manifest_and_runs_on_the_real_one(tmp_path):
+    """MM 2026-11-18: main() must CALL check_tree_manifest (it was defined, tested, and never called by the route)."""
+    import subprocess
+    script = tmp_path / "hello.py"
+    script.write_text("print('ZZ ROUTE RAN ZZ')", encoding="utf-8")
+    (tmp_path / "fake" / "stack").mkdir(parents=True); (tmp_path / "fake" / "taniteval").mkdir()
+    env = dict(os.environ, OPTB_TREE=str(tmp_path / "fake"), CUDA_VISIBLE_DEVICES="-1")
+    r = subprocess.run([sys.executable, os.path.join(HERE, "optb_route.py"), str(script)], capture_output=True, encoding="utf-8", env=env, timeout=600)
+    assert r.returncode != 0 and "tree manifest" in r.stderr and "ZZ ROUTE RAN ZZ" not in r.stdout, (r.returncode, r.stderr[-400:])
+    env.pop("OPTB_TREE")
+    r = subprocess.run([sys.executable, os.path.join(HERE, "optb_route.py"), str(script)], capture_output=True, encoding="utf-8", env=env, timeout=600)
+    assert r.returncode == 0 and "ZZ ROUTE RAN ZZ" in r.stdout, (r.returncode, r.stderr[-400:])

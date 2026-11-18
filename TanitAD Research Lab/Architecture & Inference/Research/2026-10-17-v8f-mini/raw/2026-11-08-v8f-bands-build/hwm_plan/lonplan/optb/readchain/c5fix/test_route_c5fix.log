@@ -1,0 +1,41 @@
+........F                                                                [100%]
+================================== FAILURES ===================================
+_______________ test_tree_manifest_matches_and_detects_a_change _______________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/actrsp/optb/readchain/tmp_c5/bt3/test_tree_manifest_matches_and0')
+
+    def test_tree_manifest_matches_and_detects_a_change(tmp_path):
+        sys.path.insert(0, HERE)
+        import optb_route as R
+>       assert R.check_tree_manifest() == 1865
+               ^^^^^^^^^^^^^^^^^^^^^^^
+
+test_route.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def check_tree_manifest():
+        """tree_manifest.sha256 (written at build: sha256 + relpath of every .py under tree/stack and tree/taniteval). Refuses on any difference."""
+        mp = os.path.join(HERE, "tree_manifest.sha256")
+        want = {}
+        for ln in open(mp, encoding="utf-8"):
+            s, r = ln.rstrip("\n").split("  ", 1)
+            want[r] = s
+        got = {}
+        for sub in ("stack", "taniteval"):
+            for dp, dn, fn in os.walk(os.path.join(OPTB_TREE, sub)):
+                dn[:] = [d for d in dn if d not in ("__pycache__", ".pytest_cache")]
+                for f in fn:
+                    if f.endswith(".py"):
+                        full = os.path.join(dp, f)
+                        got[os.path.relpath(full, OPTB_TREE).replace("\\", "/")] = full
+        if set(got) != set(want):
+            raise RuntimeError(f"tree manifest: file set differs (extra {sorted(set(got) - set(want))[:3]}, missing {sorted(set(want) - set(got))[:3]})")
+        bad = [r for r, p in got.items() if sha256_file(p) != want[r]]
+        if bad:
+>           raise RuntimeError(f"tree manifest: {len(bad)} files differ, e.g. {bad[:3]}")
+E           RuntimeError: tree manifest: 1 files differ, e.g. ['stack/tanitad/models/hjepa.py']
+
+optb_route.py:99: RuntimeError
+=========================== short test summary info ===========================
+FAILED test_route.py::test_tree_manifest_matches_and_detects_a_change - Runti...
+1 failed, 8 passed in 26.20s

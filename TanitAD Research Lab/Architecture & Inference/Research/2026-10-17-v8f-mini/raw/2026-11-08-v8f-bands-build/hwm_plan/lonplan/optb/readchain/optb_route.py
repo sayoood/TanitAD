@@ -1,7 +1,7 @@
 """OPTB read-chain loading route. Thin wrapper; edits NO landed file.
 
 Why: an FT checkpoint (trainer 4c396aff) carries cfg fields the ladder tree's V8FMiniConfig does not know, and with wm_rsp_readout=fixed_k the model BUILD loads the frozen probe from cfg.wm_rsp_probe,
-a BOX-2 path. The route is:  WMACT_CODE_ROOT = OPTB_TREE (F:/TanitAD-scratch/actrsp/optb/tree, blob-equal to the stack/taniteval of 4c396aff; tree_manifest.sha256 re-checks it on every start)
+a BOX-2 path. The route is:  WMACT_CODE_ROOT = OPTB_TREE (F:/TanitAD-scratch/actrsp/optb/tree, blob-equal to the stack/taniteval of 86da79cd (the CUDA-fixed built_rsp; 4c396aff manifest kept as tree_manifest.4c396aff.sha256); main() re-checks tree_manifest.sha256 on every start)
 plus install(): wraps tanitad.models.v8f_mini.load_rsp_probe so a probe path that does not exist is remapped to the local copy of the SAME BASENAME, and the ORIGINAL function then still checks the file's
 sha256 against cfg.wm_rsp_probe_sha256 (never skipped; a wrong-sha probe refuses). The remap itself also refuses a basename not in the allow-list and a local copy whose sha differs from the declared one.
 
@@ -106,6 +106,7 @@ def main(argv):
         return 2
     if "--workers" in argv and int(argv[argv.index("--workers") + 1]) > 1:
         raise SystemExit("OPTB route: --workers > 1 spawns processes that do not carry the probe remap; use --workers 1")
+    check_tree_manifest()   # MM 2026-11-18: the docstring promised a re-check on every start, but only test_route.py called it; the tree is 86da79cd (blob-verified), manifest regenerated
     install()
     import runpy
     script = argv[1]

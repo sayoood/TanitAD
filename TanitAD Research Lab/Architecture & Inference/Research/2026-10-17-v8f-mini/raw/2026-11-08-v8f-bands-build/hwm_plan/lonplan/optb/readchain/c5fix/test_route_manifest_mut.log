@@ -1,0 +1,27 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_ test_main_refuses_a_tree_that_is_not_the_manifest_and_runs_on_the_real_one __
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/actrsp/optb/readchain/tmp_c5/mut/bt/test_main_refuses_a_tree_that_0')
+
+    def test_main_refuses_a_tree_that_is_not_the_manifest_and_runs_on_the_real_one(tmp_path):
+        """MM 2026-11-18: main() must CALL check_tree_manifest (it was defined, tested, and never called by the route)."""
+        import subprocess
+        script = tmp_path / "hello.py"
+        script.write_text("print('ZZ ROUTE RAN ZZ')", encoding="utf-8")
+        (tmp_path / "fake" / "stack").mkdir(parents=True); (tmp_path / "fake" / "taniteval").mkdir()
+        env = dict(os.environ, OPTB_TREE=str(tmp_path / "fake"), CUDA_VISIBLE_DEVICES="-1")
+        r = subprocess.run([sys.executable, os.path.join(HERE, "optb_route.py"), str(script)], capture_output=True, encoding="utf-8", env=env, timeout=600)
+>       assert r.returncode != 0 and "tree manifest" in r.stderr and "ZZ ROUTE RAN ZZ" not in r.stdout, (r.returncode, r.stderr[-400:])
+E       AssertionError: (1, ' 50, in install
+E             assert os.path.abspath(tanitad.__file__).replace("\\\\", "/").lower().startswith(os.path.abs...^^^^^^^^^^^^^^^^
+E         AssertionError: G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\stack\\tanitad\\__init__.py
+E         ')
+E       assert (1 != 0 and 'tree manifest' in 'Traceback (most recent call last):\n  File "F:\\TanitAD-scratch\\actrsp\\optb\\readchain\\tmp_c5\\mut\\optb_route.py"...^^^^^^^^^^^^^^^^^\nAssertionError: G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\stack\\tanitad\\__init__.py\n')
+E        +  where 1 = CompletedProcess(args=['C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe', 'F:\\TanitAD-scratch\\actrsp\\optb\\re...^^^^^^^^^^^^^^^^\nAssertionError: G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\stack\\tanitad\\__init__.py\n').returncode
+E        +  and   'Traceback (most recent call last):\n  File "F:\\TanitAD-scratch\\actrsp\\optb\\readchain\\tmp_c5\\mut\\optb_route.py"...^^^^^^^^^^^^^^^^^\nAssertionError: G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\stack\\tanitad\\__init__.py\n' = CompletedProcess(args=['C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe', 'F:\\TanitAD-scratch\\actrsp\\optb\\re...^^^^^^^^^^^^^^^^\nAssertionError: G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\stack\\tanitad\\__init__.py\n').stderr
+
+test_route.py:90: AssertionError
+=========================== short test summary info ===========================
+FAILED test_route.py::test_main_refuses_a_tree_that_is_not_the_manifest_and_runs_on_the_real_one
+1 failed, 9 deselected in 1.70s

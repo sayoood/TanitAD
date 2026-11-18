@@ -89,3 +89,18 @@ def test_manifest_assembles_only_what_exists_and_aggregates_controls(tmp_path):
     json.dump({"c2_hold": True, "c3_hold": False, "c2_c3_hold": False, "c5_hold": True}, open(root / "evidence" / "FTRSP_s0.json", "w"))
     run("manifest", "--root", str(root), "--out", str(tmp_path / "m.json"))
     assert json.load(open(tmp_path / "m.json"))["controls"]["c2_c3_hold"] is False
+
+
+REAL_FTRSP = "C:/Users/Admin/t2v8f_pulls/optb_FTRSP_s0"
+
+
+@pytest.mark.skipif(not os.path.isfile(os.path.join(REAL_FTRSP, "BANK.done")), reason="the real FTRSP_s0 bank is not pulled here")
+def test_c5_default_is_the_checkers_129_and_the_old_141_is_refused_on_the_real_bank(tmp_path):
+    """MM ruling 2026-11-18 (MM_RULINGS_POSTCHECK.md): C5 counts the 133 wm.* PARAMETERS minus 4 wm.proj = 129. The default must pass the real
+    FTRSP_s0 bank; the pre-ruling constant 141 must refuse it (rc 4) and name 141, so the check is not a pass-through."""
+    r = run("evidence", "--tag", "FTRSP_s0", "--bank", REAL_FTRSP, "--out", str(tmp_path / "ev.json"))
+    ev = json.load(open(tmp_path / "ev.json"))
+    assert r.returncode == 0 and ev["c5_hold"] is True and ev["c5"]["adam"]["n_with_state"] == 129, (ev.get("problems"), r.stderr[-300:])
+    r = run("evidence", "--tag", "FTRSP_s0", "--bank", REAL_FTRSP, "--out", str(tmp_path / "ev141.json"), "--expect-adam", "141")
+    ev = json.load(open(tmp_path / "ev141.json"))
+    assert r.returncode == 4 and ev["c5_hold"] is False and any("wanted 141" in p for p in ev["problems"]), ev.get("problems")
