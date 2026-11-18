@@ -999,8 +999,9 @@ class HJEPAStack(nn.Module):
         c1 = m.cfg[0]
         with torch.no_grad(), torch.random.fork_rng(devices=[]):
             torch.manual_seed(0)
-            z1 = torch.randn(batch, n_frames, c1.latent_dim).double()
-            a = torch.randn(batch, n_frames - 1, c1.action_dim).double()
+            dev = next(m.parameters()).device                                                       # box-2 pilot 2026-11-18: the noise was left on the CPU while the model sat on CUDA (gate rc 1)
+            z1 = torch.randn(batch, n_frames, c1.latent_dim).to(dev, torch.float64)
+            a = torch.randn(batch, n_frames - 1, c1.action_dim).to(dev, torch.float64)
             m.eval()
             out = m.loss(z1, a)
         res = dict(seen)

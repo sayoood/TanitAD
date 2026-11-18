@@ -1,0 +1,91 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+______ test_gate_passes_for_the_rsp_arm_and_reads_the_built_readout_back ______
+
+init = {'root': WindowsPath('F:/TanitAD-scratch/actrsp/optb/devfix/tmp/bt_R/optb0'), 'ck': WindowsPath('F:/TanitAD-scratch/actrsp/optb/devfix/tmp/bt_R/optb0/src/ckpt_last.pt')}
+probe = {'path': 'F:\\TanitAD-scratch\\actrsp\\optb\\devfix\\tmp\\bt_R\\optb_probe0\\readout.pt', 'sha': '893b89f7ddb64dab6c4108e3d626f71da071957319607cfab22ed9c93ea42ea5'}
+
+    def test_gate_passes_for_the_rsp_arm_and_reads_the_built_readout_back(init, probe):
+>       assert lgate(init, "g_rsp", FT, rsp_flags(probe)) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_optb.py:257: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_optb.py:244: in lgate
+    rc = TR.main(["--out", str(init["root"] / name), *BASE, "--init-ckpt", str(init["ck"]), *WMF, *extra, *more, *(["--steps", str(steps)] if steps else ["--selfcheck-only"])])
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts\v8f_mini_train.py:3371: in main
+    bad = declared_vs_built(a, cfg, model, opt, info, enc, ego, lr_at, dag, comp, rcv, t2b)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts\v8f_mini_train.py:1708: in declared_vs_built
+    bad += bad_wm_rsp(a, cfg, model)                                                             # PREREG_V8F_ACTRSP: --wm-rsp-w read back from the BUILT loss (HJEPAStack.built_rsp) and the BUILT LevelConfig
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts\v8f_mini_train.py:1645: in bad_wm_rsp
+    r = model.wm.built_rsp(cfg.hmax)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\models\v8f_mini.py:831: in built_rsp
+    return self.stack.built_rsp(int(n_frames))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\models\hjepa.py:1005: in built_rsp
+    out = m.loss(z1, a)
+          ^^^^^^^^^^^^^
+tanitad\models\hjepa.py:759: in loss
+    enc = self.encode(z1_seq, a_seq)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\models\hjepa.py:703: in encode
+    zs, acts, tgts = [z1_seq], [self.act_embed(a_seq)], [a_seq]
+                                ^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1779: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1790: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\container.py:253: in forward
+    input = module(input)
+            ^^^^^^^^^^^^^
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1779: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1790: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = Linear(in_features=2, out_features=32, bias=True)
+input = tensor([[[ 1.4164,  0.2379],
+         [-0.9334,  1.1331],
+         [-0.0898, -1.8413],
+         [ 0.8999,  0.9023],
+  ... 1.2003],
+         [-0.9660, -0.5988],
+         [ 0.1003, -0.3967],
+         [-0.1605,  1.1467]]], dtype=torch.float64)
+
+    def forward(self, input: Tensor) -> Tensor:
+        """
+        Runs the forward pass.
+        """
+>       return F.linear(input, self.weight, self.bias)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: Expected all tensors to be on the same device, but got mat1 is on cpu, different from other tensors on cuda:0 (when checking argument in method wrapper_CUDA_addmm)
+
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\linear.py:134: RuntimeError
+---------------------------- Captured stdout setup ----------------------------
+[1/2] ade 6.218 total 85.265 p_gt 1.00
+[2/2] ade 8.835 total 95.109 p_gt 0.60
+DONE {"steps": 2, "arm": "M2b", "seed": 5, "seconds": 3.9851272106170654}
+[1/3] ade nan total 23.576 p_gt 1.00
+[2/3] ade nan total 23.457 p_gt 0.73
+[3/3] ade nan total 23.253 p_gt 0.47
+DONE {"steps": 3, "arm": "M2b", "seed": 5, "seconds": 3.106398582458496}
+============================== warnings summary ===============================
+tests/test_v8f_optb.py::test_gate_passes_for_the_rsp_arm_and_reads_the_built_readout_back
+  F:\TanitAD-scratch\actrsp\optb\tree\stack\scripts\v8f_mini_train.py:3693: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_v8f_optb.py::test_gate_passes_for_the_rsp_arm_and_reads_the_built_readout_back
+1 failed, 22 deselected, 1 warning in 42.26s
