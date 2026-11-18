@@ -135,7 +135,7 @@ def main():
             st[k] = st[k] + 1.0
     if tm == "move_frozen":
         st["e_ego.w"] = st["e_ego.w"] + 1.0
-    n_opt = 141          # the 145 wm.* tensors minus the 4 frozen wm.proj tensors (AMEND_OPTB C5)
+    n_opt = 129          # the 133 wm.* parameter tensors minus the 4 frozen wm.proj tensors (AMEND_OPTB C5, MM ruling 2026-11-18)
     opt = {"param_groups": [{"params": list(range(n_opt))}], "state": {i: {"exp_avg": 1} for i in range(n_opt - (1 if tm == "no_adam_state" else 0))}}
     pickle.dump({"model": st, "step": steps, "opt": opt}, open(os.path.join(out, "ckpt_last.pt"), "wb"))
     json.dump({"done": True, "steps": steps, "arm": one("arm"), "seed": int(one("seed", 0)), "argv_sha": sc["argv_sha"]}, open(os.path.join(out, "summary.json"), "w"))

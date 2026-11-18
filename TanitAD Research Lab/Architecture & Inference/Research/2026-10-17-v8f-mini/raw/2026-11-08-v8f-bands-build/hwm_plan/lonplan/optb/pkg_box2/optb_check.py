@@ -34,7 +34,9 @@ ARGVS_FILE = os.path.join(HERE, "argvs_optb.json") if os.path.exists(os.path.joi
 INIT_SHA = {0: "d920d62c6c391a61291b966a6af1783156b4351d25c7408913e4191daa0215cf", 1: "a97e6017cffb13830dacd04e1ea108fa8534bc3ab3007b8f536f01ac0846f881"}   # the R35_s{k} ckpt_last.pt (45,266,310 B each) that every arm of chassis k starts from (MEASURED sha256 of the dev-box bank)
 PROBE_SHA = {0: "edab7dce7b57f9ae21d90e5cc317c914aed432751fde7a7d4e6cf6af0748a6cf", 1: "a6d252aa405f624a7cea4129a7f7d65ba5c047045d88e89b340a8abb935bb495"}
 S_CAL = {0: 0.20076, 1: 0.20323}      # AMEND_OPTB section 1 (5 digits): the BUILT slope is read back to 1e-5
-N_WM_TENSORS, N_PROJ_TENSORS = 145, 4   # AMEND_OPTB C5: 141 of 145 wm.* Adam tensors, wm.proj bit-equal
+N_WM_TENSORS, N_PROJ_TENSORS = 145, 4   # AMEND_OPTB C5: the 145 wm.* STATE-DICT entries, the 4 wm.proj tensors (bit-equal)
+N_WM_PARAMS = 133   # MM ruling 2026-11-18 (MM_RULINGS_POSTCHECK.md): the 145 wm.* state-dict entries are 133 PARAMETERS + 12 persistent buffers (prior_mean/std/lo/hi x 3 levels), MEASURED on R35's built model; the optimiser holds parameters only -> C5 = 129 of 129
+ULP_TOL = 4.0       # MM ruling 2026-11-18: C2 also passes a step whose ABSOLUTE identity residual is <= 4 float32 ulps of level/L1 (the trainer sums the terms in float32; once rsp/L1 trains down to ~5e-5 of the level, rounding alone moves the recovered weight by ~1e-3)
 V9_MD5 = "83e30bd3791f0767707eade5f4671759"
 DATA = {"train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1", "excluded_sha256": "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9", "n_clips": 4512, "n_excluded": 60}
 #: the full length of every run is the argv's own --steps (19,164 = 4 x 4791, the ladder's length); the pilot appends --steps 200.
@@ -443,9 +445,20 @@ def weights_identity(init_sd, fin_sd):
 GAMMA_BETA, GAMMA_ROLLOUT_W, GAMMA_ACT_SIGREG, GAMMA_TOL = 0.08, 1.0, 0.005, 1e-4
 
 
+def ulp32(x):
+    """one float32 ulp at |x| (2**(e-24) for x = m 2**e, 0.5 <= m < 1); a zero level gives the smallest normal ulp"""
+    import math
+    return 2.0 ** (math.frexp(abs(x))[1] - 24) if x else 2.0 ** -149
+
+
+def step_ok(w, want, ulps):
+    """C2 at one logged step: the recovered weight within GAMMA_TOL relative, OR the absolute identity residual within ULP_TOL float32 ulps of the level (MM ruling 2026-11-18)"""
+    return abs(w - want) <= GAMMA_TOL * want or ulps <= ULP_TOL
+
+
 def rsp_from_rows(rows, with_rsp):
     """card C2 (rsp_w_from_log.py): per logged step, level/L1 - pred - rollout_w x rollout - beta x sigreg - 100 x idm = rsp_w x rsp/L1 on an RSP arm (-> rsp_w), and the gamma identity of levels 2 / 3 (and of level 1 on a NULL arm) with the weights 100 / 100 / 100."""
-    out = {"rsp_w": [], "g1": [], "g2": [], "g3": []}
+    out = {"rsp_w": [], "g1": [], "g2": [], "g3": [], "ulp": {"rsp_w": [], "g1": [], "g2": [], "g3": []}}
     for r in rows:
         if "wm/level/L1" not in r:
             continue
@@ -455,8 +468,10 @@ def rsp_from_rows(rows, with_rsp):
                 res = res - 100.0 * r["wm/idm/L1"]
                 if r.get("wm/rsp/L1"):
                     out["rsp_w"].append(res / r["wm/rsp/L1"])
+                    out["ulp"]["rsp_w"].append(abs(res - RSP_W * r["wm/rsp/L1"]) / ulp32(r["wm/level/L1"]))
             elif r[f"wm/idm/L{L}"]:
                 out[f"g{L}"].append(res / r[f"wm/idm/L{L}"])
+                out["ulp"][f"g{L}"].append(abs(res - 100.0 * r[f"wm/idm/L{L}"]) / ulp32(r[f"wm/level/L{L}"]))
     return out
 
 
@@ -481,16 +496,17 @@ def gamma_log_problems(tag, log_path):
         ev["rsp_w"] = {"n": len(v), "min": min(v) if v else None, "max": max(v) if v else None, "want": RSP_W}
         if not v:
             p.append("rsp-from-log: no logged step carries the level-1 terms and rsp/L1")
-        elif max(abs(x - RSP_W) for x in v) > GAMMA_TOL * RSP_W:
-            p.append(f"rsp-from-log: recovered rsp_w in [{min(v):.6f}, {max(v):.6f}], wanted {RSP_W} within {GAMMA_TOL:g} relative at every step")
+        elif not all(step_ok(x, RSP_W, u) for x, u in zip(v, g["ulp"]["rsp_w"])):
+            p.append(f"rsp-from-log: recovered rsp_w in [{min(v):.6f}, {max(v):.6f}] (max residual {max(g['ulp']['rsp_w']):.2f} float32 ulps of level/L1), wanted {RSP_W} within {GAMMA_TOL:g} relative or {ULP_TOL:g} ulps at every step")
+        ev["rsp_w"]["max_ulp"] = max(g["ulp"]["rsp_w"]) if v else None
         want.pop("g1")
     for k, w in want.items():
         v = g[k]
         ev[k] = {"n": len(v), "min": min(v) if v else None, "max": max(v) if v else None, "want": w}
         if not v:
             p.append(f"rsp-from-log: no logged step carries the {k} loss terms")
-        elif max(abs(x - w) for x in v) > GAMMA_TOL * w:
-            p.append(f"rsp-from-log: {k} recovered in [{min(v):.6f}, {max(v):.6f}], wanted {w} within {GAMMA_TOL:g} relative at every step")
+        elif not all(step_ok(x, w, u) for x, u in zip(v, g["ulp"][k])):
+            p.append(f"rsp-from-log: {k} recovered in [{min(v):.6f}, {max(v):.6f}] (max residual {max(g['ulp'][k]):.2f} float32 ulps), wanted {w} within {GAMMA_TOL:g} relative or {ULP_TOL:g} ulps at every step")
     return ev, p
 
 
@@ -534,8 +550,8 @@ def post_problems(tag, toks, out):
     ev2, fp2 = adam_state_problems(b)
     ev.update(ev2)
     p += fp2
-    if ev2.get("n_group_params") != N_WM_TENSORS - N_PROJ_TENSORS or ev2.get("n_with_state") != N_WM_TENSORS - N_PROJ_TENSORS:
-        p.append(f"C5: {ev2.get('n_with_state')!r} of {ev2.get('n_group_params')!r} optimiser tensors have Adam state, wanted {N_WM_TENSORS - N_PROJ_TENSORS} of {N_WM_TENSORS - N_PROJ_TENSORS} (the {N_WM_TENSORS} wm.* tensors minus the {N_PROJ_TENSORS} frozen wm.proj tensors)")
+    if ev2.get("n_group_params") != N_WM_PARAMS - N_PROJ_TENSORS or ev2.get("n_with_state") != N_WM_PARAMS - N_PROJ_TENSORS:
+        p.append(f"C5: {ev2.get('n_with_state')!r} of {ev2.get('n_group_params')!r} optimiser tensors have Adam state, wanted {N_WM_PARAMS - N_PROJ_TENSORS} of {N_WM_PARAMS - N_PROJ_TENSORS} (the {N_WM_PARAMS} wm.* parameter tensors minus the {N_PROJ_TENSORS} frozen wm.proj tensors)")
     pk = sorted(k for k in a["model"] if k.startswith("wm.proj."))
     if len(pk) != N_PROJ_TENSORS:
         p.append(f"the init checkpoint holds {len(pk)} wm.proj tensors, wanted {N_PROJ_TENSORS}")

@@ -156,6 +156,33 @@ def main():
     check("RSP log without the rsp key is refused", CK.gamma_log_problems("FTRSP_s0", log(rows(0.0, with_key=False)))[1] != [])
     check("NULL log without the key closes", CK.gamma_log_problems("FTNULL_s4", log(rows(0.0, with_key=False)))[1] == [])
     check("NULL log carrying the rsp key is refused", CK.gamma_log_problems("FTNULL_s4", log(rows(1.0)))[1] != [])
+    # MM ruling 2026-11-18 (MM_RULINGS_POSTCHECK.md): C2 in float32 ulps once the term is tiny; C5 counts parameter tensors
+    import numpy as np
+    def rows32(rsp_w, rsp=3.2e-4):
+        out = []
+        for s in (50, 100, 150, 200):
+            r = {"step": s}
+            for L in (1, 2, 3):
+                pred, sig, roll, asg, idm = 0.05, 4.4, 0.13, 8.0 if L >= 2 else 0.0, 0.055 * L
+                r.update({f"wm/pred/L{L}": pred, f"wm/sigreg/L{L}": sig, f"wm/rollout/L{L}": roll, f"wm/idm/L{L}": idm})
+                if L >= 2:
+                    r[f"wm/act_sigreg/L{L}"] = asg
+                terms = [pred, roll, 0.08 * sig, (100.0 * idm), (0.005 * asg if L >= 2 else 0.0)] + ([rsp_w * rsp * (1 + 0.1 * s / 50)] if L == 1 else [])
+                acc = np.float32(0.0)
+                for t in terms:
+                    acc = np.float32(acc + np.float32(t))          # the trainer's float32 sum
+                r[f"wm/level/L{L}"] = float(acc)
+            r["wm/rsp/L1"] = rsp * (1 + 0.1 * s / 50)
+            out.append(r)
+        return out
+    check("C2: rsp_w 1.0 with a tiny float32-summed term closes (residual within 4 ulps)", CK.gamma_log_problems("FTRSP_s0", log(rows32(1.0)))[1] == [])
+    check("C2: rsp_w 1.0 with a tiny term moves the RELATIVE weight beyond 1e-4 (the case the ruling covers)", max(abs(w - 1.0) for w in CK.rsp_from_rows(rows32(1.0), True)["rsp_w"]) > 1e-4)
+    check("C2: rsp_w 0.5 with a tiny term is refused", CK.gamma_log_problems("FTRSP_s0", log(rows32(0.5)))[1] != [])
+    check("C2: rsp_w 0.98 with a tiny term is refused (2 % at rsp 3e-4 is > 4 ulps)", CK.gamma_log_problems("FTRSP_s0", log(rows32(0.98)))[1] != [])
+    check("C2: the term logged but not added (rsp_w 0) with a tiny term is refused", CK.gamma_log_problems("FTRSP_s0", log(rows32(0.0)))[1] != [])
+    check("C5: the expected Adam count is the 133 parameter tensors minus wm.proj = 129", CK.N_WM_PARAMS - CK.N_PROJ_TENSORS == 129)
+    check("C5: 129 of 129 with state passes the Adam probe", CK.adam_state_problems({"opt": {"param_groups": [{"params": list(range(129))}], "state": {i: {} for i in range(129)}}})[1] == [])
+    check("C5: 128 of 129 with state is refused", CK.adam_state_problems({"opt": {"param_groups": [{"params": list(range(129))}], "state": {i: {} for i in range(128)}}})[1] != [])
     check("the token schema stays actsens-gate-token-v1", "actsens-gate-token-v1" in open(os.path.join(PKG, "optb_check.py"), encoding="utf-8").read())
     print(f"UNIT ok={N_OK} bad={N_BAD}")
     return 1 if N_BAD else 0
