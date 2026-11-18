@@ -26,12 +26,27 @@ tok = [str(t) for t in a["token"]]
 assert tok == [str(t) for t in b["token"]]
 chg = sorted(t for t, d in zip(tok, np.abs(a["poses"] - b["poses"]).reshape(len(tok), -1).max(1)) if d > 0)
 os.makedirs(WORK + "/score", exist_ok=True)
-tf = WORK + "/chg_tokens.json"
-json.dump({"tokens": chg}, open(tf, "w"))
-print("changed tokens", len(chg), flush=True)
+exp = CA.load_export(EXPORT)                                  # {token: agent input}: the module's own loader
+cmd, logs = CA.commands_and_logs(tok, exp)
+tl = dict(zip(tok, logs))
+tc = dict(zip(tok, cmd))
+NSH = 2                                                       # the harness puts every token AND log name on ONE Windows command line (32,767 chars): 2 shards
+shards = [chg[i::NSH] for i in range(NSH)]
+tfs = []
+for i, sh in enumerate(shards):
+    tfs.append(f"{WORK}/chg_tokens_s{i}.json")
+    json.dump({"tokens": sh, "token_log": {t: tl[t] for t in sh}}, open(tfs[-1], "w"))
+print("changed tokens", len(chg), "shards", [len(x) for x in shards], flush=True)
 
 
 def score(label, seam):
+    rows = {}
+    for i, tf in enumerate(tfs):
+        rows.update(PE.read_csv(score1(f"{label}_s{i}", seam, tf)))
+    return rows
+
+
+def score1(label, seam, tf):
     csv_p = f"{WORK}/score/{label}/{label}.csv"
     for att in range(1, 4):
         if os.path.exists(csv_p):
@@ -46,8 +61,8 @@ def score(label, seam):
     raise SystemExit(f"REFUSING: {label} did not produce {csv_p}")
 
 
-ctl = PE.read_csv(score("p7_pick_chg", SEAM_P7))
-rr = PE.read_csv(score("p7_rerank_chg", SEAM_RR))
+ctl = score("refe_p7pick_chg", SEAM_P7)
+rr = score("refe_p7rerank_chg", SEAM_RR)
 base = PE.read_csv(CSV_P7)
 assert set(ctl) == set(chg) == set(rr), (len(ctl), len(chg), len(rr))
 dmax = max(abs(float(ctl[t]["score"]) - float(base[t]["score"])) for t in chg)
@@ -57,10 +72,6 @@ if dmax > 1e-9:
     res["VERDICT"] = "INVALID: the identity control did not reproduce the banked csv; the splice is not quotable"
     json.dump(res, open(HOLD + "/adh_q6_pdms.json", "w"), indent=1)
     raise SystemExit(res["VERDICT"])
-exp = CA.load_export(EXPORT)                                  # {token: agent input}: the module's own loader
-cmd, logs = CA.commands_and_logs(tok, exp)
-tl = dict(zip(tok, logs))
-tc = dict(zip(tok, cmd))
 spl = {t: (rr[t] if t in rr else base[t]) for t in tok}
 
 
