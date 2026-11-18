@@ -369,15 +369,80 @@ def ctx_label_arrays(J: dict, path, expect_sha256: str, split: str = "train") ->
     return {"off": np.asarray(J["off"]), "y": y, "ok": okm, "sha256": sha, "n_valid": n_valid, "n_twilight_masked": n_twi}
 
 
-NAV_RB_VARIANTS = ("real", "zero")
+NAV_RB_VARIANTS = ("real", "zero", "shuffle")
+NAV_RB_SHUFFLE_SEED = 20261118                    # PREREG_V8F_NAVRBD: the seed of the clip-level derangement of the shuffle variant (the card's deliberate-regression arm N1Dx)
+#: PREREG_V8F_NAVRBD column groups of the 15-column channel: c0 state, c1..c6 exit_cur one-hot, c7..c12 exit_last one-hot, c13 dist (dead-reckoned, [0, 3]), c14 dist_valid
+NAV_RB_GROUPS = {"c0": (0, 1), "c1_6": (1, 7), "c7_12": (7, 13), "c13": (13, 14), "c14": (14, 15)}
 
 
-def nav_rb_arrays(J: dict, path, expect_sha256: str, split: str = "train", variant: str = "real"):
-    """PREREG_V8F_NAVRB2 (``--nav-rb``): the ROUNDABOUT state channel ``nav_rb`` [N, 1] float32 in {0, 1}, ROW-ALIGNED to the join (``build_navtext_nav_rb.py``: 1 iff the router row at the step is a flag-0
-    roundabout class). Re-hashes the file (refuses a mismatch or an undeclared sha), refuses a shifted clip / off / n, a wrong shape or a value outside {0, 1}. ``variant == "zero"`` (the zeroed-channel
-    control): every row 0.0. Returns ``(nav_rb, rec)``; ``rec`` carries the sha256, the variant, ``n_on`` (after the variant) and ``n_on_real``."""
+def nav_rb_group_n_on(rb) -> dict:
+    """Per column group: the number of rows with a non-zero value in that group (the batch / table's own count; a group with 0 cannot give a gradient)."""
+    rb = np.asarray(rb)
+    if rb.shape[1] == 1:
+        return {"c0": int((rb[:, 0] != 0).sum())}
+    return {g: int((rb[:, lo:hi] != 0).any(axis=1).sum()) for g, (lo, hi) in NAV_RB_GROUPS.items()}
+
+
+def nav_rb_derangement(K: int, seed: int = NAV_RB_SHUFFLE_SEED) -> np.ndarray:
+    """A seeded single-cycle permutation (Sattolo) of ``range(K)``: no fixed point, so every clip reads ANOTHER clip's rows. K >= 2."""
+    if K < 2:
+        raise ValueError(f"nav_rb derangement needs >= 2 clips, got {K}")
+    rng = np.random.default_rng(seed)
+    p = np.arange(K)
+    for i in range(K - 1, 0, -1):
+        j = int(rng.integers(0, i))
+        p[i], p[j] = p[j], p[i]
+    return p
+
+
+def nav_rb_shuffle(rb: np.ndarray, off, n, seed: int = NAV_RB_SHUFFLE_SEED):
+    """The shuffle variant: clip ``c`` reads the rows of clip ``donor[c]`` (a derangement), resampled to ``c``'s length by ``floor(i * n_donor / n_c)``. Returns ``(rows, donor)``."""
+    off, n = np.asarray(off), np.asarray(n)
+    donor = nav_rb_derangement(len(off), seed)
+    out = np.zeros_like(rb)
+    for c in range(len(off)):
+        d = int(donor[c])
+        idx = np.minimum((np.arange(int(n[c])) * int(n[d])) // max(int(n[c]), 1), int(n[d]) - 1)
+        out[int(off[c]): int(off[c]) + int(n[c])] = rb[int(off[d]) + idx]
+    return out, donor
+
+
+def nav_rb_check_values(rb: np.ndarray, feat: str) -> None:
+    """Refuse a channel array whose values break the card's section 2 layout (``ValueError``)."""
+    if feat == "state":
+        if not np.isin(rb, (0.0, 1.0)).all():
+            raise ValueError("nav_rb_arrays: values outside {0, 1}")
+        return
+    if not np.isfinite(rb).all():
+        raise ValueError("nav_rb_arrays: non-finite values")
+    if not np.isin(rb[:, 0], (0.0, 1.0)).all():
+        raise ValueError("nav_rb_arrays: c0 (state) outside {0, 1}")
+    for g in ("c1_6", "c7_12"):
+        lo, hi = NAV_RB_GROUPS[g]
+        blk = rb[:, lo:hi]
+        if not np.isin(blk, (0.0, 1.0)).all() or (blk.sum(axis=1) > 1.0).any():
+            raise ValueError(f"nav_rb_arrays: block {g} is not one-hot (values in {{0, 1}}, at most one 1 per row)")
+    if ((rb[:, 13] < 0.0) | (rb[:, 13] > 3.0)).any():
+        raise ValueError("nav_rb_arrays: c13 (dist) outside [0, 3]")
+    if not np.isin(rb[:, 14], (0.0, 1.0)).all():
+        raise ValueError("nav_rb_arrays: c14 (dist_valid) outside {0, 1}")
+    if (rb[(rb[:, 13] > 0.0), 14] != 1.0).any():
+        raise ValueError("nav_rb_arrays: c13 > 0 on a row with c14 = 0 (a distance with no dist_valid)")
+    if (rb[rb[:, 0] == 0.0] != 0.0).any():
+        raise ValueError("nav_rb_arrays: a non-zero column on a row with c0 = 0 (the channel must be silent off roundabouts)")
+
+
+def nav_rb_arrays(J: dict, path, expect_sha256: str, split: str = "train", variant: str = "real", feat: str = "state"):
+    """PREREG_V8F_NAVRB2 (``--nav-rb``): the ROUNDABOUT channel ``nav_rb`` [N, W] float32, ROW-ALIGNED to the join (``build_navtext_nav_rb.py`` / ``build_navtext_nav_rbd.py``). ``feat`` (PREREG_V8F_NAVRBD,
+    ``--nav-rb-feat``) sets W: ``state`` = 1 column in {0, 1} (c0: 1 iff the router row at the step is a flag-0 roundabout class), ``exitdist`` = 15 columns (card section 2: c0, exit_cur one-hot, exit_last one-hot,
+    dist in [0, 3], dist_valid; every column 0 where c0 is 0). Re-hashes the file (refuses a mismatch or an undeclared sha), refuses a shifted clip / off / n, a wrong shape or a value outside the layout.
+    ``variant == "zero"`` (the zeroed-channel control): every row 0.0; ``"shuffle"`` (the deliberate-regression arm): clip-level derangement (``nav_rb_shuffle``). Returns ``(nav_rb, rec)``; ``rec`` carries the
+    sha256, the variant, the feat, ``n_on`` (rows with c0 = 1, after the variant), ``n_on_real``, ``group_n_on`` (per column group, after the variant) and, for shuffle, the donor map's sha256."""
+    from tanitad.models.v8f_mini import NAV_RB_DIM, NAV_RB_FEATS
     if variant not in NAV_RB_VARIANTS:
         raise ValueError(f"nav_rb_arrays: variant {variant!r}")
+    if feat not in NAV_RB_FEATS:
+        raise ValueError(f"nav_rb_arrays: feat {feat!r}")
     sha = _sha256_file(path)
     if not expect_sha256 or sha != expect_sha256:
         raise ValueError(f"nav_rb_arrays: sha256 {sha} != declared {expect_sha256!r}")
@@ -385,14 +450,19 @@ def nav_rb_arrays(J: dict, path, expect_sha256: str, split: str = "train", varia
         _assert_table_aligned(z, J, split, "nav_rb_arrays")
         rb = np.asarray(z[f"{split}_nav_rb"], np.float32)
     N = int(np.asarray(J["off"])[-1] + np.asarray(J["n"])[-1])
-    if rb.shape != (N, 1):
-        raise ValueError(f"nav_rb_arrays: shape {rb.shape} != ({N}, 1)")
-    if not np.isin(rb, (0.0, 1.0)).all():
-        raise ValueError("nav_rb_arrays: values outside {0, 1}")
-    real_on = int(rb.sum())
+    W = NAV_RB_DIM[feat]
+    if rb.shape != (N, W):
+        raise ValueError(f"nav_rb_arrays: shape {rb.shape} != ({N}, {W}) for feat {feat}")
+    nav_rb_check_values(rb, feat)
+    real_on = int(rb[:, 0].sum())
+    rec = {"sha256": sha, "variant": variant, "feat": feat, "width": W}
     if variant == "zero":
         rb = np.zeros_like(rb)
-    rec = {"sha256": sha, "variant": variant, "n_on": int(rb.sum()), "n_on_real": real_on, "digest": hashlib.sha256(np.ascontiguousarray(rb).tobytes()).hexdigest()}
+    elif variant == "shuffle":
+        rb, donor = nav_rb_shuffle(rb, J["off"], J["n"])
+        rec["donor_map_sha256"] = hashlib.sha256(np.ascontiguousarray(donor.astype(np.int64)).tobytes()).hexdigest()
+    rec.update({"n_on": int(rb[:, 0].sum()), "n_on_real": real_on, "group_n_on": nav_rb_group_n_on(rb),
+                "digest": hashlib.sha256(np.ascontiguousarray(rb).tobytes()).hexdigest()})
     return rb, rec
 
 

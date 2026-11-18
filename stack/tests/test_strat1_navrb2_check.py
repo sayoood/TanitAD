@@ -162,8 +162,8 @@ def test_existing_arm_argv_sha_is_unchanged(key, tmp_path):
 
 
 def test_kinds_and_bases():
-    assert REAL.KINDS == ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z")
-    assert REAL.RB_BASE == {"N1R": "N1", "S1R": "S1", "S1dR": "S1d", "N1Z": "N1"} and set(REAL.RB_KINDS) <= set(REAL.NAV_KINDS)
+    assert REAL.KINDS == ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx")      # PREREG_V8F_NAVRBD adds the two D kinds
+    assert REAL.RB_BASE == {"N1R": "N1", "S1R": "S1", "S1dR": "S1d", "N1Z": "N1", "N1D": "N1", "N1Dx": "N1"} and set(REAL.RB_KINDS) <= set(REAL.NAV_KINDS)
     assert set(REAL.CTX_KINDS) == {"S1", "S1d", "S1R", "S1dR"}
     assert "--nav-rb-npz" in REAL.DATA_FLAGS_RB and "--nav-rb-npz" not in REAL.DATA_FLAGS
 

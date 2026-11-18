@@ -165,8 +165,8 @@ def test_z1_on_at_zero_init_is_the_off_model_and_leaves_the_rng_alone(world):
 
 
 def test_z1_mutation_no_fork_rng_moves_the_global_stream(world):
-    mut = mutant(MODEL_P, "            with torch.random.fork_rng(devices=[]):\n                self.e_nav_rb = nn.Linear(1, d, bias=False)\n",
-                 "            if True:\n                self.e_nav_rb = nn.Linear(1, d, bias=False)\n", "v8f_mini_mut_navrb2_b")
+    mut = mutant(MODEL_P, "            with torch.random.fork_rng(devices=[]):\n                self.e_nav_rb = nn.Linear(NAV_RB_DIM[cfg.nav_rb_feat], d, bias=False)",
+                 "            if True:\n                self.e_nav_rb = nn.Linear(NAV_RB_DIM[cfg.nav_rb_feat], d, bias=False)", "v8f_mini_mut_navrb2_b")
     _, J = make_batch(world)
     build(J, mod=mut, nav_rb="on"); s_mut = torch.get_rng_state()
     build(J, nav_rb="on"); s_off = torch.get_rng_state()
@@ -402,7 +402,7 @@ def mutant_trainer(old, new, tag):
 
 
 def test_mutation_deleting_the_join_line_turns_the_selfcheck_red(world):
-    mod = mutant_trainer('        J["nav_rb"], info["nav_rb"] = D.nav_rb_arrays(J, a.nav_rb_npz, a.nav_rb_sha256, "train", a.nav_rb_variant)', "        pass", "join")
+    mod = mutant_trainer('        J["nav_rb"], info["nav_rb"] = D.nav_rb_arrays(J, a.nav_rb_npz, a.nav_rb_sha256, "train", a.nav_rb_variant, a.nav_rb_feat)', "        pass", "join")
     with pytest.raises(SystemExit) as e:
         mod.main(_argv(world, "mut_join", ["--steps", "1", "--selfcheck-only", *N1(world), *RB(world)]))
     assert "ZZDVB-REFUSEDZZ" in str(e.value)

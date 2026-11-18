@@ -155,7 +155,7 @@ def _mutant(tmp_path, name, old, new):
 
 
 MUTATIONS = {
-    "kinds_drop_s1d": ('KINDS = ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z")', 'KINDS = ("C0", "N1", "S1", "N1R", "S1R", "S1dR", "N1Z")'),
+    "kinds_drop_s1d": ('KINDS = ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx")', 'KINDS = ("C0", "N1", "S1", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx")'),
     "render_detach_off": ('"--ctx-detach", "on" if bk == "S1d" else "off"]', '"--ctx-detach", "off"]'),
     "ctx_kinds_drop_s1d": ('CTX_KINDS = ("S1", "S1d", "S1R", "S1dR")', 'CTX_KINDS = ("S1", "S1R", "S1dR")'),
     "nav_kinds_drop_s1d": ('NAV_KINDS = ("N1", "S1", "S1d") + RB_KINDS', 'NAV_KINDS = ("N1", "S1") + RB_KINDS'),

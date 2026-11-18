@@ -166,6 +166,8 @@ CTX_HEAD_MODES = ("off", "on")
 
 #: every state-dict key a declared lever may ADD to an older checkpoint's key set (load_init_ckpt: EXACTLY these may be fresh)
 NAV_RB_MODES = ("off", "on")
+NAV_RB_FEATS = ("state", "exitdist")                   # PREREG_V8F_NAVRBD (`--nav-rb-feat`): the WIDTH of the roundabout channel: state = the 1-column NAVRB2 channel, exitdist = 15 columns (state, exit_cur 6, exit_last 6, dist, dist_valid)
+NAV_RB_DIM = {"state": 1, "exitdist": 15}
 #: PREREG_V8F_NAVRB2: the ROUNDABOUT state channel of the route-text nav (``--nav-rb``): its state-dict prefix and its batch key (read with the nav, for a model built with it; NOT in INFERENCE_INPUT_KEYS, which tests pin)
 NAV_RB_KEY_PREFIXES = ("e_nav_rb.",)
 NAV_RB_KEYS = frozenset({"nav_rb"})
@@ -264,6 +266,7 @@ class V8FMiniConfig:
     w_ctx: float = 0.0                 # PREREG_V8F_STRAT1 (`--w-ctx`): the weight of the weighted-mean context CE in the total. > 0 iff the head is on, exactly 0.0 iff off (checked by the trainer's bad_ctx)
     ctx_detach: str = "off"            # PREREG_V8F_STRAT1 (`--ctx-detach`): on = the head reads the adapter tokens DETACHED (the ctx loss then cannot move the shared adapter)
     nav_rb: str = "off"                # PREREG_V8F_NAVRB2 (`--nav-rb`): off = nothing built (every earlier arm, bit for bit); on = e_nav_rb, Linear(1, d, bias=False), zero-init, ADDED to e_nav(nav) in S, T and O
+    nav_rb_feat: str = "state"         # PREREG_V8F_NAVRBD (`--nav-rb-feat`): the width of e_nav_rb (NAV_RB_DIM). state = 1 column = the NAVRB2 / N1R channel bit for bit; exitdist = 15 columns. Read only with nav_rb on
     nav_source: str = "v9"             # PREREG_V8F_STRAT1 (`--nav-source`): a DATA lever (v9 = the join's nav, text = the router-text nav); the model never reads it, the checkpoint records it (as window_start)
     w_level: float = 0.0               # PREREG_V8F_LEVEL (`--w-level`): the weight of Huber(v_hat, logged speed) in the total. Must be > 0 with the head on and exactly 0.0 with it off (checked by the launch gate: a head with no loss, or a weight with no head, is refused)
 
@@ -306,6 +309,8 @@ class V8FMiniConfig:
             raise ValueError(f"w_ctx must be a finite number >= 0, got {self.w_ctx!r}")
         if self.nav_rb not in NAV_RB_MODES:
             raise ValueError(f"nav_rb must be one of {NAV_RB_MODES}, got {self.nav_rb!r}")
+        if self.nav_rb_feat not in NAV_RB_FEATS:
+            raise ValueError(f"nav_rb_feat must be one of {NAV_RB_FEATS}, got {self.nav_rb_feat!r}")
         if self.nav_source not in NAV_SOURCES:
             raise ValueError(f"nav_source must be one of {NAV_SOURCES}, got {self.nav_source!r}")
         if self.aux_cond not in AUX_COND_MODES:
@@ -909,7 +914,7 @@ class V8FMini(nn.Module):
         self.e_nav_rb = None
         if cfg.nav_rb == "on":                                             # PREREG_V8F_NAVRB2: built LAST under a forked RNG (no draw reaches the global stream) and zeroed: x + 0.0 == x, so the step-0 forward is the off model's
             with torch.random.fork_rng(devices=[]):
-                self.e_nav_rb = nn.Linear(1, d, bias=False)
+                self.e_nav_rb = nn.Linear(NAV_RB_DIM[cfg.nav_rb_feat], d, bias=False)       # PREREG_V8F_NAVRBD: the width from the feat (state = 1 = NAVRB2)
             nn.init.zeros_(self.e_nav_rb.weight)
         self.p_gt = 1.0
 
@@ -1393,6 +1398,8 @@ class V8FMini(nn.Module):
                       "w_wm": cfg.w_wm if self.wm is not None else 0.0,
                       "w_tac": cfg.w_tac, "w_cons": cfg.w_cons}}                       # PREREG_V8F_WC: T's constraint term is w_tac x w_cons
         if self.e_nav_rb is not None:
+            if self.cfg.nav_rb_feat != "state":
+                lv["nav_rb_feat"] = self.cfg.nav_rb_feat      # PREREG_V8F_NAVRBD: ABSENT for state, so every earlier arm's levers equal the tip's (the gate reads .get("nav_rb_feat", "state"); the BUILT width is e_nav_rb.weight.shape[1])
             lv["nav_rb"] = "on"          # PREREG_V8F_NAVRB2: the BUILT roundabout channel; the key is ABSENT when off, so an off model's levers equal the tip's (checkers read .get("nav_rb", "off"))
         if self.wm is not None and any(k > 1 for k in self.wm.built_k()["k"]):      # PREREG_V8F_MRATE: present ONLY with a multi-frame WM built (a W0 model keeps its key set); the gate reads built.get("wm_k", 1)
             bk = self.wm.built_k()
