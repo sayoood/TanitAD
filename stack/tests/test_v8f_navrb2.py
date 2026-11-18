@@ -455,3 +455,16 @@ def test_dagger_probe_mutation_without_the_partition_is_red(pack, tmp_path, monk
     monkeypatch.setattr(M, "NAV_RB_KEYS", frozenset())
     with pytest.raises(AssertionError):
         TR.dagger_probe(model, b, cfg, dag)
+
+
+def test_fine_tune_from_a_checkpoint_without_the_channel_passes_the_init_ckpt_gate(world):
+    """PREREG_V8F_NAVRB2 (pod mint 2026-11-18): every NAVRB2 arm fine-tunes a checkpoint that has no e_nav_rb; the init-ckpt G-DVB must admit exactly that fresh key, and only when --nav-rb on."""
+    base = Path(world["root"]) / "n1base_init"
+    assert TR.main(_argv(world, "n1base_init", ["--steps", "2", *N1(world)])) == 0
+    ck0 = torch.load(base / "ckpt_last.pt", weights_only=False)
+    assert not any(k.startswith("e_nav_rb") for k in ck0["model"])
+    out = Path(world["root"]) / "n1r_from_init"
+    assert TR.main(_argv(world, "n1r_from_init", ["--steps", "1", "--selfcheck-only", "--init-ckpt", str(base / "ckpt_last.pt"), *N1(world), *RB(world)])) == 0
+    sc = json.loads((out / "selfcheck.json").read_text(encoding="utf-8"))
+    ic = sc["info"]["init_ckpt"]
+    assert sc["declared_vs_built"] == "PASS" and ic["applied"] and ic["declared_new_keys"] == ["e_nav_rb.weight"] and set(ic.get("fresh_keys", [])) <= {"e_nav_rb.weight"}

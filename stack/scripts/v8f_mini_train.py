@@ -795,7 +795,7 @@ def bad_init_ckpt(a, data_info) -> list:
     elif got.get("skipped") != "resume":
         bad.append(f"init_ckpt: declared but neither applied nor skipped for a resume ({got.get('skipped')!r})")
     if got.get("applied"):                                  # PREREG_V8F_LEVEL: only the declared lever's keys may be fresh, and a lever-ON argv must have declared them
-        if bool(got.get("declared_new_keys")) != (a.level_head == "on" or a.lead_head == "on" or bool(a.t_stok_dir) or a.ctx_heads == "on"):          # PREREG_LEVELHEAD_A2: the lead head adds keys too; PREREG_V8F_OTBAND: so does the token
+        if bool(got.get("declared_new_keys")) != (a.level_head == "on" or a.lead_head == "on" or bool(a.t_stok_dir) or a.ctx_heads == "on" or a.nav_rb == "on"):          # PREREG_LEVELHEAD_A2: the lead head adds keys too; PREREG_V8F_OTBAND: so does the token; PREREG_V8F_NAVRB2: so does e_nav_rb (pod mint 2026-11-18 refused N1R_s0 without this)
             bad.append(f"init_ckpt: level_head {a.level_head} / lead_head {a.lead_head} / t_stok_dir {a.t_stok_dir!r} declared but the load declared new keys {got.get('declared_new_keys')}")
         if set(got.get("fresh_keys", [])) - set(got.get("declared_new_keys", [])):
             bad.append(f"init_ckpt: keys {sorted(set(got.get('fresh_keys', [])) - set(got.get('declared_new_keys', [])))} were left fresh but are not the declared lever's")

@@ -1,0 +1,141 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_ test_fine_tune_from_a_checkpoint_without_the_channel_passes_the_init_ckpt_gate _
+
+world = {'root': 'F:\\TanitAD-scratch\\strat1\\navrb2\\initfix\\tmp\\bt_mut\\navrb2world0', 'rb': WindowsPath('F:/TanitAD-scra...  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}, ...}
+
+    def test_fine_tune_from_a_checkpoint_without_the_channel_passes_the_init_ckpt_gate(world):
+        """PREREG_V8F_NAVRB2 (pod mint 2026-11-18): every NAVRB2 arm fine-tunes a checkpoint that has no e_nav_rb; the init-ckpt G-DVB must admit exactly that fresh key, and only when --nav-rb on."""
+        base = Path(world["root"]) / "n1base_init"
+        assert TR.main(_argv(world, "n1base_init", ["--steps", "2", *N1(world)])) == 0
+        ck0 = torch.load(base / "ckpt_last.pt", weights_only=False)
+        assert not any(k.startswith("e_nav_rb") for k in ck0["model"])
+        out = Path(world["root"]) / "n1r_from_init"
+>       assert TR.main(_argv(world, "n1r_from_init", ["--steps", "1", "--selfcheck-only", "--init-ckpt", str(base / "ckpt_last.pt"), *N1(world), *RB(world)])) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_navrb2.py:467: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+argv = ['--out', 'F:\\TanitAD-scratch\\strat1\\navrb2\\initfix\\tmp\\bt_mut\\navrb2world0\\n1r_from_init', '--synthetic', '--batch', '16', '--d', ...]
+
+    def main(argv=None):
+        argv = list(sys.argv[1:] if argv is None else argv)
+        a = build_parser().parse_args(argv)
+        if a.p10 is None:
+            a.p10 = os.path.join(PKG, "raw", "p10_yaw" if a.kin_mode == "yaw" else "p10", "p10_prior.pt")
+        if a.threads:
+            torch.set_num_threads(a.threads)
+        os.makedirs(a.out, exist_ok=True)
+        cfg = make_config(a)
+        ego = make_ego_perturb(a)                                        # O-RECOVER (PREREG_V8F_HACC_MC section 7): off by default; the object the loop applies, G-DVB reads back and the probes exercise
+        dev = torch.device("cuda" if (a.device == "auto" and torch.cuda.is_available()) else ("cpu" if a.device == "auto" else a.device))
+        torch.manual_seed(a.seed)
+        np.random.seed(a.seed)
+        store, J, wins, clips, info = build_data(a, cfg)
+        info["p10_units"] = None if a.synthetic else M.p10_meta(a.p10).get("units", "steer")
+        if not a.synthetic:
+            try:
+                M.check_p10_units(a.p10, a.kin_mode)                 # REFUSES a prior whose declared units are not this mode's
+            except ValueError as e:
+                raise SystemExit(f"ZZDVB-REFUSEDZZ {e}")
+        fstore = None
+        if a.encoder == "lora":
+            if not a.frames_root:
+                raise SystemExit("ZZDVB-REFUSEDZZ --encoder lora needs --frames-root")
+            fstore = D.FrameStore(a.frames_root, lru=info["lru"])
+            info["frames_missing"] = len(fstore.missing(clips))
+        if a.encoder == "lora":                                          # two NAMED constructions, so test_v8f_window_start's static guard can see both
+            ds = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+                                       window_start=cfg.window_start, stok=getattr(store, "stok_store", None))
+        elif a.wm_windows == "wmonly":                                   # PREREG_V8F_LADDER: the world-model-only dataset (pooled path = the token mean; off = the cached tokens)
+            ds = WW.V8FMiniWMWindows(store, J, wins, F=cfg.hmax, pooled=(a.wm_pooled == "on"), lru=info["lru"], zcache=a.wm_zcache)
+            info["wm_windows"]["zcache"] = ds.zcache
+            info["wm_windows"]["zcache_missing"] = len(ds.zcache_missing(clips)) if ds.zcache else 0
+            if ds.zcache and not info["wm_windows"]["zcache_missing"]:    # windows holding a frame the cache marks not ok are dropped here, the same list for every arm
+                n0 = len(wins)
+                wins = ds.ok_windows()
+                info["wm_windows"].update({"n_windows": len(wins), "n_windows_before_ok": n0, "n_windows_not_ok": n0 - len(wins)})
+                info["n_windows"] = len(wins)
+                info["train_window_list_sha256"] = DG.windows_sha256(J["clip"], wins)
+            if ds.zcache and not a.selfcheck_only:                        # the action arrays go to RAM at start-up, so no clip file is read during training
+                info["wm_windows"]["prewarm_clips"] = ds.prewarm()
+            info["wm_windows"]["pooled"] = ds.pooled                     # read back from the BUILT dataset (bad_wm_ladder compares it)
+            info["wm_windows"]["F"] = ds.F
+        else:
+            ds = D.V8FMiniWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+                                  window_start=cfg.window_start, stok=getattr(store, "stok_store", None))
+        if a.t_stok_dir:                                                 # PREREG_V8F_OTBAND: read back from the BUILT dataset (bad_oband); a flag-off info keeps its key set
+            info["stok_attached"] = getattr(ds, "stok", None) is not None and getattr(ds, "stok", None) is getattr(store, "stok_store", None)
+        if a.wm_windows != "wmonly":
+            info["ds_window_start"] = ds.window_start                   # the held-age clamp's origin, read back from the BUILT dataset (G-DVB compares it)
+        info["_train_windows"] = wins                                   # PREREG_V8F_STRAT1: the ctx valid-share guard reads the trained windows (popped before the selfcheck is written)
+        CL = make_ctx_labels(a, cfg, J, info)                           # PREREG_V8F_STRAT1: the context head's label arrays (None with the head off: nothing read, nothing built)
+        info.pop("_train_windows", None)
+        LL = make_lead_labels(a, cfg, J, info)                          # PREREG_LEVELHEAD_A2: the lead head's label arrays (None with the head off: nothing read, nothing built)
+        prior = M.load_p10(a.p10) if not a.synthetic else M.P10Prior.synthetic(a.seed)
+        mu, sd = M.cons_stats(J)
+        model = M.V8FMini(cfg, prior, mu, sd).to(dev)
+        if a.init_ckpt:                                                  # O-RECOVER's start state: the MODEL weights of an earlier checkpoint (before the optimiser, the probes and the gate); a resume of THIS run wins
+            try:
+                _apply = not (os.path.exists(os.path.join(a.out, "ckpt_last.pt")) and not a.no_resume)
+                if a.wm_only:                                            # PREREG_V8F_MRATE: the non-WM tensors load strictly and bit-equal, hmax is not compared, the WM is re-initialised under --seed
+                    info["init_ckpt"] = info["wm_only"] = load_wm_only_init(a.init_ckpt, model, cfg, a.seed, apply=_apply)
+                else:
+                    info["init_ckpt"] = load_init_ckpt(a.init_ckpt, model, cfg, apply=_apply)
+            except Exception as e:                                       # noqa: BLE001  a missing / foreign / mismatched checkpoint is a REFUSAL, not a crash
+                raise SystemExit(f"ZZDVB-REFUSEDZZ init-ckpt {a.init_ckpt}: {type(e).__name__}: {str(e)[:600]}")
+        if a.freeze and not a.wm_only:
+            freeze_groups(model, a.freeze)                               # PREREG_V8F_OTBAND (`--freeze`): BEFORE the optimiser below; bad_oband reads the frozen set back from the BUILT model
+        if a.wm_only:
+            freeze_all_but_wm(model)                                     # PREREG_V8F_MRATE: BEFORE the optimiser below (its decay / nodecay lists filter on requires_grad); bad_wm_only reads the frozen set back
+        dag = make_dagger(a, J, wins, clips, info)                       # PREREG_V8F_DAGGER: off by default (no bank read); with a bank: load + K-B2 + K-B3 + COVERAGE here, a refusal stops the launch before the gate
+        rcv = make_recover(a, J, wins, store, clips, info)               # PREREG_RECOVER_FT: off by default (--recover-p 0: no bank read, no table built); with the empirical law: bank load + K-B3 + the deviation table from THIS trainer's TRAIN store here, a refusal stops the launch before the gate
+        t2b = make_t2bank(a, info)                                       # PREREG_T2_DAGGER: off by default (--t2-bank-p 0: no bank read); with a bank: load + sha256 here, a refusal stops the launch before the gate
+        comp = make_compose(a, ego, dag)                                 # AMEND1 section 1: off by default; with --ego-perturb-with-dagger the loop calls THIS (swap first, then the perturbation on the samples the swap left)
+        enc = None
+        if a.encoder == "lora":
+            enc = make_encoder(a, dev)                     # AFTER the heads: it must not move their initialisation (the global RNG is restored inside)
+            enc.set_checkpointing(a.enc_ckpt)
+        ctx_ids = {id(p) for p in model.ctx_head.parameters()} if model.ctx_head is not None else set()      # PREREG_V8F_STRAT1: the head's own optimiser groups (empty with the head off = the tip's groups, bit for bit)
+        navrb_ids = {id(p) for p in model.e_nav_rb.parameters()} if model.e_nav_rb is not None else set()      # PREREG_V8F_NAVRB2: e_nav_rb in its own group (empty with the channel off = the tip's groups, bit for bit)
+        decay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim >= 2 and id(p) not in navrb_ids and id(p) not in ctx_ids]
+        nodecay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim < 2 and id(p) not in ctx_ids and id(p) not in navrb_ids]
+        groups = [{"params": decay, "weight_decay": a.wd}, {"params": nodecay, "weight_decay": 0.0}]
+        if ctx_ids:
+            groups.append({"params": [p for p in model.ctx_head.parameters() if p.ndim >= 2], "weight_decay": a.wd, "lr": a.lr * a.ctx_lr_mult, "name": "ctx", "lr_mult": a.ctx_lr_mult})
+            groups.append({"params": [p for p in model.ctx_head.parameters() if p.ndim < 2], "weight_decay": 0.0, "lr": a.lr * a.ctx_lr_mult, "name": "ctx_nd", "lr_mult": a.ctx_lr_mult})
+        if navrb_ids:
+            groups.append({"params": list(model.e_nav_rb.parameters()), "weight_decay": a.wd, "lr": a.lr * a.nav_rb_lr_mult, "name": "navrb", "lr_mult": a.nav_rb_lr_mult})
+        if enc is not None:                                # the LoRA matrices (2-D: the same weight-decay rule as the heads), their own peak lr
+            groups.append({"params": enc.lora_parameters(), "weight_decay": a.wd, "lr": lora_lr_of(a), "name": "lora", "lr_mult": lora_lr_of(a) / a.lr})
+        opt = torch.optim.AdamW(groups, lr=a.lr)
+        S = math.ceil(info["n_windows_all_clips"] / a.batch)
+        total = a.steps or S * a.steps_mult
+        sampler = D.ChunkedSampler(wins, a.batch, seed=a.seed, chunk=max(4, min(48, info["lru"] - 2)),
+                                   max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
+        # ---- the launch gate
+        lr_at = LRSchedule(a.lr, a.warmup, total)                        # the loop's schedule, built BEFORE the gate so that G-DVB can read --warmup back from it
+        bad = declared_vs_built(a, cfg, model, opt, info, enc, ego, lr_at, dag, comp, rcv, t2b)
+        bad += bad_perf_resume(a, argv)                                  # AMENDMENT_V8F_LORA_5: --resume-perf-levers read back (the named previous argv differs from this one in --accum / --enc-ckpt only)
+        if bad:
+>           raise SystemExit("ZZDVB-REFUSEDZZ declared-vs-built: " + "; ".join(bad))
+E           SystemExit: ZZDVB-REFUSEDZZ declared-vs-built: init_ckpt: level_head off / lead_head off / t_stok_dir '' declared but the load declared new keys ['e_nav_rb.weight']
+
+scripts\v8f_mini_train.py:3736: SystemExit
+---------------------------- Captured stdout call -----------------------------
+[1/2] ade 6.218 total 84.890 p_gt 1.00
+[2/2] ade 8.835 total 95.102 p_gt 0.60
+DONE {"steps": 2, "arm": "M2b", "seed": 5, "seconds": 1.6578764915466309}
+============================== warnings summary ===============================
+tests/test_v8f_navrb2.py::test_fine_tune_from_a_checkpoint_without_the_channel_passes_the_init_ckpt_gate
+  F:\TanitAD-scratch\strat1\navrb2\tree\stack\scripts\v8f_mini_train.py:4080: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_v8f_navrb2.py::test_fine_tune_from_a_checkpoint_without_the_channel_passes_the_init_ckpt_gate
+1 failed, 28 deselected, 1 warning in 11.19s
