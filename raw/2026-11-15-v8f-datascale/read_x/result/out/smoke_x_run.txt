@@ -1,0 +1,52 @@
+[taniteval] tanitad OVERRIDE -> F:/TanitAD-scratch/otband_read/tree/stack (F:\TanitAD-scratch/otband_read/tree/stack\tanitad\__init__.py)
+loaded B_s0.A 5s
+loaded B_s0.B 6s
+loaded U_s0.A 8s
+loaded U_s0.B 10s
+loaded B_rep.A 11s
+loaded B_rep.B 13s
+loaded X_s0.A 31s
+loaded X_s0.B 52s
+WROTE F:\TanitAD-scratch\datascale\readx/smoke/x/run1.json | ['X-CONTENT (one seed)'] | problems: 0 | 136.7 s
+loaded B_s0.A 2s
+loaded B_s0.B 5s
+loaded U_s0.A 6s
+loaded U_s0.B 8s
+loaded B_rep.A 10s
+loaded B_rep.B 11s
+loaded X_s0.A 13s
+loaded X_s0.B 14s
+WROTE F:\TanitAD-scratch\datascale\readx/smoke/x/run2.json | ['X-CONTENT (one seed) (CONTROL FAILED: 2 problem(s); not quotable)'] | problems: 2 | 24.9 s
+{
+ "rc 0": true,
+ "no problems": true,
+ "K-RE pass": true,
+ "K-RE checks": [
+  "B1 B_rep-B_s0.A (T1 cells)",
+  "B1 B_rep-B_s0.B (T1 cells)",
+  "B1 STRATEGIC U-B_s0.B",
+  "B1 U-B_s0.A (T1 cells)",
+  "B1 U-B_s0.B (T1 cells)",
+  "B1 floor stage A",
+  "B1 floor stage B",
+  "B3 STRATEGIC U-B_s0.A",
+  "B3 TAC-LAT stage-A floor (the 0.0767 of block 3)",
+  "B3 U-B_s0.A (T1 cells)"
+ ],
+ "K1": true,
+ "K-VLM-ZERO pass": true,
+ "K-RE goal F1": true,
+ "C-JOIN-EQ": true,
+ "STRATEGIC read": true,
+ "X-B_s0 TAC-LAT delta == banked B_rep - B_s0 (both stages)": true,
+ "floors == banked": true,
+ "label from the real delta": true,
+ "boundary Delta == -F reached on real data (stage A)": true,
+ "four families x 2 pairs x 2 stages": true,
+ "X-U present": true,
+ "outcome is a label": true,
+ "run 2: K-VLM-ZERO FAILS on unmasked ticks, read marked CONTROL FAILED": true
+}
+run1 outcome: ['X-CONTENT (one seed)'] | deciding: {'label_stage_A': 'X-CONTENT', 'label_stage_B': 'X-CONTENT', 'stage_sensitive': False, 'F_cell': {'A': 0.07669862442684461, 'B': 0.03001250521050436}, 'delta': {'A': -0.07669862442684461, 'B': -0.03001250521050436}}
+run2 outcome: ['X-CONTENT (one seed) (CONTROL FAILED: 2 problem(s); not quotable)'] | K-VLM-ZERO: {'x_vlm': 0.15311276559230225, 'b_s0_vlm': 0.12574117520688335, 'floor': 0.027371590385418892, 'pass': False}
+SMOKE OK
