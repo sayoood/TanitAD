@@ -52,3 +52,7 @@ Eval-202 (beside, no label; 16 episodes): ED −0.069 [−0.246, +0.078], RAW4 �
   * Their RB windows are a held-out set roughly twice the train RB pool: about 930 episodes (ESTIMATED from the train rate).
   * The card adds a T0 read of TAC-LAT on them, beside D1.
 * **Needs:** its own card, a build, and the PI's go for pod time. Cost ESTIMATED from NAVRB2: about 0.16 L40-h per arm, plus the held-out T0 eval on CPU.
+
+## Addendum (2026-11-18, MM): the held-out count is MEASURED
+
+* The NAVRBD feasibility probe (`../navrbd/out/RB10K_COUNTS.json`) counted the RB windows of the 10k clips with rbdist's rule: 548 labelled episodes; 7,594 grid windows / 545 episodes. The "about 930 episodes" above was an estimate from the train rate; the measured pool is 545 episodes, 34 times the 16 of eval-141.
