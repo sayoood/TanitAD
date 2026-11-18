@@ -1,0 +1,46 @@
+--- a/stack/tests/test_strat1_navrb2_check.py
++++ b/stack/tests/test_strat1_navrb2_check.py
+@@ -162,8 +162,8 @@
+ 
+ 
+ def test_kinds_and_bases():
+-    assert REAL.KINDS == ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z")
+-    assert REAL.RB_BASE == {"N1R": "N1", "S1R": "S1", "S1dR": "S1d", "N1Z": "N1"} and set(REAL.RB_KINDS) <= set(REAL.NAV_KINDS)
++    assert REAL.KINDS == ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx")      # PREREG_V8F_NAVRBD adds the two D kinds
++    assert REAL.RB_BASE == {"N1R": "N1", "S1R": "S1", "S1dR": "S1d", "N1Z": "N1", "N1D": "N1", "N1Dx": "N1"} and set(REAL.RB_KINDS) <= set(REAL.NAV_KINDS)
+     assert set(REAL.CTX_KINDS) == {"S1", "S1d", "S1R", "S1dR"}
+     assert "--nav-rb-npz" in REAL.DATA_FLAGS_RB and "--nav-rb-npz" not in REAL.DATA_FLAGS
+ 
+--- a/stack/tests/test_strat1_s1d.py
++++ b/stack/tests/test_strat1_s1d.py
+@@ -155,7 +155,7 @@
+ 
+ 
+ MUTATIONS = {
+-    "kinds_drop_s1d": ('KINDS = ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z")', 'KINDS = ("C0", "N1", "S1", "N1R", "S1R", "S1dR", "N1Z")'),
++    "kinds_drop_s1d": ('KINDS = ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx")', 'KINDS = ("C0", "N1", "S1", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx")'),
+     "render_detach_off": ('"--ctx-detach", "on" if bk == "S1d" else "off"]', '"--ctx-detach", "off"]'),
+     "ctx_kinds_drop_s1d": ('CTX_KINDS = ("S1", "S1d", "S1R", "S1dR")', 'CTX_KINDS = ("S1", "S1R", "S1dR")'),
+     "nav_kinds_drop_s1d": ('NAV_KINDS = ("N1", "S1", "S1d") + RB_KINDS', 'NAV_KINDS = ("N1", "S1") + RB_KINDS'),
+--- a/stack/tests/test_v8f_navrb2.py
++++ b/stack/tests/test_v8f_navrb2.py
+@@ -165,8 +165,8 @@
+ 
+ 
+ def test_z1_mutation_no_fork_rng_moves_the_global_stream(world):
+-    mut = mutant(MODEL_P, "            with torch.random.fork_rng(devices=[]):\n                self.e_nav_rb = nn.Linear(1, d, bias=False)\n",
+-                 "            if True:\n                self.e_nav_rb = nn.Linear(1, d, bias=False)\n", "v8f_mini_mut_navrb2_b")
++    mut = mutant(MODEL_P, "            with torch.random.fork_rng(devices=[]):\n                self.e_nav_rb = nn.Linear(NAV_RB_DIM[cfg.nav_rb_feat], d, bias=False)",
++                 "            if True:\n                self.e_nav_rb = nn.Linear(NAV_RB_DIM[cfg.nav_rb_feat], d, bias=False)", "v8f_mini_mut_navrb2_b")
+     _, J = make_batch(world)
+     build(J, mod=mut, nav_rb="on"); s_mut = torch.get_rng_state()
+     build(J, nav_rb="on"); s_off = torch.get_rng_state()
+@@ -402,7 +402,7 @@
+ 
+ 
+ def test_mutation_deleting_the_join_line_turns_the_selfcheck_red(world):
+-    mod = mutant_trainer('        J["nav_rb"], info["nav_rb"] = D.nav_rb_arrays(J, a.nav_rb_npz, a.nav_rb_sha256, "train", a.nav_rb_variant)', "        pass", "join")
++    mod = mutant_trainer('        J["nav_rb"], info["nav_rb"] = D.nav_rb_arrays(J, a.nav_rb_npz, a.nav_rb_sha256, "train", a.nav_rb_variant, a.nav_rb_feat)', "        pass", "join")
+     with pytest.raises(SystemExit) as e:
+         mod.main(_argv(world, "mut_join", ["--steps", "1", "--selfcheck-only", *N1(world), *RB(world)]))
+     assert "ZZDVB-REFUSEDZZ" in str(e.value)
