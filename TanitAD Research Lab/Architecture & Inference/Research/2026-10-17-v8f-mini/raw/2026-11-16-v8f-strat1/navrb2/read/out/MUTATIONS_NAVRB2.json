@@ -1,0 +1,195 @@
+[
+ {
+  "mutation": "Z-EVAL: the exact-zero comparison dropped",
+  "file": "navrb2_read.py",
+  "red_tests": [
+   "test_z_eval_one_window_in_mask_fails",
+   "test_z_eval_nan_mismatch_fails_and_nan_equal_passes"
+  ],
+  "expected_red": "test_z_eval_one_window_in_mask_fails",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "Z-EVAL: the zero-history mask ignored (reads every window)",
+  "file": "navrb2_read.py",
+  "red_tests": [
+   "test_z_eval_difference_outside_mask_is_not_read",
+   "test_z_eval_empty_mask_is_not_a_pass"
+  ],
+  "expected_red": "test_z_eval_difference_outside_mask_is_not_read",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "D1: the RB stratum ignored (reads all windows)",
+  "file": "navrb2_read.py",
+  "red_tests": [
+   "test_d1_reads_only_the_stratum"
+  ],
+  "expected_red": "test_d1_reads_only_the_stratum",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "RB-CLOSES: the guard dropped",
+  "file": "navrb2_read.py",
+  "red_tests": [
+   "test_label_closes_needs_the_guard_zuse_and_the_s1_pair"
+  ],
+  "expected_red": "test_label_closes_needs_the_guard_zuse_and_the_s1_pair",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "RB-CLOSES: Z-USE dropped",
+  "file": "navrb2_read.py",
+  "red_tests": [
+   "test_label_closes_needs_the_guard_zuse_and_the_s1_pair"
+  ],
+  "expected_red": "test_label_closes_needs_the_guard_zuse_and_the_s1_pair",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "RB-UNREAD fires on one unread seed (reading r3 broken)",
+  "file": "navrb2_read.py",
+  "red_tests": [
+   "test_label_read_no_gain_and_unread"
+  ],
+  "expected_red": "test_label_read_no_gain_and_unread",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "RB-NAV-ONLY: the S1R pair condition dropped",
+  "file": "navrb2_read.py",
+  "red_tests": [
+   "test_cross_pair_nav_only"
+  ],
+  "expected_red": "test_cross_pair_nav_only",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "RB-SEEDS-DISAGREE: the one-seed gain test dropped",
+  "file": "navrb2_read.py",
+  "red_tests": [
+   "test_label_seeds_disagree_on_a_one_seed_gain_or_cost"
+  ],
+  "expected_red": "test_label_seeds_disagree_on_a_one_seed_gain_or_cost",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "RB-COSTS: the D1 both-seed cost dropped",
+  "file": "navrb2_read.py",
+  "red_tests": [
+   "test_label_costs_d1_both_seeds_or_a_guard_cell_at_both_seeds"
+  ],
+  "expected_red": "test_label_costs_d1_both_seeds_or_a_guard_cell_at_both_seeds",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "K-RE: a vacuous compare accepted",
+  "file": "navrb2_read.py",
+  "red_tests": [
+   "test_k_re_equal_changed_and_vacuous"
+  ],
+  "expected_red": "test_k_re_equal_changed_and_vacuous",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "strata: the history window crosses clips",
+  "file": "navrb2_lib.py",
+  "red_tests": [
+   "test_window_state_history_does_not_cross_clips"
+  ],
+  "expected_red": "test_window_state_history_does_not_cross_clips",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "strata: the state read 5 rows AHEAD of NOW (the G-CLOCK-RB regression arm)",
+  "file": "navrb2_lib.py",
+  "red_tests": [
+   "test_window_state_now_and_history_rule",
+   "test_card_counts_on_the_real_table"
+  ],
+  "expected_red": "test_window_state_now_and_history_rule",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "the nav_rb table pin not checked",
+  "file": "navrb2_lib.py",
+  "red_tests": [
+   "test_rb_npz_pin_refuses_a_changed_file"
+  ],
+  "expected_red": "test_rb_npz_pin_refuses_a_changed_file",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "an R arm's bank commit not checked",
+  "file": "navrb2_lib.py",
+  "red_tests": [
+   "test_refusal_accepts_a_good_bank_and_refuses_each_defect"
+  ],
+  "expected_red": "test_refusal_accepts_a_good_bank_and_refuses_each_defect",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "the zero twin dumped with the channel on",
+  "file": "navrb2_dumps.py",
+  "red_tests": [
+   "test_t1_argv_follow_and_zero_twin"
+  ],
+  "expected_red": "test_t1_argv_follow_and_zero_twin",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "T0 donor pass without the named channel variant",
+  "file": "navrb2_t0.py",
+  "red_tests": [
+   "test_t0_variants_donor_holds_channel_zero_and_zero_is_withheld"
+  ],
+  "expected_red": "test_t0_variants_donor_holds_channel_zero_and_zero_is_withheld",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "the view takes S1 / N1 from the banked passes",
+  "file": "navrb2_view.py",
+  "red_tests": [
+   "test_view_plan_names_and_refuses_missing"
+  ],
+  "expected_red": "test_view_plan_names_and_refuses_missing",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "the fog logit not masked",
+  "file": "navrb2_ctx_nofog.py",
+  "red_tests": [
+   "test_nofog_masks_labels_and_logits_and_baselines"
+  ],
+  "expected_red": "test_nofog_masks_labels_and_logits_and_baselines",
+  "expected_in_red": true,
+  "went_red": true
+ },
+ {
+  "mutation": "ROUTE-COST on a single seed",
+  "file": "navrb2_strategic.py",
+  "red_tests": [
+   "test_route_cost_cells_needs_both_seeds"
+  ],
+  "expected_red": "test_route_cost_cells_needs_both_seeds",
+  "expected_in_red": true,
+  "went_red": true
+ }
+]
