@@ -48,6 +48,7 @@ CONVENTIONS
 from __future__ import annotations
 
 import copy
+import hashlib
 import math
 from dataclasses import dataclass, field
 from typing import Callable, Mapping, Optional, Sequence
@@ -469,6 +470,7 @@ class LevelConfig:
     rollout_w: float = 1.0     # PREREG_V8F_LADDER: weight of the k-step term in the level's loss (constant over training: no schedule); used only when ``rollout_k`` > 1
     rsp_w: float = 0.0         # PREREG_V8F_ACTRSP: weight of the action-response term :meth:`HJEPAStack.response_loss` in the level's loss (level 1 only). 0.0 = the term is NOT built = every earlier build, bit for bit (no key, no op)
     rsp_delta: tuple = (0.42, 0.24)   # PREREG_V8F_ACTRSP: the contrast size per action channel in WM units (1 sd of acceleration / 2.0 and yaw rate / 0.4 on R35's TRAIN windows); used only when ``rsp_w`` > 0
+    rsp_readout: str = "idm"   # PREREG_V8F_ACTRSP Amendment 2 (Option B, `--wm-rsp-readout`): "idm" = the level-1 IDM head on pairs, four contrasts (the a13f6f16 term, bit for bit); "fixed_k" = a FROZEN linear readout of the K-step endpoint, acceleration channel only, two contrasts, a constant slope (needs :meth:`HJEPAStack.set_rsp_probe`)
 
 
 @dataclass
@@ -572,6 +574,12 @@ class HJEPAStack(nn.Module):
             torch.manual_seed((base_seed * 1_000_003 + 101 * (i + 1)) % (2 ** 63 - 1))
             return mk(c.window)
 
+    def set_rsp_probe(self, w: Tensor, s_cal: float) -> None:
+        """PREREG_V8F_ACTRSP Amendment 2: the FIXED readout of the ``fixed_k`` response term. ``w`` (D,) = the frozen ridge's weights over the standardised endpoint displacement divided by its scale (so the read difference of two endpoints is
+        ``(z+ - z-) @ w``), ``s_cal`` the pre-registered transition-only slope. Non-persistent buffers: not in the state dict, no parameter, no random draw (the WM init does not move)."""
+        self.register_buffer("rsp_probe_w", w.detach().clone().float(), persistent=False)
+        self.register_buffer("rsp_probe_s", torch.tensor(float(s_cal), dtype=torch.float64), persistent=False)   # float64: the pre-registered constant is stored exactly
+
     # ---- bookkeeping ----------------------------------------------------------------------
     @property
     def n_levels(self) -> int:
@@ -599,6 +607,8 @@ class HJEPAStack(nn.Module):
                 row.update(rollout_k=c.rollout_k, rollout_stride=c.rollout_stride, rollout_w=c.rollout_w)
             if lv == 1 and c.rsp_w > 0.0:                                 # PREREG_V8F_ACTRSP: present only when moved (a flag-off stack keeps its key set); the G-DVB reader is :meth:`built_rsp` (the loss's own run), not this config echo
                 row.update(rsp_w=c.rsp_w, rsp_delta=tuple(c.rsp_delta), rsp_k=RSP_K, rsp_stride=RSP_STRIDE, rsp_ctx=RSP_CTX)
+                if c.rsp_readout != "idm":                                # Amendment 2: present only when moved (an idm-readout stack keeps the a13f6f16 key set)
+                    row.update(rsp_readout=c.rsp_readout)
             out[lv] = row
         return out
 
@@ -849,6 +859,8 @@ class HJEPAStack(nn.Module):
         loss = mean (G - I)^2. No new parameter and no random draw. Gradient reaches ``predictors[0]`` and ``act_embed`` only.
 
         ``z`` ``(B, T, D)`` level-1 states, ``a`` ``(B, T - 1, 2)`` the level-1 actions in WM units. Returns ``loss`` and ``diag`` (detached: ``rsp_g_aa``, ``rsp_g_ww``, ``rsp_g_aw``, ``rsp_g_wa``, ``rsp_s_a``, ``rsp_s_w``)."""
+        if c.rsp_readout == "fixed_k":                                                   # Amendment 2 (Option B): the frozen-readout, acceleration-only, two-contrast form
+            return self._response_loss_fixed_k(z, a, c)
         b_, t_, _ = z.shape
         K = RSP_K
         idx = torch.arange(0, t_ - K, RSP_STRIDE, device=z.device)                    # anchors 0, 10, .. 80 at T = 91: each K-step stretch lies inside the window
@@ -882,15 +894,44 @@ class HJEPAStack(nn.Module):
         diag = {"rsp_g_aa": gd[..., 0, 0].mean(), "rsp_g_ww": gd[..., 1, 1].mean(), "rsp_g_aw": gd[..., 0, 1].mean(), "rsp_g_wa": gd[..., 1, 0].mean(), "rsp_s_a": slope[0].detach(), "rsp_s_w": slope[1].detach()}
         return {"loss": loss, "diag": diag}
 
+    def _response_loss_fixed_k(self, z: Tensor, a: Tensor, c: "LevelConfig") -> dict:
+        """PREREG_V8F_ACTRSP Amendment 2 (Option B). Anchors, K, context and the batched :meth:`rollout` call are the a13f6f16 term's, but only the ACCELERATION channel is contrasted (two contrasts, +/- ``rsp_delta[0]``), and the read is the FROZEN
+        linear readout ``rsp_probe_w`` of the K-step endpoint (no head, no batch slope): ``G = (z_K+ - z_K-) @ w / (2 delta_a s)`` with the constant ``s`` of :meth:`set_rsp_probe`; loss = mean (G - 1)^2. No random draw. Gradient reaches ``predictors[0]``
+        and ``act_embed`` only (the anchor state is detached; the readout is a buffer)."""
+        t_ = z.shape[1]
+        K = RSP_K
+        idx = torch.arange(0, t_ - K, RSP_STRIDE, device=z.device)
+        if idx.numel() == 0:
+            raise ValueError(f"window of {t_} states is too short for the action-response term (needs > {K})")
+        pos = idx[:, None] + torch.arange(K, device=z.device)[None, :]
+        base = a[:, pos]                                                             # (B, A, K, 2)
+        z0 = z[:, idx].detach()
+        dlt = torch.as_tensor(c.rsp_delta, dtype=base.dtype, device=base.device)
+        e = base.new_zeros(2, 2)
+        e[0, 0], e[1, 0] = 1.0, -1.0                                                 # accp, accm
+        a2 = base[None] + (e * dlt)[:, None, None, None, :]                          # (2, B, A, K, 2)
+        zh = self.rollout(1, z0[None].expand(2, -1, -1, -1), a2, context=RSP_CTX)   # (2, B, A, K, D)
+        w = self.rsp_probe_w.to(zh.dtype)
+        s = self.rsp_probe_s.to(zh.dtype)
+        end = zh[..., -1, :]                                                         # the K-step endpoint
+        g = ((end[0] - end[1]) @ w) / (2.0 * dlt[0] * s)                             # (B, A)
+        loss = (g - 1.0).pow(2).mean()
+        return {"loss": loss, "diag": {"rsp_g_aa": g.detach().mean(), "rsp_s_a": s.detach()}}
+
     def states_per_level(self, n_frames: int) -> list:
         """States per level for a window of ``n_frames`` level-1 frames, MEASURED by running :meth:`encode` on zeros."""
         c1 = self.cfg[0]
         with torch.no_grad():
             dev = next(self.parameters()).device
-            e = self.encode(torch.zeros(1, n_frames, c1.latent_dim, device=dev), torch.zeros(1, n_frames - 1, c1.action_dim, device=dev))
+            e = self.encode(torch.zeros(1, n_frames, c1.latent_dim, device=dev, dtype=next(self.parameters()).dtype), torch.zeros(1, n_frames - 1, c1.action_dim, device=dev, dtype=next(self.parameters()).dtype))
         return [int(t.shape[1]) for t in e.z]
 
     def built_rollout(self, n_frames: int, batch: int = 2) -> dict:
+        """PREREG_V8F_ACTRSP Amendment 2: the G-DVB reader of :meth:`_built_rollout`, run on a float64 COPY (as :meth:`built_rsp` is). On a TRAINED world model (a fine-tune start) the level losses are large and the float32 difference
+        ``level - other terms`` blurs the measured weight beyond the gate's 1e-4 (MEASURED on a 3-step synthetic checkpoint: level 3 read 0.99985 for a declared 1.0). A fresh init reads 1.0 either way."""
+        return copy.deepcopy(self).double()._built_rollout(n_frames, batch)
+
+    def _built_rollout(self, n_frames: int, batch: int = 2) -> dict:
         """PREREG_V8F_LADDER, the G-DVB reader for the k-step lever: what the BUILT loss does, measured by running it. A forward hook counts the predictor calls made INSIDE :meth:`rollout` (a wrapper marks the
         span) while :meth:`loss` runs once on noise for a window of ``n_frames`` frames, with the global RNG forked (the probe moves no training stream). Per level: ``k`` = predictor calls in the free run
         (0 = no free-run term was built), ``anchors`` = the free run's anchor count, ``ctx_passed`` = the context handed to ``rollout``, ``ctx_built`` = ``predictor.pos`` rows (the BUILT parameter shape),
@@ -917,8 +958,8 @@ class HJEPAStack(nn.Module):
             with torch.no_grad(), torch.random.fork_rng(devices=[]):
                 torch.manual_seed(0)
                 dev = next(self.parameters()).device                         # drawn on the CPU and moved: fork_rng(devices=[]) forks only the CPU stream
-                z1 = torch.randn(batch, n_frames, c1.latent_dim).to(dev)
-                a = torch.randn(batch, n_frames - 1, c1.action_dim).to(dev)
+                z1 = torch.randn(batch, n_frames, c1.latent_dim).to(dev, next(self.parameters()).dtype)
+                a = torch.randn(batch, n_frames - 1, c1.action_dim).to(dev, next(self.parameters()).dtype)
                 self.eval()
                 out = self.loss(z1, a)
         finally:
@@ -970,6 +1011,10 @@ class HJEPAStack(nn.Module):
                 other = other + c1.rollout_w * out["rollout/L1"]
             res["w_in_loss_rsp"] = float((out["level/L1"] - other) / out["rsp/L1"])
         res["rsp_term"] = None if "rsp/L1" not in out else float(out["rsp/L1"])
+        res["readout"] = c1.rsp_readout if "rsp/L1" in out else None                                # Amendment 2: what the BUILT loss read through
+        if c1.rsp_readout == "fixed_k" and hasattr(m, "rsp_probe_w"):
+            res["s_cal"] = float(m.rsp_probe_s)
+            res["w_sha256"] = hashlib.sha256(self.rsp_probe_w.detach().cpu().float().numpy().tobytes()).hexdigest()   # the SINGLE-precision weights of the live buffer (not the float64 copy)
         return res
 
     def goal_cost(self, z_pred: Tensor, goal: Tensor, level: int, last_k: Optional[int] = None) -> Tensor:

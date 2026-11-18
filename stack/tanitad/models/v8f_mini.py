@@ -27,6 +27,7 @@ CONSISTENCY: differentiable hinge penalties for SPEED / STOP / TURN / LEAD that 
 from __future__ import annotations
 
 import ast
+import hashlib
 import inspect
 import json
 import math
@@ -211,6 +212,10 @@ class V8FMiniConfig:
     wm_gamma: float = 100.0
     wm_gamma_levels: tuple = ()        # PREREG_V8F_ACTSENS (`--wm-idm-gamma G1 G2 G3`): the IDM weight of each WM level. () = (wm_gamma,) x 3 = every earlier arm, bit for bit (changes the loss weight only, never a parameter shape)
     wm_rsp_w: float = 0.0              # PREREG_V8F_ACTRSP (`--wm-rsp-w`): the weight of the level-1 action-response term (HJEPAStack.response_loss). 0.0 = the term is NOT built = every earlier arm, bit for bit (no key, no op, no parameter); > 0 needs wm b and kin_mode yaw (the contrast sizes are WM units of the yaw-rate channel)
+    wm_rsp_readout: str = "idm"        # PREREG_V8F_ACTRSP Amendment 2 (`--wm-rsp-readout`): "idm" = the a13f6f16 term (default, bit for bit); "fixed_k" = Option B's frozen K-step linear readout, acceleration channel only (needs wm_rsp_w > 0, the probe, wm_freeze_proj "on")
+    wm_rsp_probe: str = ""             # Amendment 2 (`--wm-rsp-probe`): the path of the frozen readout file (readout_K10_R35_s{k}.pt); "" unless fixed_k
+    wm_rsp_probe_sha256: str = ""      # Amendment 2 (`--wm-rsp-probe-sha256`): the file's sha256; the build refuses a mismatch
+    wm_freeze_proj: str = "off"        # Amendment 2 (`--wm-freeze-proj`): "on" freezes `wm.proj` (the readout is valid in R35's latent space only; the trainer's `freeze_all_but_wm` reads it); "off" = every earlier arm
     p_gt_start: float = 1.0
     p_gt_end: float = 0.2
     max_age_t: int = 2
@@ -292,6 +297,19 @@ class V8FMiniConfig:
             raise ValueError("wm_rsp_w > 0 needs wm b (the level-1 IDM head is the readout): a lever that is declared and builds nothing")
         if wr > 0.0 and self.kin_mode != "yaw":
             raise ValueError(f"wm_rsp_w > 0 needs kin_mode yaw (the contrast sizes are WM units of the yaw-rate channel), got {self.kin_mode!r}")
+        if self.wm_rsp_readout not in ("idm", "fixed_k"):                          # PREREG_V8F_ACTRSP Amendment 2
+            raise ValueError(f"wm_rsp_readout must be 'idm' or 'fixed_k', got {self.wm_rsp_readout!r}")
+        if self.wm_freeze_proj not in ("off", "on"):
+            raise ValueError(f"wm_freeze_proj must be 'off' or 'on', got {self.wm_freeze_proj!r}")
+        if self.wm_rsp_readout == "fixed_k":
+            if not wr > 0.0:
+                raise ValueError("wm_rsp_readout fixed_k needs wm_rsp_w > 0: a readout with no term is a lever that is declared and builds nothing")
+            if self.wm_freeze_proj != "on":
+                raise ValueError("wm_rsp_readout fixed_k needs wm_freeze_proj on: the readout is valid in the checkpoint's latent space only")
+            if not (self.wm_rsp_probe and len(self.wm_rsp_probe_sha256) == 64):
+                raise ValueError("wm_rsp_readout fixed_k needs wm_rsp_probe and a 64-hex wm_rsp_probe_sha256")
+        elif self.wm_rsp_probe or self.wm_rsp_probe_sha256:
+            raise ValueError("wm_rsp_probe / wm_rsp_probe_sha256 are named but wm_rsp_readout is not fixed_k: a lever that is declared and does nothing")
         for nm in ("wm_rollout_k", "wm_rollout_stride", "wm_ctx"):               # PREREG_V8F_LADDER: three ints >= 1 (one per WM level)
             v = getattr(self, nm)
             if not (isinstance(v, (tuple, list)) and len(v) == 3 and all(isinstance(x, int) and not isinstance(x, bool) and x >= 1 for x in v)):
@@ -686,6 +704,29 @@ def _mlp(d_in, d_hid, d_out, zero_last=False):
     return m
 
 
+def load_rsp_probe(path: str, sha256: str, dim: int):
+    """PREREG_V8F_ACTRSP Amendment 2: read the frozen K = 10 readout file of ``amend1_kstep.py`` (``readout_K10_R35_s{k}.pt``). REFUSES a file whose sha256 is not ``sha256``, whose K is not 10, or whose acceleration ridge (``RA``) does not
+    read a ``dim``-wide displacement to ONE channel. Returns ``(w, s_cal)``: ``w = RA.W[:, 0] / RA.sd`` (so ``(z+ - z-) @ w`` is the ridge's read difference of two endpoints; the mean and the anchor state cancel) and ``s_cal`` = the held-out
+    swap slope of the acceleration channel (``s_cal_swap_heldout[0]``), a pre-registered constant."""
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for blk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(blk)
+    if h.hexdigest() != sha256:
+        raise ValueError(f"wm_rsp_probe {path!r}: sha256 {h.hexdigest()} != the declared {sha256}")
+    ck = torch.load(path, map_location="cpu", weights_only=False)
+    if int(ck.get("K", -1)) != 10:
+        raise ValueError(f"wm_rsp_probe {path!r}: K = {ck.get('K')!r}, the term reads the K = 10 endpoint")
+    ra = ck["RA"]
+    W, sd = np.asarray(ra["W"], dtype=np.float64), np.asarray(ra["sd"], dtype=np.float64)
+    if W.shape != (dim, 1) or sd.shape != (dim,) or not (np.isfinite(W).all() and np.isfinite(sd).all() and (sd > 0).all()):
+        raise ValueError(f"wm_rsp_probe {path!r}: RA.W {W.shape} / RA.sd {sd.shape}, need ({dim}, 1) / ({dim},), finite, sd > 0")
+    s_cal = float(ck["s_cal_swap_heldout"][0])
+    if not (math.isfinite(s_cal) and s_cal > 0.0):
+        raise ValueError(f"wm_rsp_probe {path!r}: s_cal {s_cal!r} must be a finite number > 0")
+    return torch.tensor(W[:, 0] / sd, dtype=torch.float32), s_cal
+
+
 class WMAux(nn.Module):
     """M2: the H-JEPA world-model auxiliary (``tanitad.models.hjepa``), levels z1 / z2 / z3 on the O / T / S cycles
     (0.2 s / 0.4 s / 0.8 s on the cache grid -- the nearest multiples to 0.1 / 0.5 / 1.0 s). a = without IDM
@@ -706,10 +747,12 @@ class WMAux(nn.Module):
         K = int(cfg.wm_k)
         up = lambda i: dict(window=K, dilation=cfg.wm_strides[i], causal_pad=True) if K > 1 else {}      # K = 1: LevelConfig's defaults, i.e. the earlier build
         lad = lambda i: dict(context=int(cfg.wm_ctx[i]), rollout_k=int(cfg.wm_rollout_k[i]), rollout_stride=int(cfg.wm_rollout_stride[i]), rollout_w=float(cfg.wm_rollout_w))   # noqa: E731  PREREG_V8F_LADDER: (3, 3, 3) / (1, 1, 1) = LevelConfig's defaults, i.e. the earlier build
-        lv = [mk(gl[0], action_dim=2, act_embed_dim=32, **lad(0), **(dict(rsp_w=float(cfg.wm_rsp_w), rsp_delta=RSP_DELTA) if float(cfg.wm_rsp_w) > 0.0 else {})),   # PREREG_V8F_ACTRSP: level 1 only; absent = LevelConfig's rsp_w 0.0
+        lv = [mk(gl[0], action_dim=2, act_embed_dim=32, **lad(0), **(dict(rsp_w=float(cfg.wm_rsp_w), rsp_delta=RSP_DELTA, **({"rsp_readout": "fixed_k"} if cfg.wm_rsp_readout == "fixed_k" else {})) if float(cfg.wm_rsp_w) > 0.0 else {})),   # PREREG_V8F_ACTRSP: level 1 only; absent = LevelConfig's rsp_w 0.0
 
               mk(gl[1], action_dim=32, stride=cfg.wm_strides[0], **up(0), **lad(1)), mk(gl[2], action_dim=32, stride=cfg.wm_strides[1], **up(1), **lad(2))]
         self.stack = HJEPAStack(lv, sigreg_projections=256)
+        if cfg.wm_rsp_readout == "fixed_k":                                          # Amendment 2: the frozen readout, loaded after every parameter-bearing module of the stack exists (no random draw: the WM init does not move)
+            self.stack.set_rsp_probe(*load_rsp_probe(cfg.wm_rsp_probe, cfg.wm_rsp_probe_sha256, cfg.wm_dim))
         self.proj = nn.Sequential(nn.LayerNorm(cfg.d), nn.Linear(cfg.d, cfg.wm_dim))
         self.gamma = gamma
         self.ch1_scale = CH1_SCALE[cfg.kin_mode]

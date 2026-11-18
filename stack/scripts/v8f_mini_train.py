@@ -127,6 +127,9 @@ FLAG_CHECKS = {
     # PREREG_V8F_ACTRSP: `lever:wm_rsp_w` = the weight the BUILT loss really gives the level-1 action-response term (WMAux.built_rsp: the loss run once on noise, (level/L1 - every other level-1 term) / rsp/L1, never the config that built it) AND the term's
     # own geometry read off its rollout call (anchors, K, contrasts, context) AND HJEPAStack.built_levers()[1]["rsp_w"] -> bad_wm_rsp -> `selfcheck.json levers.wm_rsp_readback` (written when the argv NAMES the flag).
     "wm_rsp_w": "lever:wm_rsp_w",
+    # PREREG_V8F_ACTRSP Amendment 2 (Option B): `lever:wm_rsp_readout` (also `wm_rsp_probe`, `wm_rsp_probe_sha256`) = the readout the BUILT loss reads through (HJEPAStack.built_levers()[1]["rsp_readout"] and WMAux.built_rsp: readout, contrast count 2, s_cal, the sha256 of the live probe weights, each compared with the probe FILE re-read here) -> bad_wm_rsp; `lever:wm_init_from_ckpt_wm` = the loader record (every wm.* tensor loaded, read back equal) -> bad_wm_only; `lever:wm_freeze_proj` = requires_grad of wm.proj.* read back from the BUILT model -> bad_wm_freeze.
+    "wm_rsp_readout": "lever:wm_rsp_readout", "wm_rsp_probe": "lever:wm_rsp_readout", "wm_rsp_probe_sha256": "lever:wm_rsp_readout",
+    "wm_init_from_ckpt_wm": "lever:wm_init_from_ckpt_wm", "wm_freeze_proj": "lever:wm_freeze_proj",
     # PREREG_V8F_LADDER: `lever:wm_rollout_k` = the predictor calls the BUILT loss makes inside HJEPAStack.rollout, per level (WMAux.built_ladder: a forward-hook count while the loss runs, never the config that built it);
     # `lever:wm_rollout_stride` = the free run's anchor count the built loss produces; `lever:wm_rollout_w` = (level loss - its other terms) / the k-step term; `lever:wm_ctx` = the predictor's parameter-shape context (pos.shape[0])
     # AND the context the free run is handed; `data:wm_windows` = the kind, F, first t and pooled flag READ BACK from the BUILT dataset (data_info["wm_windows"]) -> bad_wm_ladder.
@@ -338,6 +341,14 @@ def build_parser():
     ap.add_argument("--wm-rsp-w", dest="wm_rsp_w", type=float, default=0.0,
                     help="PREREG_V8F_ACTRSP: the weight of the level-1 action-response term (the WM's answer to +/- one sd of each action channel, read through the level-1 IDM head and matched to the identity gain). Default 0.0 = the term is not built = every earlier "
                          "arm, bit for bit (no key, no op, no parameter). The card fixes 1.0. Needs --wm b, --kin-mode yaw and --wm-only. Read back from the BUILT loss (HJEPAStack.built_rsp), not from the config")
+    ap.add_argument("--wm-rsp-readout", dest="wm_rsp_readout", choices=("idm", "fixed_k"), default="idm",
+                    help="PREREG_V8F_ACTRSP Amendment 2: the readout of the response term. idm (default) = the a13f6f16 term, bit for bit. fixed_k = Option B: a FROZEN linear readout of the K = 10 endpoint, acceleration channel only, two contrasts, a constant slope. Needs --wm-rsp-w > 0, --wm-rsp-probe, --wm-rsp-probe-sha256 and --wm-freeze-proj on")
+    ap.add_argument("--wm-rsp-probe", dest="wm_rsp_probe", default="", help="Amendment 2: the readout file (readout_K10_R35_s{k}.pt of amend1_kstep.py). Only with --wm-rsp-readout fixed_k")
+    ap.add_argument("--wm-rsp-probe-sha256", dest="wm_rsp_probe_sha256", default="", help="Amendment 2: the readout file sha256 (64 hex); the build refuses a mismatch")
+    ap.add_argument("--wm-init-from-ckpt-wm", dest="wm_init_from_ckpt_wm", choices=("off", "on"), default="off",
+                    help="Amendment 2: on = the WM-only start loads EVERY tensor of --init-ckpt including wm.* (a fine-tune of the checkpoint world model); off (default) = the WM is re-initialised under --seed (every earlier WM-only arm). Needs --wm-only and --init-ckpt")
+    ap.add_argument("--wm-freeze-proj", dest="wm_freeze_proj", choices=("off", "on"), default="off",
+                    help="Amendment 2: on = wm.proj (LayerNorm + Linear, adapter -> level-1 latent) is frozen, so the latent space the frozen readout lives in cannot move. Needs --wm-only. Default off = every earlier arm")
     ap.add_argument("--wm-rollout-k", dest="wm_rollout_k", type=int, nargs=3, default=None, metavar=("K1", "K2", "K3"),
                     help="PREREG_V8F_LADDER: free-run steps of the k-step loss per WM level (through HJEPAStack.rollout, on top of the teacher-forced one-step loss). Absent = (1, 1, 1) = every earlier arm, bit for bit. "
                          "A level with k > 1 needs hmax >= k x (its cumulative stride) + 1 frames. Needs --wm a|b")
@@ -428,6 +439,7 @@ def make_config(a) -> M.V8FMiniConfig:
     return M.V8FMiniConfig(d=a.d, ff=2 * a.d, hist=a.hist, hmax=hmax, window_start=a.window_start, n_q=a.n_q, nb=a.nb, navonly=lv["navonly"],
                            wm_strides=declared_wm_strides(a),                                             # PREREG_V8F_LFS: the ONE line that applies --wm-strides (a mutation deletes it)
                            wm_gamma_levels=declared_wm_idm_gamma(a),                                      # PREREG_V8F_ACTSENS: the ONE line that applies --wm-idm-gamma (mutation M1 deletes it)
+                           wm_rsp_readout=a.wm_rsp_readout, wm_rsp_probe=a.wm_rsp_probe, wm_rsp_probe_sha256=a.wm_rsp_probe_sha256, wm_freeze_proj=a.wm_freeze_proj,   # Amendment 2: the line that applies the Option B flags (MR11-MR13 unwire them)
                            wm_rsp_w=float(a.wm_rsp_w),                                                    # PREREG_V8F_ACTRSP: the ONE line that applies --wm-rsp-w (mutation MR1 deletes it)
                            consistency=lv["consistency"], wm=lv["wm"], n_tok=40 if a.grid == "pool4x10" else 160,
                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
@@ -822,10 +834,14 @@ def is_wm_param(name: str) -> bool:
     return name.startswith("wm.")
 
 
-def freeze_all_but_wm(model) -> None:
-    """PREREG_V8F_MRATE: the WM-only mode trains the world model and nothing else. Called BEFORE the optimiser is built (its decay / nodecay lists filter on requires_grad)."""
+def is_wm_proj_param(name: str) -> bool:
+    return name.startswith("wm.proj.")
+
+
+def freeze_all_but_wm(model, freeze_proj: bool = False) -> None:
+    """PREREG_V8F_MRATE: the WM-only mode trains the world model and nothing else. Called BEFORE the optimiser is built (its decay / nodecay lists filter on requires_grad). ``freeze_proj`` (Amendment 2, ``--wm-freeze-proj on``): ``wm.proj`` stays frozen too."""
     for n, p in model.named_parameters():
-        p.requires_grad_(is_wm_param(n))
+        p.requires_grad_(is_wm_param(n) and not (freeze_proj and is_wm_proj_param(n)))
 
 
 #: the INIT_CKPT_MATCH keys a WM-ONLY start does not compare: ``hmax`` (it only sizes the WM sequence: M2b 16, MRATE 28) and, PREREG_V8F_LFS, ``wm_strides`` (the WM is re-initialised, none of the checkpoint's WM tensors is loaded, and
@@ -833,7 +849,7 @@ def freeze_all_but_wm(model) -> None:
 WM_ONLY_NOT_COMPARED = ("hmax", "wm_strides")
 
 
-def load_wm_only_init(path, model, cfg, seed: int, apply: bool = True) -> dict:
+def load_wm_only_init(path, model, cfg, seed: int, apply: bool = True, init_wm: bool = False) -> dict:
     """Start state of a WM-only run (PREREG_V8F_MRATE, the Master Mind's reading of 2026-11-07 13:09). Hash the file; REFUSE a checkpoint whose architecture config differs from the BUILT one in any ``INIT_CKPT_MATCH`` key EXCEPT
     ``hmax`` (M2b trained at 16, this arm at 28: hmax only sizes the WM sequence); then, if ``apply``, load EVERY non-``wm.`` tensor strictly (the missing keys are exactly the model's ``wm.*`` keys, nothing is unexpected), READ THEM BACK
     (``n_mismatch_after_load``), and replace the world model by a FRESH ``WMAux`` built right after ``torch.manual_seed(seed)`` (none of the checkpoint's WM tensors is loaded; ``wm_params_equal_to_ckpt`` counts the shape-matching float
@@ -846,15 +862,28 @@ def load_wm_only_init(path, model, cfg, seed: int, apply: bool = True) -> dict:
     if not isinstance(ck, dict) or "model" not in ck or not isinstance(ck.get("cfg"), dict):
         raise ValueError("not a v8f_mini_train checkpoint (no 'model' / 'cfg')")
     norm = lambda v: tuple(v) if isinstance(v, (list, tuple)) else v          # noqa: E731
-    diff = {k: (norm(ck["cfg"][k]), norm(getattr(cfg, k))) for k in INIT_CKPT_MATCH if k not in WM_ONLY_NOT_COMPARED and k in ck["cfg"] and norm(ck["cfg"][k]) != norm(getattr(cfg, k))}
+    skip = ("hmax",) if init_wm else WM_ONLY_NOT_COMPARED                      # Amendment 2: a fine-tune of the checkpoint's own WM compares its strides too (only hmax, which only sizes the sequence, is exempt)
+    diff = {k: (norm(ck["cfg"][k]), norm(getattr(cfg, k))) for k in INIT_CKPT_MATCH if k not in skip and k in ck["cfg"] and norm(ck["cfg"][k]) != norm(getattr(cfg, k))}
     if diff:
-        raise ValueError("config mismatch between the checkpoint and the model this argv builds (checkpoint vs built; " + " and ".join(WM_ONLY_NOT_COMPARED) + " are not compared): " + "; ".join(f"{k}: {v[0]!r} != {v[1]!r}" for k, v in sorted(diff.items())))
+        raise ValueError("config mismatch between the checkpoint and the model this argv builds (checkpoint vs built; " + " and ".join(skip) + " are not compared): " + "; ".join(f"{k}: {v[0]!r} != {v[1]!r}" for k, v in sorted(diff.items())))
     sd = ck["model"]
     rec = {"path": os.path.abspath(path), "sha256": h.hexdigest(), "applied": bool(apply), "skipped": None if apply else "resume", "n_tensors": len(sd), "n_mismatch_after_load": None,
-           "source_step": ck.get("step"), "source_arm": ck.get("arm"), "source_seed": ck.get("seed"), "source_argv_sha": ck.get("argv_sha"), "mode": "wm_only",
+           "source_step": ck.get("step"), "source_arm": ck.get("arm"), "source_seed": ck.get("seed"), "source_argv_sha": ck.get("argv_sha"), "mode": "wm_only_init_wm" if init_wm else "wm_only", "init_wm": bool(init_wm),
            "hmax_ckpt": ck["cfg"].get("hmax"), "hmax_built": cfg.hmax, "wm_strides_ckpt": norm(ck["cfg"].get("wm_strides")), "wm_strides_built": norm(cfg.wm_strides),      # PREREG_V8F_LFS: the WM is fresh, so its strides are the argv's
            "wm_loaded_from_ckpt": 0, "wm_reinit_seed": None, "wm_params_equal_to_ckpt": None}
     if not apply:
+        return rec
+    if init_wm:                                                                # Amendment 2: EVERY tensor of the checkpoint, wm.* included, strictly; read back
+        res = model.load_state_dict(sd, strict=False)
+        if res.unexpected_keys or res.missing_keys:
+            raise ValueError(f"--wm-init-from-ckpt-wm: the checkpoint and the built model disagree on keys: missing {sorted(res.missing_keys)[:6]}, unexpected {sorted(res.unexpected_keys)[:6]}")
+        cur = model.state_dict()
+        rec["n_mismatch_after_load"] = sum(1 for k in sd if not torch.equal(cur[k].detach().cpu(), sd[k].detach().cpu()))
+        old = {k: v for k, v in sd.items() if is_wm_param(k)}
+        rec["wm_loaded_from_ckpt"] = len(old)
+        rec["wm_params_equal_to_ckpt"] = sum(1 for n, q in cur.items() if is_wm_param(n) and n in old and torch.equal(old[n].detach().cpu(), q.detach().cpu()))     # state-dict keys (parameters AND buffers)
+        rec["n_wm_params"] = sum(1 for n in cur if is_wm_param(n))
+        rec["proj_sha256"] = hashlib.sha256(b"".join(sd[k].detach().cpu().contiguous().numpy().tobytes() for k in sorted(sd) if is_wm_proj_param(k))).hexdigest()
         return rec
     rest = {k: v for k, v in sd.items() if not is_wm_param(k)}
     res = model.load_state_dict(rest, strict=False)
@@ -909,10 +938,22 @@ def bad_wm_only(a, cfg, model, data_info) -> list:
     if a.arm != "M2b":
         bad.append(f"wm_only: arm {a.arm} (the card trains the world model of M2b)")
     names = [n for n, p in model.named_parameters() if p.requires_grad]
-    wm_names = [n for n, _ in model.named_parameters() if is_wm_param(n)]
+    wm_names = [n for n, _ in model.named_parameters() if is_wm_param(n) and not (a.wm_freeze_proj == "on" and is_wm_proj_param(n))]      # Amendment 2: --wm-freeze-proj on removes wm.proj from the trainable set
     if not wm_names or sorted(names) != sorted(wm_names):
         bad.append(f"wm_only: trainable parameters are not exactly the WM's ({len(names)} trainable, {len(wm_names)} WM; stray: {sorted(set(names) - set(wm_names))[:4]})")
-    if rec.get("applied"):
+    if bool(rec.get("init_wm")) != (a.wm_init_from_ckpt_wm == "on"):
+        bad.append(f"lever wm_init_from_ckpt_wm: declared {a.wm_init_from_ckpt_wm} but the loader record says init_wm {rec.get('init_wm')!r}")
+    if rec.get("applied") and a.wm_init_from_ckpt_wm == "on":          # Amendment 2: a fine-tune: every tensor loaded and read back equal, no WM re-initialisation
+        n_wm = sum(1 for n in model.state_dict() if is_wm_param(n))
+        if rec.get("n_mismatch_after_load") != 0:
+            bad.append(f"lever wm_init_from_ckpt_wm: after the load {rec.get('n_mismatch_after_load')} of {rec.get('n_tensors')} tensors differ from the checkpoint's")
+        if not (rec.get("wm_loaded_from_ckpt") == n_wm and rec.get("wm_params_equal_to_ckpt") == n_wm and n_wm > 0):
+            bad.append(f"lever wm_init_from_ckpt_wm: {rec.get('wm_loaded_from_ckpt')} WM tensors loaded and {rec.get('wm_params_equal_to_ckpt')} equal the checkpoint's, the built WM has {n_wm} parameters")
+        if rec.get("wm_reinit_seed") is not None:
+            bad.append("lever wm_init_from_ckpt_wm: on, but the WM was re-initialised under a seed")
+        if rec.get("mode") != "wm_only_init_wm":
+            bad.append(f"lever wm_init_from_ckpt_wm: the start state was loaded in mode {rec.get('mode')!r}")
+    elif rec.get("applied"):
         if rec.get("wm_loaded_from_ckpt") != 0:
             bad.append(f"wm_only: {rec.get('wm_loaded_from_ckpt')} world-model tensors were loaded from the checkpoint (the card re-initialises the WM)")
         if rec.get("wm_reinit_seed") != a.seed:
@@ -1553,7 +1594,10 @@ def wm_rsp_readback(a, cfg, model) -> dict:
     """PREREG_V8F_ACTRSP: the record ``selfcheck.json`` carries (``levers.wm_rsp_readback``) when the argv NAMES ``--wm-rsp-w``: the weight the argv DECLARED, the BUILT LevelConfig's, and what the BUILT loss measures (``WMAux.built_rsp``)."""
     st = model.wm.stack if model.wm is not None else None
     return {"declared": float(a.wm_rsp_w), "built_config": None if st is None else float(st.built_levers()[1].get("rsp_w", 0.0)),
-            "built": None if model.wm is None else model.wm.built_rsp(cfg.hmax), "hmax": cfg.hmax}
+            "built": None if model.wm is None else model.wm.built_rsp(cfg.hmax), "hmax": cfg.hmax,
+            "declared_readout": a.wm_rsp_readout, "built_readout": None if st is None else st.built_levers()[1].get("rsp_readout", "idm"),
+            "freeze_proj_declared": a.wm_freeze_proj, "wm_proj_requires_grad": sorted({bool(p.requires_grad) for n, p in model.named_parameters() if is_wm_proj_param(n)}),
+            "init_from_ckpt_wm_declared": a.wm_init_from_ckpt_wm}
 
 
 def bad_wm_rsp(a, cfg, model) -> list:
@@ -1572,8 +1616,22 @@ def bad_wm_rsp(a, cfg, model) -> list:
             bad.append(f"lever wm_rsp_w: --wm-rsp-w {w} needs --kin-mode yaw (got {a.kin_mode}): the contrast sizes are WM units of the yaw-rate channel")
         if not a.wm_only:
             bad.append(f"lever wm_rsp_w: --wm-rsp-w {w} needs --wm-only (the term is a world-model objective on the frozen adapter)")
+    ro = a.wm_rsp_readout                                                       # Amendment 2: the Option B flags are refused when they would do nothing
+    if ro == "fixed_k":
+        if not w > 0.0:
+            bad.append("lever wm_rsp_readout: fixed_k needs --wm-rsp-w > 0 (a readout with no term builds nothing)")
+        if a.wm_freeze_proj != "on":
+            bad.append("lever wm_rsp_readout: fixed_k needs --wm-freeze-proj on (the readout is valid in the checkpoint latent space only)")
+        if a.wm_init_from_ckpt_wm != "on":
+            bad.append("lever wm_rsp_readout: fixed_k needs --wm-init-from-ckpt-wm on (the readout is valid for the checkpoint world model, not a re-initialised one)")
+        if not (a.wm_rsp_probe and len(a.wm_rsp_probe_sha256) == 64):
+            bad.append("lever wm_rsp_readout: fixed_k needs --wm-rsp-probe and a 64-hex --wm-rsp-probe-sha256")
+    elif a.wm_rsp_probe or a.wm_rsp_probe_sha256:
+        bad.append("lever wm_rsp_readout: --wm-rsp-probe / --wm-rsp-probe-sha256 are named but the readout is idm: a lever that is declared and does nothing")
     if lv["wm"] == "off" or model.wm is None:
         return bad
+    if cfg.wm_rsp_readout != ro:
+        bad.append(f"lever wm_rsp_readout: declared {ro} but the built config holds {cfg.wm_rsp_readout}")
     levers = model.wm.stack.built_levers()
     row = levers[1]
     if abs(float(cfg.wm_rsp_w) - w) > 1e-12:
@@ -1589,9 +1647,49 @@ def bad_wm_rsp(a, cfg, model) -> list:
     if not (isinstance(got, float) and got == got and abs(got - w) <= 1e-6 * max(1.0, abs(w))):
         bad.append(f"lever wm_rsp_w: declared {w} but the BUILT loss gives the response term the weight {got!r} (measured: (level/L1 - every other level-1 term) / rsp/L1)")
     anchors = len(range(0, cfg.hmax - 10, 10))
-    for k, want in (("calls", 1), ("contrasts", 4), ("k", 10), ("ctx_passed", 1), ("anchors", anchors)):
+    for k, want in (("calls", 1), ("contrasts", 2 if ro == "fixed_k" else 4), ("k", 10), ("ctx_passed", 1), ("anchors", anchors)):
         if r.get(k) != want:
-            bad.append(f"lever wm_rsp_w: the BUILT term's {k} = {r.get(k)!r}, the card fixes {want} (hmax {cfg.hmax})")
+            bad.append(f"lever wm_rsp_w: the BUILT term's {k} = {r.get(k)!r}, the card fixes {want} (hmax {cfg.hmax}, readout {ro})")
+    built_ro = row.get("rsp_readout", "idm")
+    if built_ro != ro or r.get("readout") != ro:
+        bad.append(f"lever wm_rsp_readout: declared {ro} but the BUILT LevelConfig holds {built_ro!r} and the BUILT loss reads through {r.get('readout')!r}")
+    if ro == "fixed_k":                                                         # the live buffers equal the FILE the argv names (re-read here, sha256 checked by the loader)
+        try:
+            w_file, s_file = M.load_rsp_probe(a.wm_rsp_probe, a.wm_rsp_probe_sha256, cfg.wm_dim)
+        except Exception as e:                                                  # noqa: BLE001
+            return bad + [f"lever wm_rsp_readout: the probe file does not load: {type(e).__name__}: {str(e)[:300]}"]
+        if r.get("w_sha256") != hashlib.sha256(w_file.numpy().tobytes()).hexdigest():
+            bad.append("lever wm_rsp_readout: the BUILT readout weights are not the probe file's")
+        if not (isinstance(r.get("s_cal"), float) and abs(r["s_cal"] - s_file) <= 1e-12):
+            bad.append(f"lever wm_rsp_readout: the BUILT slope {r.get('s_cal')!r} is not the probe file's {s_file!r}")
+    return bad
+
+
+def bad_wm_freeze(a, cfg, model, data_info) -> list:
+    """PREREG_V8F_ACTRSP Amendment 2, G-DVB for ``--wm-freeze-proj``: read the frozen set back from the BUILT model's ``requires_grad``. ``on``: needs ``--wm-only``; every ``wm.proj.*`` tensor is frozen and every other ``wm.*`` tensor trains; with
+    ``--wm-init-from-ckpt-wm on`` the live ``wm.proj`` equals the checkpoint's (sha256 of the loader record). ``off``: no ``wm.proj`` tensor is frozen."""
+    bad = []
+    on = a.wm_freeze_proj == "on"
+    if on and not a.wm_only:
+        bad.append("lever wm_freeze_proj: on needs --wm-only: a lever that is declared and does nothing")
+    if model.wm is None:
+        return bad
+    proj = [(n, p) for n, p in model.named_parameters() if is_wm_proj_param(n)]
+    if not proj:
+        return bad + (["lever wm_freeze_proj: the built model has no wm.proj parameter"] if on else [])
+    for n, p in proj:
+        if p.requires_grad == on:
+            bad.append(f"lever wm_freeze_proj: declared {a.wm_freeze_proj} but {n} requires_grad is {p.requires_grad}")
+    if on and a.wm_only:
+        stray = [n for n, p in model.named_parameters() if is_wm_param(n) and not is_wm_proj_param(n) and not p.requires_grad]
+        if stray:
+            bad.append(f"lever wm_freeze_proj: WM tensors other than wm.proj are frozen: {stray[:4]}")
+        rec = (data_info or {}).get("wm_only") or {}
+        if rec.get("applied") and rec.get("proj_sha256"):
+            sd = model.state_dict()
+            now = hashlib.sha256(b"".join(sd[k].detach().cpu().contiguous().numpy().tobytes() for k in sorted(sd) if is_wm_proj_param(k))).hexdigest()
+            if now != rec["proj_sha256"]:
+                bad.append("lever wm_freeze_proj: the live wm.proj is not the checkpoint's")
     return bad
 
 
@@ -1606,6 +1704,7 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
     bad += bad_wm_ladder(a, cfg, model, data_info)                                               # PREREG_V8F_LADDER: the seven ladder flags read back from the BUILT loss / predictor shapes / dataset
     bad += bad_wm_strides(a, cfg, model)                                                         # PREREG_V8F_LFS: --wm-strides read back from the BUILT WM modules (and the >= 2 transitions per level rule)
     bad += bad_wm_idm_gamma(a, cfg, model)                                                       # PREREG_V8F_ACTSENS: --wm-idm-gamma read back from the BUILT LevelConfigs (HJEPAStack.built_levers)
+    bad += bad_wm_freeze(a, cfg, model, data_info)                                              # PREREG_V8F_ACTRSP Amendment 2: --wm-freeze-proj read back from requires_grad
     bad += bad_wm_rsp(a, cfg, model)                                                             # PREREG_V8F_ACTRSP: --wm-rsp-w read back from the BUILT loss (HJEPAStack.built_rsp) and the BUILT LevelConfig
     bad += bad_wm_sampler(a, cfg, model, data_info)                                              # PREREG_V8F_DIVRS: --wm-sampler read back from the BUILT sampler (edges, cap, cell table)
     bad += bad_lead(a, model, data_info)                                                         # PREREG_LEVELHEAD_A2: --lead-head / --w-lead / --aux-cond read back from the BUILT model and the built label arrays
@@ -3242,13 +3341,13 @@ def main(argv=None):
         try:
             _apply = not (os.path.exists(os.path.join(a.out, "ckpt_last.pt")) and not a.no_resume)
             if a.wm_only:                                            # PREREG_V8F_MRATE: the non-WM tensors load strictly and bit-equal, hmax is not compared, the WM is re-initialised under --seed
-                info["init_ckpt"] = info["wm_only"] = load_wm_only_init(a.init_ckpt, model, cfg, a.seed, apply=_apply)
+                info["init_ckpt"] = info["wm_only"] = load_wm_only_init(a.init_ckpt, model, cfg, a.seed, apply=_apply, init_wm=(a.wm_init_from_ckpt_wm == "on"))
             else:
                 info["init_ckpt"] = load_init_ckpt(a.init_ckpt, model, cfg, apply=_apply)
         except Exception as e:                                       # noqa: BLE001  a missing / foreign / mismatched checkpoint is a REFUSAL, not a crash
             raise SystemExit(f"ZZDVB-REFUSEDZZ init-ckpt {a.init_ckpt}: {type(e).__name__}: {str(e)[:600]}")
     if a.wm_only:
-        freeze_all_but_wm(model)                                     # PREREG_V8F_MRATE: BEFORE the optimiser below (its decay / nodecay lists filter on requires_grad); bad_wm_only reads the frozen set back
+        freeze_all_but_wm(model, True) if a.wm_freeze_proj == "on" else freeze_all_but_wm(model)   # PREREG_V8F_MRATE (Amendment 2: + wm.proj when --wm-freeze-proj on; off = the earlier one-argument call): BEFORE the optimiser below (its decay / nodecay lists filter on requires_grad); bad_wm_only reads the frozen set back
     dag = make_dagger(a, J, wins, clips, info)                       # PREREG_V8F_DAGGER: off by default (no bank read); with a bank: load + K-B2 + K-B3 + COVERAGE here, a refusal stops the launch before the gate
     rcv = make_recover(a, J, wins, store, clips, info)               # PREREG_RECOVER_FT: off by default (--recover-p 0: no bank read, no table built); with the empirical law: bank load + K-B3 + the deviation table from THIS trainer's TRAIN store here, a refusal stops the launch before the gate
     t2b = make_t2bank(a, info)                                       # PREREG_T2_DAGGER: off by default (--t2-bank-p 0: no bank read); with a bank: load + sha256 here, a refusal stops the launch before the gate
@@ -3393,7 +3492,7 @@ def main(argv=None):
         levers["wm_strides_readback"] = wm_strides_readback(a, cfg, model)
     if a.wm_idm_gamma is not None:                                       # PREREG_V8F_ACTSENS: lever-NAMED launches only: declared vs the BUILT per-level IDM weights
         levers["wm_idm_gamma_readback"] = wm_idm_gamma_readback(a, cfg, model)
-    if a.wm_rsp_w != 0.0:                                                # PREREG_V8F_ACTRSP: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT weight and geometry
+    if a.wm_rsp_w != 0.0 or a.wm_freeze_proj != "off" or a.wm_init_from_ckpt_wm != "off":   # Amendment 2: the NULL arms name freeze / init without the term and carry the record too. PREREG_V8F_ACTRSP: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT weight and geometry
         levers["wm_rsp_readback"] = wm_rsp_readback(a, cfg, model)
     if wm_ladder_named(a):                                              # PREREG_V8F_LADDER: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT measurements
         levers["wm_ladder_readback"] = wm_ladder_readback(a, cfg, model, info)
