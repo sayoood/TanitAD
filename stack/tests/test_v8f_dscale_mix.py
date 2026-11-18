@@ -257,7 +257,7 @@ def test_the_T_block_at_lambda_zero_reads_exactly_zero_on_other_rows_in_the_real
 # ------------------------------------------------------------------------------------------------ 3.4 RED arms: MODEL mutations (a mutated COPY of v8f_mini.py)
 MODEL_MUTATIONS = [
     # (id, check that must fire, old, new)
-    ("c1_upper_identity_epsilon", 1, 'w = w * rw[:, None]', 'w = w * (rw[:, None] + 1e-3)'),
+    ("c1_upper_identity_epsilon", 1, 'w = w * rw[:, None]', 'w = w * (rw[:, None] + 1e-3 * torch.arange(rw.shape[0], device=rw.device)[:, None])'),
     ("c2_lat_call_loses_rw", 2, 'T["lat"] = self._partial_ce(out["lat_logits"], lt["lat_al"], lt["has"], rw)', 'T["lat"] = self._partial_ce(out["lat_logits"], lt["lat_al"], lt["has"])'),
     ("c2_lon_call_loses_rw", 2, 'T["lon"] = self._partial_ce(out["lon_logits"], lt["lon_al"], lt["has"], rw)', 'T["lon"] = self._partial_ce(out["lon_logits"], lt["lon_al"], lt["has"])'),
     ("c2_goal_loses_rw", 2, 'w = w * rw[:, None]', 'w = w'),
