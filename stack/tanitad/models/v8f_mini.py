@@ -1165,11 +1165,14 @@ class V8FMini(nn.Module):
         e = torch.cat([e[..., :2].sum(-1, keepdim=True), e[..., 2:3]], -1).sum(-1)
         T["ckpt"] = (e * ok).sum() / ok.sum().clamp_min(1.0)
         # T: masked BCE / partial-label CE / Huber at T's tick frame
+        rw = batch.get("tac_w")                  # PREREG_V8F_DSCALE_MIX: [B] row weight on the T block ONLY; ABSENT = the tip, bit for bit
         w = lt["goal_w"] * lt["has"][:, None].float()
+        if rw is not None:
+            w = w * rw[:, None]
         bce = F.binary_cross_entropy_with_logits(out["goal_logits"], lt["goal_y"], reduction="none")
         T["goal"] = (bce * w).sum() / w.sum().clamp_min(1.0)
-        T["lat"] = self._partial_ce(out["lat_logits"], lt["lat_al"], lt["has"])
-        T["lon"] = self._partial_ce(out["lon_logits"], lt["lon_al"], lt["has"])
+        T["lat"] = self._partial_ce(out["lat_logits"], lt["lat_al"], lt["has"], rw)
+        T["lon"] = self._partial_ce(out["lon_logits"], lt["lon_al"], lt["has"], rw)
         tgt = (lt["cons"] - self.cons_mu) / self.cons_sd
         if cfg.cons_absent == "zero":                # PREREG_V8F_CZ: an absent constraint's target is the 0 O reads under teacher forcing
             m = lt["has"][:, None].expand_as(tgt)
@@ -1177,7 +1180,11 @@ class V8FMini(nn.Module):
         else:
             m = torch.isfinite(tgt) & lt["has"][:, None]
         hub = F.huber_loss(out["cons_std"], torch.nan_to_num(tgt), reduction="none", delta=1.0)
-        T["cons"] = (hub * m).sum() / m.sum().clamp_min(1.0)
+        if rw is None:
+            T["cons"] = (hub * m).sum() / m.sum().clamp_min(1.0)
+        else:                                                        # PREREG_V8F_DSCALE_MIX
+            mf = m.float() * rw[:, None]
+            T["cons"] = (hub * mf).sum() / mf.sum().clamp_min(1.0)
         # O: ADE / FDE on the 0.2 s knots
         gt, gok = batch["gt"], batch["gt_ok"].float()
         T["ade"], T["fde"] = traj_terms(out["traj30"], gt, gok)      # the same two lines as before, now ONE spelling that PREREG_V8F_OACC's w_acc rule also calls
@@ -1267,13 +1274,15 @@ class V8FMini(nn.Module):
         return {"terms": T}
 
     @staticmethod
-    def _partial_ce(logits: Tensor, allowed: Tensor, has: Tensor) -> Tensor:
+    def _partial_ce(logits: Tensor, allowed: Tensor, has: Tensor, rw: Tensor | None = None) -> Tensor:
         """-log sum_{c in allowed} p_c ; rows with an empty allowed set (IGNORE) or no label are masked."""
         valid = allowed.any(-1) & has
         lse = torch.logsumexp(logits, -1)
         lsa = torch.logsumexp(logits.masked_fill(~allowed, float("-inf")), -1)
         l = torch.where(valid, lse - lsa, torch.zeros_like(lse))
-        return l.sum() / valid.float().sum().clamp_min(1.0)
+        if rw is None:
+            return l.sum() / valid.float().sum().clamp_min(1.0)
+        return (l * rw).sum() / (valid.float() * rw).sum().clamp_min(1.0)     # PREREG_V8F_DSCALE_MIX
 
     # ---- bookkeeping ------------------------------------------------------------------------------------------
     def trainable_groups(self) -> dict:

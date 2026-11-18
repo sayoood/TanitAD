@@ -140,6 +140,8 @@ FLAG_CHECKS = {
     # requires_grad False; `data:v10_md5` = the release md5 in ACCEPTED_V10_TRAIN_MD5 AND the md5 the loader hashed. argv -> make_config -> the BUILT model -> declared_vs_built (bad_oband) -> oband_probe (G-LIVE) -> the loop.
     "w_op": "cfg:w_op", "w_tac_traj": "cfg:w_tac_traj",
     "t_stok_dir": "data:stok", "t_stok_shuffle": "data:stok", "freeze": "lever:frozen", "v10_md5": "data:v10_md5",
+    # PREREG_V8F_DSCALE_MIX: the three --tac-src-* flags are read back from the BUILT stage (bad_tac_src): lambda, the list's path and the sha256 the trainer hashed
+    "tac_src_w": "data:tac_src", "tac_src_clips": "data:tac_src", "tac_src_clips_sha256": "data:tac_src",
 }
 
 LORA_PARSER_DEFAULTS = {"lora_r": 32, "lora_alpha": 32.0, "lora_targets": "q,v", "lora_lr": None, "frames_root": None, "accum": 1, "enc_ckpt": False}
@@ -309,6 +311,13 @@ def build_parser():
     ap.add_argument("--p-gt-end", type=float, default=0.2)
     ap.add_argument("--w-ckpt", type=float, default=1.0)
     ap.add_argument("--w-tac", type=float, default=1.0)
+    # ---- PREREG_V8F_DSCALE_MIX (arm UM_s0): a per-source row weight on T's block ONLY. All three default to OFF (1.0 / "" / ""), have their G-DVB entry in FLAG_CHECKS and their clause in bad_tac_src.
+    ap.add_argument("--tac-src-w", dest="tac_src_w", type=float, default=1.0,
+                    help="T-block row weight lambda on every row whose clip is NOT in --tac-src-clips (1.0 = off). The rows of the listed clips keep weight 1.")
+    ap.add_argument("--tac-src-clips", dest="tac_src_clips", default="",
+                    help="newline-joined clip ids (sha12 order) whose rows keep T-block weight 1; every other train clip gets --tac-src-w")
+    ap.add_argument("--tac-src-clips-sha256", dest="tac_src_clips_sha256", default="",
+                    help="the declared sha256 of the --tac-src-clips file's bytes; the launch is refused when the file hashes otherwise")
     ap.add_argument("--w-cons", type=float, default=0.5)
     ap.add_argument("--w-traj", type=float, default=1.0)
     ap.add_argument("--w-pen", type=float, default=0.5)
@@ -1638,6 +1647,264 @@ def oband_probe(model, batch, cfg, rtol: float = 1e-3) -> dict:
         res["token_edge"] = {"max_dlogit": dl, "max_dtraj30": float((base["traj30"] - alt["traj30"]).abs().max())}
     res["pass"] = True
     return res
+
+
+# ------------------------------------------------------------------------------------------------ PREREG_V8F_DSCALE_MIX: the per-source T-block row weight
+class TacSrc:
+    """The BUILT stage of ``--tac-src-*``: ``full_ci`` is the per-clip-index bool (True = the clip is in the list, its rows keep weight 1), ``lam`` the weight of every other row. Stateless: a pure function of ``ci`` and lambda."""
+
+    def __init__(self, lam, full_ci, list_path, list_sha256, n_listed_clips, n_other_clips, n_listed_windows, n_other_windows):
+        self.lam, self.full_ci, self.list_path, self.list_sha256 = float(lam), full_ci, list_path, list_sha256
+        self.n_listed_clips, self.n_other_clips, self.n_listed_windows, self.n_other_windows = n_listed_clips, n_other_clips, n_listed_windows, n_other_windows
+
+    def built_levers(self) -> dict:
+        return {"tac_src_w": self.lam, "tac_src_clips": self.list_path, "tac_src_list_sha256": self.list_sha256, "n_listed_clips": self.n_listed_clips, "n_other_clips": self.n_other_clips,
+                "n_listed_windows": self.n_listed_windows, "n_other_windows": self.n_other_windows}
+
+
+def make_tac_src(a, J, clips, wins, info):
+    """argv -> the stage the loop calls (PREREG_V8F_DSCALE_MIX section 3.3). ``None`` when none of the three flags is named (the arm-off path: no stage is built, no batch key is made). A refusal stops the launch before the gate:
+    lambda not finite or outside [0, 1]; lambda != 1 with no list; a list with lambda = 1 (a lever declared that does nothing); a list that does not exist; the file's sha256 != the declared one; a clip listed twice; a listed
+    clip not in the train clips; a list holding none or all of the train clips."""
+    lam = float(a.tac_src_w)
+    if not (a.tac_src_clips or a.tac_src_clips_sha256 or lam != 1.0):
+        return None
+    if not math.isfinite(lam) or not 0.0 <= lam <= 1.0:
+        raise SystemExit(f"ZZDVB-REFUSEDZZ tac-src-w {a.tac_src_w!r} is not a finite number in [0, 1]")
+    if not a.tac_src_clips:
+        raise SystemExit(f"ZZDVB-REFUSEDZZ tac-src: lambda {lam} (or a declared sha256) with no --tac-src-clips: there is no source split to weight")
+    if lam == 1.0:
+        raise SystemExit("ZZDVB-REFUSEDZZ tac-src: --tac-src-clips is named with --tac-src-w 1.0: a lever that is declared and does nothing")
+    if not os.path.isfile(a.tac_src_clips):
+        raise SystemExit(f"ZZDVB-REFUSEDZZ tac-src-clips {a.tac_src_clips}: no such file")
+    raw = open(a.tac_src_clips, "rb").read()
+    sha = hashlib.sha256(raw).hexdigest()
+    if sha != a.tac_src_clips_sha256:
+        raise SystemExit(f"ZZDVB-REFUSEDZZ tac-src-clips {a.tac_src_clips}: the file hashes {sha} but the argv declares {a.tac_src_clips_sha256!r}")
+    ids = [x.strip() for x in raw.decode("utf-8").split("\n") if x.strip()]
+    if len(set(ids)) != len(ids):
+        raise SystemExit(f"ZZDVB-REFUSEDZZ tac-src-clips: {len(ids) - len(set(ids))} clip id(s) are listed more than once")
+    train = set(clips)
+    foreign = [c for c in ids if c not in train]
+    if foreign:
+        raise SystemExit(f"ZZDVB-REFUSEDZZ tac-src-clips: {len(foreign)} listed clip(s) are not in the train clips (first: {foreign[:3]})")
+    if len(ids) == 0 or len(ids) >= len(train):
+        raise SystemExit(f"ZZDVB-REFUSEDZZ tac-src-clips: the list holds {len(ids)} of the {len(train)} train clips (it must hold some and not all)")
+    ci_of = {c: i for i, c in enumerate(J["clip"].tolist())}
+    full = torch.zeros(len(ci_of), dtype=torch.bool)
+    full[[ci_of[c] for c in ids]] = True
+    wci = np.asarray([w[0] for w in wins], dtype=np.int64)
+    nlw = int(full.numpy()[wci].sum())
+    src = TacSrc(lam, full, a.tac_src_clips, sha, len(ids), len(train) - len(ids), nlw, int(len(wci) - nlw))
+    info["tac_src"] = {**src.built_levers(), "list_sha256": sha}
+    return src
+
+
+def tac_src_stage(b, src) -> torch.Tensor:
+    """The ONE call that turns a COLLATED batch into its T-block row weight ``[B]`` float32: 1.0 on a listed clip's rows, lambda on every other row. It reads the LOGGED ``ci`` and must run BEFORE ``ego.apply`` / ``dag.apply``
+    (a swapped sample keeps the human's labels, so the label's clip is the logged one). The training loop and ``tac_src_probe`` (G-LIVE) call this same function."""
+    full = src.full_ci[b["ci"].cpu()]
+    return torch.where(full, torch.ones(full.shape, dtype=torch.float32), torch.full(full.shape, float(src.lam), dtype=torch.float32))
+
+
+def tac_src_count(tot: dict, b, src, tw) -> None:
+    """The control counts of the run (carried in the checkpoint): rows listed / other, the weight they carry, and batches whose T block has no weight at all (clamp_min makes those exactly 0)."""
+    full = src.full_ci[b["ci"].cpu()]
+    nl = int(full.sum())
+    tot["rows_listed"] += nl
+    tot["rows_other"] += int(full.shape[0]) - nl
+    tot["w_listed"] += float(tw[full].double().sum())
+    tot["w_other"] += float(tw[~full].double().sum())
+    tot["empty_batches"] += int(float(tw.double().sum()) == 0.0)
+
+
+def tac_src_share(tot: dict):
+    """The realised share of the T-block weight carried by the listed rows (exactly 1.0 at lambda 0); None before any row."""
+    den = tot["w_listed"] + tot["w_other"]
+    return (tot["w_listed"] / den) if den > 0.0 else None
+
+
+def bad_tac_src(a, src, data_info=None) -> list:
+    """PREREG_V8F_DSCALE_MIX, G-DVB: ``--tac-src-w`` / ``--tac-src-clips`` / ``--tac-src-clips-sha256`` read back from the BUILT stage (and the record ``make_tac_src`` wrote). Empty = pass. With no stage built every flag must
+    be at its default. Refused beyond the flags: a stage beside the world-model-only mode, the LoRA encoder or a T2 bank (their batches are not the labelled windows the weight is defined on)."""
+    bad = []
+    rec = (data_info or {}).get("tac_src")
+    if src is None:
+        if a.tac_src_w != 1.0 or a.tac_src_clips or a.tac_src_clips_sha256:
+            bad.append(f"tac_src declared (w {a.tac_src_w!r}, clips {a.tac_src_clips!r}, sha {a.tac_src_clips_sha256!r}) but no stage was built")
+        if rec is not None:
+            bad.append("tac_src record present but no stage was built")
+        return bad
+    if a.tac_src_w != src.lam:
+        bad.append(f"tac_src_w: declared {a.tac_src_w} but built {src.lam}")
+    if a.tac_src_clips != src.list_path:
+        bad.append(f"tac_src_clips: declared {a.tac_src_clips!r} but built {src.list_path!r}")
+    if a.tac_src_clips_sha256 != src.list_sha256:
+        bad.append(f"tac_src_clips_sha256: declared {a.tac_src_clips_sha256!r} but the BUILT stage hashed {src.list_sha256!r}")
+    if not rec or rec.get("list_sha256") != src.list_sha256 or rec.get("n_listed_clips") != src.n_listed_clips or rec.get("tac_src_w") != src.lam:
+        bad.append(f"tac_src record {rec!r} does not match the built stage")
+    if int(src.full_ci.sum()) != src.n_listed_clips:
+        bad.append(f"tac_src: the built clip mask holds {int(src.full_ci.sum())} clips, the stage says {src.n_listed_clips}")
+    if src.n_listed_windows <= 0 or src.n_other_windows <= 0:
+        bad.append(f"tac_src: windows listed {src.n_listed_windows}, other {src.n_other_windows}: both sources must have windows")
+    if a.wm_only or a.encoder == "lora" or a.t2_bank_p > 0:
+        bad.append("tac_src is refused beside --wm-only, --encoder lora and --t2-bank-p > 0 (the weight is defined on the labelled cache windows only)")
+    return bad
+
+
+def tac_src_probe(model, cfg, src, b_mixed, b_listed, b_other, lam=None, checks=(1, 2, 3, 4, 5)) -> dict:
+    """G-LIVE for PREREG_V8F_DSCALE_MIX section 3.4, checks 1 to 5, read from the BUILT model's own ``loss`` on COPIES (CPU, fixed seeds). ``b_mixed`` holds rows of both sources, ``b_listed`` only listed rows, ``b_other`` only
+    other rows; each carries every key the loss reads. The weight is ALWAYS built by ``tac_src_stage`` (the loop's function). Any violation is an AssertionError, which the caller turns into a refusal.
+
+      1 upper identity   tac_w = ones reproduces tac_w ABSENT on the mixed batch: every term, the total and every parameter gradient differ by EXACTLY 0.0
+      2 lower identity   (lambda 0 only) on the other-only batch the T block is exactly 0.0 and its backward gives exactly 0.0 on every parameter; the same batch with tac_w ABSENT gives > 0 on h_goal / h_lat / h_lon / h_cons
+      3 partial          at lambda 0.5 T["lat"] and T["lon"] equal the analytic weighted mean (rtol 1e-6) and differ from their lambda 0 and lambda 1 values
+      4 non-T invariance on the mixed batch every non-T term is bit-equal at the declared lambda and at 1.0, and so is the gradient of their sum (control: a T term does move)
+      5 corpus untouched on the listed-only batch the stage's weight is all ones and the loss is bit-identical to ABSENT, terms and gradients
+    ``checks`` runs a subset (the mutation tests read each check's RED arm on its own); the launch runs all five."""
+    lam_d = float(src.lam if lam is None else lam)
+    if not cfg.w_tac > 0.0:
+        raise AssertionError(f"tac_src probe: w_tac {cfg.w_tac} zeroes T's whole block: the lever is declared and does nothing")
+    m = copy.deepcopy(model).cpu()
+    m.train()
+    named = [(n, p) for n, p in m.named_parameters() if p.requires_grad]
+    TKEYS = ("goal", "lat", "lon", "cons", "total")
+
+    def tw_of(b, lam_):
+        full = src.full_ci[b["ci"].cpu()]
+        return torch.where(full, torch.ones(full.shape, dtype=torch.float32), torch.full(full.shape, float(lam_), dtype=torch.float32)), full
+
+    def run(b, tw, scalar=None):
+        """-> (terms detached, grads of ``scalar(terms)`` or of the total, the recorded _partial_ce calls)."""
+        bb = dict(b)
+        bb.pop("tac_w", None)
+        if tw is not None:
+            bb["tac_w"] = tw
+        calls = []
+        orig = type(m)._partial_ce
+
+        def rec(logits, allowed, has, rw=None):
+            calls.append((logits.detach().double(), allowed.clone(), has.clone(), None if rw is None else rw.detach().double()))
+            return orig(logits, allowed, has) if rw is None else orig(logits, allowed, has, rw)
+
+        m._partial_ce = rec
+        try:
+            for _, p in named:
+                p.grad = None
+            torch.manual_seed(20261118)
+            T = m.loss(bb, p_gt=0.5, gen=torch.Generator().manual_seed(11))["terms"]
+            for k, v in T.items():
+                if not torch.isfinite(v):
+                    raise AssertionError(f"tac_src probe: loss term {k} is not finite: {float(v)}")
+            sc = T["total"] if scalar is None else scalar(T)
+            if sc.requires_grad:
+                sc.backward()
+            g = {n: (p.grad.detach().clone() if p.grad is not None else torch.zeros_like(p)) for n, p in named}
+        finally:
+            del m._partial_ce
+        return {k: v.detach().clone() for k, v in T.items()}, g, calls
+
+    def gdiff(ga, gb, pre=""):
+        return float(sum((ga[n] - gb[n]).abs().sum() for n in ga if n.startswith(pre)))
+
+    def tdiff(Ta, Tb, keys):
+        return float(sum((Ta[k] - Tb[k]).abs() for k in keys))
+
+    block = lambda T: cfg.w_tac * (T["goal"] + 0.5 * (T["lat"] + T["lon"]) + cfg.w_cons * T["cons"])      # noqa: E731
+    res = {"lam": lam_d}
+    # determinism control: the same loss twice is bit-equal (otherwise every difference below means nothing)
+    Ta, ga, _ = run(b_mixed, None)
+    Ta2, ga2, _ = run(b_mixed, None)
+    res["control_repeat_term_diff"], res["control_repeat_grad_diff"] = tdiff(Ta, Ta2, Ta.keys()), gdiff(ga, ga2)
+    if res["control_repeat_term_diff"] != 0.0 or res["control_repeat_grad_diff"] != 0.0:
+        raise AssertionError(f"tac_src probe: the probe is not deterministic (the same loss twice differs by {res['control_repeat_term_diff']} / {res['control_repeat_grad_diff']})")
+    ones = torch.ones(b_mixed["ci"].shape[0], dtype=torch.float32)
+    # 1 upper identity
+    if 1 in checks:
+        T1, g1, _ = run(b_mixed, ones)
+        res["c1_term_diff"], res["c1_grad_diff"] = tdiff(Ta, T1, Ta.keys()), gdiff(ga, g1)
+        if res["c1_term_diff"] != 0.0 or res["c1_grad_diff"] != 0.0:
+            raise AssertionError(f"tac_src probe check 1: tac_w = ones does not reproduce tac_w absent (terms {res['c1_term_diff']}, grads {res['c1_grad_diff']}): the upper identity fails")
+    # 2 lower identity (only at lambda 0)
+    if 2 in checks:
+        if lam_d == 0.0:
+            tw_o, full_o = tw_of(b_other, 0.0)
+            if bool(full_o.any()):
+                raise AssertionError("tac_src probe check 2: the other-only batch holds a listed row")
+            tw_o = tac_src_stage(b_other, src)
+            T0, g0, _ = run(b_other, tw_o, block)
+            res["c2_block"] = float(block(T0))
+            res["c2_grad_abs_sum"] = float(sum(g.abs().sum() for g in g0.values()))
+            Tn, gn, _ = run(b_other, None, block)
+            res["c2_control_block"] = float(block(Tn))
+            res["c2_control_heads"] = {h: float(sum(g.abs().sum() for n, g in gn.items() if n.startswith(h + "."))) for h in ("h_goal", "h_lat", "h_lon", "h_cons", "trunk_t", "read_t")}
+            if res["c2_block"] != 0.0 or res["c2_grad_abs_sum"] != 0.0:
+                raise AssertionError(f"tac_src probe check 2: at lambda 0 the T block of an other-only batch reads {res['c2_block']} with gradient mass {res['c2_grad_abs_sum']} (both must be exactly 0.0)")
+            if not res["c2_control_block"] > 0.0 or not all(res["c2_control_heads"][h] > 0.0 for h in ("h_goal", "h_lat", "h_lon", "h_cons")):
+                raise AssertionError(f"tac_src probe check 2: the control (tac_w absent) must give a T block > 0 and gradient on all four heads: {res['c2_control_block']} {res['c2_control_heads']}")
+        else:
+            res["c2_skipped"] = f"lambda {lam_d} != 0: the lower identity is a lambda-0 statement; check 3 proves the weighting at 0.5"
+    # 3 partial, not a switch (lambda 0.5 explicit, whatever the declared lambda is)
+    if 3 in checks:
+        tw5, full5 = tw_of(b_mixed, 0.5)
+        T5, _, calls5 = run(b_mixed, tw5)
+        T_l0, _, _ = run(b_mixed, tw_of(b_mixed, 0.0)[0])
+        for name, i in (("lat", 0), ("lon", 1)):
+            logits, allowed, has, rw = calls5[i]
+            valid = allowed.any(-1) & has
+            l = torch.where(valid, torch.logsumexp(logits, -1) - torch.logsumexp(logits.masked_fill(~allowed, float("-inf")), -1), torch.zeros(logits.shape[0], dtype=torch.float64))
+            nv_l, nv_o = int((valid & full5).sum()), int((valid & ~full5).sum())
+            if nv_l == 0 or nv_o == 0:
+                raise AssertionError(f"tac_src probe check 3: the mixed batch has {nv_l} listed and {nv_o} other valid {name} rows: both sources are needed")
+            want = float((l[valid & full5].sum() + 0.5 * l[valid & ~full5].sum()) / (nv_l + 0.5 * nv_o))
+            got = float(T5[name])
+            res[f"c3_{name}"] = {"got": got, "analytic": want, "lambda0": float(T_l0[name]), "lambda1": float(Ta[name])}
+            if abs(got - want) > 1e-6 * abs(want) + 1e-9:
+                raise AssertionError(f"tac_src probe check 3: T[{name}] at lambda 0.5 is {got}, the analytic weighted mean is {want}")
+            for lab, other in (("lambda 0", float(T_l0[name])), ("lambda 1", float(Ta[name]))):
+                if abs(got - other) <= 1e-5 * abs(got):
+                    raise AssertionError(f"tac_src probe check 3: T[{name}] at lambda 0.5 ({got}) equals its {lab} value ({other}): a switch, not a weight")
+    # 4 non-tactical invariance (the declared lambda against 1.0, same generator)
+    if 4 in checks:
+        twd = tac_src_stage(b_mixed, src) if lam is None else tw_of(b_mixed, lam_d)[0]
+        nonT = lambda T: sum(v for k, v in T.items() if k not in TKEYS and v.requires_grad)      # noqa: E731
+        Tn1, gn1, _ = run(b_mixed, ones, nonT)
+        Tnd, gnd, _ = run(b_mixed, twd, nonT)
+        keys_nt = [k for k in Tn1 if k not in TKEYS]
+        res["c4_nonT_term_diff"], res["c4_nonT_grad_diff"] = tdiff(Tn1, Tnd, keys_nt), gdiff(gn1, gnd)
+        res["c4_T_term_diff_control"] = tdiff(Tn1, Tnd, ("goal", "lat", "lon", "cons"))
+        res["c4_n_nonT_terms"] = len(keys_nt)
+        if res["c4_nonT_term_diff"] != 0.0 or res["c4_nonT_grad_diff"] != 0.0:
+            raise AssertionError(f"tac_src probe check 4: a non-T term or its gradient moved with the weight (terms {res['c4_nonT_term_diff']}, grads {res['c4_nonT_grad_diff']})")
+        if lam_d < 1.0 and not res["c4_T_term_diff_control"] > 0.0:
+            raise AssertionError("tac_src probe check 4: the control failed: no T term moved with the weight on the mixed batch (the probe cannot see the lever)")
+    # 5 the listed rows are untouched
+    if 5 in checks:
+        twl = tac_src_stage(b_listed, src)
+        if not bool((twl == 1.0).all()):
+            raise AssertionError("tac_src probe check 5: the stage gives a listed row a weight other than 1.0")
+        Tla, gla, _ = run(b_listed, None)
+        Tlw, glw, _ = run(b_listed, twl)
+        res["c5_term_diff"], res["c5_grad_diff"] = tdiff(Tla, Tlw, Tla.keys()), gdiff(gla, glw)
+        if res["c5_term_diff"] != 0.0 or res["c5_grad_diff"] != 0.0:
+            raise AssertionError(f"tac_src probe check 5: on a listed-only batch the weighted loss differs from the absent one (terms {res['c5_term_diff']}, grads {res['c5_grad_diff']})")
+    res["pass"] = True
+    return res
+
+
+def tac_src_probe_batches(ds, sampler, src, finish, n=64, max_batches=400):
+    """The three probe batches (mixed, listed-only, other-only) from the TRAINER's own sampler (epoch 0, deterministic): windows are collected by source until each batch has ``n``; ``finish`` attaches the label-stage keys
+    the loss reads (launch / level / lead) exactly as the main() probe batch gets them."""
+    lst, oth = [], []
+    for k, idx in enumerate(sampler.epoch(0)):
+        for w in idx:
+            (lst if bool(src.full_ci[int(w[0])]) else oth).append(w)
+        if (len(lst) >= n and len(oth) >= n) or k >= max_batches:
+            break
+    if len(lst) < n // 2 or len(oth) < n // 2:
+        raise AssertionError(f"tac_src probe: the sampler's first {k + 1} batches hold {len(lst)} listed and {len(oth)} other windows (need {n // 2} of each)")
+    mk = lambda ws: finish(D.collate([ds.item(*w) for w in ws]))      # noqa: E731
+    return mk(lst[: n // 2] + oth[: n // 2]), mk(lst[:n]), mk(oth[:n])
 
 
 def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None, rec=None, t2b=None) -> list:
@@ -3302,6 +3569,7 @@ def main(argv=None):
     if a.wm_only:
         freeze_all_but_wm(model)                                     # PREREG_V8F_MRATE: BEFORE the optimiser below (its decay / nodecay lists filter on requires_grad); bad_wm_only reads the frozen set back
     dag = make_dagger(a, J, wins, clips, info)                       # PREREG_V8F_DAGGER: off by default (no bank read); with a bank: load + K-B2 + K-B3 + COVERAGE here, a refusal stops the launch before the gate
+    tsrc = make_tac_src(a, J, clips, wins, info)                     # PREREG_V8F_DSCALE_MIX: off by default (None: no stage, no batch key); with --tac-src-*: the per-source T-block row weight, a refusal stops the launch before the gate
     rcv = make_recover(a, J, wins, store, clips, info)               # PREREG_RECOVER_FT: off by default (--recover-p 0: no bank read, no table built); with the empirical law: bank load + K-B3 + the deviation table from THIS trainer's TRAIN store here, a refusal stops the launch before the gate
     t2b = make_t2bank(a, info)                                       # PREREG_T2_DAGGER: off by default (--t2-bank-p 0: no bank read); with a bank: load + sha256 here, a refusal stops the launch before the gate
     comp = make_compose(a, ego, dag)                                 # AMEND1 section 1: off by default; with --ego-perturb-with-dagger the loop calls THIS (swap first, then the perturbation on the samples the swap left)
@@ -3322,6 +3590,7 @@ def main(argv=None):
     # ---- the launch gate
     lr_at = LRSchedule(a.lr, a.warmup, total)                        # the loop's schedule, built BEFORE the gate so that G-DVB can read --warmup back from it
     bad = declared_vs_built(a, cfg, model, opt, info, enc, ego, lr_at, dag, comp, rcv, t2b)
+    bad += bad_tac_src(a, tsrc, info)                                # PREREG_V8F_DSCALE_MIX: the three --tac-src-* flags read back from the BUILT stage (called here, not inside declared_vs_built: test_v8f_t2bank pins that call's text)
     bad += bad_perf_resume(a, argv)                                  # AMENDMENT_V8F_LORA_5: --resume-perf-levers read back (the named previous argv differs from this one in --accum / --enc-ckpt only)
     if bad:
         raise SystemExit("ZZDVB-REFUSEDZZ declared-vs-built: " + "; ".join(bad))
@@ -3380,6 +3649,20 @@ def main(argv=None):
             accp = acc_probe(model, probe, cfg)               # PREREG_V8F_OACC: the BUILT loss moves by exactly w_acc x the acceleration term, and O's head receives its gradient (a deleted line reads 0.0 and is refused)
         except AssertionError as e:
             raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: {e}")
+        tsp = None
+        if tsrc is not None:                                  # PREREG_V8F_DSCALE_MIX: lever-ON launches only (a flag-off selfcheck.json keeps its key set): checks 1 to 5 of section 3.4 on the BUILT loss
+            def _tsrc_finish(bb):
+                if cfg.launch_intent_w > 0.0:
+                    bb["launch"] = launch_stage(bb)
+                if cfg.level_head == "on":
+                    bb["level_y"], bb["level_ok"] = level_stage(bb)
+                if cfg.lead_head == "on":
+                    bb["lead_y"], bb["lead_has"], bb["lead_near"] = lead_stage(bb, LL)
+                return bb
+            try:
+                tsp = tac_src_probe(model, cfg, tsrc, *tac_src_probe_batches(ds, sampler, tsrc, _tsrc_finish))
+            except (AssertionError, ValueError) as e:
+                raise SystemExit(f"ZZDVB-REFUSEDZZ tac-src: {e}")
         adm = M.assert_no_situation_classifier_input(model.cpu().eval(), probe)
         model.to(dev).train()
         try:                                                  # after the model is back on its device in train mode: the probe sees the state the acc probe saw
@@ -3466,6 +3749,8 @@ def main(argv=None):
         sc["otband_probe"] = obp
         if info.get("stok"):
             sc["stok"] = info["stok"]
+    if tsrc is not None:                                                # PREREG_V8F_DSCALE_MIX: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
+        sc["tac_src_probe"], sc["tac_src"] = tsp, info["tac_src"]
     if cfg.lead_head == "on":                                           # PREREG_LEVELHEAD_A2: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
         sc["lead_head_probe"] = ldp
         sc["lead_labels"] = info["lead_labels"]
@@ -3494,6 +3779,7 @@ def main(argv=None):
     lead_on = cfg.lead_head == "on"                                # PREREG_LEVELHEAD_A2: off (the default) = the loop runs no new line
     launch_tot = {"rows": 0, "eligible": 0, "n": 0}                # ... run totals: rows seen, GT-valid rows (the along-track label exists), GT-launch rows; carried in the checkpoint of an arm that has the lever ON only
     launch_int = {"rows": 0, "eligible": 0, "n": 0}                # ... and since the last log line
+    tac_tot = {"rows_listed": 0, "rows_other": 0, "w_listed": 0.0, "w_other": 0.0, "empty_batches": 0}      # PREREG_V8F_DSCALE_MIX: rows by source, the T-block weight they carry, batches with no T weight; carried in the checkpoint of a lever-ON arm only
     perf_rec = None                                                  # AMENDMENT_V8F_LORA_5: set only by a resume across --accum / --enc-ckpt under --resume-perf-levers
     if os.path.exists(ck_path) and not a.no_resume:
         ck = torch.load(ck_path, map_location="cpu", weights_only=False)
@@ -3513,6 +3799,7 @@ def main(argv=None):
         ov_tot.update(ck.get("ego_dagger_overlap") or {})
         rec_tot.update(ck.get("recover_totals") or {})
         launch_tot.update(ck.get("launch_totals") or {})
+        tac_tot.update(ck.get("tac_src_totals") or {})
         print(f"[resume] step {step} epoch {ep} batch {bi}", flush=True)
     elif a.resume_perf_levers is not None:
         raise SystemExit(f"ZZRESUME-REFUSEDZZ --resume-perf-levers resumes a checkpoint and there is none at {ck_path}")
@@ -3530,6 +3817,8 @@ def main(argv=None):
             blob["recover"], blob["recover_totals"] = rcv.built_levers(), dict(rec_tot)
         if launch_on:                                                   # lever-ON arms only: a flag-off checkpoint keeps its key set
             blob["launch_totals"] = dict(launch_tot)
+        if tsrc is not None:                                            # PREREG_V8F_DSCALE_MIX: lever-ON arms only: what was BUILT and the counts so far (a flag-off checkpoint keeps its key set)
+            blob["tac_src"], blob["tac_src_totals"] = tsrc.built_levers(), dict(tac_tot)
         if a.wm_only:                                                   # WM-only arms only
             blob["wm_only"] = True
         if enc is not None:             # `model` keeps B's layout (the unchanged v8f_mini_eval.py loads it); the LoRA matrices travel beside it
@@ -3561,6 +3850,9 @@ def main(argv=None):
                     lvl_lab = level_stage(b)
                 if lead_on:                                            # PREREG_LEVELHEAD_A2: the lead label of the LOGGED frame (clip index and step), taken BEFORE any ego stage (a swapped sample's ci / t is the own one)
                     lead_lab = lead_stage(b, LL)
+                if tsrc is not None:                                   # PREREG_V8F_DSCALE_MIX: the T-block row weight from the LOGGED clip index, taken BEFORE any ego / dagger stage (a swapped sample keeps the human's labels)
+                    tac_w = tac_src_stage(b, tsrc)
+                    tac_src_count(tac_tot, b, tsrc, tac_w)
                 if comp.on:                                            # AMEND1 section 1 (--ego-perturb-with-dagger): the swap is drawn first, the perturbation only on the samples the swap did not replace; the overlap is measured (exactly 0)
                     b = comp.apply(b, step)
                     for c_ in (ov_int, ov_tot):
@@ -3598,6 +3890,8 @@ def main(argv=None):
                     b["level_y"], b["level_ok"] = lvl_lab
                 if lead_on:                                            # PREREG_LEVELHEAD_A2: attached AFTER the stages: the loss reads b["lead_y"], b["lead_has"], b["lead_near"]
                     b["lead_y"], b["lead_has"], b["lead_near"] = lead_lab
+                if tsrc is not None:                                   # PREREG_V8F_DSCALE_MIX: attached AFTER the stages (they return their own batch dict): the loss reads b["tac_w"]
+                    b["tac_w"] = tac_w
                 if t2b.active:                                         # PREREG_T2_DAGGER (exclusive with every stage above): whole bank samples replace a share p of the rows AFTER the label stages (it masks launch / level / lead itself); p = 0 runs none of these lines
                     b_pre = b
                     b = t2b.apply(b, step)
@@ -3606,6 +3900,8 @@ def main(argv=None):
                     for c_ in (t2_int, t2_tot):
                         c_["rows"] += t2b.last["n_rows"]
                         c_["n"] += t2b.last["n_selected"]
+            if tsrc is not None and "tac_w" not in b:              # PREREG_V8F_DSCALE_MIX: a lever declared whose key never reaches the loss is a refusal, not a silent baseline
+                raise SystemExit(f"ZZTACSRC-NOT-APPLIEDZZ step {step}: --tac-src-w {tsrc.lam} is on but the batch the loss receives carries no `tac_w`: a lever that is declared and does nothing")
             b = to_dev(b, dev)
             for g in opt.param_groups:
                 g["lr"] = lr_at(step) * g.get("lr_mult", 1.0)
@@ -3693,6 +3989,10 @@ def main(argv=None):
     if lead_on:
         summary["lead_head"], summary["w_lead"] = "on", cfg.w_lead
         summary["lead_labels"] = info["lead_labels"]
+    if tsrc is not None:                                                   # PREREG_V8F_DSCALE_MIX: the lever-ON arm's run record (K-TACSRC reads it; a flag-off summary.json keeps its key set)
+        summary["tac_src_w"], summary["tac_src_list_sha256"] = tsrc.lam, tsrc.list_sha256
+        summary["tac_src_rows_listed"], summary["tac_src_rows_other"] = tac_tot["rows_listed"], tac_tot["rows_other"]
+        summary["tac_src_weight_share_listed"], summary["tac_src_empty_batches"] = tac_src_share(tac_tot), tac_tot["empty_batches"]
     if enc is not None:
         summary["encoder"] = "lora"
     if a.wm_only:                                                          # PREREG_V8F_MRATE: the WM-only arm's run record (a flag-off summary.json keeps its key set)
