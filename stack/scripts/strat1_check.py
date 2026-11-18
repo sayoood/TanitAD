@@ -259,7 +259,19 @@ def rb_gate_problems(kind, toks, sc):
                 if nzg:
                     bad.append(f"navrb_probe.{key}: the zero-channel control reads non-zero on {nzg} (must be exactly 0.0 per group)")
         gg, gn, unread = pr.get("group_grads"), pr.get("group_n_on"), set(pr.get("group_unread_in_batch") or [])
-        if isinstance(gg, dict) and isinstance(gn, dict) and set(gg) == set(gn) == set(RBD_GROUPS):
+        bgn = pr.get("batch_group_n_on")
+        if bgn is None and not zero:
+            bad.append("navrb_probe.batch_group_n_on missing: the rows the tokens read in the real batch must be counted per group")
+        if bgn is not None and (not isinstance(bgn, dict) or set(bgn) != set(RBD_GROUPS)):
+            bad.append(f"navrb_probe.batch_group_n_on {bgn!r}: needs the five groups {RBD_GROUPS}")
+        elif isinstance(gg, dict) and isinstance(bgn, dict) and set(gg) == set(RBD_GROUPS):
+            dead = [g for g in RBD_GROUPS if (bgn[g] or 0) > 0 and not gg[g] > 0.0]                 # RBDFIX: the counts of the rows READ in the real batch decide
+            if dead:
+                bad.append(f"navrb_probe: groups {dead} are read non-zero in the real batch but have no gradient")
+            alive = [g for g in RBD_GROUPS if not (bgn[g] or 0) > 0 and gg[g] != 0.0]
+            if alive:
+                bad.append(f"navrb_probe: groups {alive} are read as zero in the real batch but have gradient (inconsistent)")
+        elif isinstance(gg, dict) and isinstance(gn, dict) and set(gg) == set(gn) == set(RBD_GROUPS):
             dead = [g for g in RBD_GROUPS if (gn[g] or 0) > 0 and not gg[g] > 0.0 and g not in unread]
             if dead:
                 bad.append(f"navrb_probe: groups {dead} have non-zero rows in the real batch but no gradient and are not named unread")
@@ -276,8 +288,17 @@ def rb_gate_problems(kind, toks, sc):
     if zero:
         if ng != 0.0 or "e_nav_rb.weight" not in (live.get("declared_dead") or []):
             bad.append(f"N1Z: live NAVRB group grad {ng!r} (must be exactly 0.0) and e_nav_rb.weight must be declared dead")
-    elif not isinstance(ng, (int, float)) or not ng > 0.0:
-        bad.append(f"G-LIVE: the NAVRB group has no gradient ({ng!r})")
+    else:
+        bno = pr.get("batch_n_on")                                              # RBDFIX: the non-zero channel rows the tokens READ in the real self-check batch
+        if bno is None and dk:
+            bad.append("navrb_probe.batch_n_on missing: the live NAVRB gradient is judged against the rows the real batch carries")
+        if bno is not None and (isinstance(bno, bool) or not isinstance(bno, int) or bno < 0):
+            bad.append(f"navrb_probe.batch_n_on {bno!r} (must be a non-negative int)")
+        elif bno == 0:
+            if ng != 0.0:                                                       # no channel row in the batch: the gradient must be exactly 0.0 (the planted e_nav_rb_grad > 0 is read above)
+                bad.append(f"G-LIVE: the real batch reads no channel row (batch_n_on 0) but the NAVRB group grad is {ng!r} (must be exactly 0.0)")
+        elif not isinstance(ng, (int, float)) or not ng > 0.0:
+            bad.append(f"G-LIVE: the NAVRB group has no gradient ({ng!r}) with {bno!r} channel rows read in the real batch")
     return bad
 
 

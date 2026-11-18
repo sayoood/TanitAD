@@ -1894,7 +1894,15 @@ def navrb_probe(model, batch, cfg) -> dict:
             t = m.loss(bb, p_gt=0.5, gen=torch.Generator().manual_seed(0))["terms"]["total"]
             g = torch.autograd.grad(t, [m.e_nav_rb.weight], allow_unused=True)[0]
             return {k: (0.0 if g is None else float(g[:, lo:hi].abs().sum())) for k, (lo, hi) in D.NAV_RB_GROUPS.items()}
-        res["group_grads"] = group_grads(b_real)                                      # the real batch (its own non-zero counts are group_n_on)
+        read_rows = []                                                                # RBDFIX: the rows e_nav_rb is actually CALLED with in this one real-batch loss (a forward pre-hook on the copy: no extra loss call, no RNG draw)
+        hk = m.e_nav_rb.register_forward_pre_hook(lambda mod, args: read_rows.append(args[0].detach().reshape(-1, res["width"]).clone()))
+        try:
+            res["group_grads"] = group_grads(b_real)                                  # the real batch (its own non-zero counts are group_n_on)
+        finally:
+            hk.remove()
+        rr = torch.cat(read_rows, 0).numpy()
+        res["batch_n_on"] = int((rr != 0).any(axis=1).sum())                          # RBDFIX: non-zero channel rows the tokens READ in the real self-check batch (group_n_on above counts the whole batch tensor, read or not)
+        res["batch_group_n_on"] = D.nav_rb_group_n_on(rr)
         res["group_grads_planted"] = group_grads({**b_real, "nav_rb": navrb_planted(b_real["nav_rb"])})          # every group non-zero in every frame: reachability whatever the batch carries
         res["group_control_zero_channel"] = group_grads({**b_real, "nav_rb": torch.zeros_like(b_real["nav_rb"])})
         res["group_unread_in_batch"] = sorted(k for k, n in res["group_n_on"].items() if n > 0 and not res["group_grads"][k] > 0.0)      # non-zero only in frames no token reads: named, not a failure

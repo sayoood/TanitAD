@@ -52,7 +52,8 @@ def _sc(SC, kind):
     if kind == "N1Dx":
         sc["info"]["nav_rb"]["donor_map_sha256"] = "ef" * 32
     sc["navrb_probe"].update({"feat": "exitdist", "width": 15, "group_n_on": {g: 3 for g in GROUPS}, "group_grads": {g: 0.1 for g in GROUPS}, "group_grads_planted": {g: 0.2 for g in GROUPS},
-                              "group_control_zero_channel": {g: 0.0 for g in GROUPS}, "group_unread_in_batch": []})
+                              "group_control_zero_channel": {g: 0.0 for g in GROUPS}, "group_unread_in_batch": [],
+                              "batch_n_on": 6, "batch_group_n_on": {g: 3 for g in GROUPS}})       # RBDFIX: the rows the tokens read in the real batch
     return sc
 
 
@@ -83,10 +84,10 @@ def check_gate(SC, tmp_path):
         assert SC.gate_problems("N1D", t, _edit(sc, ("navrb_probe", "group_grads_planted", g), 0.0)), ("planted", g)
         assert SC.gate_problems("N1D", t, _edit(sc, ("navrb_probe", "group_control_zero_channel", g), 1e-12)), ("control", g)
         assert SC.gate_problems("N1D", t, _edit(sc, ("info", "nav_rb", "group_n_on", g), 0)), ("n_on", g)
-        dead = _edit(_edit(sc, ("navrb_probe", "group_n_on", g), 4), ("navrb_probe", "group_grads", g), 0.0)   # non-zero in the batch, no gradient, NOT named unread
+        dead = _edit(_edit(sc, ("navrb_probe", "batch_group_n_on", g), 4), ("navrb_probe", "group_grads", g), 0.0)   # RBDFIX: read non-zero by the tokens in the batch, no gradient
         assert SC.gate_problems("N1D", t, dead), ("dead-in-batch", g)
         named = _edit(dead, ("navrb_probe", "group_unread_in_batch"), [g])
-        assert SC.gate_problems("N1D", t, named) == [], ("unread named", g)
+        assert SC.gate_problems("N1D", t, named), ("unread naming no longer excuses a group the tokens read", g)
     for key in ("group_grads", "group_grads_planted", "group_control_zero_channel", "group_n_on"):             # a missing record
         d = json.loads(json.dumps(sc))
         del d["navrb_probe"][key]
@@ -266,7 +267,7 @@ MUTATIONS = {
     "drop_group_gradient_clause": ('            elif need == "gt":', '            elif False:'),
     "drop_group_zero_control_clause": ('            elif need == "zero":', '            elif False:'),
     "drop_group_n_on_clause": ('        if set(gno) != set(RBD_GROUPS) or any(not (gno.get(g) or 0) > 0 for g in RBD_GROUPS):', '        if False:'),
-    "drop_dead_in_batch_clause": ('            if dead:\n                bad.append(f"navrb_probe: groups {dead} have non-zero', '            if False:\n                bad.append(f"navrb_probe: groups {dead} have non-zero'),
+    "drop_dead_in_batch_clause": ('            if dead:\n                bad.append(f"navrb_probe: groups {dead} are read non-zero', '            if False:\n                bad.append(f"navrb_probe: groups {dead} are read non-zero'),
     "drop_feat_lever_clause": ('    if dk and lv.get("nav_rb_feat") != "exitdist":', '    if False:'),
     "drop_info_feat_clause": ('        if rec.get("feat") != "exitdist" or rec.get("width") != 15:', '        if False:'),
     "drop_missing_feat_flag_clause": ('    if dk and RB_FEAT_FLAG not in toks:', '    if False:'),
