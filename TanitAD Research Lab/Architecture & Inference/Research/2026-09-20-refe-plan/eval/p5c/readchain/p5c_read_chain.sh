@@ -15,6 +15,9 @@
 #                  the read runs with --rehearsal (no P5-C claim). P5C_DRY_CKPT_C1 / _C0 are the model files that get sealed.
 #   P5C_REGRESSION=seal   (dry run only) tamper one sha file: the chain MUST refuse at arms_verified and exit 4.
 #   P5C_BASE_SHA   (default: computed from P5C_BASE_CKPT)
+#   P5C_F_FLOOR_GB free-space floor on F: for a real run (default 20 = the pinned run's own floor). MM 2026-11-18: the read writes ~nothing to F:
+#                  (work, pulled arms, seams and scores all live on E:); the floor only spares other sessions' pinned runs, which refuse below
+#                  20 GB on their own, so a lower value never pushes one under its floor. E: keeps its own floor of 3 GB.
 set -u
 HOLD="${P5C_HOLD:-E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p5c_readchain}"
 TIP="${P5C_TIP:-F:/TanitAD_p5cread_tip}"
@@ -108,7 +111,9 @@ mark() { printf '%s %s\n' "$(ts)" "$2" > "$M/$1.DONE"; }
 say "chain start; dry=$DRY tip=$TIP work=$WORK"
 [ -d "$EV/p5c" ] || { say "REFUSING: no tip export at $TIP (need <PK>/eval/p5c)"; fail preflight 2 2; }
 for d in E F; do g=$(free_gb "$d:/"); [ "${g:-0}" -ge 3 ] || { say "REFUSING: $d: has ${g:-?} GB free (< 3)"; fail preflight 2 2; }; done
-g=$(free_gb "F:/"); if [ "$DRY" != "1" ] && [ "${g:-0}" -lt 20 ]; then say "REFUSING: F: has $g GB free (< 20; the pinned run's floor)"; fail preflight 2 2; fi
+FFLOOR="${P5C_F_FLOOR_GB:-20}"; [ "$FFLOOR" -ge 3 ] 2>/dev/null || { say "REFUSING: P5C_F_FLOOR_GB=$FFLOOR (integer >= 3 required)"; fail preflight 2 2; }
+g=$(free_gb "F:/"); if [ "$DRY" != "1" ] && [ "${g:-0}" -lt "$FFLOOR" ]; then say "REFUSING: F: has $g GB free (< $FFLOOR; default 20 = the pinned run's floor)"; fail preflight 2 2; fi
+[ "$FFLOOR" = 20 ] || say "F: floor $FFLOOR GB (P5C_F_FLOOR_GB; default 20); F: free $g GB"
 wait_commit || { say "REFUSING: free commit < 6 GB for 30 min"; fail preflight 2 2; }
 if [ "$DRY" != "1" ]; then
   for a in C1 C0; do [ -f "$MODELS/$a/model_final_sha256_$a.txt" ] || [ -f "$M/hf_pull_$a.DONE" ] || true; done
