@@ -73,7 +73,9 @@ def _run(mod, root, workers, monkeypatch):
     monkeypatch.setenv("THOR_GATE_WORKERS", str(workers))
     src_run, plan = _fake_suite(root / f"w{workers}")
     run = src_run
-    mod.R, mod.PYT, mod.plan, mod.OUT = run, root / f"w{workers}" / "pyt", plan, run / "results"
+    # the inner pytest must import pytest from where THIS one did: the Thor venv has no pytest (the gate passes its --no-deps side
+    # folder as PYT, /home/nvidia/refcv8_audit/pyt), so an empty PYT made every inner file rc 1 with no junit there (K2DC02 gate, 2026-11-18)
+    mod.R, mod.PYT, mod.plan, mod.OUT = run, pathlib.Path(pytest.__file__).resolve().parents[1], plan, run / "results"
     mod.OUT.mkdir()
     mod.run_stage("S", plan["stages"]["S"])
     rec = json.loads((mod.OUT / "S.json").read_text(encoding="utf-8"))
