@@ -129,6 +129,8 @@ FLAG_CHECKS = {
     "wm_rsp_w": "lever:wm_rsp_w",
     # PREREG_V8F_ACTRSP Amendment 2 (Option B): `lever:wm_rsp_readout` (also `wm_rsp_probe`, `wm_rsp_probe_sha256`) = the readout the BUILT loss reads through (HJEPAStack.built_levers()[1]["rsp_readout"] and WMAux.built_rsp: readout, contrast count 2, s_cal, the sha256 of the live probe weights, each compared with the probe FILE re-read here) -> bad_wm_rsp; `lever:wm_init_from_ckpt_wm` = the loader record (every wm.* tensor loaded, read back equal) -> bad_wm_only; `lever:wm_freeze_proj` = requires_grad of wm.proj.* read back from the BUILT model -> bad_wm_freeze.
     "wm_rsp_readout": "lever:wm_rsp_readout", "wm_rsp_probe": "lever:wm_rsp_readout", "wm_rsp_probe_sha256": "lever:wm_rsp_readout",
+    # PREREG_V8F_ACTRSP Amendment 3: `lever:wm_rsp_target` = the g* the BUILT loss pulled G to (WMAux.built_rsp()["target"], read from the loss's own residual) and the BUILT LevelConfig's rsp_target -> bad_wm_rsp
+    "wm_rsp_target": "lever:wm_rsp_readout",
     "wm_init_from_ckpt_wm": "lever:wm_init_from_ckpt_wm", "wm_freeze_proj": "lever:wm_freeze_proj",
     # PREREG_V8F_LADDER: `lever:wm_rollout_k` = the predictor calls the BUILT loss makes inside HJEPAStack.rollout, per level (WMAux.built_ladder: a forward-hook count while the loss runs, never the config that built it);
     # `lever:wm_rollout_stride` = the free run's anchor count the built loss produces; `lever:wm_rollout_w` = (level loss - its other terms) / the k-step term; `lever:wm_ctx` = the predictor's parameter-shape context (pos.shape[0])
@@ -343,6 +345,9 @@ def build_parser():
                          "arm, bit for bit (no key, no op, no parameter). The card fixes 1.0. Needs --wm b, --kin-mode yaw and --wm-only. Read back from the BUILT loss (HJEPAStack.built_rsp), not from the config")
     ap.add_argument("--wm-rsp-readout", dest="wm_rsp_readout", choices=("idm", "fixed_k"), default="idm",
                     help="PREREG_V8F_ACTRSP Amendment 2: the readout of the response term. idm (default) = the a13f6f16 term, bit for bit. fixed_k = Option B: a FROZEN linear readout of the K = 10 endpoint, acceleration channel only, two contrasts, a constant slope. Needs --wm-rsp-w > 0, --wm-rsp-probe, --wm-rsp-probe-sha256 and --wm-freeze-proj on")
+    ap.add_argument("--wm-rsp-target", dest="wm_rsp_target", type=float, default=1.0,
+                    help="PREREG_V8F_ACTRSP Amendment 3: the gain g* the fixed_k response term pulls G to; loss = mean (G - g*)^2. Default 1.0 = the Amendment 2 term, bit for bit. Needs --wm-rsp-readout fixed_k (a value != 1.0 with idm or without the term is refused). "
+                         "Read back from the BUILT LevelConfig and from the BUILT loss's own residual (WMAux.built_rsp), not from the config")
     ap.add_argument("--wm-rsp-probe", dest="wm_rsp_probe", default="", help="Amendment 2: the readout file (readout_K10_R35_s{k}.pt of amend1_kstep.py). Only with --wm-rsp-readout fixed_k")
     ap.add_argument("--wm-rsp-probe-sha256", dest="wm_rsp_probe_sha256", default="", help="Amendment 2: the readout file sha256 (64 hex); the build refuses a mismatch")
     ap.add_argument("--wm-init-from-ckpt-wm", dest="wm_init_from_ckpt_wm", choices=("off", "on"), default="off",
@@ -439,7 +444,7 @@ def make_config(a) -> M.V8FMiniConfig:
     return M.V8FMiniConfig(d=a.d, ff=2 * a.d, hist=a.hist, hmax=hmax, window_start=a.window_start, n_q=a.n_q, nb=a.nb, navonly=lv["navonly"],
                            wm_strides=declared_wm_strides(a),                                             # PREREG_V8F_LFS: the ONE line that applies --wm-strides (a mutation deletes it)
                            wm_gamma_levels=declared_wm_idm_gamma(a),                                      # PREREG_V8F_ACTSENS: the ONE line that applies --wm-idm-gamma (mutation M1 deletes it)
-                           wm_rsp_readout=a.wm_rsp_readout, wm_rsp_probe=a.wm_rsp_probe, wm_rsp_probe_sha256=a.wm_rsp_probe_sha256, wm_freeze_proj=a.wm_freeze_proj,   # Amendment 2: the line that applies the Option B flags (MR11-MR13 unwire them)
+                           wm_rsp_readout=a.wm_rsp_readout, wm_rsp_probe=a.wm_rsp_probe, wm_rsp_probe_sha256=a.wm_rsp_probe_sha256, wm_freeze_proj=a.wm_freeze_proj, wm_rsp_target=float(a.wm_rsp_target),   # Amendment 2: the line that applies the Option B flags (MR11-MR13 unwire them)
                            wm_rsp_w=float(a.wm_rsp_w),                                                    # PREREG_V8F_ACTRSP: the ONE line that applies --wm-rsp-w (mutation MR1 deletes it)
                            consistency=lv["consistency"], wm=lv["wm"], n_tok=40 if a.grid == "pool4x10" else 160,
                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
@@ -1596,6 +1601,7 @@ def wm_rsp_readback(a, cfg, model) -> dict:
     return {"declared": float(a.wm_rsp_w), "built_config": None if st is None else float(st.built_levers()[1].get("rsp_w", 0.0)),
             "built": None if model.wm is None else model.wm.built_rsp(cfg.hmax), "hmax": cfg.hmax,
             "declared_readout": a.wm_rsp_readout, "built_readout": None if st is None else st.built_levers()[1].get("rsp_readout", "idm"),
+            "declared_target": float(a.wm_rsp_target), "built_target": None if st is None else st.built_levers()[1].get("rsp_target", 1.0),
             "freeze_proj_declared": a.wm_freeze_proj, "wm_proj_requires_grad": sorted({bool(p.requires_grad) for n, p in model.named_parameters() if is_wm_proj_param(n)}),
             "init_from_ckpt_wm_declared": a.wm_init_from_ckpt_wm}
 
@@ -1616,6 +1622,11 @@ def bad_wm_rsp(a, cfg, model) -> list:
             bad.append(f"lever wm_rsp_w: --wm-rsp-w {w} needs --kin-mode yaw (got {a.kin_mode}): the contrast sizes are WM units of the yaw-rate channel")
         if not a.wm_only:
             bad.append(f"lever wm_rsp_w: --wm-rsp-w {w} needs --wm-only (the term is a world-model objective on the frozen adapter)")
+    tg = a.wm_rsp_target                                                        # Amendment 3: g* is a finite number > 0, and != 1.0 only with the fixed_k readout
+    if not (isinstance(tg, float) and tg == tg and abs(tg) != float("inf") and tg > 0.0):
+        return bad + [f"lever wm_rsp_target: --wm-rsp-target must be a finite number > 0, got {tg!r}"]
+    if tg != 1.0 and a.wm_rsp_readout != "fixed_k":
+        bad.append(f"lever wm_rsp_target: --wm-rsp-target {tg} needs --wm-rsp-readout fixed_k: a lever that is declared and does nothing")
     ro = a.wm_rsp_readout                                                       # Amendment 2: the Option B flags are refused when they would do nothing
     if ro == "fixed_k":
         if not w > 0.0:
@@ -1650,6 +1661,14 @@ def bad_wm_rsp(a, cfg, model) -> list:
     for k, want in (("calls", 1), ("contrasts", 2 if ro == "fixed_k" else 4), ("k", 10), ("ctx_passed", 1), ("anchors", anchors)):
         if r.get(k) != want:
             bad.append(f"lever wm_rsp_w: the BUILT term's {k} = {r.get(k)!r}, the card fixes {want} (hmax {cfg.hmax}, readout {ro})")
+    if cfg.wm_rsp_target != tg:                                                 # Amendment 3: declared vs the built config, the BUILT LevelConfig and the BUILT loss's own residual
+        bad.append(f"lever wm_rsp_target: declared {tg} but the built config holds {cfg.wm_rsp_target}")
+    if ro == "fixed_k":
+        if float(row.get("rsp_target", 1.0)) != tg:
+            bad.append(f"lever wm_rsp_target: declared {tg} but the BUILT LevelConfig holds {row.get('rsp_target', 1.0)!r}")
+        got_t = r.get("target")
+        if not (isinstance(got_t, float) and abs(got_t - tg) <= 1e-9 * max(1.0, abs(tg))):
+            bad.append(f"lever wm_rsp_target: declared {tg} but the BUILT loss pulls G to {got_t!r} (measured: mean G - mean (G - g*))")
     built_ro = row.get("rsp_readout", "idm")
     if built_ro != ro or r.get("readout") != ro:
         bad.append(f"lever wm_rsp_readout: declared {ro} but the BUILT LevelConfig holds {built_ro!r} and the BUILT loss reads through {r.get('readout')!r}")

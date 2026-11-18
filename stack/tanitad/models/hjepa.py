@@ -471,6 +471,7 @@ class LevelConfig:
     rsp_w: float = 0.0         # PREREG_V8F_ACTRSP: weight of the action-response term :meth:`HJEPAStack.response_loss` in the level's loss (level 1 only). 0.0 = the term is NOT built = every earlier build, bit for bit (no key, no op)
     rsp_delta: tuple = (0.42, 0.24)   # PREREG_V8F_ACTRSP: the contrast size per action channel in WM units (1 sd of acceleration / 2.0 and yaw rate / 0.4 on R35's TRAIN windows); used only when ``rsp_w`` > 0
     rsp_readout: str = "idm"   # PREREG_V8F_ACTRSP Amendment 2 (Option B, `--wm-rsp-readout`): "idm" = the level-1 IDM head on pairs, four contrasts (the a13f6f16 term, bit for bit); "fixed_k" = a FROZEN linear readout of the K-step endpoint, acceleration channel only, two contrasts, a constant slope (needs :meth:`HJEPAStack.set_rsp_probe`)
+    rsp_target: float = 1.0    # PREREG_V8F_ACTRSP Amendment 3 (`--wm-rsp-target`): the gain g* the fixed_k term pulls G to, loss = mean (G - g*)^2. 1.0 = the Amendment 2 term, bit for bit; read only by the fixed_k readout
 
 
 @dataclass
@@ -609,6 +610,8 @@ class HJEPAStack(nn.Module):
                 row.update(rsp_w=c.rsp_w, rsp_delta=tuple(c.rsp_delta), rsp_k=RSP_K, rsp_stride=RSP_STRIDE, rsp_ctx=RSP_CTX)
                 if c.rsp_readout != "idm":                                # Amendment 2: present only when moved (an idm-readout stack keeps the a13f6f16 key set)
                     row.update(rsp_readout=c.rsp_readout)
+                if c.rsp_target != 1.0:                                   # Amendment 3: present only when moved (an Amendment 2 stack keeps its key set)
+                    row.update(rsp_target=c.rsp_target)
             out[lv] = row
         return out
 
@@ -896,7 +899,7 @@ class HJEPAStack(nn.Module):
 
     def _response_loss_fixed_k(self, z: Tensor, a: Tensor, c: "LevelConfig") -> dict:
         """PREREG_V8F_ACTRSP Amendment 2 (Option B). Anchors, K, context and the batched :meth:`rollout` call are the a13f6f16 term's, but only the ACCELERATION channel is contrasted (two contrasts, +/- ``rsp_delta[0]``), and the read is the FROZEN
-        linear readout ``rsp_probe_w`` of the K-step endpoint (no head, no batch slope): ``G = (z_K+ - z_K-) @ w / (2 delta_a s)`` with the constant ``s`` of :meth:`set_rsp_probe`; loss = mean (G - 1)^2. No random draw. Gradient reaches ``predictors[0]``
+        linear readout ``rsp_probe_w`` of the K-step endpoint (no head, no batch slope): ``G = (z_K+ - z_K-) @ w / (2 delta_a s)`` with the constant ``s`` of :meth:`set_rsp_probe`; loss = mean (G - g*)^2 with ``g* = c.rsp_target`` (Amendment 3; default 1.0). No random draw. Gradient reaches ``predictors[0]``
         and ``act_embed`` only (the anchor state is detached; the readout is a buffer)."""
         t_ = z.shape[1]
         K = RSP_K
@@ -915,8 +918,12 @@ class HJEPAStack(nn.Module):
         s = self.rsp_probe_s.to(zh.dtype)
         end = zh[..., -1, :]                                                         # the K-step endpoint
         g = ((end[0] - end[1]) @ w) / (2.0 * dlt[0] * s)                             # (B, A)
-        loss = (g - 1.0).pow(2).mean()
-        return {"loss": loss, "diag": {"rsp_g_aa": g.detach().mean(), "rsp_s_a": s.detach()}}
+        resid = g - float(c.rsp_target)                                              # Amendment 3: g* = 1.0 is the Amendment 2 term (x - 1.0 == x - 1.0 exactly)
+        loss = resid.pow(2).mean()
+        diag = {"rsp_g_aa": g.detach().mean(), "rsp_s_a": s.detach()}
+        if c.rsp_target != 1.0:                                                      # present only when moved: the loss dict keeps its a13f6f16 key set at g* 1.0. The G-DVB reader measures g* = mean G - mean (G - g*)
+            diag["rsp_resid"] = resid.detach().mean()
+        return {"loss": loss, "diag": diag}
 
     def states_per_level(self, n_frames: int) -> list:
         """States per level for a window of ``n_frames`` level-1 frames, MEASURED by running :meth:`encode` on zeros."""
@@ -1012,6 +1019,7 @@ class HJEPAStack(nn.Module):
                 other = other + c1.rollout_w * out["rollout/L1"]
             res["w_in_loss_rsp"] = float((out["level/L1"] - other) / out["rsp/L1"])
         res["rsp_term"] = None if "rsp/L1" not in out else float(out["rsp/L1"])
+        res["target"] = float(out["rsp_g_aa/L1"] - out["rsp_resid/L1"]) if "rsp_resid/L1" in out else (1.0 if c1.rsp_readout == "fixed_k" and "rsp/L1" in out else None)   # Amendment 3: the g* the BUILT loss pulled G to (mean G - mean (G - g*)); key absent = 1.0
         res["readout"] = c1.rsp_readout if "rsp/L1" in out else None                                # Amendment 2: what the BUILT loss read through
         if c1.rsp_readout == "fixed_k" and hasattr(m, "rsp_probe_w"):
             res["s_cal"] = float(m.rsp_probe_s)

@@ -213,6 +213,7 @@ class V8FMiniConfig:
     wm_gamma_levels: tuple = ()        # PREREG_V8F_ACTSENS (`--wm-idm-gamma G1 G2 G3`): the IDM weight of each WM level. () = (wm_gamma,) x 3 = every earlier arm, bit for bit (changes the loss weight only, never a parameter shape)
     wm_rsp_w: float = 0.0              # PREREG_V8F_ACTRSP (`--wm-rsp-w`): the weight of the level-1 action-response term (HJEPAStack.response_loss). 0.0 = the term is NOT built = every earlier arm, bit for bit (no key, no op, no parameter); > 0 needs wm b and kin_mode yaw (the contrast sizes are WM units of the yaw-rate channel)
     wm_rsp_readout: str = "idm"        # PREREG_V8F_ACTRSP Amendment 2 (`--wm-rsp-readout`): "idm" = the a13f6f16 term (default, bit for bit); "fixed_k" = Option B's frozen K-step linear readout, acceleration channel only (needs wm_rsp_w > 0, the probe, wm_freeze_proj "on")
+    wm_rsp_target: float = 1.0         # PREREG_V8F_ACTRSP Amendment 3 (`--wm-rsp-target`): the gain g* of the fixed_k term, loss = mean (G - g*)^2. 1.0 = Amendment 2, bit for bit; != 1.0 needs wm_rsp_readout fixed_k
     wm_rsp_probe: str = ""             # Amendment 2 (`--wm-rsp-probe`): the path of the frozen readout file (readout_K10_R35_s{k}.pt); "" unless fixed_k
     wm_rsp_probe_sha256: str = ""      # Amendment 2 (`--wm-rsp-probe-sha256`): the file's sha256; the build refuses a mismatch
     wm_freeze_proj: str = "off"        # Amendment 2 (`--wm-freeze-proj`): "on" freezes `wm.proj` (the readout is valid in R35's latent space only; the trainer's `freeze_all_but_wm` reads it); "off" = every earlier arm
@@ -299,6 +300,11 @@ class V8FMiniConfig:
             raise ValueError(f"wm_rsp_w > 0 needs kin_mode yaw (the contrast sizes are WM units of the yaw-rate channel), got {self.kin_mode!r}")
         if self.wm_rsp_readout not in ("idm", "fixed_k"):                          # PREREG_V8F_ACTRSP Amendment 2
             raise ValueError(f"wm_rsp_readout must be 'idm' or 'fixed_k', got {self.wm_rsp_readout!r}")
+        rt = self.wm_rsp_target                                                    # Amendment 3: a finite float > 0; != 1.0 only with the fixed_k readout (else a lever that is declared and does nothing)
+        if not (isinstance(rt, (int, float)) and not isinstance(rt, bool) and math.isfinite(rt) and rt > 0.0):
+            raise ValueError(f"wm_rsp_target must be a finite number > 0, got {rt!r}")
+        if rt != 1.0 and self.wm_rsp_readout != "fixed_k":
+            raise ValueError("wm_rsp_target != 1.0 needs wm_rsp_readout fixed_k: a lever that is declared and does nothing")
         if self.wm_freeze_proj not in ("off", "on"):
             raise ValueError(f"wm_freeze_proj must be 'off' or 'on', got {self.wm_freeze_proj!r}")
         if self.wm_rsp_readout == "fixed_k":
@@ -747,7 +753,7 @@ class WMAux(nn.Module):
         K = int(cfg.wm_k)
         up = lambda i: dict(window=K, dilation=cfg.wm_strides[i], causal_pad=True) if K > 1 else {}      # K = 1: LevelConfig's defaults, i.e. the earlier build
         lad = lambda i: dict(context=int(cfg.wm_ctx[i]), rollout_k=int(cfg.wm_rollout_k[i]), rollout_stride=int(cfg.wm_rollout_stride[i]), rollout_w=float(cfg.wm_rollout_w))   # noqa: E731  PREREG_V8F_LADDER: (3, 3, 3) / (1, 1, 1) = LevelConfig's defaults, i.e. the earlier build
-        lv = [mk(gl[0], action_dim=2, act_embed_dim=32, **lad(0), **(dict(rsp_w=float(cfg.wm_rsp_w), rsp_delta=RSP_DELTA, **({"rsp_readout": "fixed_k"} if cfg.wm_rsp_readout == "fixed_k" else {})) if float(cfg.wm_rsp_w) > 0.0 else {})),   # PREREG_V8F_ACTRSP: level 1 only; absent = LevelConfig's rsp_w 0.0
+        lv = [mk(gl[0], action_dim=2, act_embed_dim=32, **lad(0), **(dict(rsp_w=float(cfg.wm_rsp_w), rsp_delta=RSP_DELTA, **({"rsp_readout": "fixed_k", "rsp_target": float(cfg.wm_rsp_target)} if cfg.wm_rsp_readout == "fixed_k" else {})) if float(cfg.wm_rsp_w) > 0.0 else {})),   # PREREG_V8F_ACTRSP: level 1 only; absent = LevelConfig's rsp_w 0.0
 
               mk(gl[1], action_dim=32, stride=cfg.wm_strides[0], **up(0), **lad(1)), mk(gl[2], action_dim=32, stride=cfg.wm_strides[1], **up(1), **lad(2))]
         self.stack = HJEPAStack(lv, sigreg_projections=256)
