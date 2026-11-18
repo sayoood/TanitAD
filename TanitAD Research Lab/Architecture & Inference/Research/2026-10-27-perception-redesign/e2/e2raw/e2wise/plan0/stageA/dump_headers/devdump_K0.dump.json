@@ -1,0 +1,107 @@
+{
+ "tool": "r9_e1_dump.py",
+ "schema": "r9e1-dump-v1",
+ "rig": false,
+ "ckpt": "/home/nvidia/r8ns/r9e2/runs/r9e2-K0/model_wise_plan_a000.pt",
+ "ckpt_used": "/home/nvidia/r8ns/r9e2/runs/r9e2-K0/model_wise_plan_a000.pt",
+ "ckpt_md5": "beae7c8cfded14aae54486b66a440b54",
+ "ckpt_kind": "ema_model_only",
+ "weights_are_ema": true,
+ "step": 6000,
+ "rig_step0": null,
+ "config": "/home/nvidia/r8ns/r9e2/runs/r9e2-K0/config.json",
+ "config_md5": "0ffd3a9a53d427f80bd919bc42477f6b",
+ "split": {
+  "set": "DEV",
+  "n_clips": 70,
+  "check": {
+   "checked": true,
+   "grid_sha256_matches_stamp": true,
+   "count_mismatch": []
+  }
+ },
+ "n_windows": 2397,
+ "n_clips": 70,
+ "order_digest": "1c4cddfd96a94314279e4a1c9ded91bb30ccdf4df77c4366cc9a02dab3b4fc3b",
+ "n_eval_windows_in_dataset": 23772,
+ "window_W": 8,
+ "s2_grid_sha256": "9943f3a282defba846eac4cdacc3d4cbd00af95ce40ae5e44a24e5d6d76a59a0",
+ "pose_sync": "off",
+ "pose_sync_record": null,
+ "departures": [
+  "pose-sync sidecar NOT enabled (PERC8 / MAPSEL ran R8_NO_POSE_SYNC=1): the unshifted pose clock",
+  "argv --trunk-compile REMOVED: no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)",
+  "Thor data paths REMAPPED to the eval kit /home/nvidia for ['--agent-join', '--agent-rig-extrinsics', '--anchors', '--clip-clock-sidecar', '--eval-cache', '--eval-labels', '--join3d', '--map-gt-root', '--map-hires-class-weights', '--nav-compliance-tau-file', '--speed-max-sidecar-v6-eval', '--vis1-sidecar'] (per flag, basename-checked; recorded in argv_remap)",
+  "tactical-goal pos_weight / class mask from config.json tac_goal_stats (the TRAIN split's own constants; train():8483-8497 derives them from the loaded split)"
+ ],
+ "declared_vs_built": {
+  "mismatches": [],
+  "registry_entries": 335
+ },
+ "param_breakdown_equal": true,
+ "future_frame_control": {
+  "pass": true,
+  "windows": [
+   {
+    "sha12": "0dfe63214bc2",
+    "ws": 7,
+    "perception_equal": {
+     "map_hires_logits": true,
+     "box_slots.presence_logit": true,
+     "box_slots.box": true,
+     "box_slots.cls_logits": true,
+     "box_slots.cz": true
+    },
+    "has_law_term": true,
+    "law_zero_frame": 0.004029740579426289,
+    "law_real_frame": 0.00028758024564012885,
+    "law_differs": true
+   },
+   {
+    "sha12": "0dfe63214bc2",
+    "ws": 12,
+    "perception_equal": {
+     "map_hires_logits": true,
+     "box_slots.presence_logit": true,
+     "box_slots.box": true,
+     "box_slots.cls_logits": true,
+     "box_slots.cz": true
+    },
+    "has_law_term": true,
+    "law_zero_frame": 0.00424377154558897,
+    "law_real_frame": 0.00028950179694220424,
+    "law_differs": true
+   }
+  ],
+  "rule": "zero future frame: every perception tensor torch.equal to the real-future-frame forward (and, where a law term exists, the term differs)"
+ },
+ "n_box3d_windows": 2308,
+ "n_rasters": 2397,
+ "n_rasters_with_gt": 2329,
+ "raster_bytes": 894310747,
+ "raster_names_sha256": "a4adcac5fb7b934c99fa0484f8af18b89b773d8634780fd7b39ac73731cfa1ee",
+ "packs": {
+  "path": "/home/nvidia/r8ns/r9e2/runs/E2WISE_PLAN0/stageA/devdump_K0/perc_det.pkl",
+  "sha256": "30f6a6ea8d51a269c803920ee4d9d1b6ea1e3d734dbc9041006c5462c0bc59e2"
+ },
+ "map_decision": {
+  "rule_seen": [
+   "prior_corrected"
+  ],
+  "decide_checked": 48,
+  "decide_mismatch_cells": 0
+ },
+ "timing_s": {
+  "wait_decode": 0.1,
+  "forward": 958.4,
+  "planes": 141.8
+ },
+ "loop_s": 1103.7,
+ "wall_s": 1233.4,
+ "seed": 0,
+ "device": "cuda",
+ "cuda_max_memory_allocated_gib": 1.124,
+ "SMOKE_RESTRICTED": false,
+ "torch": "2.13.0+cu130",
+ "tree_commit": null
+}
