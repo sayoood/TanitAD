@@ -579,6 +579,12 @@ FIELD_P7_STORE_KEYS = 103139
 FIELD_P7_LOSS_SHA256 = "e29d91c349539ba366c73739fd2fe7fc6f1e7a6a015c4c0749df5f15df36c994"       # refe/field_loss.py (LF bytes), re-hashed from the tip export 2026-11-17; test_field_loss.py ZZTEST_PASS 42 at this hash
 FIELD_P7_ARM_NAME = {"F": "refe_field_p7", "C": "refe_field_p7_ctrl"}
 FIELD_P7_ARM_W = {"F": FIELD_P7_W, "C": 0.0}
+# the two REPLICATES (PI "I approve your recommendation" 2026-11-17, PREREG_AUX_FIELD_LOSS_P7 Amendment A): Cs = C and Fs = F at `--seed 1`, everything else identical, own `--out`.  Mirrors P5-C's C0r.
+# F's and C's entries (names, weights, seed 0, argv, profiles) are NOT touched: their PASS tokens bind them (test_field_p7_profile.chk_unchanged proves it against the e9ecd885 values).
+FIELD_P7_ARM_SEED = {"F": 0, "C": 0, "Cs": 1, "Fs": 1}
+FIELD_P7_REP_BASE = {"Cs": "C", "Fs": "F"}          # replicate arm -> the seed-0 twin whose argv/profile it copies
+FIELD_P7_ARM_NAME.update({"Cs": "refe_field_p7_ctrl_s1", "Fs": "refe_field_p7_s1"})
+FIELD_P7_ARM_W.update({"Cs": FIELD_P7_ARM_W["C"], "Fs": FIELD_P7_ARM_W["F"]})
 FIELD_P7_LABELS_DEFAULT = "/workspace/data/refe_navtrain/aux_label_store_full"       # the pod path of the full store beside P7's own (G3: shipped by the MM)
 FIELD_P7_PATH_FLAGS = P5C_PATH_FLAGS + ("--field-labels",)
 
@@ -594,6 +600,8 @@ def p7field_argv(arm: str, paths: dict | None = None) -> list:
     a[i + 2:i + 2] = ["--field-labels", (paths or {}).get("field_labels", FIELD_P7_LABELS_DEFAULT), "--field-margin", FIELD_REGISTERED["--field-margin"], "--field-interp", FIELD_REGISTERED["--field-interp"]]
     j = a.index("--out")
     a[j + 1] = f"{P['out_root']}/p7field_{arm.lower()}"
+    k = a.index("--seed")
+    a[k + 1] = str(FIELD_P7_ARM_SEED[arm])
     return a
 
 
@@ -602,9 +610,10 @@ def p7field_profile(arm: str) -> dict:
     c0 = PROFILES["refe_p5c_c0"]
     req = dict(c0["required_flags"])
     req.update({"--w-field": repr(float(FIELD_P7_ARM_W[arm])), "--field-labels": None, **FIELD_REGISTERED})
+    req["--seed"] = str(FIELD_P7_ARM_SEED[arm])
     forb = tuple(c0["forbidden_flags"]) + (("--field-shuffle-seed",) if "--field-shuffle-seed" not in c0["forbidden_flags"] else ())
     prof = {k: v for k, v in c0.items() if k not in ("p5c_rules", "p5c_arm", "p5c_base")}
-    prof.update({"name": FIELD_P7_ARM_NAME[arm], "p7field_rules": True, "p7field_arm": arm, "field_arm": arm, "data_flags": tuple(c0["data_flags"]) + ("--field-labels",),
+    prof.update({"name": FIELD_P7_ARM_NAME[arm], "p7field_rules": True, "p7field_arm": arm, "field_arm": FIELD_P7_REP_BASE.get(arm, arm), "data_flags": tuple(c0["data_flags"]) + ("--field-labels",),
                  "suite": list(c0["suite"]) + FIELD_SUITE_EXTRA + [{"script": "test_field_p7_profile.py", "args": ["--fast"], "token": "ZZFIELDP7PROF_PASS"}],
                  "forbidden_flags": forb, "required_flags": req, "live_terms": P6_TERMS + ("field_L",), "field_min_coverage": 0.999,
                  "field_w": FIELD_P7_ARM_W[arm], "field_store_sha256": FIELD_P7_STORE_SHA256, "field_store_keys": FIELD_P7_STORE_KEYS, "field_loss_sha256": FIELD_P7_LOSS_SHA256})
@@ -612,6 +621,8 @@ def p7field_profile(arm: str) -> dict:
 
 
 for _farm in ("F", "C"):                          # NOT `_arm`: that module name (the P5-C loop variable above) must keep its value
+    PROFILES[FIELD_P7_ARM_NAME[_farm]] = p7field_profile(_farm)
+for _farm in ("Cs", "Fs"):                        # the replicates (seed 1), built from the same function
     PROFILES[FIELD_P7_ARM_NAME[_farm]] = p7field_profile(_farm)
 
 
