@@ -30,6 +30,7 @@ for A in "$@"; do
   for f in summary.json selfcheck.json argv.json; do timeout 120 bash "$C" "$RR/$A/$f" "$RUNS/$A/$f" > /dev/null 2>&1; done
   ck=$(timeout 120 bash "$P" "sha256sum $RR/$A/ckpt_last.pt | cut -c1-64" 2>/dev/null | tr -d '\r' | tail -n 1)
   echo "tar_sha256 $rs ckpt_sha256 $ck pulled $(ts)" > "$PULL/$A/PULLED.txt"
+  rm -f -- "${TARS:?}/$A.tar"   # the pulled archive is a temp copy: its content is extracted and checked above, the pod keeps the archive (PI rule of 2026-11-07)
   echo "[$(ts)] $A: pulled (141 ep files, tar sha256 ${rs:0:16}, ckpt ${ck:0:16})"
 done
 if [ -n "$bad" ]; then echo "ZZ PULL-SPATIAL FAIL$bad"; exit 1; fi
