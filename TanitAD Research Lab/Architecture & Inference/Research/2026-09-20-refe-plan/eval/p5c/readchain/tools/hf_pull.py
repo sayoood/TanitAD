@@ -66,6 +66,15 @@ def main():
             raise SystemExit(f"REFUSING: under {pre} found model_final.pt x{len(m_ck)}, {shaname} x{len(m_sf)}; repo holds: {sorted(files)[:40]}")
         sf = hf_hub_download(a.repo, m_sf[0], token=tok, local_dir=a.out)
         ck = hf_hub_download(a.repo, m_ck[0], token=tok, local_dir=a.out)
+        # hf_hub_download(local_dir=) keeps the repo sub-path (<out>/p5c/c1/model_final.pt); the chain reads <out>/model_final.pt and <out>/<shaname>.
+        # MEASURED 2026-11-19 on the first real run: both pulls verified, then arms_verified refused "missing model". Move both files up (same drive).
+        flat = []
+        for src, leaf in ((sf, shaname), (ck, "model_final.pt")):
+            dst = os.path.join(a.out, leaf)
+            if os.path.abspath(src) != os.path.abspath(dst):
+                os.replace(src, dst)
+            flat.append(dst)
+        sf, ck = flat
     want, got = read_sha_file(sf), sha256_file(ck)
     ok = want == got
     print(f"ZZP5C_HF_PULL {a.arm} {'OK' if ok else 'SHA-MISMATCH'} sha256 {got[:12]} (pod file {want[:12]}) size {os.path.getsize(ck)} path {ck}")
