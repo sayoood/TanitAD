@@ -21,7 +21,7 @@ better); (4) the jitter clause is the POINT delta < 0 (the PREREG sets no CI req
 
 CPU only.  Usage:
   python r9_e2_dose_verdict.py --k2dc-pf <E2_READ_K2DC/E2_K2_pf> --k2-pf <E2_READ_K2M1N20/E2_K2_pf> --k0-pf <E2_READ_K2M1N20/E2_K0_pf> --dev-split DEV_HOLD_SPLIT.json \
-      --metrics <runs/r9e2-K2DC/metrics.jsonl> --out-dir <dir> [--k2dc-read <E2_READ_K2DC/read> --k2-read <E2_READ_K2M1N20/read>]
+      --metrics <runs/r9e2-K2DC/metrics.jsonl> --out-dir <dir> [--arm K2DC02 (reads target/bounds from runs.d/r9e2_K2DC02.argv.json; default K2DC = unchanged)] [--k2dc-read <E2_READ_K2DC/read> --k2-read <E2_READ_K2M1N20/read>]
   (each --*-pf dir holds dump_s0 / dump_s1; PYTHONPATH = <tree>/stack:<tree>/stack/scripts:<tree>/taniteval, `;` on Windows.)
 EXIT: 0 SUPPORTED | 1 REFUTED | 2 INCONCLUSIVE | 3 DOSE-VOID | 4 REFUSED.
 """
@@ -44,6 +44,10 @@ EPS = 1e-9                  # float slack on the two inclusive bounds (the CI ro
 SHARE_BAND = (0.05, 0.15)   # in-training validity: logged trunk share, design 2.2's dose band
 SHARE_MIN_STEP = 3000
 SHARE_MIN_PROBES = 2
+ARM_DEFAULT = "K2DC"        # the default arm: every constant above is K2DC's (share target 0.10); `--arm K2DC` and no --arm read bit-for-bit as before
+ARM_ARGV = {"K2DC02": "r9e2_K2DC02.argv.json"}      # arms whose dose settings are READ from stack/ops/runs.d/<file>, never typed here
+ARGV_DIR = Path(__file__).resolve().parents[1] / "ops" / "runs.d"
+BAND_REL = (0.5, 1.5)       # K2DC's band [0.05, 0.15] is 0.5x..1.5x of its target 0.10; a derived arm keeps the same RELATIVE band around its own target
 EXIT = {"SUPPORTED": 0, "REFUTED": 1, "INCONCLUSIVE": 2, "DOSE-VOID": 3}
 RESOLUTIONS = ("'at both seeds' governs the whole SUPPORTED sentence",
                "REFUTED 'lateral rows' = LAT_cross_mae_m and LAT_cross_abs_final_m (the lateral rows that are lengths)",
@@ -53,6 +57,30 @@ RESOLUTIONS = ("'at both seeds' governs the whole SUPPORTED sentence",
 
 def _fail(msg: str):
     raise SystemExit(f"[r9-e2-dose-verdict] REFUSED: {msg}")
+
+
+def arm_dose(arm: str = ARM_DEFAULT, argv_json=None):
+    """None for the default arm K2DC (nothing changes).  For a derived arm: its dose settings READ from its argv json (target and bounds are typed nowhere in this file):
+    {"arm", "argv_json", "target", "bounds": [lo, hi], "share_band": [lo, hi]} with share_band = BAND_REL x target."""
+    if arm == ARM_DEFAULT:
+        if argv_json:
+            _fail(f"--argv-json is only for a derived arm, not {ARM_DEFAULT}")
+        return None
+    if arm not in ARM_ARGV:
+        _fail(f"unknown --arm {arm!r} (known: {ARM_DEFAULT}, {', '.join(sorted(ARM_ARGV))})")
+    p = Path(argv_json) if argv_json else ARGV_DIR / ARM_ARGV[arm]
+    try:
+        toks = json.loads(p.read_text(encoding="utf-8"))["argv"]
+        t = toks[toks.index("--map-hires-share-target") + 1]
+        bnd = toks[toks.index("--map-hires-w-bounds") + 1]
+        target = float(t)
+        lo, hi = (float(x) for x in bnd.split(","))
+    except (OSError, ValueError, KeyError, IndexError, TypeError) as e:
+        _fail(f"{p}: no usable --map-hires-share-target / --map-hires-w-bounds ({e!r})")
+    if not (target > 0.0 and 0.0 < lo < hi):
+        _fail(f"{p}: implausible dose settings target {target}, bounds {lo},{hi}")
+    return {"arm": arm, "argv_json": str(p), "target": target, "bounds": [lo, hi],
+            "share_band": [round(BAND_REL[0] * target, 6), round(BAND_REL[1] * target, 6)]}
 
 
 # ---------------------------------------------------------------------------------------------------------------- #
@@ -103,7 +131,7 @@ def decide(per_seed: dict) -> dict:
 # ---------------------------------------------------------------------------------------------------------------- #
 # the in-training validity check                                                                                    #
 # ---------------------------------------------------------------------------------------------------------------- #
-def void_check(metrics_path) -> dict:
+def void_check(metrics_path, band=SHARE_BAND, bounds=None) -> dict:
     """Reads the trainer's metrics.jsonl: rows carrying `dc_share_read` (map_dose_ctl.MapDoseController.fire, merged into the metrics row at the firing step)."""
     if metrics_path is None:
         return {"status": "NOT-CHECKED", "reason": "no --metrics given: the in-training validity condition was not read; the outcome is UNCHECKED-VOID", "valid": None}
@@ -112,7 +140,7 @@ def void_check(metrics_path) -> dict:
         lines = p.read_text(encoding="utf-8").splitlines()
     except OSError as e:
         _fail(f"--metrics {p}: unreadable ({e})")
-    probes = []
+    probes, weffs = [], []
     for ln in lines:
         ln = ln.strip()
         if not ln:
@@ -123,11 +151,19 @@ def void_check(metrics_path) -> dict:
             continue
         if isinstance(r, dict) and "dc_share_read" in r and "step" in r:
             probes.append((int(r["step"]), float(r["dc_share_read"])))
+            if "dc_w_eff" in r:
+                weffs.append((int(r["step"]), float(r["dc_w_eff"])))
     late = [(s, v) for s, v in probes if s >= SHARE_MIN_STEP]
-    inside = [(s, v) for s, v in late if SHARE_BAND[0] <= v <= SHARE_BAND[1]]
-    out = {"metrics": str(p), "n_probes_total": len(probes), "n_probes_step_ge_3000": len(late), "n_inside_band": len(inside), "band": list(SHARE_BAND),
-           "rule": f">= {SHARE_MIN_PROBES} probes at step >= {SHARE_MIN_STEP} inside [{SHARE_BAND[0]}, {SHARE_BAND[1]}]",
+    inside = [(s, v) for s, v in late if band[0] <= v <= band[1]]
+    out = {"metrics": str(p), "n_probes_total": len(probes), "n_probes_step_ge_3000": len(late), "n_inside_band": len(inside), "band": list(band),
+           "rule": f">= {SHARE_MIN_PROBES} probes at step >= {SHARE_MIN_STEP} inside [{band[0]}, {band[1]}]",
            "probes_step_ge_3000": [{"step": s, "share": round(v, 5)} for s, v in late]}
+    if bounds is not None:       # informational only (a derived arm): how often the controller sat ON its weight bounds at the late probes; never enters the validity rule
+        lw = [w for s, w in weffs if s >= SHARE_MIN_STEP]
+        out["w_bounds"] = list(bounds)
+        out["n_late_w_eff_probes"] = len(lw)
+        out["n_late_at_lower_bound"] = sum(1 for w in lw if w <= bounds[0] * (1 + 1e-6))
+        out["n_late_at_upper_bound"] = sum(1 for w in lw if w >= bounds[1] * (1 - 1e-6))
     if not probes:
         out.update(status="VOID", valid=False, reason="metrics.jsonl holds no dc_share_read row: the controller never fired (or the log format changed): refusing to call the dose held")
     else:
@@ -247,7 +283,7 @@ def beside(k2dc_read, k2_read) -> dict:
 
 
 # ---------------------------------------------------------------------------------------------------------------- #
-def build(numbers: dict, void: dict, extra: dict | None = None) -> dict:
+def build(numbers: dict, void: dict, extra: dict | None = None, arm: dict | None = None) -> dict:
     d = decide({s: {k: numbers[s][k] for k in ("dc_vs_k0", "dc_vs_k2", "jitter_dlag_dc_vs_k2")} for s in SEEDS})
     if void.get("valid") is False:
         outcome = "DOSE-VOID"
@@ -267,11 +303,16 @@ def build(numbers: dict, void: dict, extra: dict | None = None) -> dict:
            "seeds": numbers}
     if extra:
         doc["beside_no_direction"] = extra
+    if arm is not None:          # a derived arm only; the K2DC document has no `arm` key and its thresholds are untouched
+        doc["thresholds"]["share_band"] = list(arm["share_band"])
+        doc["arm"] = {**arm, "note": "the pre-registered decision constants (bar, band, jitter clause, two seeds) are PREREG_K2DC_2026-11-12's, applied UNCHANGED to this arm; the in-training share band is "
+                                     "BAND_REL x this arm's own target (read from its argv json). Pre-registered for K2DC02 in e2/e2raw/PREREG_K2DC02_2026-11-18.md (landed 75d9ca52, before any K2DC02 training step): K2DC is the comparator "
+                                     "in K2's slot (--k2-read = E2_READ_K2DC's read); `reason` text naming next arms is K2DC's, and that PREREG's section 4 replaces it."}
     return doc
 
 
 def md(doc: dict) -> str:
-    L = [f"# K2DC dose hypothesis: **{doc['outcome']}**", "", f"{doc['reason']}", "",
+    L = [f"# {doc.get('arm', {}).get('arm', ARM_DEFAULT)} dose hypothesis: **{doc['outcome']}**", "", f"{doc['reason']}", "",
          f"*{doc['class']}.* Pre-registration: `{doc['prereg']}`. Tier: {doc['tier']}. Windows: {doc['windows']}.", "", f"Estimator: {doc['estimator']}.", "",
          f"In-training validity (`dose_validity`): **{doc['dose_validity'].get('status')}** ({doc['dose_validity'].get('rule', '')}; "
          f"{doc['dose_validity'].get('n_inside_band', '-')} of {doc['dose_validity'].get('n_probes_step_ge_3000', '-')} late probes inside the band).", "",
@@ -309,11 +350,16 @@ def main(argv=None) -> int:
     ap.add_argument("--k2dc-read", help="E2_READ_K2DC/read (EVAL_K2.json, s6c/) for the no-direction map / box / S6c rows")
     ap.add_argument("--k2-read", help="E2_READ_K2M1N20/read")
     ap.add_argument("--boot", type=int, default=2000)
+    ap.add_argument("--arm", default=ARM_DEFAULT, help=f"{ARM_DEFAULT} (default: unchanged behaviour) or {', '.join(sorted(ARM_ARGV))}: the arm's `--k2dc-*` inputs are that arm's; "
+                    "its share target and bounds are read from stack/ops/runs.d/<arm>.argv.json (or --argv-json)")
+    ap.add_argument("--argv-json", help="a derived arm's argv json (default: stack/ops/runs.d/r9e2_<arm>.argv.json next to this script's stack/)")
     ap.add_argument("--out-dir", required=True)
     a = ap.parse_args(argv)
     try:
+        arm = arm_dose(a.arm, a.argv_json)
         numbers = {s: seed_numbers(a.k2dc_pf, a.k2_pf, a.k0_pf, a.dev_split, s, a.boot) for s in SEEDS}
-        doc = build(numbers, void_check(a.metrics), beside(a.k2dc_read, a.k2_read))
+        void = void_check(a.metrics) if arm is None else void_check(a.metrics, tuple(arm["share_band"]), tuple(arm["bounds"]))
+        doc = build(numbers, void, beside(a.k2dc_read, a.k2_read)) if arm is None else build(numbers, void, beside(a.k2dc_read, a.k2_read), arm)
     except SystemExit as e:
         print(e, file=sys.stderr)
         return 4
