@@ -1,0 +1,436 @@
+{
+ "declared_vs_built": "PASS",
+ "live": {
+  "terms": {
+   "ckpt": 2.7316622734069824,
+   "goal": 0.4693821966648102,
+   "lat": 0.30124086141586304,
+   "lon": 1.5923326015472412,
+   "cons": 0.4184251129627228,
+   "ade": 3.018247365951538,
+   "fde": 9.80533504486084,
+   "acc": 0.033441875129938126,
+   "lead_bce": 0.5746457576751709,
+   "lead_huber": 0.01601409539580345,
+   "lead": 0.5906598567962646,
+   "pen_SPEED": 2.474116086959839,
+   "pens_SPEED": 4.610844612121582,
+   "pen_STOP": 0.4512758255004883,
+   "pens_STOP": 0.0,
+   "pen_TURN": 0.0256483256816864,
+   "pens_TURN": 0.0,
+   "pen_LEAD": 1.035009741783142,
+   "pens_LEAD": 0.39803817868232727,
+   "wm": 207.73980712890625,
+   "total": 32.185264587402344
+  },
+  "missing_terms": [],
+  "unexpected_terms": [],
+  "dead_params": [],
+  "declared_dead": [],
+  "unexpected_dead": [],
+  "declared_dead_but_alive": [],
+  "control_prior_grad_sum": 0.0,
+  "head_o_grad_step0": 549.4039311408997,
+  "n_trainable": 258,
+  "groups_grad": {
+   "adapter": 3792.433503627777,
+   "S": 3890.7267607413232,
+   "T": 696.658772286959,
+   "O": 4976.243400512263,
+   "head_s": 7143.040444135666,
+   "head_o": 12331.805985808372,
+   "wm": 4675.5302552317735
+  },
+  "pass": true
+ },
+ "code_mix_probe": {
+  "code_mix": "whole",
+  "p_gt": 0.5,
+  "n_labelled": 64,
+  "n_draws_samples": 256,
+  "n_partial": 0,
+  "n_all_gt": 118,
+  "n_all_own": 138,
+  "unit_gt_rate": {
+   "decisions": 0.4609375,
+   "speed": 0.4609375,
+   "angle": 0.4609375,
+   "tte": 0.4609375,
+   "timegap": 0.4609375,
+   "geom": 0.4609375,
+   "leadgap": 0.4609375
+  },
+  "pass": true
+ },
+ "o_interface_probe": {
+  "o_interface": "full",
+  "shift": 2.5,
+  "n_windows": 64,
+  "perturbations": {
+   "donor_code": {
+    "max_abs_dtraj60": 0.10561370849609375,
+    "o_read_code_abs_max": 0.5483947396278381,
+    "o_read_ck_minus_nominal_abs_max": 37.59679412841797,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "gt_code": {
+    "max_abs_dtraj60": 2.055014133453369,
+    "o_read_code_abs_max": 4.651522159576416,
+    "o_read_ck_minus_nominal_abs_max": 37.59679412841797,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "random_code": {
+    "max_abs_dtraj60": 2.099435567855835,
+    "o_read_code_abs_max": 0.9999334216117859,
+    "o_read_ck_minus_nominal_abs_max": 37.59679412841797,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "shifted_checkpoints": {
+    "max_abs_dtraj60": 3.721510648727417,
+    "o_read_code_abs_max": 0.5401970148086548,
+    "o_read_ck_minus_nominal_abs_max": 35.087223052978516,
+    "o_read_ck_ok_abs_max": 1.0,
+    "max_abs_d_ckpt": 2.500001907348633,
+    "t_reads_s_max_abs_dgoal_logits": 0.07627832144498825
+   }
+  },
+  "pass": true
+ },
+ "acc_probe": {
+  "w_acc_declared": 0.0,
+  "w_probe": 1.0,
+  "acc": 0.003645470831543207,
+  "acc_at_zero_weight": 0.003645470831543207,
+  "total_w": 32.607295989990234,
+  "total_0": 32.60365295410156,
+  "contribution": 0.003643035888671875,
+  "w_x_acc": 0.003645470831543207,
+  "head_o_grad_diff": 4.856958389282227,
+  "read_o_grad_diff": 0.0,
+  "control_repeat_total_diff": 0.0,
+  "control_repeat_grad_diff": 0.0,
+  "control_prior_grad_diff": 0.0,
+  "control_wm_grad_diff": 0.0,
+  "declared_zero_total_reproduces_exactly": true,
+  "pass": true
+ },
+ "admissibility": {
+  "allowed": [
+   "a_s",
+   "a_t",
+   "act",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ],
+  "read": [
+   "a_s",
+   "a_t",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ]
+ },
+ "levers": {
+  "navonly": false,
+  "consistency": true,
+  "wm": "b",
+  "cons_absent": "mask",
+  "code_mix": "whole",
+  "o_interface": "full",
+  "w_acc": 0.0,
+  "launch_intent_w": 0.0,
+  "wm_idm_gamma": 100.0,
+  "kin_mode": "yaw",
+  "wm_ch1_scale": 0.4,
+  "p_gt_start": 1.0,
+  "p_gt_end": 0.2,
+  "hist": 4,
+  "hmax": 16,
+  "window_start": 3,
+  "prior_frozen": true,
+  "residual_zero_init": true,
+  "params": {
+   "adapter": 275712,
+   "cond": 25088,
+   "S": 1321737,
+   "T": 1463868,
+   "O": 2120216,
+   "WM": 2007874,
+   "LEAD": 66306,
+   "AUX": 1024
+  },
+  "n_params_trainable": 7281825,
+  "w": {
+   "w_pen": 0.5,
+   "w_pen_self": 0.25,
+   "w_wm": 0.1,
+   "w_tac": 1.0,
+   "w_cons": 0.5
+  },
+  "lead_head": "on",
+  "w_lead": 3.362,
+  "lead_vision_only_source": true,
+  "aux_cond": "token",
+  "aux_vision_only_source": true,
+  "aux_token_dim": 3,
+  "ego_perturb": {
+   "ego_perturb_p": 0.0,
+   "ego_perturb_vscale": [
+    0.5,
+    1.0
+   ],
+   "ego_perturb_vmax": 8.0,
+   "ego_perturb_adrop": 1.5,
+   "ego_perturb_yawrate_std": 0.0,
+   "ego_perturb_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ]
+  },
+  "dagger": {
+   "dagger_p": 0.0,
+   "dagger_seed": 0,
+   "dagger_bank": null,
+   "dagger_bank_sha256": null,
+   "kin_mode": "yaw",
+   "bank_hmax": null,
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ],
+   "labels_re_expressed": [
+    "lab_s.rc"
+   ],
+   "nav_rebuild_invalid": false,
+   "constants_sha256": "8f94b3b5e35f4457be51d695842457a340d1228ab48c5862f4db1e5063f3ffaf"
+  },
+  "dagger_p": 0.0,
+  "dagger_bank_sha256": null,
+  "dagger_bank_sha256_declared": null,
+  "recover": {
+   "recover_p": 0.0,
+   "recover_dev_law": "empirical",
+   "recover_dev_shape": "constant",
+   "recover_dev_bank": null,
+   "recover_dev_bank_sha256": null,
+   "recover_target": "rejoin",
+   "recover_rejoin_steps": 10,
+   "recover_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav",
+    "pose_now"
+   ],
+   "retargeted": [
+    "gt",
+    "lab_s.rc"
+   ]
+  },
+  "recover_table": null,
+  "ego_perturb_with_dagger": false,
+  "ego_perturb_stream": 0,
+  "ego_dagger_overlap_n": 0,
+  "launch_intent": {
+   "launch_intent_w": 0.0,
+   "v0_max": 6.0,
+   "dv": 1.0,
+   "dt": 0.2,
+   "knots": [
+    1,
+    12
+   ],
+   "axis": "along (x of the ego frame at NOW)",
+   "mask_from": "the LOGGED kin3[:, 0] and the GT future, taken before any ego stage"
+  },
+  "launch_n": 0,
+  "launch_eligible": 0,
+  "init_ckpt": null,
+  "lr_schedule": {
+   "lr": 0.0003,
+   "warmup": 200,
+   "total": 61568
+  }
+ },
+ "steps_total": 61568,
+ "S_steps_per_epoch_100pct": 15392,
+ "info": {
+  "batch": 64,
+  "md5_overridden": false,
+  "n_clips": 14512,
+  "n_clips_expected": 14512,
+  "n_clips_all": 14512,
+  "n_excluded": 0,
+  "n_excluded_declared": 0,
+  "excluded_in_train": 0,
+  "excluded_sha256": null,
+  "train_sha256": "9844151fcb15504fe9e729fdc6235aebd3e31bfd363cb362994852931ada60f4",
+  "lru": 174,
+  "kin_mode": "yaw",
+  "n_windows_all_clips": 985048,
+  "n_windows": 985048,
+  "window_start": 3,
+  "window_t_min": 3,
+  "train_window_list_sha256": "c13477163d6515f75bbe8c18f64ff45b0dc33ae356706efa33df0b2f74448e60",
+  "p10_units": "pose_kappa",
+  "ds_window_start": 3,
+  "lead_labels": {
+   "path": "/root/dscale10k/merged/lead_union.npz",
+   "sha256": "e96c2d5e315cb76e5eaf87fb303ba9de17e3ebabf873f6dbd15451c29d25bdb3",
+   "n_rows": 1463944,
+   "n_has": 1335115,
+   "n_near": 383889,
+   "n_clips": 14512,
+   "n_clips_with_labels": 13928
+  }
+ },
+ "argv_sha": "3834e7cbda3a3b9a",
+ "ego_perturb_probe": {
+  "ego_perturb": "off",
+  "pass": true,
+  "skipped": "--ego-perturb-p 0: the perturbation is not applied; the default run is the pre-change run"
+ },
+ "dagger_probe": {
+  "dagger": "off",
+  "pass": true,
+  "skipped": "--dagger-p 0: no row is swapped; the default run is the pre-change run"
+ },
+ "ego_dagger_compose_probe": {
+  "ego_dagger_compose": "off",
+  "pass": true,
+  "overlap": 0,
+  "skipped": "--ego-perturb-with-dagger not named: the two levers are not composed (the default run is the pre-change run)"
+ },
+ "recover_probe": {
+  "recover": "off",
+  "pass": true,
+  "skipped": "--recover-p 0: the perturbation is not applied; the default run is the pre-change run"
+ },
+ "t2bank_probe": {
+  "t2_bank": "off",
+  "pass": true,
+  "skipped": "--t2-bank-p 0: no row is swapped; the default run is the pre-change run"
+ },
+ "launch_intent_probe": {
+  "launch_intent": "off",
+  "pass": true,
+  "launch_n": 0,
+  "launch_eligible": 0,
+  "skipped": "--launch-intent-w not named: the term is not in the loss (the default run is the pre-change run)"
+ },
+ "lead_head_probe": {
+  "w_lead_declared": 3.362,
+  "aux_cond": "token",
+  "vision_only": {
+   "keys_read": [
+    "frame_ok"
+   ],
+   "vision_sensitivity": 0.06112191453576088,
+   "source_problems": []
+  },
+  "aux_vision_only": {
+   "keys_read": [
+    "frame_ok"
+   ],
+   "vision_sensitivity": 0.03166273236274719,
+   "source_problems": []
+  },
+  "probe_n_has": 61,
+  "probe_n_near": 20,
+  "step0_total": 32.60402297973633,
+  "step0_lead_term": 0.7074215412139893,
+  "step0_lead_bce": 0.6912052035331726,
+  "step0_lead_huber": 0.01621636562049389,
+  "step0_total_without_lead": 30.225671758174897,
+  "step0_lead_share": 0.0729465570257878,
+  "w_lead_for_10pct_share": 4.747392859096799,
+  "term": 0.7074215412139893,
+  "total_w": 42.403297424316406,
+  "total_0": 40.02494812011719,
+  "contribution": 2.3783493041992188,
+  "w_lead_x_term": 2.3783512215614317,
+  "head_grad_diff": 170.30201721191406,
+  "head_grad_diff_presence_row": 11.15755558013916,
+  "head_grad_diff_gap_row": 0.24352502822875977,
+  "head_grad_at_w0_detach_control": 0.0,
+  "e_aux_lead_cols_grad_at_w0": 38.645538330078125,
+  "plan_moves_with_token": 0.9790687561035156,
+  "control_repeat_total_diff": 0.0,
+  "control_repeat_grad_diff": 0.0,
+  "control_allfalse_term": 0.0,
+  "control_allfalse_total_diff": 0.0,
+  "control_allfalse_head_grad_diff": 0.0,
+  "control_prior_grad_diff": 0.0,
+  "pass": true
+ },
+ "lead_labels": {
+  "path": "/root/dscale10k/merged/lead_union.npz",
+  "sha256": "e96c2d5e315cb76e5eaf87fb303ba9de17e3ebabf873f6dbd15451c29d25bdb3",
+  "n_rows": 1463944,
+  "n_has": 1335115,
+  "n_near": 383889,
+  "n_clips": 14512,
+  "n_clips_with_labels": 13928
+ }
+}
