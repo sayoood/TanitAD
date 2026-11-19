@@ -1,0 +1,126 @@
+PROBE-N1D-FEAT  FULL RUN
+card: PREREG_V8F_N1DW.md sec 10 (sha256 59f2b7f919af958fd2da9c21f559c0f68db64add84e6fcb70cd5d6c7905c2301)
+tier: T0 decodability of frozen features, never driving performance   evidence: MEASURED (ours; banked N1D checkpoints, D1-HO grid, CPU, zero training)
+estimator: taniteval.ci.paired_episode_cluster_bootstrap, B 2000, seed 0, over the held-out episodes; answers 'another draw of EPISODES' only
+windows 5736 / episodes 497; class counts [1934, 1862, 1940]; majority share 0.338215 (card 0.338215); bar 0.0383
+feature dims {'F_TEXT': [15], 'F_NAV': [256], 'F_PLAN': [1024], 'F_VIS': [256]}; gt_ok False windows 0
+
+== accuracy (point; the CIs are in PROBE_RESULT.json) ==
+N1D_s0 tree seed0: F-NAV=0.5934  F-PLAN=0.7028  F-PLAN+TEXT=0.7333  F-TEXT=0.6044  F-TEXT-REG=0.4735  F-TEXT-REG-ALL=0.3040  F-VIS=0.5875
+N1D_s0 tree seed1: F-NAV=0.5934  F-PLAN=0.7028  F-PLAN+TEXT=0.7333  F-TEXT=0.6044  F-TEXT-REG=0.4735  F-TEXT-REG-ALL=0.3040  F-VIS=0.5875
+N1D_s0 logit seed0: F-NAV=0.5183  F-PLAN=0.6844  F-PLAN+TEXT=0.6834  F-TEXT=0.5159  F-VIS=0.5722
+N1D_s0 logit seed1: F-NAV=0.5183  F-PLAN=0.6844  F-PLAN+TEXT=0.6834  F-TEXT=0.5159  F-VIS=0.5722
+N1D_s1 tree seed0: F-NAV=0.5910  F-PLAN=0.6937  F-PLAN+TEXT=0.7249  F-TEXT=0.6044  F-TEXT-REG=0.4735  F-TEXT-REG-ALL=0.3040  F-VIS=0.5614
+N1D_s1 tree seed1: F-NAV=0.5910  F-PLAN=0.6937  F-PLAN+TEXT=0.7249  F-TEXT=0.6044  F-TEXT-REG=0.4735  F-TEXT-REG-ALL=0.3040  F-VIS=0.5614
+N1D_s1 logit seed0: F-NAV=0.5194  F-PLAN=0.6850  F-PLAN+TEXT=0.6841  F-TEXT=0.5159  F-VIS=0.5690
+N1D_s1 logit seed1: F-NAV=0.5194  F-PLAN=0.6850  F-PLAN+TEXT=0.6841  F-TEXT=0.5159  F-VIS=0.5690
+
+== contrasts A-B on the same windows (paired episode-cluster bootstrap, B 2000 seed 0) ==
+-- N1D_s0|tree|seed0
+   NAV-TEXT       -0.0110 [-0.0197, -0.0023] separated  (n 5736/497 ep)
+   PLAN-NAV       +0.1093 [+0.0831, +0.1373] separated  (n 5736/497 ep)
+   PLAN-TEXT      +0.0983 [+0.0725, +0.1241] separated  (n 5736/497 ep)
+   PLANTEXT-PLAN  +0.0305 [+0.0216, +0.0400] separated  (n 5736/497 ep)
+   VIS-TEXT       -0.0169 [-0.0478, +0.0137] not separated  (n 5736/497 ep)
+   PLANTEXT-TEXT  +0.1288 [+0.1056, +0.1523] separated  (n 5736/497 ep)
+   PLAN-VIS       +0.1152 [+0.0930, +0.1376] separated  (n 5736/497 ep)
+-- N1D_s0|tree|seed1
+   NAV-TEXT       -0.0110 [-0.0197, -0.0023] separated  (n 5736/497 ep)
+   PLAN-NAV       +0.1093 [+0.0831, +0.1373] separated  (n 5736/497 ep)
+   PLAN-TEXT      +0.0983 [+0.0725, +0.1241] separated  (n 5736/497 ep)
+   PLANTEXT-PLAN  +0.0305 [+0.0216, +0.0400] separated  (n 5736/497 ep)
+   VIS-TEXT       -0.0169 [-0.0478, +0.0137] not separated  (n 5736/497 ep)
+   PLANTEXT-TEXT  +0.1288 [+0.1056, +0.1523] separated  (n 5736/497 ep)
+   PLAN-VIS       +0.1152 [+0.0930, +0.1376] separated  (n 5736/497 ep)
+-- N1D_s0|logit|seed0
+   NAV-TEXT       +0.0024 [-0.0007, +0.0081] not separated  (n 5736/497 ep)
+   PLAN-NAV       +0.1661 [+0.1415, +0.1919] separated  (n 5736/497 ep)
+   PLAN-TEXT      +0.1686 [+0.1440, +0.1946] separated  (n 5736/497 ep)
+   PLANTEXT-PLAN  -0.0010 [-0.0074, +0.0052] not separated  (n 5736/497 ep)
+   VIS-TEXT       +0.0563 [+0.0262, +0.0854] separated  (n 5736/497 ep)
+   PLANTEXT-TEXT  +0.1675 [+0.1432, +0.1920] separated  (n 5736/497 ep)
+   PLAN-VIS       +0.1123 [+0.0914, +0.1348] separated  (n 5736/497 ep)
+-- N1D_s0|logit|seed1
+   NAV-TEXT       +0.0024 [-0.0007, +0.0081] not separated  (n 5736/497 ep)
+   PLAN-NAV       +0.1661 [+0.1415, +0.1919] separated  (n 5736/497 ep)
+   PLAN-TEXT      +0.1686 [+0.1440, +0.1946] separated  (n 5736/497 ep)
+   PLANTEXT-PLAN  -0.0010 [-0.0074, +0.0052] not separated  (n 5736/497 ep)
+   VIS-TEXT       +0.0563 [+0.0262, +0.0854] separated  (n 5736/497 ep)
+   PLANTEXT-TEXT  +0.1675 [+0.1432, +0.1920] separated  (n 5736/497 ep)
+   PLAN-VIS       +0.1123 [+0.0914, +0.1348] separated  (n 5736/497 ep)
+-- N1D_s1|tree|seed0
+   NAV-TEXT       -0.0134 [-0.0225, -0.0043] separated  (n 5736/497 ep)
+   PLAN-NAV       +0.1027 [+0.0765, +0.1285] separated  (n 5736/497 ep)
+   PLAN-TEXT      +0.0893 [+0.0634, +0.1143] separated  (n 5736/497 ep)
+   PLANTEXT-PLAN  +0.0312 [+0.0210, +0.0411] separated  (n 5736/497 ep)
+   VIS-TEXT       -0.0431 [-0.0728, -0.0138] separated  (n 5736/497 ep)
+   PLANTEXT-TEXT  +0.1205 [+0.0965, +0.1428] separated  (n 5736/497 ep)
+   PLAN-VIS       +0.1323 [+0.1088, +0.1581] separated  (n 5736/497 ep)
+-- N1D_s1|tree|seed1
+   NAV-TEXT       -0.0134 [-0.0225, -0.0043] separated  (n 5736/497 ep)
+   PLAN-NAV       +0.1027 [+0.0765, +0.1285] separated  (n 5736/497 ep)
+   PLAN-TEXT      +0.0893 [+0.0634, +0.1143] separated  (n 5736/497 ep)
+   PLANTEXT-PLAN  +0.0312 [+0.0210, +0.0411] separated  (n 5736/497 ep)
+   VIS-TEXT       -0.0431 [-0.0728, -0.0138] separated  (n 5736/497 ep)
+   PLANTEXT-TEXT  +0.1205 [+0.0965, +0.1428] separated  (n 5736/497 ep)
+   PLAN-VIS       +0.1323 [+0.1088, +0.1581] separated  (n 5736/497 ep)
+-- N1D_s1|logit|seed0
+   NAV-TEXT       +0.0035 [-0.0005, +0.0095] not separated  (n 5736/497 ep)
+   PLAN-NAV       +0.1656 [+0.1412, +0.1901] separated  (n 5736/497 ep)
+   PLAN-TEXT      +0.1691 [+0.1451, +0.1936] separated  (n 5736/497 ep)
+   PLANTEXT-PLAN  -0.0009 [-0.0081, +0.0060] not separated  (n 5736/497 ep)
+   VIS-TEXT       +0.0532 [+0.0241, +0.0827] separated  (n 5736/497 ep)
+   PLANTEXT-TEXT  +0.1682 [+0.1451, +0.1915] separated  (n 5736/497 ep)
+   PLAN-VIS       +0.1159 [+0.0926, +0.1406] separated  (n 5736/497 ep)
+-- N1D_s1|logit|seed1
+   NAV-TEXT       +0.0035 [-0.0005, +0.0095] not separated  (n 5736/497 ep)
+   PLAN-NAV       +0.1656 [+0.1412, +0.1901] separated  (n 5736/497 ep)
+   PLAN-TEXT      +0.1691 [+0.1451, +0.1936] separated  (n 5736/497 ep)
+   PLANTEXT-PLAN  -0.0009 [-0.0081, +0.0060] not separated  (n 5736/497 ep)
+   VIS-TEXT       +0.0532 [+0.0241, +0.0827] separated  (n 5736/497 ep)
+   PLANTEXT-TEXT  +0.1682 [+0.1451, +0.1915] separated  (n 5736/497 ep)
+   PLAN-VIS       +0.1159 [+0.0926, +0.1406] separated  (n 5736/497 ep)
+
+== OUTCOME, tree probe (DECIDES) ==
+   N1D_s0|tree|seed0: PROBE-PRESENT-UNUSED
+   N1D_s0|tree|seed1: PROBE-PRESENT-UNUSED
+   N1D_s1|tree|seed0: PROBE-PRESENT-UNUSED
+   N1D_s1|tree|seed1: PROBE-PRESENT-UNUSED
+   PROBE-LOST-AT-TOKEN      NOT-HELD
+   PROBE-LOST-AFTER-TOKEN   NOT-HELD
+   PROBE-PRESENT-UNUSED     HOLDS
+   PROBE-VISION             NOT-HELD
+   headline: HOLDS ['PROBE-PRESENT-UNUSED']; one-seed none
+   lever after RBW-NO-GAIN (PROBE-PRESENT-UNUSED): the decoder / rollout: a T0-against-T1 read of N1D on D1-HO (zero training) first, then the planner-side lever it points to
+
+== OUTCOME, logit probe (printed beside; a linear negative is not a negative about learnability) ==
+   N1D_s0|logit|seed0: PROBE-PRESENT-UNUSED, PROBE-VISION
+   N1D_s0|logit|seed1: PROBE-PRESENT-UNUSED, PROBE-VISION
+   N1D_s1|logit|seed0: PROBE-PRESENT-UNUSED, PROBE-VISION
+   N1D_s1|logit|seed1: PROBE-PRESENT-UNUSED, PROBE-VISION
+   PROBE-LOST-AT-TOKEN      NOT-HELD
+   PROBE-LOST-AFTER-TOKEN   NOT-HELD
+   PROBE-PRESENT-UNUSED     HOLDS
+   PROBE-VISION             HOLDS
+   headline: HOLDS ['PROBE-PRESENT-UNUSED', 'PROBE-VISION']; one-seed none
+
+== controls ==
+K-CONST: majority share live 0.338215 vs card 0.338215; fold-wise train-majority predictor pooled accuracy 0.304045; pass True
+SHUF: max |acc - 0.338215| over 40 cells = 0.0403 (must be <= 0.02); pass False
+   OUT OF BAND N1D_s0|tree|seed1|F-VIS: 0.3161
+   OUT OF BAND N1D_s0|logit|seed1|F-TEXT: 0.3785
+   OUT OF BAND N1D_s0|logit|seed1|F-NAV: 0.3741
+   OUT OF BAND N1D_s1|logit|seed1|F-TEXT: 0.3785
+   OUT OF BAND N1D_s1|logit|seed1|F-NAV: 0.3726
+   OUT OF BAND N1D_s1|logit|seed1|F-VIS: 0.3175
+K-DET: pass True  {'N1D_s0': {'F_TEXT': True, 'F_NAV': True, 'F_PLAN': True, 'F_VIS': True, 'plan0': True, 'g': True, 'ci': True, 't0': True}, 'N1D_s1': {'F_TEXT': True, 'F_NAV': True, 'F_PLAN': True, 'F_VIS': True, 'plan0': True, 'g': True, 'ci': True, 't0': True}}
+REGRESSION-ARM (F-TEXT with c0 and the exit columns c1..c12 zeroed (c13 dist, c14 dist_valid kept), tree probe, minus F-TEXT: must be separated below 0): pass True
+   N1D_s0|tree|seed0: -0.1309 [-0.1533, -0.1088] separated  (n 5736/497 ep)
+   N1D_s0|tree|seed1: -0.1309 [-0.1533, -0.1088] separated  (n 5736/497 ep)
+   N1D_s1|tree|seed0: -0.1309 [-0.1533, -0.1088] separated  (n 5736/497 ep)
+   N1D_s1|tree|seed1: -0.1309 [-0.1533, -0.1088] separated  (n 5736/497 ep)
+REGRESSION-ARM-ALL-ZERO (informational, not a card control): N1D_s0|tree|seed0: -0.3004 [-0.3379, -0.2621] separated  (n 5736/497 ep); N1D_s0|tree|seed1: -0.3004 [-0.3379, -0.2621] separated  (n 5736/497 ep); N1D_s1|tree|seed0: -0.3004 [-0.3379, -0.2621] separated  (n 5736/497 ep); N1D_s1|tree|seed1: -0.3004 [-0.3379, -0.2621] separated  (n 5736/497 ep)
+TREE-SEED-IDENTITY (informational): all identical between probe seeds True
+K-LABEL/K-PARITY (informational): {"N1D_s0": {"windows_matched": 5736, "windows_mine": 5736, "g_max_abs_diff_m": 0.0, "label_agree": 5736, "tick0_plan_max_abs_diff_m_vs_dump_ol": 0.0, "dump_dir": "/root/strat1/navrbd/out/t1/dump_NAVRBD-HO-N1D_s0_m10_causal_heads"}, "N1D_s1": {"windows_matched": 5736, "windows_mine": 5736, "g_max_abs_diff_m": 0.0, "label_agree": 5736, "tick0_plan_max_abs_diff_m_vs_dump_ol": 0.0, "dump_dir": "/root/strat1/navrbd/out/t1/dump_NAVRBD-HO-N1D_s1_m10_causal_heads"}}
+
+CONTROL STATUS: PROBLEM SHUF
