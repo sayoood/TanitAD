@@ -218,7 +218,7 @@ def test_existing_r_kind_argv_sha_is_the_e71782a3_value(key, tmp_path):
 
 
 def test_kinds_and_bases():
-    assert REAL.KINDS == ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx") and REAL.D_KINDS == ("N1D", "N1Dx")
+    assert REAL.KINDS == ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx", "N1DW4", "N1DW2") and REAL.D_KINDS == ("N1D", "N1Dx")      # PREREG_V8F_N1DW adds the two W kinds
     assert REAL.RB_BASE["N1D"] == REAL.RB_BASE["N1Dx"] == "N1" and set(REAL.D_KINDS) <= set(REAL.RB_KINDS) <= set(REAL.NAV_KINDS) and not set(REAL.D_KINDS) & set(REAL.CTX_KINDS)
     assert REAL.base_kind("N1D") == "N1" and "--nav-rb-feat" not in REAL.RB_FLAGS and REAL.RB_FEAT_FLAG == "--nav-rb-feat"
 
@@ -275,10 +275,10 @@ MUTATIONS = {
     "render_dx_variant_real": ('        rb[rb.index("--nav-rb-variant") + 1] = "shuffle"', '        pass'),
     "pair_drop_diff_clause": ('    if diff:\n        bad.append(f"the {kind} argv differs from N1R', '    if False:\n        bad.append(f"the {kind} argv differs from N1R'),
     "pair_drop_new_sha_clause": ('    if flag_value(toks, "--nav-rb-sha256") in (None, "", flag_value(ref, "--nav-rb-sha256")):', '    if False:'),
-    "post_drop_width_clause": ('        if w is not None and kind in D_KINDS and tuple(w.shape)[1:] != (15,):', '        if False:'),
+    "post_drop_width_clause": ('        if w is not None and kind in DCHAN_KINDS and tuple(w.shape)[1:] != (15,):', '        if False:'),      # PREREG_V8F_N1DW: the 15-column kinds are DCHAN_KINDS (D + W)
     "geval_drop_feat_regression_arm": ('    if ck["cfg"].get("nav_rb") == "on" and ck["cfg"].get("nav_rb_feat", "state") != "state":', '    if False:'),
     "report_use_r_names_for_d": ('            if not r.get(sp, {}).get("G-CLOCK-RBD_pass"):', '            if False:'),
-    "names_d_use_r_files": ('    return (RBD_NPZ, RBD_REPORT) if kind in D_KINDS else', '    return (RBD_NPZ, RBD_REPORT) if False else'),
+    "names_d_use_r_files": ('    return (RBD_NPZ, RBD_REPORT) if kind in DCHAN_KINDS else', '    return (RBD_NPZ, RBD_REPORT) if False else'),      # PREREG_V8F_N1DW: as above
 }
 EXPECT_RED = {"drop_group_gradient_clause": "gate", "drop_group_zero_control_clause": "gate", "drop_group_n_on_clause": "gate", "drop_dead_in_batch_clause": "gate", "drop_feat_lever_clause": "gate",
               "drop_info_feat_clause": "gate", "drop_missing_feat_flag_clause": "gate", "drop_r_kind_refusal": "gate", "render_without_the_feat": "render", "render_dx_variant_real": "render",

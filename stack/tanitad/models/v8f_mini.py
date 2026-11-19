@@ -255,6 +255,8 @@ class V8FMiniConfig:
                                        # `launch_mask` marks (GT-launch: v0 < 6 m/s and the GT chord speed over the last 0.2 s of the horizon >= v0 + 1 m/s). 0.0 = the term is NOT in the total and NOT computed =
                                        # every earlier arm, bit for bit (no new tensor op, no new T key). > 0 = the batch must carry `launch` (the trainer computes it from the LOGGED state before any ego stage)
 
+    rb_window_w: float = 1.0           # PREREG_V8F_N1DW (`--rb-window-w`): w, the weight of O's trajectory terms (ADE / 3 + 0.5 FDE / 6) on ROUNDABOUT samples (`rb` mask = c0 of the sample's nav_rb row at NOW; training only). 1.0 = the term is NOT
+                                       # computed and NOT in the total = every earlier arm, bit for bit (no new tensor op, no new T key). > 1 = the batch must carry `rb`; the total gains w_traj x (w - 1) x rb_traj
     w_op: float = 0.0                  # PREREG_V8F_OTBAND (`--w-op`): weight of the operative-band term (ADE over knots 1-10 / 3 + 0.5 x FDE at knot 10 / 6). 0.0 = NOT in the total and NOT computed = every earlier arm, bit for bit
     w_tac_traj: float = 0.0            # PREREG_V8F_OTBAND (`--w-tac-traj`): weight of the tactical-band term (ADE over knots 11-30 / 3 + 0.5 x FDE at knot 30 / 6). 0.0 = NOT in the total
     stok_dim: int = 0                  # PREREG_V8F_OTBAND (`--t-stok-dir`): the strategic token's dimension, read from the stok file's metadata. 0 = no token = every earlier arm, bit for bit (no module, no key added)
@@ -290,6 +292,8 @@ class V8FMiniConfig:
             raise ValueError(f"w_acc must be a finite number >= 0, got {self.w_acc!r}")
         if not (math.isfinite(self.launch_intent_w) and self.launch_intent_w >= 0.0):
             raise ValueError(f"launch_intent_w must be a finite number >= 0, got {self.launch_intent_w!r}")
+        if not (math.isfinite(self.rb_window_w) and self.rb_window_w >= 1.0):
+            raise ValueError(f"rb_window_w must be a finite number >= 1, got {self.rb_window_w!r}")
         for nm in ("w_op", "w_tac_traj"):
             if not (math.isfinite(getattr(self, nm)) and getattr(self, nm) >= 0.0):
                 raise ValueError(f"{nm} must be a finite number >= 0, got {getattr(self, nm)!r}")
@@ -567,6 +571,16 @@ def launch_along_term(traj30: Tensor, gt: Tensor, gok: Tensor, launch: Tensor) -
     per = d.sum(1) / float(traj30.shape[1])
     g = gok * launch.to(gok.dtype)
     return (per * g).sum() / gok.sum().clamp_min(1.0)
+
+
+def rb_traj_terms(traj30: Tensor, gt: Tensor, gok: Tensor, rb: Tensor) -> tuple:
+    """PREREG_V8F_N1DW: ``(ade_rb, fde_rb)``, the RB-sample part of :func:`traj_terms`: the SAME per-sample smoothed L2 distance ``d`` (mean over the 30 knots / the last knot), times ``gok`` AND the roundabout mask ``rb`` [B] bool,
+    summed over the batch and divided by the SAME denominator as ``traj_terms`` (``gok.sum().clamp_min(1.0)``: the batch's GT-valid samples, NOT the RB count). So ``ade + ade_rb`` is ADE with weight 2 on an RB sample and 1 elsewhere, and a
+    batch with no RB sample gives exactly 0.0. The loss term and the G-LIVE probe both call this one spelling."""
+    d = torch.sqrt(((traj30 - gt) ** 2).sum(-1) + 1e-9)
+    g = gok * rb.to(gok.dtype)
+    n = gok.sum().clamp_min(1.0)
+    return (d.mean(1) * g).sum() / n, (d[:, -1] * g).sum() / n
 
 
 # ------------------------------------------------------------------------------------------------ hard projection
@@ -1256,6 +1270,11 @@ class V8FMini(nn.Module):
             if "launch" not in batch:
                 raise ValueError("launch_intent_w > 0 but the batch carries no `launch` mask: the trainer computes it from the LOGGED state before any ego stage (v8f_mini_train.py launch stage)")
             T["launch_along"] = launch_along_term(out["traj30"], gt, gok, batch["launch"])
+        if cfg.rb_window_w > 1.0:                                    # PREREG_V8F_N1DW: computed ONLY when declared (1.0 = no new tensor op, no new T key = the tip, bit for bit)
+            if "rb" not in batch:
+                raise ValueError("rb_window_w > 1 but the batch carries no `rb` mask: the trainer computes it from c0 of the LOGGED nav_rb row at NOW before any ego stage (v8f_mini_train.py rb_mask)")
+            ade_rb, fde_rb = rb_traj_terms(out["traj30"], gt, gok, batch["rb"])
+            T["rb_traj"] = ade_rb / 3.0 + 0.5 * fde_rb / 6.0
         if cfg.level_head == "on":                                   # PREREG_V8F_LEVEL: computed ONLY when the head is built (off = no new tensor op, no new T key = the tip, bit for bit)
             if "level_y" not in batch or "level_ok" not in batch:
                 raise ValueError("level_head on but the batch carries no `level_y` / `level_ok`: the trainer computes them from the LOGGED speed before any ego stage (v8f_mini_train.py level_stage)")
@@ -1315,6 +1334,7 @@ class V8FMini(nn.Module):
                  + cfg.w_traj * (T["ade"] / 3.0 + 0.5 * T["fde"] / 6.0))
         total = total + cfg.w_acc * T["acc"] if cfg.w_acc > 0.0 else total          # PREREG_V8F_OACC: ONE line (a mutation deletes it); w_acc 0 adds nothing: B's total, bit for bit
         total = total + cfg.w_traj * cfg.launch_intent_w * T["launch_along"] / 3.0 if cfg.launch_intent_w > 0.0 else total      # PREREG_V8F_LAUNCH_INTENT: ONE line (a mutation deletes it); W 0 adds nothing: the tip's total
+        total = total + cfg.w_traj * (cfg.rb_window_w - 1.0) * T["rb_traj"] if cfg.rb_window_w > 1.0 else total      # PREREG_V8F_N1DW: ONE line (a mutation deletes it); w 1.0 adds nothing: the tip's total
         total = total + cfg.w_op * T["op"] if cfg.w_op > 0.0 else total                        # PREREG_V8F_OTBAND: ONE line each (a mutation deletes it); weight 0 adds nothing: the tip's total
         total = total + cfg.w_tac_traj * T["tac"] if cfg.w_tac_traj > 0.0 else total
         total = total + cfg.w_level * T["level"] if cfg.level_head == "on" else total          # PREREG_V8F_LEVEL: ONE line (a mutation deletes it); head off adds nothing: the tip's total
@@ -1397,6 +1417,8 @@ class V8FMini(nn.Module):
                 "w": {"w_pen": cfg.w_pen if cfg.consistency else 0.0, "w_pen_self": cfg.w_pen_self if cfg.consistency else 0.0,
                       "w_wm": cfg.w_wm if self.wm is not None else 0.0,
                       "w_tac": cfg.w_tac, "w_cons": cfg.w_cons}}                       # PREREG_V8F_WC: T's constraint term is w_tac x w_cons
+        if self.cfg.rb_window_w != 1.0:
+            lv["rb_window_w"] = self.cfg.rb_window_w          # PREREG_V8F_N1DW: ABSENT at 1.0, so every earlier arm's levers equal the tip's (the gate reads .get("rb_window_w", 1.0))
         if self.e_nav_rb is not None:
             if self.cfg.nav_rb_feat != "state":
                 lv["nav_rb_feat"] = self.cfg.nav_rb_feat      # PREREG_V8F_NAVRBD: ABSENT for state, so every earlier arm's levers equal the tip's (the gate reads .get("nav_rb_feat", "state"); the BUILT width is e_nav_rb.weight.shape[1])

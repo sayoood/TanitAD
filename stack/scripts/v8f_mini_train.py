@@ -125,6 +125,9 @@ FLAG_CHECKS = {
     # PREREG_V8F_NAVRBD: `lever:nav_rb_feat` = equals built_levers().get("nav_rb_feat", "state") AND the BUILT e_nav_rb.weight width (NAV_RB_DIM) AND the LOADED array's width AND the cfg that goes into the checkpoint
     # (bad_navrb): argv -> make_config -> cfg.nav_rb_feat -> V8FMini (Linear(NAV_RB_DIM[feat], d)) / D.nav_rb_arrays(feat) -> navrb_probe (per-column-group gradients) -> the window item -> _nav_tok -> the total loss.
     "nav_rb_feat": "lever:nav_rb_feat",
+    # PREREG_V8F_N1DW: `cfg:rb_window_w` = equals the BUILT config AND built_levers().get("rb_window_w", 1.0): argv -> make_config -> cfg.rb_window_w -> the BUILT loss (rb_traj term) / built_levers / the checkpoint cfg -> rb_window_probe (G-LIVE:
+    # the term reaches the total with its weight on the rows rb_mask names, O's head gets its gradient, an all-False mask reads EXACTLY 0.0) -> the run record (rb_n / rb_eligible / rb_weight_share)
+    "rb_window_w": "cfg:rb_window_w",
     # PREREG_V8F_MRATE: `lever:wm_k` = equals built_levers().get("wm_k", 1) (the BUILT modules' window / dilation / causal pad, WMAux.built_k); `lever:wm_only` = the record the WM-only loader read back (bad_wm_only: non-WM tensors bit-equal to the checkpoint,
     # NO WM tensor loaded, the WM re-initialised under --seed, trainable == the WM's parameters exactly, every other lever at its default) -> wm_only_live_check (G-LIVE) + planner_identity_probe -> `model.wm_only_loss(b)` in the loop.
     "wm_k": "lever:wm_k", "wm_only": "lever:wm_only",
@@ -180,6 +183,10 @@ def build_parser():
                     help="PREREG_V8F_LAUNCH_INTENT: W, the EXTRA weight on O's along-track distance over knots 1-12 (tau 0.2-2.4 s, the executed horizon at m = 10) for GT-launch TRAIN samples (the LOGGED v0 < 6 m/s and the GT chord speed over the "
                          "last 0.2 s of the 6 s horizon >= v0 + 1 m/s; label-side, nothing of it is read at inference). The term is W x the along-axis, knots 1-12 slice of ADE's own per-knot distance, on launch samples only: on a launch sample that slice "
                          "carries weight 1 + W; a non-launch sample's loss is unchanged. 0.0 (default) = the term is not computed and not in the loss = every earlier arm, bit for bit. > 0 = the value comes from the PREREG's dose rule, is written into the argv and never tuned")
+    ap.add_argument("--rb-window-w", dest="rb_window_w", type=float, default=1.0,
+                    help="PREREG_V8F_N1DW: w, the weight of O's trajectory terms (ADE / 3 + 0.5 FDE / 6) on ROUNDABOUT train samples (the LOGGED c0 of the sample's nav_rb row at NOW; label-side, nothing of it is read at inference): the total gains "
+                         "w_traj x (w - 1) x the RB-sample part of those terms, over the batch's GT-valid denominator, so on an RB sample the trajectory terms carry weight exactly w and every other sample's loss is unchanged. "
+                         "1.0 (default) = the term is not computed and not in the loss = every earlier arm, bit for bit. > 1 needs --nav-rb on and --w-traj > 0; the value comes from the PREREG's dose list and is written into the argv")
     # ---- PREREG_V8F_LEVEL (lever (a) of DECISION_K2). Both flags default to OFF and have their G-DVB entry in FLAG_CHECKS and their clause in bad_level.
     ap.add_argument("--level-head", dest="level_head", choices=M.LEVEL_HEAD_MODES, default="off",
                     help="PREREG_V8F_LEVEL: off (default) = nothing is built = every earlier arm, bit for bit (state dict AND outputs). on = a head on the mean of the CURRENT tick frame's adapted VISION tokens -> MLP(d, d, 1) -> v_hat (m/s), "
@@ -474,6 +481,7 @@ def make_config(a) -> M.V8FMiniConfig:
                            ctx_heads=a.ctx_heads, w_ctx=a.w_ctx, ctx_detach=a.ctx_detach, nav_source=a.nav_source,        # PREREG_V8F_STRAT1: the lines that apply the STRAT1 levers (a mutation deletes them)
                            nav_rb=a.nav_rb,                                                                             # PREREG_V8F_NAVRB2: the line that applies --nav-rb (a mutation deletes it)
                            nav_rb_feat=a.nav_rb_feat,                                                                   # PREREG_V8F_NAVRBD: the line that applies --nav-rb-feat (a mutation deletes it)
+                           rb_window_w=a.rb_window_w,                                                                   # PREREG_V8F_N1DW: the line that applies --rb-window-w (a mutation deletes it)
                            lead_head=a.lead_head, w_lead=a.w_lead, aux_cond=a.aux_cond,
                            w_op=a.w_op, w_tac_traj=a.w_tac_traj,                      # PREREG_V8F_OTBAND: the lines that apply the band levers (a mutation deletes them)
                            stok_dim=(D.stok_dim_of(a.t_stok_dir) if a.t_stok_dir else 0))
@@ -868,7 +876,7 @@ WM_ONLY_DEFAULT_DESTS = ("navonly", "no_consistency", "cons_absent", "code_mix",
                          "ego_perturb_p", "ego_perturb_yawrate_std", "dagger_p", "dagger_bank", "dagger_bank_sha256", "ego_perturb_with_dagger", "recover_p", "recover_dev_bank", "recover_dev_bank_sha256",
                          "encoder", "lora_lr", "frames_root", "accum", "enc_ckpt", "window_start", "w_op", "w_tac_traj", "t_stok_dir", "t_stok_shuffle", "freeze", "v10_md5",
                          "ctx_heads", "w_ctx", "ctx_detach", "ctx_lr_mult", "ctx_labels", "ctx_labels_sha256", "nav_source", "nav_text_npz", "nav_text_sha256",
-                         "nav_rb", "nav_rb_npz", "nav_rb_sha256", "nav_rb_variant", "nav_rb_lr_mult", "nav_rb_feat")
+                         "nav_rb", "nav_rb_npz", "nav_rb_sha256", "nav_rb_variant", "nav_rb_lr_mult", "nav_rb_feat", "rb_window_w")
 
 
 def is_wm_param(name: str) -> bool:
@@ -1965,6 +1973,16 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
         bad.append(f"lever launch_intent_w: declared {a.launch_intent_w} but built {built.get('launch_intent_w')}")
     if a.launch_intent_w > 0.0 and not model.cfg.w_traj > 0.0:
         bad.append(f"launch_intent_w {a.launch_intent_w} declared but w_traj is {model.cfg.w_traj}: the term enters the total scaled by w_traj -- a lever that is declared and does nothing")
+    # PREREG_V8F_N1DW: the roundabout-window weight declared on the argv is the one the BUILT config and the BUILT model's levers say (argv -> make_config -> cfg -> built_levers); a non-finite or < 1 weight is refused (a weight below 1
+    # would DOWN-weight roundabout samples); a weight on a model with no roundabout channel, or on a zero position loss, is a lever that is declared and does nothing. rb_window_probe then reads the BUILT loss.
+    if not (math.isfinite(a.rb_window_w) and a.rb_window_w >= 1.0):
+        bad.append(f"rb_window_w {a.rb_window_w!r} is not a finite number >= 1")
+    if built.get("rb_window_w", 1.0) != a.rb_window_w:
+        bad.append(f"lever rb_window_w: declared {a.rb_window_w} but built {built.get('rb_window_w', 1.0)}")
+    if a.rb_window_w > 1.0 and (a.nav_rb != "on" or model.cfg.nav_rb != "on" or model.e_nav_rb is None):
+        bad.append(f"rb_window_w {a.rb_window_w} declared but --nav-rb is {a.nav_rb}: the mask is c0 of the nav_rb channel -- a lever that is declared and does nothing")
+    if a.rb_window_w > 1.0 and not model.cfg.w_traj > 0.0:
+        bad.append(f"rb_window_w {a.rb_window_w} declared but w_traj is {model.cfg.w_traj}: the term enters the total scaled by w_traj -- a lever that is declared and does nothing")
     if not built["prior_frozen"]:
         bad.append("the P10 prior is not frozen")
     if model.cfg.n_tok != (40 if a.grid == "pool4x10" else 160):
@@ -1978,7 +1996,7 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
     if built["wm"] != "off" and built["wm_ch1_scale"] != M.CH1_SCALE[a.kin_mode]:
         bad.append(f"WM action channel 1 scale {built['wm_ch1_scale']} != {M.CH1_SCALE[a.kin_mode]} for kin_mode {a.kin_mode}")
     for f in ("hist", "hmax", "d", "n_q", "nb", "p_gt_start", "p_gt_end", "w_ckpt", "w_tac", "w_cons", "w_traj", "w_pen",
-              "w_pen_self", "w_wm", "detach_upper", "kin_mode", "w_acc", "launch_intent_w"):
+              "w_pen_self", "w_wm", "detach_upper", "kin_mode", "w_acc", "launch_intent_w", "rb_window_w"):
         want = {"hist": a.hist, "hmax": cfg.hmax, "d": a.d, "n_q": a.n_q, "nb": a.nb}.get(f, getattr(a, f, None))
         got = getattr(model.cfg, f)
         if want is not None and not (got == want or (isinstance(want, float) and abs(got - want) < 1e-12)):
@@ -2410,6 +2428,111 @@ def launch_intent_probe(model, batch, cfg, rtol: float = 1e-3) -> dict:
         raise AssertionError(f"launch probe: the natural mask names {res['launch_n']} rows but the total moved by {res['natural_contribution']} (head_o grad diff {res['natural_head_o_grad_diff']}): the real labels do not reach the loss")
     res["pass"] = True
     return res
+
+
+def rb_mask(batch: dict) -> torch.Tensor:
+    """PREREG_V8F_N1DW: the ONE call that turns a COLLATED batch into its roundabout mask ``[B]`` bool -- the training loop calls it, and ``rb_window_probe`` (G-LIVE) calls the same function. It is c0 (``state``, column 0) of the
+    sample's ``nav_rb`` row at its NOW tick: ``batch["nav_rb"]`` is ``[B, hmax, W]``, frames ``t - hmax + 1 .. t`` (v8f_mini_data.py ``item``: ``J["nav_rb"][row(ci, j) for j in idc]``), so NOW is the LAST index, the one ``_forward``
+    gives O (``last_now = Fn - 1``, ``run_o`` -> ``_nav_tok(b, last_o)``). No row after NOW exists in the batch. It must run BEFORE any ego / DAgger stage (a swap keeps ``nav_rb`` as logged either way) and the loss reads ``b["rb"]``."""
+    return batch["nav_rb"][:, -1, 0] > 0.5
+
+
+def rb_weight_share(n_rb: int, n_eligible: int, w: float) -> float | None:
+    """PREREG_V8F_N1DW K-SHARE: the realised share of the trajectory loss that sits on roundabout samples, from the run record's counts: RB samples carry w, the other GT-valid samples 1. ``w p / (w p + 1 - p)`` with
+    ``p = n_rb / n_eligible`` (both counted over GT-valid samples). None when no GT-valid row was seen."""
+    if n_eligible <= 0:
+        return None
+    p = n_rb / n_eligible
+    return (w * p) / (w * p + 1.0 - p)
+
+
+def rb_window_probe(model, batch, cfg, rtol: float = 1e-3) -> dict:
+    """G-LIVE for PREREG_V8F_N1DW: the extra roundabout trajectory term REACHES THE LOSS THE TRAINER BACKPROPAGATES, with the declared weight, ON THE ROWS THE MASK NAMES, and O's plan parameters receive its gradient -- read from the
+    BUILT model's own ``loss`` on the real probe batch (a COPY, its own seeds). The mask is ``rb_mask(batch)`` (the loop's own call). A probe batch can hold no natural RB row (p about 6 %), so the wire is proved on a FORCED mask (the first
+    half of the GT-valid rows) and the natural mask is read beside it. With w = 1.0 declared nothing runs: {"rb_window": "off"}.
+
+      term           finite and > 0 on the forced mask, and absent at w = 1.0
+      contribution   total(w) - total(1) == w_traj x (w - 1) x term (to ``rtol`` and float32 rounding). DELETE the line that adds the term and this reads 0.0 -> RED
+      O's head       sum |grad(total(w)) - grad(total(1))| over ``head_o.*`` > 0
+      natural mask   when it holds >= 1 GT-valid row, its contribution is > 0 too (the real labels reach the loss)
+      controls       (a) the same loss twice at w = 1.0 gives gradients that differ by EXACTLY 0.0; (b) an ALL-FALSE mask at w gives term 0.0, total difference 0.0 and gradient difference EXACTLY 0.0 (total's gradient bit-equal to
+                     w = 1's; a mask that is ignored reads non-zero); (c) the frozen P10 prior's gradient difference is EXACTLY 0.0; (d) so is the world-model auxiliary's, when built
+
+    Returns the record selfcheck.json carries; any violation is an AssertionError, which the caller turns into a refusal."""
+    W = float(cfg.rb_window_w)
+    if not W > 1.0:
+        return {"rb_window": "off", "pass": True, "rb_n": 0, "rb_eligible": 0, "skipped": "--rb-window-w not named (or 1.0): the term is not in the loss (the default run is the pre-change run)"}
+    eps32 = float(torch.finfo(torch.float32).eps)
+    nat = rb_mask(batch)
+    gok = batch["gt_ok"].bool()
+    if nat.dtype != torch.bool or tuple(nat.shape) != (int(gok.shape[0]),):
+        raise AssertionError(f"rb probe: the mask is {nat.dtype} {tuple(nat.shape)}, a bool [B] is required")
+    elig = int(gok.sum())
+    if elig < 2:
+        raise AssertionError(f"rb probe: only {elig} GT-valid rows in the probe batch; the wire cannot be seen")
+    forced = torch.zeros_like(nat)
+    forced[gok.nonzero().flatten()[: max(1, elig // 2)]] = True
+    none = torch.zeros_like(nat)
+    m = copy.deepcopy(model).cpu()
+    m.train()
+    named = [(n, p) for n, p in m.named_parameters() if p.requires_grad]
+
+    def run(w_, mask):
+        m.cfg.rb_window_w = w_
+        for _, p in named:
+            p.grad = None
+        for p in m.prior.parameters():
+            p.grad = None
+        torch.manual_seed(20261119)
+        out = m.loss({**batch, "rb": mask}, p_gt=0.5, gen=torch.Generator().manual_seed(11))
+        T = out["terms"]
+        for k, v in T.items():
+            if not torch.isfinite(v):
+                raise AssertionError(f"rb probe: loss term {k} is not finite at rb_window_w {w_}: {float(v)}")
+        T["total"].backward()
+        g = {n: (p.grad.detach().clone() if p.grad is not None else torch.zeros_like(p)) for n, p in named}
+        g["__prior__"] = torch.cat([(p.grad.detach().reshape(-1) if p.grad is not None else torch.zeros(p.numel())) for p in m.prior.parameters()])
+        return float(T["total"].detach()), (float(T["rb_traj"].detach()) if "rb_traj" in T else None), g
+
+    t_w, term_w, g_w = run(W, forced)
+    t_1, term_1, g_1 = run(1.0, forced)
+    t_1b, _, g_1b = run(1.0, forced)
+    t_n, term_n, g_n = run(W, none)
+    t_nat, term_nat, g_nat = run(W, nat)
+    dsum = lambda ga, gb, pre: float(sum((ga[n] - gb[n]).abs().sum() for n in ga if n.startswith(pre)))      # noqa: E731
+    w_traj = float(m.cfg.w_traj)
+    want = w_traj * (W - 1.0) * (term_w or 0.0)
+    res = {"rb_window_w_declared": W, "rb_n": int(nat.sum()), "rb_n_eligible": int((nat & gok).sum()), "rb_eligible": elig, "rb_n_forced": int(forced.sum()), "term_forced": term_w, "term_at_unit_weight": term_1,
+           "total_w": t_w, "total_1": t_1, "contribution": t_w - t_1, "w_traj_x_wm1_x_term": want,
+           "head_o_grad_diff": dsum(g_w, g_1, "head_o."), "read_o_grad_diff": dsum(g_w, g_1, "read_o."),
+           "natural_contribution": t_nat - t_1, "natural_term": term_nat, "natural_head_o_grad_diff": dsum(g_nat, g_1, "head_o."),
+           "control_repeat_total_diff": abs(t_1b - t_1), "control_repeat_grad_diff": dsum(g_1, g_1b, ""),
+           "control_allfalse_term": term_n, "control_allfalse_total_diff": abs(t_n - t_1), "control_allfalse_grad_diff": dsum(g_n, g_1, ""),
+           "control_prior_grad_diff": float((g_w["__prior__"] - g_1["__prior__"]).abs().sum()),
+           "control_wm_grad_diff": dsum(g_w, g_1, "wm.") if m.wm is not None else None}
+    if term_w is None or not math.isfinite(term_w) or not term_w > 0.0:
+        raise AssertionError(f"rb probe: the extra term reads {term_w} on the forced mask (finite and > 0 required)")
+    if term_1 is not None:
+        raise AssertionError("rb probe: the term is computed at rb_window_w 1.0 (a declared-off lever must add no term)")
+    if res["control_repeat_total_diff"] != 0.0 or res["control_repeat_grad_diff"] != 0.0:
+        raise AssertionError(f"rb probe: the probe is not deterministic (the same loss twice differs by {res['control_repeat_total_diff']} / {res['control_repeat_grad_diff']}): its differences mean nothing")
+    if not want > 64.0 * eps32 * max(abs(t_1), 1.0):
+        raise AssertionError(f"rb probe: w_traj x (w - 1) x term = {want} is below float32 visibility against the total {t_1}: the probe cannot see the term")
+    if abs(res["contribution"] - want) > rtol * want + 4.0 * eps32 * max(abs(t_w), abs(t_1)):
+        raise AssertionError(f"rb probe: the total moved by {res['contribution']} when the weight went from 1 to {W}, w_traj x (w - 1) x term is {want}: the term does not reach the loss with its weight")
+    if not res["head_o_grad_diff"] > 0.0:
+        raise AssertionError("rb probe: O's head receives no gradient from the roundabout term (the sum of |d total / d head_o| differences is 0.0)")
+    if term_n != 0.0 or res["control_allfalse_total_diff"] != 0.0 or res["control_allfalse_grad_diff"] != 0.0:
+        raise AssertionError(f"rb probe: an ALL-FALSE mask must read exactly 0.0 (term {term_n}, total diff {res['control_allfalse_total_diff']}, grad diff {res['control_allfalse_grad_diff']}): the mask is not what selects the rows")
+    if res["control_prior_grad_diff"] != 0.0:
+        raise AssertionError(f"rb probe: the frozen P10 prior's gradient moved with the weight ({res['control_prior_grad_diff']}): the control must read exactly 0.0")
+    if res["control_wm_grad_diff"] not in (None, 0.0):
+        raise AssertionError(f"rb probe: the world-model auxiliary's gradient moved with the weight ({res['control_wm_grad_diff']}): it does not feed the plan, the control must read exactly 0.0")
+    if res["rb_n_eligible"] > 0 and not (res["natural_contribution"] > 0.0 and res["natural_head_o_grad_diff"] > 0.0):
+        raise AssertionError(f"rb probe: the natural mask names {res['rb_n_eligible']} GT-valid rows but the total moved by {res['natural_contribution']} (head_o grad diff {res['natural_head_o_grad_diff']}): the real labels do not reach the loss")
+    res["pass"] = True
+    return res
+
 
 def make_ctx_labels(a, cfg, J, info):
     """PREREG_V8F_STRAT1: the context head's label arrays, row-aligned to the label join (``D.ctx_label_arrays``), or None when the head is off (nothing is read). The file is re-hashed against ``--ctx-labels-sha256``
@@ -3801,6 +3924,8 @@ def main(argv=None):
     if enc is None:
         if cfg.launch_intent_w > 0.0:                    # PREREG_V8F_LAUNCH_INTENT: every probe calls model.loss on this batch, and a lever-ON loss reads b["launch"] (the loop's own call, on the LOGGED state)
             probe["launch"] = launch_stage(probe)
+        if cfg.rb_window_w > 1.0:                        # PREREG_V8F_N1DW: every probe calls model.loss on this batch, and a lever-ON loss reads b["rb"] (the loop's own call, c0 of the LOGGED nav_rb row at NOW)
+            probe["rb"] = rb_mask(probe)
         if cfg.level_head == "on":                       # PREREG_V8F_LEVEL: every probe calls model.loss on this batch, and a lever-ON loss reads level_y / level_ok (the loop's own call, on the LOGGED state)
             probe["level_y"], probe["level_ok"] = level_stage(probe)
         if cfg.lead_head == "on":                        # PREREG_LEVELHEAD_A2: as above (the lead labels, looked up by the probe's own clip index and step)
@@ -3818,6 +3943,8 @@ def main(argv=None):
         probe_f = D.collate_frames([ds_probe.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_LORA], fstore)
         if cfg.launch_intent_w > 0.0:                    # PREREG_V8F_LAUNCH_INTENT: as above (the cached tokens stay in `probe`; the mask comes from the logged kin3 and the GT)
             probe_f["launch"] = launch_stage(probe_f)
+        if cfg.rb_window_w > 1.0:                        # PREREG_V8F_N1DW: as above (the mask comes from the logged nav_rb row at NOW)
+            probe_f["rb"] = rb_mask(probe_f)
         if cfg.level_head == "on":                       # PREREG_V8F_LEVEL: as above
             probe_f["level_y"], probe_f["level_ok"] = level_stage(probe_f)
         if cfg.lead_head == "on":                        # PREREG_LEVELHEAD_A2: as above
@@ -3875,6 +4002,10 @@ def main(argv=None):
             lip = launch_intent_probe(model, probe, cfg)      # PREREG_V8F_LAUNCH_INTENT: G-LIVE on the loop's own mask (launch_stage); the term reaches the loss on the rows the mask names, O's head gets its gradient, an all-False mask reads EXACTLY 0.0 (off: nothing runs)
         except (AssertionError, ValueError) as e:
             raise SystemExit(f"ZZDVB-REFUSEDZZ launch-intent: {e}")
+        try:
+            rwp = rb_window_probe(model, probe, cfg)           # PREREG_V8F_N1DW: G-LIVE on the loop's own mask (rb_mask); the term reaches the loss on the rows the mask names, O's head gets its gradient, an all-False mask reads EXACTLY 0.0 (off: nothing runs)
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ rb-window: {e}")
         try:
             lvp = level_head_probe(model, probe, cfg)         # PREREG_V8F_LEVEL: G-LIVE on the loop's own label call (level_stage); the term reaches the loss with its weight, the head gets its gradient, the detach control reads EXACTLY 0.0, the token reaches O, the head is vision-only (off: nothing runs)
         except (AssertionError, ValueError) as e:
@@ -3941,6 +4072,8 @@ def main(argv=None):
     sc["recover_probe"] = recp
     sc["t2bank_probe"] = t2p
     sc["launch_intent_probe"] = lip
+    if cfg.rb_window_w > 1.0:                                           # PREREG_V8F_N1DW: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
+        sc["rb_window_probe"] = rwp
     if a.wm_only:                                                       # WM-only arms only: a flag-off selfcheck.json keeps its key set
         sc["planner_identity_probe"] = pid
     if cfg.level_head == "on":                                          # lever-ON arms only: a flag-off selfcheck.json keeps its key set
@@ -3982,6 +4115,9 @@ def main(argv=None):
     ctx_on = cfg.ctx_heads == "on"                                 # PREREG_V8F_STRAT1: off (the default) = the loop runs no new line
     launch_tot = {"rows": 0, "eligible": 0, "n": 0}                # ... run totals: rows seen, GT-valid rows (the along-track label exists), GT-launch rows; carried in the checkpoint of an arm that has the lever ON only
     launch_int = {"rows": 0, "eligible": 0, "n": 0}                # ... and since the last log line
+    rb_on = cfg.rb_window_w > 1.0                                  # PREREG_V8F_N1DW: off (the default) = the loop runs no new line
+    rb_tot = {"rows": 0, "eligible": 0, "n": 0, "n_eligible": 0}   # ... run totals: rows seen, GT-valid rows, RB rows (c0 at NOW), RB rows that are also GT-valid (the loss mass); carried in the checkpoint of an arm that has the lever ON only
+    rb_int = {"rows": 0, "eligible": 0, "n": 0, "n_eligible": 0}   # ... and since the last log line
     perf_rec = None                                                  # AMENDMENT_V8F_LORA_5: set only by a resume across --accum / --enc-ckpt under --resume-perf-levers
     if os.path.exists(ck_path) and not a.no_resume:
         ck = torch.load(ck_path, map_location="cpu", weights_only=False)
@@ -3989,6 +4125,8 @@ def main(argv=None):
             perf_rec = perf_resume_record(a, argv, ck["argv_sha"], ck["step"])      # None unless the flag is set and the checkpoint is exactly the previous argv's
             if perf_rec is None:
                 raise SystemExit("ZZRESUME-REFUSEDZZ the checkpoint was written by a different argv")
+        if float(ck["cfg"].get("rb_window_w", 1.0)) != float(cfg.rb_window_w):        # PREREG_V8F_N1DW: a checkpoint whose cfg.rb_window_w differs from the declared one is never continued (a key absent = 1.0 = every earlier checkpoint)
+            raise SystemExit(f"ZZRESUME-REFUSEDZZ the checkpoint's cfg.rb_window_w is {ck['cfg'].get('rb_window_w', 1.0)} but the argv declares {cfg.rb_window_w}")
         if comp.on and int(ck.get("ego_perturb_stream", 0)) != ego.stream:        # a composed checkpoint from before the stream separation (no key = stream 0) must not be continued on another generator
             raise SystemExit(f"ZZRESUME-REFUSEDZZ the checkpoint drew the perturbation from stream {int(ck.get('ego_perturb_stream', 0))} but this build draws stream {ego.stream}: a resume would switch generators mid-run")
         model.load_state_dict(ck["model"])
@@ -4001,6 +4139,7 @@ def main(argv=None):
         ov_tot.update(ck.get("ego_dagger_overlap") or {})
         rec_tot.update(ck.get("recover_totals") or {})
         launch_tot.update(ck.get("launch_totals") or {})
+        rb_tot.update(ck.get("rb_totals") or {})
         print(f"[resume] step {step} epoch {ep} batch {bi}", flush=True)
     elif a.resume_perf_levers is not None:
         raise SystemExit(f"ZZRESUME-REFUSEDZZ --resume-perf-levers resumes a checkpoint and there is none at {ck_path}")
@@ -4018,6 +4157,8 @@ def main(argv=None):
             blob["recover"], blob["recover_totals"] = rcv.built_levers(), dict(rec_tot)
         if launch_on:                                                   # lever-ON arms only: a flag-off checkpoint keeps its key set
             blob["launch_totals"] = dict(launch_tot)
+        if rb_on:                                                       # PREREG_V8F_N1DW: lever-ON arms only: a flag-off checkpoint keeps its key set
+            blob["rb_totals"] = dict(rb_tot)
         if a.nav_rb == "on":                                            # PREREG_V8F_NAVRB2: lever-ON arms only
             blob["nav_rb_sha256"], blob["nav_rb_variant"] = a.nav_rb_sha256, a.nav_rb_variant
             if a.nav_rb_feat != "state":                                # PREREG_V8F_NAVRBD: beside cfg["nav_rb_feat"] (cfg is cfg.__dict__); absent for state = an N1R checkpoint keeps its key set
@@ -4053,6 +4194,8 @@ def main(argv=None):
             if a.wm_windows != "wmonly":                           # PREREG_V8F_LADDER: the label stages read labelled-batch keys (kin3, p10f, ci/t labels); a world-model-only batch carries none (--wm-only forces every one of them off)
                 if launch_on:                                          # PREREG_V8F_LAUNCH_INTENT: the GT-launch mask from the LOGGED v0 and the GT future, taken BEFORE any ego stage rebuilds kin3 (a swapped sample's kin3 is the own state)
                     lmask = launch_stage(b)
+                if rb_on:                                              # PREREG_V8F_N1DW: the roundabout mask = c0 of the LOGGED nav_rb row at NOW, taken where the launch mask is (before any stage; a DAgger swap holds nav_rb as logged)
+                    rmask = rb_mask(b)
                 if level_on:                                           # PREREG_V8F_LEVEL: the label is the LOGGED speed at NOW, taken BEFORE any ego stage rebuilds kin3 (the head sees the logged frame)
                     lvl_lab = level_stage(b)
                 if lead_on:                                            # PREREG_LEVELHEAD_A2: the lead label of the LOGGED frame (clip index and step), taken BEFORE any ego stage (a swapped sample's ci / t is the own one)
@@ -4092,6 +4235,13 @@ def main(argv=None):
                         c_["rows"] += int(lmask.shape[0])
                         c_["eligible"] += int(b["gt_ok"].sum())
                         c_["n"] += int(lmask.sum())
+                if rb_on:                                              # ... and attached AFTER the stages (they return their own batch dict): the loss reads b["rb"]
+                    b["rb"] = rmask
+                    for c_ in (rb_int, rb_tot):                        # the control counts: rows seen, GT-valid rows, RB rows, RB rows that are GT-valid (leftover batches of 1-4 rows can hold none: no per-batch requirement)
+                        c_["rows"] += int(rmask.shape[0])
+                        c_["eligible"] += int(b["gt_ok"].sum())
+                        c_["n"] += int(rmask.sum())
+                        c_["n_eligible"] += int((rmask & b["gt_ok"].bool()).sum())
                 if level_on:                                           # ... and attached AFTER the stages (they return their own batch dict): the loss reads b["level_y"], b["level_ok"]
                     b["level_y"], b["level_ok"] = lvl_lab
                 if lead_on:                                            # PREREG_LEVELHEAD_A2: attached AFTER the stages: the loss reads b["lead_y"], b["lead_has"], b["lead_near"]
@@ -4154,6 +4304,9 @@ def main(argv=None):
                 if launch_on:                                               # PREREG_V8F_LAUNCH_INTENT: per log interval (the steps since the last line)
                     rec["launch_n"], rec["launch_eligible"], rec["launch_rows"] = launch_int["n"], launch_int["eligible"], launch_int["rows"]
                     launch_int.update(rows=0, eligible=0, n=0)
+                if rb_on:                                                   # PREREG_V8F_N1DW: per log interval (the steps since the last line)
+                    rec["rb_n"], rec["rb_eligible"], rec["rb_rows"], rec["rb_n_eligible"] = rb_int["n"], rb_int["eligible"], rb_int["rows"], rb_int["n_eligible"]
+                    rb_int.update(rows=0, eligible=0, n=0, n_eligible=0)
                 if enc is not None:
                     rec["lora_grad_norm"] = float(gn_l)
                 log.write(json.dumps(rec) + "\n"); log.flush()
@@ -4186,6 +4339,10 @@ def main(argv=None):
         summary["launch_n"], summary["launch_eligible"], summary["launch_rows"] = launch_tot["n"], launch_tot["eligible"], launch_tot["rows"]
         summary["launch_intent_w"] = cfg.launch_intent_w
         summary["launch_weight_share"] = launch_weight_share(launch_tot["n"], launch_tot["eligible"], cfg.launch_intent_w)
+    if rb_on:                                                              # PREREG_V8F_N1DW: the lever-ON arm's run record (a flag-off summary.json keeps its key set)
+        summary["rb_n"], summary["rb_eligible"], summary["rb_rows"], summary["rb_n_eligible"] = rb_tot["n"], rb_tot["eligible"], rb_tot["rows"], rb_tot["n_eligible"]
+        summary["rb_window_w"] = cfg.rb_window_w
+        summary["rb_weight_share"] = rb_weight_share(rb_tot["n_eligible"], rb_tot["eligible"], cfg.rb_window_w)
     if level_on:                                                           # PREREG_V8F_LEVEL: the lever-ON arm's run record (a flag-off summary.json keeps its key set)
         summary["level_head"], summary["w_level"] = "on", cfg.w_level
     if lead_on or cfg.aux_cond == "token":                                 # PREREG_LEVELHEAD_A2: the lever-ON arm's run record (a flag-off summary.json keeps its key set)

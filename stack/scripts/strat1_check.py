@@ -32,11 +32,17 @@ BASE_ARGVS = "E:/Projects/TanitAD-artifacts/dagland/motion_c/theory/obd/box2/fro
 BASE_SHA256 = None            # pinned by the MM when the frozen file is copied into the chain's folder (UNVERIFIED here: read in place)
 STRAT_LABELS_SHA256 = "8055a321df6db1725ea17abde2999d48bcb68d43f1a480a69ed42dd0cf184eff"
 NINE = ("--nav-source", "--nav-text-npz", "--nav-text-sha256", "--ctx-heads", "--w-ctx", "--ctx-labels", "--ctx-labels-sha256", "--ctx-lr-mult", "--ctx-detach")
-KINDS = ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx")
+KINDS = ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx", "N1DW4", "N1DW2")
 #: PREREG_V8F_NAVRB2: the R kinds = the base kind + the five --nav-rb flags (N1R / S1R / S1dR: the real channel; N1Z: the same argv with the channel all 0.0, a same-seed N1 replicate with the new code)
-RB_BASE = {"N1R": "N1", "S1R": "S1", "S1dR": "S1d", "N1Z": "N1", "N1D": "N1", "N1Dx": "N1"}
+RB_BASE = {"N1R": "N1", "S1R": "S1", "S1dR": "S1d", "N1Z": "N1", "N1D": "N1", "N1Dx": "N1", "N1DW4": "N1", "N1DW2": "N1"}
 #: PREREG_V8F_NAVRBD: the D kinds = an R kind (N1R) + exactly `--nav-rb-feat exitdist` and the 15-column npz + sha (N1D: the real channel; N1Dx: the deliberate-regression arm, rows deranged across clips). An R / non-RB kind never names exitdist.
 D_KINDS = ("N1D", "N1Dx")
+#: PREREG_V8F_N1DW: the W kinds = N1D's argv (the real 15-column channel, the same npz + sha) + exactly `--rb-window-w <w>` (N1DW4: w = 4, N1DW2: w = 2). They read the D channel (DCHAN_KINDS = every kind with the 15-column table); no
+#: existing kind's argv moves, and a non-W kind never names the flag.
+W_KINDS = ("N1DW4", "N1DW2")
+W_VALUE = {"N1DW4": "4", "N1DW2": "2"}
+RB_W_FLAG = "--rb-window-w"
+DCHAN_KINDS = D_KINDS + W_KINDS
 RB_FEAT_FLAG = "--nav-rb-feat"
 RBD_NPZ, RBD_REPORT = "navtext_nav_rbd.npz", "navtext_nav_rbd_report.json"                  # the 15-column table and its builder report (build_navtext_nav_rbd.py), in <inputs>/strat1/
 RBD_GROUPS = ("c0", "c1_6", "c7_12", "c13", "c14")
@@ -46,7 +52,7 @@ RB_FLAGS = ("--nav-rb", "--nav-rb-npz", "--nav-rb-sha256", "--nav-rb-variant", "
 
 def rb_names(kind):
     """The channel table and builder-report file names of an R / D kind (D kinds read the 15-column table)."""
-    return (RBD_NPZ, RBD_REPORT) if kind in D_KINDS else ("navtext_nav_rb.npz", "navtext_nav_rb_report.json")
+    return (RBD_NPZ, RBD_REPORT) if kind in DCHAN_KINDS else ("navtext_nav_rb.npz", "navtext_nav_rb_report.json")
 
 
 RB_LR_MULT = "10"                                                         # card section 0, item 2 (MM ruling 2)
@@ -97,8 +103,10 @@ def render(kind, seed, root, out, nav_npz="", ctx_npz="", base_argvs=BASE_ARGVS,
           "--nav-rb-variant", "zero" if kind == "N1Z" else "real", "--nav-rb-lr-mult", RB_LR_MULT] if kind in RB_KINDS else []
     if kind == "N1Dx":
         rb[rb.index("--nav-rb-variant") + 1] = "shuffle"                       # PREREG_V8F_NAVRBD: the deliberate-regression arm
-    if kind in D_KINDS:
+    if kind in DCHAN_KINDS:
         rb += [RB_FEAT_FLAG, "exitdist"]                                       # PREREG_V8F_NAVRBD: the ONE new flag, appended after the N1R flags (an N1R render is untouched)
+    if kind in W_KINDS:
+        rb += [RB_W_FLAG, W_VALUE[kind]]                                       # PREREG_V8F_N1DW: the ONE new flag of a W kind, appended after N1D's (an N1D render is untouched)
     return t + nav + ctx + rb
 
 
@@ -130,6 +138,73 @@ def pairing_problems(kind, toks, ref_toks):
     if flag_value(toks, "--nav-rb-variant") != ("shuffle" if kind == "N1Dx" else flag_value(ref, "--nav-rb-variant")):
         bad.append(f"--nav-rb-variant {flag_value(toks, '--nav-rb-variant')!r} (N1D = the reference's {flag_value(ref, '--nav-rb-variant')!r}, N1Dx = shuffle)")
     return bad
+
+
+def w_pairing_problems(kind, toks, ref_toks):
+    """PREREG_V8F_N1DW pairing rule: a W kind's argv equals its paired N1D argv (the banked one of the same seed) PLUS exactly ``--rb-window-w <w>`` (w = 4 for N1DW4, 2 for N1DW2), with its own --out and nothing else different:
+    the same seed, steps, data, lr, nav flags, channel npz + sha, variant and feat. ``ref_toks`` = the banked N1D argv."""
+    if kind not in W_KINDS:
+        return [f"{kind} is not a W kind"]
+    bad, toks, ref = [], list(toks), list(ref_toks)
+    if RB_W_FLAG in ref:
+        bad.append(f"the reference (N1D) argv names {RB_W_FLAG} (N1D's argv is the unweighted arm and does not)")
+    if flag_value(ref, RB_FEAT_FLAG) != "exitdist":
+        bad.append("the reference argv is not an N1D argv (--nav-rb-feat exitdist missing)")
+    if toks.count(RB_W_FLAG) != 1 or flag_value(toks, RB_W_FLAG) != W_VALUE[kind]:
+        return bad + [f"the {kind} argv must name {RB_W_FLAG} exactly once, as {W_VALUE[kind]}"]
+    i = toks.index(RB_W_FLAG)
+    toks = toks[:i] + toks[i + 2:]
+    if len(toks) != len(ref):
+        return bad + [f"argv length {len(toks)} (without the weight flag) != the N1D argv's {len(ref)}"]
+    diff = [(j, y, x) for j, (x, y) in enumerate(zip(toks, ref)) if x != y and not (j > 0 and toks[j - 1] == "--out" and ref[j - 1] == "--out")]
+    if diff:
+        bad.append(f"the {kind} argv differs from N1D's beyond the weight flag / out: {diff[:4]}")
+    return bad
+
+
+def w_gate_problems(kind, toks, sc):
+    """PREREG_V8F_N1DW G-DVB / G-LIVE read of a selfcheck.json: a W kind names the flag once with its kind's value, builds exactly that value (levers.rb_window_w), and carries the probe's controls (term > 0, O's head gradient > 0,
+    the all-False mask EXACTLY 0.0 in term, total and gradient, the repeat control EXACTLY 0.0). A non-W kind names no --rb-window-w, builds no such lever and carries no probe."""
+    bad = []
+    lv = sc.get("levers", {})
+    if kind not in W_KINDS:
+        if RB_W_FLAG in toks:
+            bad.append(f"a {kind} argv names {RB_W_FLAG}")
+        if "rb_window_w" in lv or "rb_window_probe" in sc or "rb_window" in lv:
+            bad.append(f"a {kind} arm builds or probes the roundabout-window weight")
+        return bad
+    want = float(W_VALUE[kind])
+    if toks.count(RB_W_FLAG) != 1 or flag_value(toks, RB_W_FLAG) != W_VALUE[kind]:
+        bad.append(f"{RB_W_FLAG}: arm {kind} needs it named once as {W_VALUE[kind]}, argv {flag_value(toks, RB_W_FLAG)!r} (a flag whose default disables it must be named)")
+    if lv.get("rb_window_w") != want:
+        bad.append(f"levers.rb_window_w: arm {kind} needs {want}, built {lv.get('rb_window_w')!r}")
+    pr = sc.get("rb_window_probe") or {}
+    if not pr.get("pass"):
+        bad.append("rb_window_probe missing or not pass")
+    if pr.get("rb_window_w_declared") != want:
+        bad.append(f"rb_window_probe.rb_window_w_declared {pr.get('rb_window_w_declared')!r} != {want}")
+    for key in ("term_forced", "head_o_grad_diff"):
+        v = pr.get(key)
+        if not isinstance(v, (int, float)) or not v > 0.0:
+            bad.append(f"rb_window_probe.{key} {v!r} (must be > 0)")
+    for key in ("control_allfalse_term", "control_allfalse_total_diff", "control_allfalse_grad_diff", "control_repeat_total_diff", "control_repeat_grad_diff", "control_prior_grad_diff"):
+        if pr.get(key) != 0.0:
+            bad.append(f"rb_window_probe.{key} {pr.get(key)!r} (must be exactly 0.0)")
+    if pr.get("term_at_unit_weight") is not None:
+        bad.append("rb_window_probe: the term is computed at w = 1.0 (a declared-off lever must add no term)")
+    return bad
+
+
+def hyg_w():
+    """PREREG_V8F_N1DW G-HYG: the config refuses a weight below 1, a non-finite weight and an unknown key."""
+    from tanitad.models import v8f_mini as M
+    n = 0
+    for kw in (dict(rb_window_w=0.5), dict(rb_window_w=float("nan")), dict(rb_window_w=float("inf")), dict(rb_window_wz=2.0)):
+        try:
+            M.V8FMiniConfig(**kw)
+        except (ValueError, TypeError):
+            n += 1
+    return [] if n == 4 else [f"only {n} of 4 bad rb_window_w configs were refused"]
 
 
 def argv_sha(toks):
@@ -187,6 +262,7 @@ def gate_problems(kind, toks, sc, steps=RUN_STEPS):
     if "--detach-upper" not in toks or (sc.get("otband_probe") or {}).get("detach_upper") is not True:      # the BUILT value: the otband probe records cfg.detach_upper and, when it is on,
         bad.append("--detach-upper is not built (the OBD-CTL recipe)")                                       # asserts O's terms put no gradient on S / T (levers has no such key: reading it refused every real mint)
     bad += rb_gate_problems(kind, toks, sc)
+    bad += w_gate_problems(kind, toks, sc)                                   # PREREG_V8F_N1DW: the W kinds' weight (a non-W kind names none and builds none)
     return bad
 
 
@@ -204,7 +280,7 @@ def rb_gate_problems(kind, toks, sc):
     miss = [f for f in RB_FLAGS if f not in toks]
     if miss:
         bad.append(f"the argv does not name {miss}: a flag whose default disables it must be named")
-    dk = kind in D_KINDS
+    dk = kind in DCHAN_KINDS
     if dk and RB_FEAT_FLAG not in toks:
         bad.append(f"the argv does not name {RB_FEAT_FLAG}: a flag whose default disables it must be named (a {kind} arm is the exitdist channel)")
     if dk and RB_FEAT_FLAG in toks and flag_value(toks, RB_FEAT_FLAG) != "exitdist":
@@ -305,9 +381,9 @@ def moved_identity(init_sd, fin_sd, kind):
                 bad.append("N1Z: e_nav_rb.weight moved off 0.0 (the channel was all zero)")
         elif not bool((w != 0).any()):
             bad.append(f"{kind}: e_nav_rb.weight did not move off its zero init")
-        if w is not None and kind in D_KINDS and tuple(w.shape)[1:] != (15,):
+        if w is not None and kind in DCHAN_KINDS and tuple(w.shape)[1:] != (15,):
             bad.append(f"{kind}: e_nav_rb.weight is {tuple(w.shape)} (needs [d, 15])")
-        if w is not None and kind not in D_KINDS and tuple(w.shape)[1:] != (1,):
+        if w is not None and kind not in DCHAN_KINDS and tuple(w.shape)[1:] != (1,):
             bad.append(f"{kind}: e_nav_rb.weight is {tuple(w.shape)} (needs [d, 1])")
     elif rb:
         bad.append(f"e_nav_rb keys {rb[:2]} in a {kind} checkpoint")
@@ -532,7 +608,7 @@ def rb_report_problems(kind, rb_npz, report_path):
         r = json.load(open(report_path, encoding="utf-8"))
     except (OSError, ValueError):
         return ["no nav_rb builder report"]
-    if kind in D_KINDS:                                                         # PREREG_V8F_NAVRBD: the D builder's own clock check (card section 6, G-CLOCK-RBD), same layout, same rule: PASS and the 1-s-ahead regression arm FAILS
+    if kind in DCHAN_KINDS:                                                     # PREREG_V8F_NAVRBD: the D builder's own clock check (card section 6, G-CLOCK-RBD), same layout, same rule: PASS and the 1-s-ahead regression arm FAILS
         bad = []
         for sp in ("train", "eval"):
             if not r.get(sp, {}).get("G-CLOCK-RBD_pass"):
@@ -701,7 +777,7 @@ def mint(tag, kind, seed, a):
     trainer = os.path.join(a.root, TRAINER_REL)
     env = {"PYTHONPATH": os.path.join(a.root, "stack") + os.pathsep + a.root, "CUDA_VISIBLE_DEVICES": a.gpu, "HF_HUB_DISABLE_XET": "1"}
     checks = {"G-SUITE": {"pass": True, "result_sha256": b["gsuite_result_sha256"]}, "frozen_argvs_sha256": {"pass": True, "sha256": sha_file(frozen)}}
-    h = hyg() + (hyg_rb() if kind in RB_KINDS else [])
+    h = hyg() + (hyg_rb() if kind in RB_KINDS else []) + (hyg_w() if kind in W_KINDS else [])
     checks["G-HYG"] = {"pass": not h, "problems": h}
     if base_kind(kind) in NAV_KINDS:
         checks["G-CLOCK"] = {"pass": True, "nav_report_sha256": b["nav_report_sha256"], "note": "G-CLOCK-NAV read from the builder report (train + eval PASS, regression arm FAILS); ctx label alignment asserts run inside the trainer's selfcheck"}
@@ -798,7 +874,7 @@ def main(argv=None):
     p = sub.add_parser("gate"); p.add_argument("kind", choices=KINDS); p.add_argument("--selfcheck", required=True); p.add_argument("--argv-json", required=True)
     p = sub.add_parser("post"); p.add_argument("kind", choices=KINDS); p.add_argument("--init", required=True); p.add_argument("--final", required=True)
     p = sub.add_parser("geval"); p.add_argument("--ckpt", required=True); p.add_argument("--selfcheck", default="")
-    p = sub.add_parser("pair"); p.add_argument("kind", choices=D_KINDS); p.add_argument("--argv-json", required=True); p.add_argument("--ref-argv-json", required=True)
+    p = sub.add_parser("pair"); p.add_argument("kind", choices=D_KINDS + W_KINDS); p.add_argument("--argv-json", required=True); p.add_argument("--ref-argv-json", required=True)
     sub.add_parser("hyg")
     for nm in ("mint", "run"):
         p = sub.add_parser(nm); p.add_argument("kind", choices=KINDS); p.add_argument("seed", choices=tuple(SEEDS))
@@ -813,12 +889,12 @@ def main(argv=None):
     if a.cmd == "gate":
         bad = gate_problems(a.kind, json.load(open(a.argv_json, encoding="utf-8")), json.load(open(a.selfcheck, encoding="utf-8")))
     elif a.cmd == "pair":
-        bad = pairing_problems(a.kind, json.load(open(a.argv_json, encoding="utf-8")), json.load(open(a.ref_argv_json, encoding="utf-8")))
+        bad = (w_pairing_problems if a.kind in W_KINDS else pairing_problems)(a.kind, json.load(open(a.argv_json, encoding="utf-8")), json.load(open(a.ref_argv_json, encoding="utf-8")))
     elif a.cmd == "post":
         import torch
         fin = torch.load(a.final, map_location="cpu", weights_only=False)["model"]
         bad = moved_identity(torch.load(a.init, map_location="cpu", weights_only=False)["model"], fin, a.kind)
-        if a.kind in D_KINDS and "e_nav_rb.weight" in fin and fin["e_nav_rb.weight"].shape[1] == 15:
+        if a.kind in DCHAN_KINDS and "e_nav_rb.weight" in fin and fin["e_nav_rb.weight"].shape[1] == 15:
             print(json.dumps({"group_weight_l1": group_weight_norms(fin["e_nav_rb.weight"])}))      # PREREG_V8F_NAVRBD: a group that reads exactly 0.0 is named here, not failed
     elif a.cmd == "suite":
         r = suite_compare(a.base_junit, a.new_junit, a.new_commit, a.base_commit)
