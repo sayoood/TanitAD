@@ -1,0 +1,442 @@
+{
+ "card": "PREREG_N1D_T0T1.md sha256 5ef1ba4f142b380bd2d4bfbd426070e0bcc93587b53554d0217fb9110c85d9f7",
+ "tier": "T0 (tick-0 open-loop plan) against T1-kin (self-action rollout, m=10, causal); zero training",
+ "evidence_class": "MEASURED (ours; banked NAVRBD D1-HO dumps, CPU)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap B 2000 seed 0 over 497 episodes; answers another-draw-of-EPISODES only (training variance = the two seeds)",
+ "bar": 0.0383,
+ "n_windows": 5736,
+ "n_episodes": 497,
+ "problems": [],
+ "level": {
+  "N1D_s0": {
+   "T0": {
+    "point": 0.6265690376569037,
+    "lo": 0.6055,
+    "hi": 0.6468
+   },
+   "T1": {
+    "point": 0.6195955369595537,
+    "lo": 0.5983,
+    "hi": 0.6419
+   }
+  },
+  "N1D_s1": {
+   "T0": {
+    "point": 0.6349372384937239,
+    "lo": 0.6141,
+    "hi": 0.6544
+   },
+   "T1": {
+    "point": 0.6499302649930265,
+    "lo": 0.6296,
+    "hi": 0.6699
+   }
+  },
+  "N1R_s0": {
+   "T0": {
+    "point": 0.6101813110181311,
+    "lo": 0.5885,
+    "hi": 0.6308
+   },
+   "T1": {
+    "point": 0.5904811715481172,
+    "lo": 0.5695,
+    "hi": 0.6122
+   }
+  },
+  "N1R_s1": {
+   "T0": {
+    "point": 0.6194211994421199,
+    "lo": 0.5984,
+    "hi": 0.6393
+   },
+   "T1": {
+    "point": 0.6328451882845189,
+    "lo": 0.6125,
+    "hi": 0.6535
+   }
+  }
+ },
+ "T0_minus_T1": {
+  "N1D_s0": {
+   "delta": 0.006973500697350032,
+   "lo": -0.0155,
+   "hi": 0.0274,
+   "separated": false,
+   "n_windows": 5736,
+   "n_episodes": 497
+  },
+  "N1D_s1": {
+   "delta": -0.014993026499302675,
+   "lo": -0.0348,
+   "hi": 0.0026,
+   "separated": false,
+   "n_windows": 5736,
+   "n_episodes": 497
+  },
+  "N1R_s0": {
+   "delta": 0.019700139470013922,
+   "lo": -0.0026,
+   "hi": 0.0405,
+   "separated": false,
+   "n_windows": 5736,
+   "n_episodes": 497
+  },
+  "N1R_s1": {
+   "delta": -0.013423988842398926,
+   "lo": -0.0334,
+   "hi": 0.0059,
+   "separated": false,
+   "n_windows": 5736,
+   "n_episodes": 497
+  }
+ },
+ "N1D_minus_N1R_at_T0": {
+  "s0": {
+   "delta": 0.016387726638772637,
+   "lo": 0.0087,
+   "hi": 0.0241,
+   "separated": true,
+   "n_windows": 5736,
+   "n_episodes": 497
+  },
+  "s1": {
+   "delta": 0.015516039051603925,
+   "lo": 0.0043,
+   "hi": 0.0264,
+   "separated": true,
+   "n_windows": 5736,
+   "n_episodes": 497
+  }
+ },
+ "N1D_minus_N1R_at_T1": {
+  "s0": {
+   "delta": 0.029114365411436527,
+   "lo": 0.0174,
+   "hi": 0.0409,
+   "separated": true,
+   "n_windows": 5736,
+   "n_episodes": 497
+  },
+  "s1": {
+   "delta": 0.017085076708507674,
+   "lo": 0.0044,
+   "hi": 0.03,
+   "separated": true,
+   "n_windows": 5736,
+   "n_episodes": 497
+  }
+ },
+ "fade_(N1D_T0-T1)_minus_(N1R_T0-T1)": {
+  "s0": {
+   "delta": -0.012726638772663876,
+   "lo": -0.0253,
+   "hi": -0.0005,
+   "separated": true,
+   "n_windows": 5736,
+   "n_episodes": 497
+  },
+  "s1": {
+   "delta": -0.0015690376569037646,
+   "lo": -0.0158,
+   "hi": 0.0118,
+   "separated": false,
+   "n_windows": 5736,
+   "n_episodes": 497
+  }
+ },
+ "labels_per_seed": {
+  "N1D_s0": {
+   "label": "DECODE-LOSES",
+   "T0_minus_T1": 0.006973500697350032,
+   "T0_minus_T1_ci": [
+    -0.0155,
+    0.0274
+   ],
+   "T0_acc": 0.6265690376569037,
+   "T1_acc": 0.6195955369595537,
+   "probe_Fplan_tree_acc": 0.7027545327754533,
+   "Fplan_minus_T0_point_diff_two_estimators": 0.07618549511854955
+  },
+  "N1D_s1": {
+   "label": "DECODE-LOSES",
+   "T0_minus_T1": -0.014993026499302675,
+   "T0_minus_T1_ci": [
+    -0.0348,
+    0.0026
+   ],
+   "T0_acc": 0.6349372384937239,
+   "T1_acc": 0.6499302649930265,
+   "probe_Fplan_tree_acc": 0.6936889818688982,
+   "Fplan_minus_T0_point_diff_two_estimators": 0.0587517433751743
+  }
+ },
+ "label_overall": "DECODE-LOSES",
+ "label_overall_note": "both seeds agree",
+ "N1R_beside": {
+  "N1R_s0": {
+   "T0_minus_T1": {
+    "delta": 0.019700139470013922,
+    "lo": -0.0026,
+    "hi": 0.0405,
+    "separated": false,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "T0": {
+    "point": 0.6101813110181311,
+    "lo": 0.5885,
+    "hi": 0.6308
+   },
+   "T1": {
+    "point": 0.5904811715481172,
+    "lo": 0.5695,
+    "hi": 0.6122
+   }
+  },
+  "N1R_s1": {
+   "T0_minus_T1": {
+    "delta": -0.013423988842398926,
+    "lo": -0.0334,
+    "hi": 0.0059,
+    "separated": false,
+    "n_windows": 5736,
+    "n_episodes": 497
+   },
+   "T0": {
+    "point": 0.6194211994421199,
+    "lo": 0.5984,
+    "hi": 0.6393
+   },
+   "T1": {
+    "point": 0.6328451882845189,
+    "lo": 0.6125,
+    "hi": 0.6535
+   }
+  }
+ },
+ "controls": {
+  "K1": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "separated": false,
+   "n_windows": 5736,
+   "n_episodes": 497,
+   "pass": true
+  },
+  "K-RE": {
+   "cells": {
+    "N1D_s0": {
+     "recomputed": 0.6195955369595537,
+     "banked_RESULT_NAVRBD": 0.6195955369595537,
+     "abs_diff": 0.0,
+     "pass": true
+    },
+    "N1D_s1": {
+     "recomputed": 0.6499302649930265,
+     "banked_RESULT_NAVRBD": 0.6499302649930265,
+     "abs_diff": 0.0,
+     "pass": true
+    },
+    "N1R_s0": {
+     "recomputed": 0.5904811715481172,
+     "banked_RESULT_NAVRBD": 0.5904811715481172,
+     "abs_diff": 0.0,
+     "pass": true
+    },
+    "N1R_s1": {
+     "recomputed": 0.6328451882845189,
+     "banked_RESULT_NAVRBD": 0.6328451882845189,
+     "abs_diff": 0.0,
+     "pass": true
+    }
+   },
+   "pass": true,
+   "banked_source": "raw/2026-11-16-v8f-strat1/navrbd/read/result/RESULT_NAVRBD.json D1_HO_each_acc"
+  },
+  "K-CONST": {
+   "majority_accuracy": 0.3382147838214784,
+   "expected": 0.338215,
+   "pass": true,
+   "gt_class_counts": [
+    1934,
+    1862,
+    1940
+   ]
+  },
+  "K-T0": {
+   "cells": {
+    "N1D_s0|feat1": {
+     "max_abs_diff_m": 0.0,
+     "n_windows": 5736,
+     "pass": true
+    },
+    "N1D_s0|feat2": {
+     "max_abs_diff_m": 0.0,
+     "n_windows": 5736,
+     "pass": true
+    },
+    "N1D_s1|feat1": {
+     "max_abs_diff_m": 0.0,
+     "n_windows": 5736,
+     "pass": true
+    },
+    "N1D_s1|feat2": {
+     "max_abs_diff_m": 0.0,
+     "n_windows": 5736,
+     "pass": true
+    }
+   },
+   "pass": true,
+   "note": "N1D arms only: the extractor was run for N1D only; N1R ol is read the same way from its dump, its parity vs an extractor is not measured"
+  }
+ },
+ "controls_all_pass": true,
+ "informational_label_agreement_T0_T1": {
+  "N1D_s0": 0.6485355648535565,
+  "N1D_s1": 0.672768479776848,
+  "N1R_s0": 0.6447001394700139,
+  "N1R_s1": 0.6724198047419805
+ },
+ "informational_confusion_GTrow_by_T0col": {
+  "N1D_s0": [
+   [
+    1430,
+    233,
+    271
+   ],
+   [
+    367,
+    1056,
+    439
+   ],
+   [
+    589,
+    243,
+    1108
+   ]
+  ],
+  "N1D_s1": [
+   [
+    1316,
+    217,
+    401
+   ],
+   [
+    373,
+    1109,
+    380
+   ],
+   [
+    502,
+    221,
+    1217
+   ]
+  ],
+  "N1R_s0": [
+   [
+    1441,
+    221,
+    272
+   ],
+   [
+    345,
+    997,
+    520
+   ],
+   [
+    612,
+    266,
+    1062
+   ]
+  ],
+  "N1R_s1": [
+   [
+    1351,
+    204,
+    379
+   ],
+   [
+    345,
+    1039,
+    478
+   ],
+   [
+    551,
+    226,
+    1163
+   ]
+  ]
+ },
+ "informational_confusion_GTrow_by_T1col": {
+  "N1D_s0": [
+   [
+    1042,
+    617,
+    275
+   ],
+   [
+    135,
+    1459,
+    268
+   ],
+   [
+    312,
+    575,
+    1053
+   ]
+  ],
+  "N1D_s1": [
+   [
+    1101,
+    491,
+    342
+   ],
+   [
+    207,
+    1415,
+    240
+   ],
+   [
+    345,
+    383,
+    1212
+   ]
+  ],
+  "N1R_s0": [
+   [
+    1052,
+    622,
+    260
+   ],
+   [
+    149,
+    1352,
+    361
+   ],
+   [
+    286,
+    671,
+    983
+   ]
+  ],
+  "N1R_s1": [
+   [
+    1112,
+    440,
+    382
+   ],
+   [
+    233,
+    1285,
+    344
+   ],
+   [
+    353,
+    354,
+    1233
+   ]
+  ]
+ }
+}
