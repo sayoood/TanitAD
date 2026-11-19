@@ -27,7 +27,7 @@ DEFINITIONS (fixed here so a pre-registration can name them):
     `interp="navsim2hz"` instead runs NAVSIM's own chain (REFe 20 poses -> 8 poses at 2 Hz by `navsim_dac.to_navsim` -> 41 poses at
     10 Hz by `navsim_dac.at_10hz`), the representation NAVSIM's verdict is judged in. Both are differentiable.
   * corners: the four corners of the nuPlan Pacifica footprint, identical to `navsim_dac.corners_global` (same order).
-  * lookup: bilinear `grid_sample` on the SDF in metres (int8 * 0.1). A corner is IN EXTENT iff its fractional cell-centre
+  * lookup: bilinear lookup (explicit gather, deterministic backward on CUDA; same values as `grid_sample`, border padding) on the SDF in metres (int8 * 0.1). A corner is IN EXTENT iff its fractional cell-centre
     index is inside [0, 159] x [0, 127] (the hull the bilinear lookup is fully supported on; the same test as
     `proto_label.raster_inside`). An out-of-extent corner contributes exactly 0 loss and exactly 0 gradient.
   * reduction: sum of the hinge over valid samples / (n_valid * 64 * 40 * 4). Out-of-extent corners count in the denominator as
@@ -122,17 +122,36 @@ def footprint_corners(poses: torch.Tensor) -> torch.Tensor:
 
 
 def sample_sdf(sdf_int8: torch.Tensor, pts: torch.Tensor):
-    """Bilinear SDF lookup. sdf_int8 [B, 160, 128] int8, pts [B, N, 2] (x, y) in the label frame ->
-    (s [B, N] metres, in_extent [B, N] bool)."""
-    img = (sdf_int8.to(pts.dtype) * SDF_UNIT_M).transpose(1, 2).unsqueeze(1)            # [B, 1, NY, NX]: H = y, W = x
-    gx = 2.0 * (pts[..., 0] - X0) / (X1 - X0) - 1.0
-    gy = 2.0 * (pts[..., 1] - Y0) / (Y1 - Y0) - 1.0
-    grid = torch.stack([gx, gy], dim=-1).unsqueeze(2)                                   # [B, N, 1, 2]: (x_norm, y_norm)
-    s = F.grid_sample(img, grid, mode="bilinear", padding_mode="border", align_corners=False)
+    """Bilinear SDF lookup. sdf_int8 [B, 160, 128] int8 (indexed [x, y]), pts [B, N, 2] (x, y) in the label frame ->
+    (s [B, N] metres, in_extent [B, N] bool).
+
+    An explicit gather + multiply-add, numerically the same as `F.grid_sample(mode="bilinear", padding_mode="border",
+    align_corners=False)` (the unnormalised coordinate of that call is the fractional cell-centre index fx, fy below). It
+    replaces grid_sample because `grid_sampler_2d_backward_cuda` has no deterministic implementation, and the launch gate's
+    G-CKPT replays training under `torch.use_deterministic_algorithms(True)`. The SDF is a constant label: only the weights
+    carry gradient."""
     fx = (pts[..., 0] - X0) / RES - 0.5
     fy = (pts[..., 1] - Y0) / RES - 0.5
     in_ext = (fx >= 0) & (fx <= NX - 1) & (fy >= 0) & (fy <= NY - 1)
-    return s.reshape(pts.shape[0], pts.shape[1]), in_ext
+    cx = fx.clamp(0.0, float(NX - 1))                                                   # border padding
+    cy = fy.clamp(0.0, float(NY - 1))
+    x0 = cx.detach().floor().clamp(max=NX - 2)
+    y0 = cy.detach().floor().clamp(max=NY - 2)
+    wx = cx - x0
+    wy = cy - y0
+    x0 = x0.long()
+    y0 = y0.long()
+    flat = (sdf_int8.to(pts.dtype) * SDF_UNIT_M).reshape(sdf_int8.shape[0], NX * NY)    # [B, NX*NY], index = x * NY + y
+
+    def corner(ix, iy):
+        return torch.gather(flat, 1, ix * NY + iy)
+
+    v00 = corner(x0, y0)
+    v10 = corner(x0 + 1, y0)
+    v01 = corner(x0, y0 + 1)
+    v11 = corner(x0 + 1, y0 + 1)
+    s = v00 * (1.0 - wx) * (1.0 - wy) + v10 * wx * (1.0 - wy) + v01 * (1.0 - wx) * wy + v11 * wx * wy
+    return s, in_ext
 
 
 def field_loss(traj: torch.Tensor, sdf_int8: torch.Tensor, *, margin: float = 0.25, valid=None,

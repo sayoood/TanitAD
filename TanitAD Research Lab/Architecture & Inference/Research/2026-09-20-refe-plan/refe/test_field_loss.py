@@ -197,6 +197,35 @@ def i8(a):
     return torch.from_numpy(np.ascontiguousarray(a)).to(torch.int8)
 
 
+# ============================================================================ frozen reference: the OLD grid_sample lookup
+def old_sample_sdf(sdf_int8: torch.Tensor, pts: torch.Tensor):
+    """FROZEN COPY of field_loss.sample_sdf as it was before the deterministic rewrite (tip e9ecd885 .. 40938dd8): bilinear
+    `F.grid_sample`, border padding, align_corners=False. It is the reference the explicit gather lookup must reproduce."""
+    import torch.nn.functional as F
+    img = (sdf_int8.to(pts.dtype) * UNIT).transpose(1, 2).unsqueeze(1)                  # [B, 1, NY, NX]: H = y, W = x
+    gx = 2.0 * (pts[..., 0] - X0) / (80.0) - 1.0
+    gy = 2.0 * (pts[..., 1] - Y0) / (64.0) - 1.0
+    grid = torch.stack([gx, gy], dim=-1).unsqueeze(2)
+    s = F.grid_sample(img, grid, mode="bilinear", padding_mode="border", align_corners=False)
+    fx = (pts[..., 0] - X0) / RES - 0.5
+    fy = (pts[..., 1] - Y0) / RES - 0.5
+    in_ext = (fx >= 0) & (fx <= NX - 1) & (fy >= 0) & (fy <= NY - 1)
+    return s.reshape(pts.shape[0], pts.shape[1]), in_ext
+
+
+def rand_points(rng, B, N, dtype):
+    """Uniform over the extent widened by 4 m each side, so a share of the points is out of extent."""
+    x = rng.uniform(X0 - 4.0, X0 + NX * RES + 4.0, (B, N))
+    y = rng.uniform(Y0 - 4.0, Y0 + NY * RES + 4.0, (B, N))
+    return torch.from_numpy(np.stack([x, y], -1)).to(dtype)
+
+
+def rand_sdf(rng, B, smooth):
+    if not smooth:
+        return torch.from_numpy(rng.integers(-127, 128, (B, NX, NY)).astype(np.int8))
+    return torch.from_numpy(np.stack([wavy_sdf() if b % 2 == 0 else road_sdf(2.0 + b) for b in range(B)]))
+
+
 # ============================================================================ the suite
 def suite(M) -> tuple:
     """The checks, against module `M`. Returns (names of the FAILING checks (empty = all green), number of checks run)."""
@@ -500,6 +529,146 @@ def suite(M) -> tuple:
                   (M.X0, M.X1, M.Y0, M.Y1, M.RES, M.NX, M.NY, M.SDF_UNIT_M, M.SDF_CLIP_M)
         return ok and (M.N_SRC, M.SRC_DT, M.N_STEPS, M.K_PROPOSALS) == (20, 0.2, 40, 64)
 
+    # ---- (N) the explicit lookup vs the frozen grid_sample reference; no grid_sample; deterministic ---------------------------
+    def n_coordinate():
+        # claim: grid_sample's unnormalised x for align_corners=False, ((gx + 1) * W - 1) / 2 with gx = 2 (x - X0) / (X1 - X0) - 1, IS fx
+        rng = np.random.default_rng(31)
+        pts = rand_points(rng, 1, 50_000, torch.float64)
+        gx = 2.0 * (pts[..., 0] - X0) / 80.0 - 1.0
+        gy = 2.0 * (pts[..., 1] - Y0) / 64.0 - 1.0
+        d = max(float((((gx + 1.0) * NX - 1.0) / 2.0 - ((pts[..., 0] - X0) / RES - 0.5)).abs().max()),
+                float((((gy + 1.0) * NY - 1.0) / 2.0 - ((pts[..., 1] - Y0) / RES - 0.5)).abs().max()))
+        INFO["n_coord_dev"] = d
+        return d < 1e-9
+
+    def n_forward():
+        rng = np.random.default_rng(32)
+        worst = {}
+        okk = True
+        for dtype in (torch.float64, torch.float32):
+            for smooth in (False, True):
+                sdf = rand_sdf(rng, 4, smooth)
+                pts = rand_points(rng, 4, 25_000, dtype)                       # 100,000 points per case
+                s_new, e_new = M.sample_sdf(sdf, pts)
+                s_old, e_old = old_sample_sdf(sdf, pts)
+                key = ("f64" if dtype == torch.float64 else "f32") + ("_smooth" if smooth else "_noise")
+                worst[key] = float((s_new - s_old).abs().max())
+                if dtype == torch.float32 and smooth:
+                    worst["f32_smooth_mean"] = float((s_new - s_old).abs().mean())
+                    s64, _ = old_sample_sdf(sdf, pts.double())                  # float64 truth at the float32-ROUNDED points
+                    worst["f32_new_vs_truth"] = float((s_new.double() - s64).abs().max())
+                    worst["f32_old_vs_truth"] = float((s_old.double() - s64).abs().max())
+                okk &= bool(torch.equal(e_new, e_old)) and s_new.shape == s_old.shape and s_new.dtype == dtype
+        INFO.update({"fwd_maxabs_" + k: v for k, v in worst.items()})
+        # float32: each implementation rounds the fractional index in its own order (ulp(fx) ~ 1.5e-5 cells at fx ~ 160), worth up to
+        # ~slope * 1.5e-5 ~ 5e-6 m on a smooth SDF (MEASURED: max 2.9e-6, mean 1.8e-7; each implementation is ~4e-6 from the float64 truth at the
+        # same float32 points, so 1e-6 is below what ANY float32 lookup can agree on at the tails). Bounds: max <= 5e-6, mean <= 5e-7, and the new
+        # lookup is no further from the float64 truth than the old one + 2e-6. The noise SDF (+-25 m between neighbours) is reported, not bounded.
+        return (okk and worst["f64_noise"] <= 1e-12 and worst["f64_smooth"] <= 1e-12 and worst["f32_smooth"] <= 5e-6
+                and worst["f32_smooth_mean"] <= 5e-7 and worst["f32_new_vs_truth"] <= worst["f32_old_vs_truth"] + 2e-6)
+
+    def n_forward_edges():
+        # out-of-extent and exact-edge / exact-centre points: equal to the reference
+        rng = np.random.default_rng(33)
+        sdf = rand_sdf(rng, 2, False)
+        xs = np.array([X0 - 50, X0, X0 + 0.25, X0 + 0.5, X0 + NX * RES - 0.25, X0 + NX * RES, X0 + NX * RES + 50])
+        ys = np.array([Y0 - 50, Y0, Y0 + 0.25, Y0 + 0.5, Y0 + NY * RES - 0.25, Y0 + NY * RES, Y0 + NY * RES + 50])
+        g = np.stack(np.meshgrid(xs, ys, indexing="ij"), -1).reshape(1, -1, 2)
+        pts = torch.from_numpy(np.concatenate([g, g], 0)).double()
+        a, ea = M.sample_sdf(sdf, pts)
+        b, eb = old_sample_sdf(sdf, pts)
+        return float((a - b).abs().max()) <= 1e-12 and bool(torch.equal(ea, eb))
+
+    def n_point_grad():
+        # d s / d pts, float64, on points >= 1e-6 (index units) from an integer fractional index. Cell boundaries are measure-zero
+        # kinks of the piecewise-bilinear map (the two one-sided slopes differ), so there is no single gradient to compare there.
+        rng = np.random.default_rng(34)
+        worst = 0.0
+        npts = 0
+        for smooth in (False, True):
+            sdf = rand_sdf(rng, 4, smooth)
+            pts = rand_points(rng, 4, 25_000, torch.float64)
+            fx = ((pts[..., 0] - X0) / RES - 0.5)
+            fy = ((pts[..., 1] - Y0) / RES - 0.5)
+            keep = ((fx - fx.round()).abs() > 1e-6) & ((fy - fy.round()).abs() > 1e-6)
+            w = torch.from_numpy(rng.normal(size=tuple(pts.shape[:2])))
+            grads = []
+            for fn in (M.sample_sdf, old_sample_sdf):
+                p2 = pts.clone().requires_grad_(True)
+                (fn(sdf, p2)[0] * w).sum().backward()
+                grads.append(p2.grad)
+            d = float(((grads[0] - grads[1]).abs() * keep[..., None]).max())
+            worst = max(worst, d)
+            npts += int(keep.sum())
+        INFO["pt_grad_maxabs"], INFO["pt_grad_n"] = worst, npts
+        return worst <= 1e-10 and npts > 150_000
+
+    def n_loss_vs_old():
+        # field_loss value and d/d traj, with the OLD sample_sdf monkeypatched into the module under test
+        rng = np.random.default_rng(35)
+        cases = [FX[k] for k in ("wavy", "wrap", "navsim")]
+        cases.append((arcs(rng, 3, 64, 2.0, 18.0, 0.05, 2.5), np.stack([wavy_sdf(), road_sdf(2.5), const_sdf(0.1)])))
+        cases.append((arcs(rng, 2, 64, 3.0, 22.0, 0.08, 6.0), np.stack([wavy_sdf()[::-1].copy(), road_sdf(1.0)])))
+        worst_v, worst_g = 0.0, 0.0
+        for interp in ("5hz", "navsim2hz"):
+            for traj, sdf in cases:
+                res = []
+                for use_old in (False, True):
+                    saved = M.sample_sdf
+                    if use_old:
+                        M.sample_sdf = old_sample_sdf
+                    try:
+                        tr = tt(traj, grad=True)
+                        L = M.field_loss(tr, i8(sdf), interp=interp)
+                        L.backward()
+                    finally:
+                        M.sample_sdf = saved
+                    res.append((float(L.detach()), tr.grad.clone()))
+                worst_v = max(worst_v, abs(res[0][0] - res[1][0]))
+                worst_g = max(worst_g, float((res[0][1] - res[1][1]).abs().max()))
+        INFO["loss_val_maxabs"], INFO["loss_grad_maxabs"] = worst_v, worst_g
+        return worst_v <= 1e-12 and worst_g <= 1e-10
+
+    def n_no_grid_sample():
+        import torch.nn.functional as TF
+        saved = TF.grid_sample
+
+        def boom(*a, **k):
+            raise AssertionError("grid_sample was called")
+        TF.grid_sample = boom
+        try:
+            traj, sdf = FX["wavy"]
+            for dt in (torch.float64, torch.float32):
+                tr = tt(traj, dt, grad=True)
+                M.field_loss(tr, i8(sdf)).backward()
+                M.field_loss(tr, i8(sdf), interp="navsim2hz")
+            return True
+        finally:
+            TF.grid_sample = saved
+
+    def n_deterministic():
+        traj, sdf = FX["wavy"]
+        devs = ["cpu"]
+        if torch.cuda.is_available():
+            devs.append("cuda")
+        else:
+            INFO["cuda"] = "CUDA_SKIPPED"
+        prev = torch.are_deterministic_algorithms_enabled()
+        torch.use_deterministic_algorithms(True)
+        try:
+            for dev in devs:
+                grads = []
+                for _ in range(2):
+                    tr = tt(traj, torch.float32).to(dev).requires_grad_(True)
+                    L = M.field_loss(tr, i8(sdf).to(dev))
+                    L.backward()
+                    grads.append((float(L.detach()), tr.grad.cpu().clone()))
+                if not (grads[0][0] == grads[1][0] and torch.equal(grads[0][1], grads[1][1]) and bool(grads[0][1].abs().sum() > 0)):
+                    return False
+        finally:
+            torch.use_deterministic_algorithms(prev)
+        return True
+
     for name, fn in (("R1 matches independent ref (wavy, f64)", r_wavy_f64), ("R2 matches independent ref (wavy, f32)", r_wavy_f32),
                      ("R3 yaw-wrap crossing +-pi", r_wrap), ("R4 navsim2hz chain matches ref, differs from 5hz", r_navsim),
                      ("R5 real int8 labels vs ref", r_real), ("R6 per-proposal breakdown", r_parts),
@@ -512,7 +681,11 @@ def suite(M) -> tuple:
                      ("V1 valid mask", v_valid), ("V2 batch mean", v_batch), ("V3 input guards (int8 only)", v_guards),
                      ("F1 corners == navsim_dac.corners_global", f_corners), ("F2 5hz->10hz poses == np.interp ref", f_poses_5hz),
                      ("F3 navsim2hz poses == to_navsim+at_10hz", f_poses_navsim),
-                     ("F5 up-sampling by hand (line x = 0.7 q; +-pi midpoint)", f_poses_hand), ("H5 step-edge ramp by hand (x and y)", h_step_edges), ("F4 grid constants == label manifest", f_grid_constants)):
+                     ("F5 up-sampling by hand (line x = 0.7 q; +-pi midpoint)", f_poses_hand), ("H5 step-edge ramp by hand (x and y)", h_step_edges), ("F4 grid constants == label manifest", f_grid_constants),
+                     ("N1 grid_sample coordinate == fx, fy", n_coordinate), ("N2 lookup == frozen grid_sample, 100k pts x 4 cases", n_forward),
+                     ("N3 edges and out-of-extent == grid_sample", n_forward_edges), ("N4 d s / d pts == grid_sample (off-kink)", n_point_grad),
+                     ("N5 field_loss value and d/d traj == old lookup", n_loss_vs_old), ("N6 no grid_sample call", n_no_grid_sample),
+                     ("N7 deterministic mode: bit-identical grads", n_deterministic)):
         t(name, fn)
     return bad, count[0]
 
@@ -520,12 +693,19 @@ def suite(M) -> tuple:
 # (name, required-term, old snippet (must occur exactly once), new snippet)
 MUTATIONS = [
     ("margin sign flipped", "margin", "hinge = F.relu(margin - s)", "hinge = F.relu(-margin - s)"),
-    ("x/y swapped in the sampling grid", "grid", "grid = torch.stack([gx, gy], dim=-1)", "grid = torch.stack([gy, gx], dim=-1)"),
-    ("align_corners flipped", "grid", "align_corners=False", "align_corners=True"),
+    ("x/y swapped in the gather index", "grid", "ix * NY + iy", "iy * NX + ix"),
+    ("half-cell offset dropped (align_corners=True)", "grid", "cx = fx.clamp(0.0, float(NX - 1))", "cx = (fx + 0.5).clamp(0.0, float(NX - 1))"),
     ("upsampling dropped (5 Hz poses repeated)", "upsample", "mid = torch.cat([mid_xy, mid_h], dim=-1)", "mid = b"),
     ("loss on the best-matching proposal only", "all-64", "per_prop = (hinge * vm[:, None, None, None]).mean(dim=(2, 3))",
      "per_prop = (hinge * vm[:, None, None, None]).mean(dim=(2, 3)) * F.one_hot(traj[..., 1].abs().mean(-1).argmin(1), K).to(hinge.dtype)"),
-    ("int8 unit (0.1 m) forgotten", "unit", "img = (sdf_int8.to(pts.dtype) * SDF_UNIT_M)", "img = (sdf_int8.to(pts.dtype))"),
+    ("int8 unit (0.1 m) forgotten", "unit", "flat = (sdf_int8.to(pts.dtype) * SDF_UNIT_M)", "flat = (sdf_int8.to(pts.dtype))"),
+    ("border clamp dropped (x)", "border", "cx = fx.clamp(0.0, float(NX - 1))", "cx = fx"),
+    ("border clamp dropped (y)", "border", "cy = fy.clamp(0.0, float(NY - 1))", "cy = fy"),
+    ("x0 not capped at NX - 2", "cap", "x0 = cx.detach().floor().clamp(max=NX - 2)", "x0 = cx.detach().floor()"),
+    ("y0 not capped at NY - 2", "cap", "y0 = cy.detach().floor().clamp(max=NY - 2)", "y0 = cy.detach().floor()"),
+    ("grid_sample re-introduced", "nogs", "s = v00 * (1.0 - wx) * (1.0 - wy) + v10 * wx * (1.0 - wy) + v01 * (1.0 - wx) * wy + v11 * wx * wy",
+     "s = F.grid_sample(flat.reshape(-1, NX, NY).transpose(1, 2).unsqueeze(1), torch.stack([2.0 * (pts[..., 0] - X0) / (X1 - X0) - 1.0, "
+     "2.0 * (pts[..., 1] - Y0) / (Y1 - Y0) - 1.0], dim=-1).unsqueeze(2), mode=\"bilinear\", padding_mode=\"border\", align_corners=False).reshape(pts.shape[0], pts.shape[1])"),
     ("hinge dropped (linear)", "hinge", "hinge = F.relu(margin - s)", "hinge = margin - s"),
     ("out-of-extent mask dropped", "extent", "hinge = hinge * in_ext.to(hinge.dtype)", "hinge = hinge"),
     ("yaw wrap dropped", "wrap", "return torch.remainder(d + math.pi, 2.0 * math.pi) - math.pi", "return d"),
@@ -536,7 +716,7 @@ MUTATIONS = [
     ("interp switch ignored", "interp", 'poses = poses_10hz(traj) if interp == "5hz" else poses_10hz_navsim(traj)', "poses = poses_10hz(traj)"),
     ("time base off by one (t = 0 ... 3.9)", "steps", "poses = poses[..., 1:, :]", "poses = poses[..., :-1, :]"),
 ]
-REQUIRED = {"margin", "grid", "upsample", "all-64", "unit"}                     # the PI's list: sign, x/y swap, align_corners, upsampling, best-only, int8 unit
+REQUIRED = {"margin", "grid", "upsample", "all-64", "unit", "border", "cap", "nogs"}                     # the PI's list: sign, x/y swap, align_corners, upsampling, best-only, int8 unit
 
 
 def main() -> int:
@@ -574,6 +754,8 @@ def main() -> int:
     c5 = base.footprint_corners(base.poses_10hz(tr)[..., 1:, :])
     cn = base.footprint_corners(base.poses_10hz_navsim(tr)[..., 1:, :])
     dev = (c5 - cn).norm(dim=-1)
+    print("lookup vs frozen grid_sample: " + ", ".join(f"{k} {v:.3e}" for k, v in sorted(info.items()) if k.startswith(("fwd_", "pt_grad", "loss_", "n_coord"))))
+    print(info.get("cuda", "CUDA checked (available)"))
     print(f"corner agreement vs navsim_dac.corners_global: max dev f64 {info['corner_dev_f64']:.2e} m, f32 {info['corner_dev_f32']:.2e} m")
     print(f"up-sampling route (5hz vs navsim2hz) on 256 arcs v 5-18 m/s, |kappa| <= 0.05: corner deviation max {float(dev.max()):.3f} m, "
           f"p99 {float(dev.flatten().quantile(0.99)):.3f} m, mean {float(dev.mean()):.4f} m  (margin is 0.25 m)")

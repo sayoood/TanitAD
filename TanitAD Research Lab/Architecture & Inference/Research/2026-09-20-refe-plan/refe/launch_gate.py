@@ -576,7 +576,7 @@ def p5c_refusals(prof: dict, argv: list) -> list:
 FIELD_P7_W = 2.0                                  # --w-field of arm F: MM-ratified pre-data 2026-11-17, PI "Approve F+C" 2026-11-17; frozen, the launch gate may only veto it (field_p7/WEIGHT_FIELDP7.md, raw/weight_rule_p7_cpu.json)
 FIELD_P7_STORE_SHA256 = "4a17db673b1548ba35724ab848a7dc551e4b0bc1e49c57ae93e6357454bf287a"      # the FULL aux label store (103,139 keys): aux_drivable_head.PINNED_STORE_SHA256, which train.py:664 hard-pins for --field-labels
 FIELD_P7_STORE_KEYS = 103139
-FIELD_P7_LOSS_SHA256 = "e29d91c349539ba366c73739fd2fe7fc6f1e7a6a015c4c0749df5f15df36c994"       # refe/field_loss.py (LF bytes), re-hashed from the tip export 2026-11-17; test_field_loss.py ZZTEST_PASS 42 at this hash
+FIELD_P7_LOSS_SHA256 = "da7b43030cbc89b43da74c3c9ce48b12450d3080c702374dc2e62dea929563b3"       # refe/field_loss.py (LF bytes), re-hashed 2026-11-19 after the deterministic (gather, no grid_sample) lookup; test_field_loss.py ZZTEST_PASS 54 at this hash
 FIELD_P7_ARM_NAME = {"F": "refe_field_p7", "C": "refe_field_p7_ctrl"}
 FIELD_P7_ARM_W = {"F": FIELD_P7_W, "C": 0.0}
 # the two REPLICATES (PI "I approve your recommendation" 2026-11-17, PREREG_AUX_FIELD_LOSS_P7 Amendment A): Cs = C and Fs = F at `--seed 1`, everything else identical, own `--out`.  Mirrors P5-C's C0r.
@@ -615,7 +615,9 @@ def p7field_profile(arm: str) -> dict:
     prof = {k: v for k, v in c0.items() if k not in ("p5c_rules", "p5c_arm", "p5c_base")}
     prof.update({"name": FIELD_P7_ARM_NAME[arm], "p7field_rules": True, "p7field_arm": arm, "field_arm": FIELD_P7_REP_BASE.get(arm, arm), "data_flags": tuple(c0["data_flags"]) + ("--field-labels",),
                  "suite": list(c0["suite"]) + FIELD_SUITE_EXTRA + [{"script": "test_field_p7_profile.py", "args": ["--fast"], "token": "ZZFIELDP7PROF_PASS"}],
-                 "forbidden_flags": forb, "required_flags": req, "live_terms": P6_TERMS + ("field_L",), "field_min_coverage": 0.999,
+                 "forbidden_flags": forb, "required_flags": req, "live_terms": P6_TERMS + (("field_L",) if FIELD_P7_ARM_W[arm] > 0.0 else ()), "field_min_coverage": 0.999,
+                 # field_L is a declared live term ONLY where the arm trains it: train.py computes and logs it only when --w-field > 0, so a
+                 # control at 0.0 that declared it FAILED G-LIVE on the pod ("field_L ABSENT from the trainer's metrics", C, 2026-11-19 06:15Z).
                  "field_w": FIELD_P7_ARM_W[arm], "field_store_sha256": FIELD_P7_STORE_SHA256, "field_store_keys": FIELD_P7_STORE_KEYS, "field_loss_sha256": FIELD_P7_LOSS_SHA256})
     return prof
 

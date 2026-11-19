@@ -39,7 +39,12 @@ OLD_PROFILES_P5C = ("refe_p5c", "refe_p5c_c0", "refe_p5c_c0r")
 # F and C EXACTLY as at e9ecd885 (computed from a raw tip export of that module before the replicate arms were added): the argv templates literally, the two profile dicts as a sha256 of
 # json.dumps(profile, sort_keys=True, default=str).  A later LEGITIMATE change to the shared P5-C machinery re-pins the two hashes (and the PASS tokens of F/C must then be re-issued anyway).
 E9_ARGV = {"F": json.loads('["--backbone", "vitl16", "--targets", "/workspace/data/refe_navtrain/train_grow_cmd_3c_p7", "--images", "/workspace/data/navtrain_pixels", "--calib", "/workspace/data/refe_p7/p7_reserve/calib/calib_table.json", "--metric-cache", "/workspace/data/refe_navtrain/metric_cache", "--scorer-sees-trunk", "--yaw-wrap", "off", "--nav-mode", "command", "--labeller", "online", "--label-workers", "13", "--label-chunks", "2", "--init-from", "/workspace/data/refe_runs/p7_reserve_head/model_final.pt", "--epochs", "0", "--steps", "2000", "--epoch-unit", "scenes", "--batch", "4", "--accum", "64", "--lr", "5e-5", "--weight-decay", "0.01", "--amp", "bf16", "--score-w", "0.1", "--w-field", "2.0", "--field-labels", "/workspace/data/refe_navtrain/aux_label_store_full", "--field-margin", "0.25", "--field-interp", "5hz", "--ego-yaw-table", "/workspace/data/refe_navtrain/ego_yaw_navtrain.json.gz", "--seed", "0", "--tf32", "--compile", "--workers", "2", "--log-every", "1", "--ckpt-every-min", "20", "--out", "/workspace/data/refe_runs/p7field_f", "--resume"]'), "C": json.loads('["--backbone", "vitl16", "--targets", "/workspace/data/refe_navtrain/train_grow_cmd_3c_p7", "--images", "/workspace/data/navtrain_pixels", "--calib", "/workspace/data/refe_p7/p7_reserve/calib/calib_table.json", "--metric-cache", "/workspace/data/refe_navtrain/metric_cache", "--scorer-sees-trunk", "--yaw-wrap", "off", "--nav-mode", "command", "--labeller", "online", "--label-workers", "13", "--label-chunks", "2", "--init-from", "/workspace/data/refe_runs/p7_reserve_head/model_final.pt", "--epochs", "0", "--steps", "2000", "--epoch-unit", "scenes", "--batch", "4", "--accum", "64", "--lr", "5e-5", "--weight-decay", "0.01", "--amp", "bf16", "--score-w", "0.1", "--w-field", "0.0", "--field-labels", "/workspace/data/refe_navtrain/aux_label_store_full", "--field-margin", "0.25", "--field-interp", "5hz", "--ego-yaw-table", "/workspace/data/refe_navtrain/ego_yaw_navtrain.json.gz", "--seed", "0", "--tf32", "--compile", "--workers", "2", "--log-every", "1", "--ckpt-every-min", "20", "--out", "/workspace/data/refe_runs/p7field_c", "--resume"]')}
-E9_PROFILE_SHA256 = {"F": '68f739037368a42867cd420c002dd4b85572c170bf2f46ea3ca6089996d12013', "C": '258b53f9c1602f788f7c3c466c476079d107e960c9a0e45dd4955a7bc7492088'}
+# 2026-11-19, two pod-measured fixes, and NOTHING else in either profile dict: (1) the deterministic field-loss lookup moves field_loss_sha256 (e29d91c3 -> da7b4303) in
+# both; (2) C no longer declares field_L as a live term (C's pod gate FAILED G-LIVE on it: the trainer logs field_L only when --w-field > 0). chk_unchanged undoes
+# exactly those two and must reproduce the e9ecd885 hashes (E9_ORIG_SHA256) bit for bit, so no other key can have moved.
+E9_PROFILE_SHA256 = {"F": 'e795f43cd511751100bcd587df31f732ff826a4c30b4a5c7d2fcd1830b554c22', "C": '2944fef660e56ef04266ce09a0df37da2405d345471ba1f0125c2a936019b1df'}
+E9_ORIG_SHA256 = {"F": '68f739037368a42867cd420c002dd4b85572c170bf2f46ea3ca6089996d12013', "C": '258b53f9c1602f788f7c3c466c476079d107e960c9a0e45dd4955a7bc7492088'}
+E9_LOSS_SHA256 = 'e29d91c349539ba366c73739fd2fe7fc6f1e7a6a015c4c0749df5f15df36c994'
 
 
 def ok(cond, msg=""):
@@ -83,7 +88,8 @@ def chk_registry():
         ok(pr["required_flags"]["--w-field"] == ("2.0" if tw == "F" else "0.0") and pr["field_w"] == (2.0 if tw == "F" else 0.0) and type(pr["field_w"]) is float)
         ok("--field-labels" in pr["required_flags"] and pr["required_flags"]["--field-margin"] == "0.25" and pr["required_flags"]["--field-interp"] == "5hz")
         ok("--field-labels" in pr["data_flags"] and "--init-from" in pr["data_flags"] and "--traj-label-table" not in pr["data_flags"])
-        ok(pr["live_terms"] == L.P6_TERMS + ("field_L",) and pr["field_min_coverage"] == 0.999)
+        ok(pr["live_terms"] == L.P6_TERMS + (("field_L",) if tw == "F" else ()) and pr["field_min_coverage"] == 0.999,
+           (nm, "field_L is declared live exactly where it is trained (F, Fs); a control (C, Cs) that declares it fails G-LIVE (pod, 2026-11-19)"))
         ok(all(f in pr["forbidden_flags"] for f in L.AUX_HEAD_FLAGS) and "--traj-label-table" in pr["forbidden_flags"] and "--field-shuffle-seed" in pr["forbidden_flags"] and "--init-from" not in pr["forbidden_flags"])
         ok(pr["required_flags"]["--seed"] == SEED[arm] and pr["required_flags"]["--lr"] == "5e-5" and pr["required_flags"]["--steps"] == "2000" and pr["required_flags"]["--epochs"] == "0" and "--ego-yaw-table" in pr["required_flags"])
         ok(pr["init_from_sha256"] == L.P5C_BASE_SHA256 and pr["init_from_sha256"].startswith("2613fc17"), "the P7 base sha pin")
@@ -97,7 +103,7 @@ def chk_registry():
         ok("G-RESERVE" not in pr["checks"])
     ok(L.FIELD_P7_W == 2.0 and type(L.FIELD_P7_W) is float)
     ok(L.FIELD_P7_STORE_SHA256 == "4a17db673b1548ba35724ab848a7dc551e4b0bc1e49c57ae93e6357454bf287a" and L.FIELD_P7_STORE_KEYS == 103139)
-    ok(L.FIELD_P7_LOSS_SHA256 == "e29d91c349539ba366c73739fd2fe7fc6f1e7a6a015c4c0749df5f15df36c994")
+    ok(L.FIELD_P7_LOSS_SHA256 == "da7b43030cbc89b43da74c3c9ce48b12450d3080c702374dc2e62dea929563b3")
     for nm in ALL_NAMES.values():
         pr = L.PROFILES[nm]
         ok((pr["field_store_sha256"], pr["field_store_keys"], pr["field_loss_sha256"]) == (L.FIELD_P7_STORE_SHA256, L.FIELD_P7_STORE_KEYS, L.FIELD_P7_LOSS_SHA256))
@@ -271,6 +277,10 @@ def chk_unchanged():
     for arm, nm in NAMES.items():
         ok(L.p7field_argv(arm) == E9_ARGV[arm], (arm, "argv moved since e9ecd885"))
         ok(hashlib.sha256(json.dumps(L.PROFILES[nm], sort_keys=True, default=str).encode()).hexdigest() == E9_PROFILE_SHA256[arm], (nm, "profile moved since e9ecd885"))
+        back = dict(L.PROFILES[nm], field_loss_sha256=E9_LOSS_SHA256)
+        if arm == "C":
+            back["live_terms"] = tuple(back["live_terms"]) + ("field_L",)
+        ok(hashlib.sha256(json.dumps(back, sort_keys=True, default=str).encode()).hexdigest() == E9_ORIG_SHA256[arm], (nm, "undoing the two 2026-11-19 fixes must give the e9ecd885 profile exactly"))
         ok(L.FIELD_P7_ARM_NAME[arm] == nm and L.FIELD_P7_ARM_W[arm] == (2.0 if arm == "F" else 0.0))
     for rp, tw in TWIN.items():
         a, b = L.PROFILES[REP_NAMES[rp]], L.PROFILES[NAMES[tw]]
@@ -356,7 +366,8 @@ MUTATIONS = [
     ("launch_gate.py", "(\"--field-shuffle-seed\",) if \"--field-shuffle-seed\" not in c0[\"forbidden_flags\"] else ()", "()", "registry"),              # the shuffled-label arm is no longer forbidden
     ("launch_gate.py", "\"--field-labels\": None, **FIELD_REGISTERED})", "\"--field-labels\": None})", "registry"),                                      # the margin / interp are no longer REQUIRED flags
     ("launch_gate.py", "list(c0[\"suite\"]) + FIELD_SUITE_EXTRA + [", "list(c0[\"suite\"]) + [", "registry"),                                          # test_field_loss.py leaves G-SUITE
-    ("launch_gate.py", "\"live_terms\": P6_TERMS + (\"field_L\",)", "\"live_terms\": P6_TERMS", "registry"),                                           # field_L is not a declared live term
+    ("launch_gate.py", "\"live_terms\": P6_TERMS + ((\"field_L\",) if FIELD_P7_ARM_W[arm] > 0.0 else ())", "\"live_terms\": P6_TERMS", "registry"),     # F does not declare field_L
+    ("launch_gate.py", "((\"field_L\",) if FIELD_P7_ARM_W[arm] > 0.0 else ())", "(\"field_L\",)", "registry"),     # the control declares field_L again (the 2026-11-19 pod G-LIVE failure)
     ("launch_gate.py", 'FIELD_P7_ARM_SEED = {"F": 0, "C": 0, "Cs": 1, "Fs": 1}', 'FIELD_P7_ARM_SEED = {"F": 0, "C": 0, "Cs": 0, "Fs": 1}', 'argv_delta'),    # the Cs replicate is not at seed 1
     ("launch_gate.py", 'FIELD_P7_ARM_SEED = {"F": 0, "C": 0, "Cs": 1, "Fs": 1}', 'FIELD_P7_ARM_SEED = {"F": 0, "C": 0, "Cs": 1, "Fs": 0}', 'argv_delta'),    # the Fs replicate is not at seed 1
     ("launch_gate.py", '    k = a.index("--seed")\n    a[k + 1] = str(FIELD_P7_ARM_SEED[arm])\n', '', 'argv_delta'),    # the template carries C0 seed 0 for every arm
