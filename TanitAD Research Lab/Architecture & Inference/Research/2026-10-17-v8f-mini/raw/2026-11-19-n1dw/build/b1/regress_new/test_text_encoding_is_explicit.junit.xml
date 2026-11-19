@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="3" time="24.993" timestamp="2026-11-19T15:27:27.705868+01:00" hostname="FREEDOM2035"><testcase classname="tests.test_text_encoding_is_explicit" name="test_subprocess_text_mode_always_names_its_encoding" time="21.096"><failure message="AssertionError: text-mode subprocess without encoding= decodes with the LOCALE codec; on Windows that is cp1252 and any non-Latin-1 glyph in the child's output raises UnicodeDecodeError, which reads as a bug in the tool. Add encoding=&quot;utf-8&quot;:&#10;    stack\tests\test_r9_e3_make_argv.py:497&#10;    stack\tests\test_r9_e3_make_argv.py:502&#10;assert not ['stack\\tests\\test_r9_e3_make_argv.py:497', 'stack\\tests\\test_r9_e3_make_argv.py:502']">def test_subprocess_text_mode_always_names_its_encoding():
+        """Repo-wide: what is being decoded is our own tool's stdout, and that is
+        UTF-8 on every platform this programme runs on."""
+        bad = []
+        for p in _py_files(STACK, REPO / "Paper", REPO / "tools"):
+            t = _tree(p)
+            if t is None:
+                continue
+            for node in ast.walk(t):
+                if not (isinstance(node, ast.Call) and _is_subprocess_call(node)):
+                    continue
+                if _kw(node, "encoding") is not None:
+                    continue
+                if any(_is_true(_kw(node, f)) for f in _TEXT_FLAGS):
+                    bad.append(f"{p.relative_to(REPO)}:{node.lineno}")
+&gt;       assert not bad, (
+            "text-mode subprocess without encoding= decodes with the LOCALE codec; "
+            "on Windows that is cp1252 and any non-Latin-1 glyph in the child's "
+            "output raises UnicodeDecodeError, which reads as a bug in the tool. "
+            'Add encoding="utf-8":\n  ' + "\n  ".join(bad))
+E       AssertionError: text-mode subprocess without encoding= decodes with the LOCALE codec; on Windows that is cp1252 and any non-Latin-1 glyph in the child's output raises UnicodeDecodeError, which reads as a bug in the tool. Add encoding="utf-8":
+E           stack\tests\test_r9_e3_make_argv.py:497
+E           stack\tests\test_r9_e3_make_argv.py:502
+E       assert not ['stack\\tests\\test_r9_e3_make_argv.py:497', 'stack\\tests\\test_r9_e3_make_argv.py:502']
+
+tests\test_text_encoding_is_explicit.py:113: AssertionError</failure></testcase><testcase classname="tests.test_text_encoding_is_explicit" name="test_tests_and_figures_open_text_files_with_an_explicit_encoding" time="3.690" /><testcase classname="tests.test_text_encoding_is_explicit" name="test_the_guard_can_actually_fail" time="0.001" /></testsuite></testsuites>

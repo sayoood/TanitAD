@@ -1,0 +1,29 @@
+........E
+=================================== ERRORS ====================================
+____ ERROR at setup of test_z0_w1_build_is_the_0c3b374f_model_bit_for_bit _____
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dw/build/tmp/run1/bt'), _trace=<pluggy._tracing.TagT...88A0>, _basetemp=WindowsPath('F:/TanitAD-scratch/n1dw/build/tmp/run1/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+        root = tmp_path_factory.mktemp("n1dwworld")
+>       w = D.make_synthetic_world(root, n_train=6, n_eval=2, T=60, seed=0)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_n1dw.py:87: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tanitad\data\v8f_mini_data.py:1334: in make_synthetic_world
+    fk = _fk()
+         ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _fk():
+>       from taniteval import floors_kin
+E       ModuleNotFoundError: No module named 'taniteval'
+
+tanitad\data\v8f_mini_data.py:98: ModuleNotFoundError
+=========================== short test summary info ===========================
+ERROR tests/test_v8f_n1dw.py::test_z0_w1_build_is_the_0c3b374f_model_bit_for_bit
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+8 passed, 1 error in 3.49s
+EXIT 1

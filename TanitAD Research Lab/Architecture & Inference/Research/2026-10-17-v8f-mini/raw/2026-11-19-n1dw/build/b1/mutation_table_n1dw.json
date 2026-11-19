@@ -1,0 +1,204 @@
+{
+ "card_sha256": "59f2b7f919af958fd2da9c21f559c0f68db64add84e6fcb70cd5d6c7905c2301",
+ "mutants": [
+  {
+   "mutant": "a_delete_extra_term_line",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "edit": "111 -> 21 chars",
+   "tests": [
+    {
+     "test": "test_z1_w4_vs_w1_every_existing_term_and_output_bit_equal_total_moves_by_exactly_the_term",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_z1_w4_vs_w1_every_existing_term_and_output_bit_equal_total_moves_by_exactly_the_term",
+      "1 failed, 1 warning in 6.09s"
+     ]
+    },
+    {
+     "test": "test_z2_probe_term_positive_head_gradient_and_exact_zero_controls",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_z2_probe_term_positive_head_gradient_and_exact_zero_controls",
+      "1 failed in 7.30s"
+     ]
+    }
+   ],
+   "named_test_red": true,
+   "any_named_test_red": true,
+   "file_sha256_before": "4048801d2a135c01782f1ab9e327a4dd7f850be5e63a29712afd4628da4153dc",
+   "file_sha256_after_restore": "4048801d2a135c01782f1ab9e327a4dd7f850be5e63a29712afd4628da4153dc",
+   "restored": true,
+   "primary_named_test_red": true
+  },
+  {
+   "mutant": "b_mask_all_ones",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "edit": "42 -> 59 chars",
+   "tests": [
+    {
+     "test": "test_mask_is_c0_of_the_nav_rb_row_at_now_a_bool_per_sample",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_mask_is_c0_of_the_nav_rb_row_at_now_a_bool_per_sample",
+      "1 failed in 4.64s"
+     ]
+    },
+    {
+     "test": "test_z2_probe_term_positive_head_gradient_and_exact_zero_controls",
+     "rc": 0,
+     "red": false,
+     "tail": [
+      "1 passed in 6.23s"
+     ]
+    }
+   ],
+   "named_test_red": false,
+   "any_named_test_red": true,
+   "file_sha256_before": "3e086b67276da59fc666d186e313d9b9b5a1a58eb1e6a3e47be600dfbcabb3b4",
+   "file_sha256_after_restore": "3e086b67276da59fc666d186e313d9b9b5a1a58eb1e6a3e47be600dfbcabb3b4",
+   "restored": true,
+   "primary_named_test_red": true
+  },
+  {
+   "mutant": "c_mask_read_at_now_plus_5",
+   "file": "stack/tanitad/data/v8f_mini_data.py",
+   "edit": "75 -> 91 chars",
+   "tests": [
+    {
+     "test": "test_mask_no_future_row_garbage_after_now_leaves_it_unchanged",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_mask_no_future_row_garbage_after_now_leaves_it_unchanged",
+      "1 failed in 5.29s"
+     ]
+    },
+    {
+     "test": "test_mask_is_c0_of_the_nav_rb_row_at_now_a_bool_per_sample",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_mask_is_c0_of_the_nav_rb_row_at_now_a_bool_per_sample",
+      "1 failed in 4.98s"
+     ]
+    }
+   ],
+   "named_test_red": true,
+   "any_named_test_red": true,
+   "file_sha256_before": "de2fbc19d56733ba0a91eecd65ba1a335d9f4e33923f870784459839d43e75ab",
+   "file_sha256_after_restore": "de2fbc19d56733ba0a91eecd65ba1a335d9f4e33923f870784459839d43e75ab",
+   "restored": true,
+   "primary_named_test_red": true
+  },
+  {
+   "mutant": "d_divide_by_rb_count",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "edit": "63 -> 61 chars",
+   "tests": [
+    {
+     "test": "test_z1_w4_vs_w1_every_existing_term_and_output_bit_equal_total_moves_by_exactly_the_term",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_z1_w4_vs_w1_every_existing_term_and_output_bit_equal_total_moves_by_exactly_the_term",
+      "1 failed in 6.14s"
+     ]
+    },
+    {
+     "test": "test_zid_per_sample_trajectory_gradient_scales_by_exactly_w_on_rb_and_not_on_others",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_zid_per_sample_trajectory_gradient_scales_by_exactly_w_on_rb_and_not_on_others",
+      "1 failed in 6.45s"
+     ]
+    }
+   ],
+   "named_test_red": true,
+   "any_named_test_red": true,
+   "file_sha256_before": "4048801d2a135c01782f1ab9e327a4dd7f850be5e63a29712afd4628da4153dc",
+   "file_sha256_after_restore": "4048801d2a135c01782f1ab9e327a4dd7f850be5e63a29712afd4628da4153dc",
+   "restored": true,
+   "primary_named_test_red": true
+  },
+  {
+   "mutant": "e_flag_without_gdvb_entry",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "edit": "38 -> 0 chars",
+   "tests": [
+    {
+     "test": "test_a_flag_without_a_gdvb_entry_is_refused_by_the_gate_itself",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_a_flag_without_a_gdvb_entry_is_refused_by_the_gate_itself",
+      "1 failed in 12.06s"
+     ]
+    },
+    {
+     "test": "test_flag_default_is_one_has_a_flag_check_and_a_wm_only_default",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_flag_default_is_one_has_a_flag_check_and_a_wm_only_default",
+      "1 failed in 3.27s"
+     ]
+    }
+   ],
+   "named_test_red": true,
+   "any_named_test_red": true,
+   "file_sha256_before": "3e086b67276da59fc666d186e313d9b9b5a1a58eb1e6a3e47be600dfbcabb3b4",
+   "file_sha256_after_restore": "3e086b67276da59fc666d186e313d9b9b5a1a58eb1e6a3e47be600dfbcabb3b4",
+   "restored": true,
+   "primary_named_test_red": true
+  },
+  {
+   "mutant": "f_flag_not_applied_in_make_config",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "edit": "199 -> 0 chars",
+   "tests": [
+    {
+     "test": "test_gdvb_passes_an_honoured_argv_and_names_the_flag_in_built_levers",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_gdvb_passes_an_honoured_argv_and_names_the_flag_in_built_levers",
+      "1 failed in 8.37s"
+     ]
+    }
+   ],
+   "named_test_red": true,
+   "any_named_test_red": true,
+   "file_sha256_before": "3e086b67276da59fc666d186e313d9b9b5a1a58eb1e6a3e47be600dfbcabb3b4",
+   "file_sha256_after_restore": "3e086b67276da59fc666d186e313d9b9b5a1a58eb1e6a3e47be600dfbcabb3b4",
+   "restored": true,
+   "primary_named_test_red": true
+  },
+  {
+   "mutant": "g_mask_not_attached_to_the_batch",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "edit": "36 -> 25 chars",
+   "tests": [
+    {
+     "test": "test_end_to_end_n1dw_arm_probe_levers_counts_and_checkpoint",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_end_to_end_n1dw_arm_probe_levers_counts_and_checkpoint",
+      "1 failed in 12.28s"
+     ]
+    }
+   ],
+   "named_test_red": true,
+   "any_named_test_red": true,
+   "file_sha256_before": "3e086b67276da59fc666d186e313d9b9b5a1a58eb1e6a3e47be600dfbcabb3b4",
+   "file_sha256_after_restore": "3e086b67276da59fc666d186e313d9b9b5a1a58eb1e6a3e47be600dfbcabb3b4",
+   "restored": true,
+   "primary_named_test_red": true
+  }
+ ],
+ "note": "primary_named_test_red = the first listed test. Mutant (b): the probe test stays green by design (it takes its mask from the batch); the mask test is the named RED. Resume-cfg check mutant (h) not yet run."
+}
