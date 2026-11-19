@@ -1,0 +1,103 @@
+{
+ "before": {
+  "tag": "unmutated_before",
+  "rc": 0,
+  "passed": 25,
+  "failed": 0,
+  "failed_tests": [],
+  "tail": "ated\\python_variable_methods.cpp:837.) |     assert abs(float(r1[\"level\"]) - float(r2[\"level\"])) < 1e-6 and float(r1[\"n_level\"]) == float(r2[\"n_level\"])        # the reference rollout has no offset |  | -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html | 25 passed, 1 warning in 39.37s | "
+ },
+ "mutations": [
+  {
+   "tag": "m1_level_add_removed",
+   "rc": 1,
+   "passed": 24,
+   "failed": 1,
+   "failed_tests": [
+    "stack/tests/test_v8f_act_level.py::test_the_loop_lines_of_the_level_exist_once"
+   ],
+   "tail": "llout has no offset |  | -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html | =========================== short test summary info =========================== | FAILED stack/tests/test_v8f_act_level.py::test_the_loop_lines_of_the_level_exist_once | 1 failed, 24 passed, 1 warning in 37.02s | ",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "red": true
+  },
+  {
+   "tag": "m2_reference_read_detached",
+   "rc": 1,
+   "passed": 22,
+   "failed": 3,
+   "failed_tests": [
+    "stack/tests/test_v8f_act_level.py::test_invalid_level_labels_are_masked",
+    "stack/tests/test_v8f_act_level.py::test_level_gradient_reaches_predictor_and_action_embed_only",
+    "stack/tests/test_v8f_act_level.py::test_probe_reads_level_gradients_and_goes_red_when_the_head_is_attached"
+   ],
+   "tail": "l.py::test_level_gradient_reaches_predictor_and_action_embed_only | FAILED stack/tests/test_v8f_act_level.py::test_invalid_level_labels_are_masked | FAILED stack/tests/test_v8f_act_level.py::test_probe_reads_level_gradients_and_goes_red_when_the_head_is_attached | 3 failed, 22 passed, 1 warning in 32.01s | ",
+   "file": "stack/tanitad/models/act_cons.py",
+   "red": true
+  },
+  {
+   "tag": "m3_label_at_frame_s_plus_k_minus_1",
+   "rc": 1,
+   "passed": 21,
+   "failed": 4,
+   "failed_tests": [
+    "stack/tests/test_v8f_act_level.py::test_invalid_level_labels_are_masked",
+    "stack/tests/test_v8f_act_level.py::test_level_mutations_in_memory_go_red",
+    "stack/tests/test_v8f_act_level.py::test_planted_level_reads_abs_c_and_the_frame_rule_is_s_plus_k",
+    "stack/tests/test_v8f_act_level.py::test_step_k_of_roll_pairs_is_frame_s_plus_k"
+   ],
+   "tail": "e_is_s_plus_k | FAILED stack/tests/test_v8f_act_level.py::test_step_k_of_roll_pairs_is_frame_s_plus_k | FAILED stack/tests/test_v8f_act_level.py::test_invalid_level_labels_are_masked | FAILED stack/tests/test_v8f_act_level.py::test_level_mutations_in_memory_go_red | 4 failed, 21 passed, 1 warning in 33.07s | ",
+   "file": "stack/tanitad/models/act_cons.py",
+   "red": true
+  },
+  {
+   "tag": "m4_head_params_attached_in_level_read",
+   "rc": 1,
+   "passed": 23,
+   "failed": 2,
+   "failed_tests": [
+    "stack/tests/test_v8f_act_level.py::test_level_gradient_reaches_predictor_and_action_embed_only",
+    "stack/tests/test_v8f_act_level.py::test_probe_reads_level_gradients_and_goes_red_when_the_head_is_attached"
+   ],
+   "tail": "t summary info =========================== | FAILED stack/tests/test_v8f_act_level.py::test_level_gradient_reaches_predictor_and_action_embed_only | FAILED stack/tests/test_v8f_act_level.py::test_probe_reads_level_gradients_and_goes_red_when_the_head_is_attached | 2 failed, 23 passed, 1 warning in 31.67s | ",
+   "file": "stack/tanitad/models/act_cons.py",
+   "red": true
+  },
+  {
+   "tag": "m5_valid_label_mask_dropped",
+   "rc": 1,
+   "passed": 23,
+   "failed": 2,
+   "failed_tests": [
+    "stack/tests/test_v8f_act_level.py::test_invalid_level_labels_are_masked",
+    "stack/tests/test_v8f_act_level.py::test_planted_level_reads_abs_c_and_the_frame_rule_is_s_plus_k"
+   ],
+   "tail": "======================= short test summary info =========================== | FAILED stack/tests/test_v8f_act_level.py::test_planted_level_reads_abs_c_and_the_frame_rule_is_s_plus_k | FAILED stack/tests/test_v8f_act_level.py::test_invalid_level_labels_are_masked | 2 failed, 23 passed, 1 warning in 36.77s | ",
+   "file": "stack/tanitad/models/act_cons.py",
+   "red": true
+  },
+  {
+   "tag": "m6_refusal_V_with_W0_removed",
+   "rc": 1,
+   "passed": 24,
+   "failed": 1,
+   "failed_tests": [
+    "stack/tests/test_v8f_act_level.py::test_gate_refusals_of_the_level_weight"
+   ],
+   "tail": "ce rollout has no offset |  | -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html | =========================== short test summary info =========================== | FAILED stack/tests/test_v8f_act_level.py::test_gate_refusals_of_the_level_weight | 1 failed, 24 passed, 1 warning in 38.01s | ",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "red": true
+  }
+ ],
+ "after": {
+  "tag": "unmutated_after",
+  "rc": 0,
+  "passed": 25,
+  "failed": 0,
+  "failed_tests": [],
+  "tail": "ated\\python_variable_methods.cpp:837.) |     assert abs(float(r1[\"level\"]) - float(r2[\"level\"])) < 1e-6 and float(r1[\"n_level\"]) == float(r2[\"n_level\"])        # the reference rollout has no offset |  | -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html | 25 passed, 1 warning in 37.83s | "
+ },
+ "red_count": 6,
+ "total": 6,
+ "unmutated_green_before_and_after": true,
+ "PASS": true
+}

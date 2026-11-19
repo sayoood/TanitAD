@@ -1,0 +1,25 @@
+[2026-11-19T06:20:12Z] poll 1: MARK;[2026-11-19T06:18:27Z] rollout LSQF_s0 start (Q leadsup_a, base LS_s0, threshold 0.4, head b2220429eb64f82b);
+[2026-11-19T06:26:15Z] rollout queue state DONE
+[2026-11-19T06:26:19Z] pulled rollouts.out sha256 e671433f69a9c018
+ZZ PULL-SPATIAL DONE
+ZZ PULL-SPATIAL DONE
+[2026-11-19T06:30:29Z] qhead_read_qfls.sh rc 0
+[06:30:01Z] headway r2 rc 0 : controls PASS | counts {'PASS': True, 'n_lead_windows': 642, 'n_episodes_with_lead': 56, 'enough': True, 'min_windows': 200, 'min_episodes': 20, 'n_windows_total': 2399, 'n_episodes_total': 141} | spr
+[06:30:09Z] families r3 rc 0 : controls PASS | spread seeds [0, 1, 2, 3, 4, 5] | missing []
+h3 LSQF_s0: PASS | {"n_first_tick_present": 1088, "a_in_rollout": {"max_abs_g_src_vs_g_used": 0.0, "max_abs_g_used_vs_min": 0.0, "bar_m": 0.0, "PASS": true}, "n_recomputed": 1088, "b_offline_recompute": {"max_abs_g_src_vs_recomputed_min": 0.00464630126953125, "mean_abs": 0.0007551813306396498, "with
+h3 LSQF_s1: PASS | {"n_first_tick_present": 928, "a_in_rollout": {"max_abs_g_src_vs_g_used": 0.0, "max_abs_g_used_vs_min": 0.0, "bar_m": 0.0, "PASS": true}, "n_recomputed": 928, "b_offline_recompute": {"max_abs_g_src_vs_recomputed_min": 0.003070831298828125, "mean_abs": 0.0006851792207051968, "withi
+== controls of note ADD42_N2 section 3 (printed first)
+  h1_control_rollout_equals_head_fed_dump          PASS {"cmp": ["141", "0"], "tool_sha256_recorded_in_first_run": ["21cf7ac38d344fd7"], "tool_sha256_now_prefix": "21cf7ac38d344fd7", "tool_unchanged": true, "why": nu
+  h2_no_plan_moved_ahead                           PASS {}
+  h3_gap_used_equals_min_recomputed                PASS {}
+  h4_train_files_only                              PASS {}
+  h5_check_coverage_in_0.15_0.25                   PASS {"rule": "per arm type: a type is read only if both of its checkpoints are inside the band (note N1 section 4, note N2 section 2)", "types_read": ["LS"], "types
+  h8_check_clips_used_by_no_fit_and_no_selection   PASS {}
+  h6_fit_reaches_parameters_and_learns_a_quantile  PASS {"n_mutations": 7, "why": null}
+  h7_reader_controls                               PASS {"headway_ALL_PASS": true, "family_ALL_PASS": true, "g5_planted_regression_read_as_worse": true}
+  d1_label_pack_equals_banked_pack                 PASS {"why": null}
+  d2_new_states_equal_banked_states                PASS {}
+== names LS {"reaches_oracle": "QHEAD-REACHES-ORACLE-QF", "U_against_map": "QHEAD-CUTS-MORE-QF", "cost_against_map": "QHEAD-COST-EQUAL-QF", "cost_against_no_rule": "QHEAD-COSTS-QF", "cost_against_no_rule_cells": {"name": "COST-LONGITUDINAL COST-TACTICAL", "cost_families": ["LONGITUDINAL", "TACTICAL"], "gain_families": []}}
+== beside LS {"share_of_label_fed_fall_reached_per_base": [0.976190476190476, 0.9148936170212766], "U_qh_minus_none": {"per_base": [-0.073, -0.0765], "pooled": -0.0747, "interval": [-0.1128, -0.0393], "excludes_0": true}, "U_qh_minus_map": {"per_base": [-0.0142, -0.016], "pooled": -0.0151, "interval": [-0.0297, -0.0006], "exclud
+ZZ READ-QHEAD-QF DONE 06:30:29Z
+ZZ QHEAD-QF-WAIT DONE 2026-11-19T06:30:29Z
