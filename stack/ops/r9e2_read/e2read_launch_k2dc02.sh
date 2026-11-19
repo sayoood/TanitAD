@@ -20,14 +20,19 @@
 #   (d) two NEW config.json guards: the 0.02 share target and the 0.1,25 bounds (e2read_launch_k2dc.sh:29 only checked that the flag was present; K2DC's own argv carries 0.10 and 1,25
 #       (stack/ops/runs.d/r9e2_K2DC.argv.json:230-231, so a K2DC config would pass the old guard); source: stack/ops/runs.d/r9e2_K2DC02.argv.json:230-237).
 #   Every other guard is unchanged.
+#   (e) ROLL PIN, MM 2026-11-19: ROLL_BLOB was copied from e2read_launch_k2dc.sh:20 as b4d141b9 (r9e2_roll.sh at 2efcf06f, 11-08), but 1c48ee8f (11-16, an ancestor of the
+#       K2DC02 train commit e454e96c) moved r9e2_roll.sh to 38161299, so the first real launch refused at 23:05Z ("tree r9e2_roll.sh blob != b4d141b9"). The 1c48ee8f diff only
+#       adds R9E2_CKPT_NAME (default model_ema.pt, which keeps --require-ema and every --ckpt path byte-identical: r9e2_roll.sh:53-55, :188, :221); so the pin is 38161299
+#       and a NEW guard refuses any R9E2_CKPT_NAME other than model_ema.pt, so the K2DC02 read takes the same EMA checkpoint path as the K0 roll it is compared with.
 set -u
 C=${1:?train commit (12 chars)}; ENV_BLOB=${2:?landed env blob sha1}
 R=/home/nvidia/r8ns/r9e2
 ARM=K2DC02; OLD=${K0_SEED_SRC:-$R/runs/E2_READ_K2DC}; OUT=$R/runs/E2_READ_$ARM; K0=$R/runs/r9e2-K0; K2=$R/runs/r9e2-$ARM
 TREE=$R/read_tree_${C}_k2dc; ENVF=$R/inputs/r9e2_read_env.thor.sh_${ENV_BLOB:0:8}
 BLK=$R/inputs/b1_eval_lead_block_k4_dt0p5_psync.npz
-WRAP_BLOB=fcf2e5c342309c3ce76d2782619d5145b11ff29a; ROLL_BLOB=b4d141b9a540901fb44e3c3f644d11ff8e1535e5
+WRAP_BLOB=fcf2e5c342309c3ce76d2782619d5145b11ff29a; ROLL_BLOB=3816129936e810cece67dfb620b3813a435a99cb
 die() { echo "ZZE2READ-REFUSED $*"; exit 3; }
+case "${R9E2_CKPT_NAME:-model_ema.pt}" in model_ema.pt) ;; *) die "R9E2_CKPT_NAME='${R9E2_CKPT_NAME}' is set: this read must take model_ema.pt like the K0 roll it reuses";; esac
 b() { python3 -c 'import hashlib,sys; d=open(sys.argv[1],"rb").read(); print(hashlib.sha1(b"blob %d\0" % len(d) + d).hexdigest())' "$1" 2>/dev/null; }
 [ ${#C} = 12 ] || die "train commit must be 12 chars, got '$C'"
 SEG=$(awk -v c="$C" 'index($0," START commit " c " ") && /arms \[K2DC02\]/ {f=1} f' $R/gate3/CHAIN_STATUS.txt)

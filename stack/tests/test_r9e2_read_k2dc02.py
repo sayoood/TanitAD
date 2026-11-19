@@ -7,10 +7,12 @@
   * DELIBERATE REGRESSION: a copy of the launcher with the 0.02 guard line removed lets K2DC's config through, so the refusal check goes RED on it;
   * the launcher's literals equal the tokens of stack/ops/runs.d/r9e2_K2DC02.argv.json (the single source), and the dose verdict READS target and bounds from that json;
   * the dose verdict's default path (no --arm, K2DC) is unchanged.
+  * (e) the roll pin is r9e2_roll.sh 38161299 (1c48ee8f) and R9E2_CKPT_NAME other than model_ema.pt is refused (guard RUN, mutation checked).
 """
 import difflib
 import importlib.util
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -45,6 +47,38 @@ def _norm(t):
     return t.replace("K2DC02", "K2DC").replace("k2dc02", "k2dc")
 
 
+# r9e2_roll.sh at 1c48ee8f (an ancestor of the K2DC02 train commit e454e96c); the K2DC pin b4d141b9 is r9e2_roll.sh at 2efcf06f
+ROLL_PIN_LINE = "WRAP_BLOB=fcf2e5c342309c3ce76d2782619d5145b11ff29a; ROLL_BLOB=3816129936e810cece67dfb620b3813a435a99cb"
+
+
+def _ckpt_guard(text):
+    keep = [ln for ln in text.splitlines() if ln.startswith('case "${R9E2_CKPT_NAME')]
+    assert len(keep) == 1, keep
+    return keep[0]
+
+
+def test_roll_pin_and_ckpt_name_guard(tmp_path):
+    """The roll pin is r9e2_roll.sh 38161299; its only change over b4d141b9 is R9E2_CKPT_NAME (default model_ema.pt). The guard admits only that default.
+    MUTATE: without the guard line, ckpt.pt passes (RED for the mutant)."""
+    t = _text(NEW)
+    assert t.count(ROLL_PIN_LINE) == 1
+    g = _ckpt_guard(t)
+
+    def run(lines, val):
+        env_line = "" if val is None else "export R9E2_CKPT_NAME=%s\n" % val
+        p = tmp_path / "ck.sh"
+        p.write_bytes(('set -u\ndie() { echo "ZZE2READ-REFUSED $*"; exit 3; }\n%s%s\necho GUARD-PASSED\n' % (env_line, "\n".join(lines))).encode("utf-8"))
+        env = {k: v for k, v in os.environ.items() if k != "R9E2_CKPT_NAME"}
+        r = subprocess.run([_bash(), str(p)], capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
+        return r.returncode, r.stdout
+
+    assert run([g], None) == (0, "GUARD-PASSED\n")
+    assert run([g], "model_ema.pt")[0] == 0
+    rc, out = run([g], "ckpt.pt")
+    assert rc == 3 and "R9E2_CKPT_NAME='ckpt.pt'" in out, out
+    assert run([], "ckpt.pt")[0] == 0                         # the mutant (guard removed) lets the raw checkpoint through
+
+
 def _toks():
     argv = json.loads(ARGV02.read_text(encoding="utf-8"))["argv"]
     return argv[argv.index("--map-hires-share-target") + 1], argv[argv.index("--map-hires-w-bounds") + 1]
@@ -67,12 +101,16 @@ def test_launcher_differs_from_k2dc_only_in_the_intended_lines():
     # removed: exactly the K0 seed-source line's old OLD= and the old marker-check line; nothing else of the executable code
     assert [r for r in removed if not r.startswith("#")] == [
         'ARM=K2DC; OLD=$R/runs/E2_READ_K2M1N20; OUT=$R/runs/E2_READ_$ARM; K0=$R/runs/r9e2-K0; K2=$R/runs/r9e2-$ARM',
+        "WRAP_BLOB=fcf2e5c342309c3ce76d2782619d5145b11ff29a; ROLL_BLOB=b4d141b9a540901fb44e3c3f644d11ff8e1535e5",
         next(r for r in removed if r.startswith("for m in")),
     ]
     assert all(r.startswith("for m in 'ROLL-DONE K0'") for r in removed if r.startswith("for m in"))
     code_added = [x for x in added if not x.startswith("#")]
-    assert len(code_added) == 6, code_added
+    assert len(code_added) == 8, code_added
     assert code_added[0].startswith("ARM=K2DC; OLD=${K0_SEED_SRC:-$R/runs/E2_READ_K2DC}; OUT=")
+    # (e) the roll re-pin (wrapper pin unchanged) and the one checkpoint-name guard
+    assert code_added.count(ROLL_PIN_LINE) == 1
+    assert sum(x.startswith('case "${R9E2_CKPT_NAME:-model_ema.pt}" in model_ema.pt) ;;') for x in code_added) == 1
     assert sum(x.startswith("CFG1=") for x in code_added) == 1
     assert sum(x.startswith('case "$CFG1"') for x in code_added) == 2
     assert sum(x.startswith("for d in $OLD ") for x in code_added) == 1
