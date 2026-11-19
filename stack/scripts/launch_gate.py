@@ -3717,6 +3717,24 @@ def share_alarm_readings(sh: dict, launch_argv: list[str], rows: list[dict]) -> 
     return out
 
 
+#: pinned EQUAL to `tanitad.train.map_trunk_gs.FLAG` by tests/test_launch_gate_sharealarm_sg.py (the gate does not import tanitad at module level)
+_MAP_TRUNK_GS_FLAG = "--map-hires-trunk-grad-scale"
+
+
+def _map_trunk_gs_scale(launch_argv: list[str]) -> tuple[float, str | None]:
+    """The map->trunk stop-gradient scale S of the launch argv (absent = 1.0). Returns (S, None), or (nan, reason) when it is out of [0, 1] or unparsable."""
+    v = flag_values(launch_argv, _MAP_TRUNK_GS_FLAG)
+    if v is None:
+        return 1.0, None
+    try:
+        s = float(v[0])
+    except (IndexError, TypeError, ValueError):
+        return float("nan"), f"{_MAP_TRUNK_GS_FLAG} {v!r} is not a number (the trainer refuses it too)"
+    if not (0.0 <= s <= 1.0):                              # also rejects nan
+        return float("nan"), f"{_MAP_TRUNK_GS_FLAG} {v[0]} is outside [0, 1] (the trainer refuses it too)"
+    return s, None
+
+
 def full_profile_live_reasons(prof: dict, launch_argv: list[str], run_argv: list[str], rows: list[dict], cfg: dict | None,
                               run_dir: Path | None = None) -> tuple[list[str], dict]:
     """The refcv9-full family's rows on the SMOKE (inert for a profile with neither key):
@@ -3785,7 +3803,22 @@ def full_profile_live_reasons(prof: dict, launch_argv: list[str], run_argv: list
                               "statistic": "mean of every map-share reading in the smoke (row_key rows + dc_share_read when the controller is on)",
                               "n": len(vals), "mean": stat}
         terms = flag_values(launch_argv, sh["terms_flag"])
-        if terms and sh["term"] not in str(terms[0]).split(","):
+        sg_s, sg_err = _map_trunk_gs_scale(launch_argv)                  # SG: the map->trunk stop-gradient scale (absent = 1.0)
+        if sg_err:
+            reasons.append(f"SHARE-ALARM: {sg_err}")
+        elif sg_s == 0.0:
+            nz = [v for v in vals if v != 0.0]
+            det["share_alarm"]["mode"] = "stop-gradient: every reading exactly 0.0 (PREREG_K2SG \u00a72)"
+            if not vals:
+                reasons.append(f"SHARE-ALARM: the smoke carries no `{sh['row_key']}` reading although {_MAP_TRUNK_GS_FLAG} 0.0 declares a "
+                               f"stop-gradient -- the exact-zero identity cannot be read (a missing alarm is a FAIL, never a pass)")
+            elif nz:
+                reasons.append(f"SHARE-ALARM: OP-VOID: the stop-gradient does not reach the trunk -- {_MAP_TRUNK_GS_FLAG} 0.0 requires every map "
+                               f"trunk-share reading of `{sh['row_key']}` to be exactly 0.0, but {len(nz)} of {len(vals)} read non-zero: {nz} (PREREG_K2SG \u00a72)")
+        elif sg_s != 1.0:
+            reasons.append(f"SHARE-ALARM: {_MAP_TRUNK_GS_FLAG} {sg_s:g} is a partial trunk-gradient scale and no pre-registered share-alarm rule "
+                           f"exists for it (only 1.0 = floor alarm and 0.0 = exact-zero identity are defined)")
+        elif terms and sh["term"] not in str(terms[0]).split(","):
             reasons.append(f"SHARE-ALARM: {sh['terms_flag']} {terms[0]} does not separate `{sh['term']}`: the banded map's share cannot be read")
         elif not vals:
             reasons.append(f"SHARE-ALARM: the smoke carries no `{sh['row_key']}` reading although the banded map head is ON "
