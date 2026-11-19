@@ -1,0 +1,66 @@
+[23:33:50Z] container free 42 GB
+[23:34:04Z] e1 headway rc 0
+[23:34:11Z] e1 families rc 0
+e1 hw/RESULT_HEADWAY.json     PASS leaves 1836 / 1836 differing 0 only-bank 0 only-got 0 max abs diff 0
+e1 q3/RESULT_Q3.json          PASS leaves 1897 / 1897 differing 0 only-bank 0 only-got 0 max abs diff 1.44e-15
+ZZ ENV-E1 PASS
+[23:34:25Z] headway rc 0
+[23:34:33Z] families rc 0
+[23:34:34Z] read rc 0
+TIER: T1-kin (kinematic rollout on the model's own actions; the lead does not react); never driving performance
+== controls (e1, k1 to k9)
+   e1_pod_read_reproduces_bank PASS {"file": "ENV_E1.json", "PASS": true}
+   k1_rerun_equals_banked PASS {"line": "CMP files=141 differing=0", "PASS": true}
+   k2_first_look_and_driven_steps_unchanged PASS {"per_run": {"I10RLcF5_s0": {"max_abs_executed_steps_1_to_h": 0.0, "h": 5, "max_abs_first_tick_inputs": 0.0, "n_first_ticks": 2399, "PASS": true}, "I10RLcF5_s1": {"max_abs_executed_steps_1_to_h": 0.0, "h": 5, "max_abs_first_tick_inputs": 0.0, "n_first_ticks": 2399, "PASS": true}, "I10RQ50F5_s0": {"max_abs_executed_steps_1_to_h": 0.0, "h": 5, "max_abs_first_tick_inputs": 0.0, "n_
+   k3_look_reads_what_a_tick_reads PASS {"per_run": {"I10RLcF5_s0": {"n_windows_log_only": 2399, "n_windows_premise_equal_first_5_steps": 2399, "max_abs_log_only_inputs": 0.0, "max_abs_driven_inputs_on_premise_windows": 0.0, "PASS": true}, "I10RLcF5_s1": {"n_windows_log_only": 2399, "n_windows_premise_equal_first_5_steps": 2399, "max_abs_log_only_inputs": 0.0, "max_abs_driven_inputs_on_premise_windows": 0.0, "PASS": true}, "I1
+   k4_cap_only PASS {"every_later_look": {"I10RLcF5_s0": {"n_looks": 7197, "largest_excess_m": 1.1368683772161603e-13, "PASS": true}, "I10RLcF5_s1": {"n_looks": 7197, "largest_excess_m": 1.1368683772161603e-13, "PASS": true}, "I10RQ50F5_s0": {"n_looks": 7197, "largest_excess_m": 1.4210854715202004e-14, "PASS": true}, "I10RQ50F5_s1": {"n_looks": 7197, "largest_excess_m": 1.1368683772161603e-13, "PASS": true}, "I10RLcF2_s0": {"n
+   k5_rate_is_live_and_acts_in_the_known_direction PASS {"lines": ["k5 brake: rule every 5 ends the block farther from the lead    holds | windows 48, strictly farther 48, none closer True, median gain 1.440 m, max gain 2.998 m", "k5 hold: lead holding its speed, the two plans are equal       holds | windows 48, bit-identical plans True, later looks that changed a plan 0", "k5 planted fault (look fed the tick's own inputs) FAI
+   k6_counts PASS {"n_runs": 7, "not_141": [], "tick_rows_vs_expected": {"I10RLcFID_s0": [7197, 7197], "I10RLcF5_s0": [7197, 7197], "I10RLcF5_s1": [7197, 7197], "I10RQ50F5_s0": [7197, 7197], "I10RQ50F5_s1": [7197, 7197], "I10RLcF2_s0": [7197, 7197], "I10RLcF2_s1": [7197, 7197]}, "later_look_rows_vs_expected": {"I10RLcFID_s0": null, "I10RLcF5_s0": [7197, 7197], "I10RLcF5_s1": [7197, 7197], "I10RQ50F5_s0": [7197, 7197], "I10RQ50
+   k7_reused_files PASS {"n_files": 18, "differing": [], "PASS": true}
+   k8_reader_controls PASS {"headway": true, "family": true, "PASS": true}
+   k9_model_and_wrapper PASS {"n_runs": 7, "ckpt_not_equal": [], "wrapper_sha256": "51b3e783536689f6", "card": "51b3e783536689f6", "one_sha_everywhere": true, "PASS": true}
+== reported without a bar
+   r1_later_looks_and_saturated_steps {"I10RLcF5_s0": {"later_looks": 7197, "later_looks_with_a_lead_present": 2221, "later_looks_that_changed_the_plan": 414, "later_looks_at_the_braking_limit_on_a_step_still_to_be_driven": 311, "tick_rows_saturated_executed_steps": {"run": 2083, "banked": 2261, "rows_run": 414, "rows_banked": 433}, "envelope_reshaped_plans": 84, "plans_checked": 7197}, "I10RLcF5_s1": {"later_looks": 7197, "la
+== names
+   RULEFAST10K-LABEL-FASTER-RULE-CUTS-UNSAFE
+   RULEFAST10K-READER-NO-U-CHANGE
+== levels per rule rate (per model seed; 562 scored windows, 642 lead windows)
+   LABEL   I10RLc     U [0.0463, 0.0302]  C [0.0, 0.0031]  F [0.1838, 0.2523]
+   LABEL   I10RLcF5   U [0.0338, 0.0249]  C [0.0, 0.0]  F [0.1854, 0.257]
+   LABEL   I10RLcF2   U [0.0391, 0.0196]  C [0.0, 0.0]  F [0.1854, 0.2586]
+   READER  I10RQ50    U [0.0872, 0.073]  C [0.0312, 0.0218]  F [0.2274, 0.2913]
+   READER  I10RQ50F5  U [0.0747, 0.0676]  C [0.0156, 0.0171]  F [0.2259, 0.2944]
+== FR: rule every 5 steps minus the banked rule at the tick only, per form (pooled [interval], per seed)
+   LABEL   U -0.0089 [-0.0176, -0.0011] [-0.0125, -0.0053]  C -0.0016 [-0.0051, +0.0000] [0.0, -0.0031]  F +0.0031 [-0.0023, +0.0098] [0.0016, 0.0047]
+   READER  U -0.0089 [-0.0213, +0.0004] [-0.0125, -0.0053]  C -0.0101 [-0.0235, -0.0022] [-0.0156, -0.0047]  F +0.0008 [-0.0081, +0.0086] [-0.0016, 0.0031]
+== dose (label-fed, names nothing)
+   every2_minus_banked    U -0.0089 [-0.0191, +0.0002] [-0.0071, -0.0107]  C -0.0016 [-0.0051, +0.0000] [0.0, -0.0031]  F +0.0039 [-0.0023, +0.0104] [0.0016, 0.0062]
+   every2_minus_every5    U +0.0000 [-0.0090, +0.0096] [0.0053, -0.0053]  C +0.0000 [+0.0000, +0.0000] [0.0, 0.0]  F +0.0008 [-0.0054, +0.0078] [0.0, 0.0016]
+== beside
+   I10RLcF5 against no rule: U -0.1005 [-0.1483, -0.0575] [-0.1121, -0.089]  C -0.0592 [-0.0966, -0.0288] [-0.0763, -0.0421]  F +0.0810 [+0.0384, +0.1276] [0.0903, 0.0717]
+   I10RQ50F5 against no rule: U -0.0587 [-0.0976, -0.0235] [-0.0712, -0.0463]  C -0.0428 [-0.0772, -0.0160] [-0.0607, -0.0249]  F +0.1199 [+0.0724, +0.1717] [0.1308, 0.109]
+   I10RLcF2 against no rule: U -0.1005 [-0.1461, -0.0603] [-0.1068, -0.0943]  C -0.0592 [-0.0966, -0.0288] [-0.0763, -0.0421]  F +0.0818 [+0.0405, +0.1282] [0.0903, 0.0732]
+   reader-fed minus label-fed, both every 5 steps: U +0.0418 [+0.0207, +0.0675] [0.0409, 0.0427]  C +0.0164 [+0.0049, +0.0307] [0.0156, 0.0171]  F +0.0389 [+0.0091, +0.0665] [0.0405, 0.0374]
+== families (rule every 5 minus banked; the four families are LONGITUDINAL, LATERAL, TACTICAL here, STRATEGIC below)
+   LABEL   LONGITUDINAL:speed_mae_mps         D  +0.0107 [+0.0023, +0.0205] [0.0128, 0.0087] INSIDE-SPREAD
+   LABEL   LONGITUDINAL:along_mae_m           D  +0.0235 [+0.0076, +0.0416] [0.0229, 0.0241] INSIDE-SPREAD
+   LABEL   LATERAL:cross_mae_m                D  +0.0007 [-0.0036, +0.0051] [-0.0, 0.0013] OPEN
+   LABEL   LATERAL:heading_mae_deg            D  +0.0432 [-0.0037, +0.0899] [0.0478, 0.0386] OPEN
+   LABEL   LATERAL:curvature_mae_1pm          D  +0.0037 [+0.0012, +0.0068] [0.0035, 0.0039] INSIDE-SPREAD
+   LABEL   LATERAL:yaw_rate_mae_degps         D  +0.2785 [+0.0701, +0.5040] [0.2928, 0.2641] INSIDE-SPREAD
+   LABEL   TACTICAL:lon_err_rate              D  -0.0004 [-0.0025, +0.0015] [-0.0008, 0.0] OPEN
+   LABEL   TACTICAL:lat_err_rate              D  +0.0021 [-0.0008, +0.0052] [0.0013, 0.0029] OPEN
+   LABEL   TACTICAL:joint_err_rate            D  +0.0006 [-0.0029, +0.0036] [-0.0004, 0.0017] OPEN
+   LABEL   TACTICAL:ade_tac_m                 D  +0.0322 [+0.0097, +0.0591] [0.0298, 0.0345] INSIDE-SPREAD
+   READER  LONGITUDINAL:speed_mae_mps         D  +0.0303 [+0.0132, +0.0500] [0.0309, 0.0297] INSIDE-SPREAD
+   READER  LONGITUDINAL:along_mae_m           D  +0.0727 [+0.0346, +0.1166] [0.0769, 0.0685] WORSE
+   READER  LATERAL:cross_mae_m                D  +0.0021 [-0.0073, +0.0144] [-0.0029, 0.0072] OPEN
+   READER  LATERAL:heading_mae_deg            D  +0.1701 [+0.0533, +0.3424] [0.2335, 0.1067] INSIDE-SPREAD
+   READER  LATERAL:curvature_mae_1pm          D  +0.0058 [+0.0024, +0.0106] [0.0073, 0.0043] INSIDE-SPREAD
+   READER  LATERAL:yaw_rate_mae_degps         D  +0.8117 [+0.4312, +1.2679] [0.9418, 0.6815] INSIDE-SPREAD
+   READER  TACTICAL:lon_err_rate              D  +0.0000 [-0.0058, +0.0067] [0.0033, -0.0033] OPEN
+   READER  TACTICAL:lat_err_rate              D  +0.0056 [-0.0017, +0.0135] [0.0008, 0.0104] OPEN
+   READER  TACTICAL:joint_err_rate            D  +0.0044 [+0.0004, +0.0088] [0.0042, 0.0046] INSIDE-SPREAD
+   READER  TACTICAL:ade_tac_m                 D  +0.1027 [+0.0487, +0.1672] [0.1032, 0.1022] WORSE
+STRATEGIC: as note N1 of card ADD46 (T0 first tick: the banked read of the two models without the rule; along the rule-driven rollout NOT COMPUTED, n = 0, no instrument)
+ZZ PODREAD-RULEFAST DONE 23:34:34Z
