@@ -100,6 +100,7 @@ from tanitad.refs import refcv8_conditioning as r8c  # noqa: E402  refcv8 WP-B
 from tanitad.train import refcv8_train as r8train  # noqa: E402  refcv8 WP-B (trainer side)
 from tanitad.train import grad_share as _gshare  # noqa: E402  refcv8 X4: the in-run P-GRAD statistic
 from tanitad.train import map_dose_ctl as _mdc  # noqa: E402  K2DC: the map-dose share controller (--map-hires-share-*; OFF = target None: nothing built)
+from tanitad.train import map_trunk_gs as _mgs  # noqa: E402  K2DC next lever: --map-hires-trunk-grad-scale (1.0 = OFF: no op inserted)
 from tanitad.train import weight_ema as _wema  # noqa: E402  refcv8 R8-WARMUP: weight EMA + the B1 guard
 from tanitad.train import map_only_ft as _mof  # noqa: E402  PI D-R9-MAPHEAD-PRECISION: --r8-train-only-map
 from tanitad.refs import refcv9_progress as _r9p  # noqa: E402  refcv9 R9-PF: --r9-progress-head (OFF: nothing)
@@ -210,6 +211,8 @@ _r9p.register_dvb_levers(_dvb.register)
 _r9af.register_dvb_levers(_dvb.register)
 # K2DC (PREREG_K2DC): --map-hires-share-target / -every / -group / --map-hires-w-bounds are `built` levers (the controller object model._map_dose_ctl)
 _mdc.register_dvb_levers(_dvb.register)
+# --map-hires-trunk-grad-scale is a `built` lever (the scale the banded head's forward reads: model._map_hires.trunk_grad_scale)
+_mgs.register_dvb_levers(_dvb.register)
 import numpy as _np  # noqa: E402
 
 # --- v3-only loss weights (everything shared is imported above) --------------
@@ -937,6 +940,7 @@ def _pin_refcv8(cfg, args) -> None:
     except ValueError as e:
         raise SystemExit(f"[refcv8] --grad-share-at: {e}")
     _mdc.pin_args(args)          # K2DC: --map-hires-share-*'s refusals (a no-op while --map-hires-share-target is unset)
+    _mgs.pin_args(args)          # --map-hires-trunk-grad-scale's refusals (outside [0, 1]; < 1 needs the banded head; a no-op at 1.0)
     if bool(getattr(args, "smoke_seed_ego_frames", False)) and int(getattr(args, "steps", 0) or 0) > 100:
         raise SystemExit("[v3] --smoke-seed-ego-frames is a SMOKE flag (it adds an extra, hand-picked batch): "
                          "refused above --steps 100")
@@ -10058,6 +10062,7 @@ def train(args) -> dict:
             own_enc=bool(_moe.is_on(args)))                  # refcv9 C2: False (the default) builds nothing new
         model._map_hires = _mhr.build_map_hires_branch(model, _hcfg).to(device)
         model._w_map_hires = float(args.w_map_hires)
+        _mgs.attach(model, args)                             # --map-hires-trunk-grad-scale < 1: the scale the banded head's forward reads (1.0: nothing set)
         if _mbf.is_on(args):                                 # refcv9 C1: absent (no attribute) for a default run
             setattr(model, _mbf.MODEL_ATTR, True)
         model._map_hires_class_weight = _hcw.to(device)
@@ -13867,6 +13872,7 @@ def build_parser() -> argparse.ArgumentParser:
                          "--grad-share-every-th row (the tip's schedule). A reading costs ~16 min inside the fp32 "
                          "replay on Thor (MEASURED 2026-10-11), so a ladder arm reads only where its consumer looks.")
     _mdc.add_arguments(g8)       # K2DC: --map-hires-share-target / -every / -group / --map-hires-w-bounds (target unset = OFF)
+    _mgs.add_arguments(g8)       # --map-hires-trunk-grad-scale (default 1.0 = OFF: no op, the tip's graph)
     g8.add_argument("--ema-decay", type=float, default=0.0,
                     help="refcv8 R8-WARMUP: weight EMA (tanitad/train/weight_ema.py). 0 = off (the tip's loop, "
                          "checkpoint and rows, bit for bit). >0: an fp32 shadow of every trainable parameter and float "

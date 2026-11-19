@@ -838,6 +838,18 @@ class MapHiresBranch(nn.Module):
     """``fmap_s8`` (+ this batch's 0.25 m lift geometry) -> 10 cm map logits AND the
     shared 0.25 m BEV features the planner's pool reads."""
 
+    #: ``--map-hires-trunk-grad-scale`` (``tanitad/train/map_trunk_gs.py``): 1.0 = OFF (no op inserted); set by ``map_trunk_gs.attach`` (a plain float,
+    #: not a parameter / buffer: ``state_dict`` unchanged)
+    trunk_grad_scale: float = 1.0
+
+    def _gs(self, x):
+        """The banded head's gradient scale on the trunk features entering it; OFF returns ``x`` itself (no op, no import)."""
+        s = self.trunk_grad_scale
+        if s == 1.0:
+            return x
+        from tanitad.train.map_trunk_gs import grad_scale
+        return grad_scale(x, s)
+
     def __init__(self, cfg: MapHiresConfig, *, d_image: int, image_hw: tuple):
         super().__init__()
         self.cfg = cfg
@@ -942,9 +954,9 @@ class MapHiresBranch(nn.Module):
     def _forward_banded(self, feats, fmap_s8, grid, valid, near_source, near_block_zeros, map_feats=None):
         if near_source is not None:
             raise ValueError("near_source is a G-MAP-OVERFIT regression-arm input; the banded head does not take it")
-        src = fmap_s8
+        src = self._gs(fmap_s8)                                              # --map-hires-trunk-grad-scale: the near lift's direct trunk read (OFF: fmap_s8 itself)
         # refcv9 C2 (M3): the banded head reads the map's OWN encoder; ``feats`` (the shared-lift ``d_model`` encoder) stays the planner BEV
-        mf = feats if map_feats is None else map_feats
+        mf = self._gs(feats) if map_feats is None else map_feats           # --map-hires-trunk-grad-scale (OFF: feats itself); the planner BEV reads the UNSCALED feats
 
         def body(f):
             return tuple(self.banded(self.refine, self.near, self.near_refine, f, src, grid, valid,
@@ -995,7 +1007,7 @@ class MapHiresBranch(nn.Module):
             hist = _hg.take_hist_valid(valid.any(dim=1), bev.dtype)      # None when nothing was staged (an eval forward): no key; the LOSS side refuses a missing key
         feats = self._run(self.encoder, bev)
         if self.banded is not None:
-            map_feats = None if self.map_encoder is None else self._run(self.map_encoder, bev)      # refcv9 C2 (M3)
+            map_feats = None if self.map_encoder is None else self._run(self.map_encoder, self._gs(bev))      # refcv9 C2 (M3); --map-hires-trunk-grad-scale scales its INPUT (the map's own encoder keeps the full gradient)
             out_b = self._forward_banded(feats, fmap_s8, grid, valid, near_source, bool(near_block_zeros), map_feats)
             if hist is not None:                                # refcv9 K2 (T1h + banded): the SAME [B, X4, Y4] bool, beside `map_banded`; the key is ABSENT otherwise (OFF: out_b is the tip's dict)
                 out_b["map_hires_hist_valid"] = hist

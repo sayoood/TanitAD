@@ -430,6 +430,7 @@ def _build_model(config: dict, ckpt_path: str, device: str = "cuda", remap: dict
     # BUILT FIRST -- before the perception branch, whose A6 planner pool reads this branch's
     # 0.25 m encoder (its width and grid are read off the BUILT branch). Off => nothing. ----- #
     rec["map_hires"] = build_map_hires_block(tr, model, args, device)
+    tr._mgs.attach(model, args)                                         # train(): --map-hires-trunk-grad-scale (1.0: nothing set); parameter-free, so it sits here and not in build_map_hires_block, which holds no attach (test_refcv7_loader_aux_stamp)
     # ---- train():8070-8130 -- the perception branch AS refcv7 BUILDS IT (refcv6 loader: built
     # only behind w_map/w_box3d, with neither bev_source, planner_crop_m, the A9 fields nor
     # query_select) ------------------------------------------------------------------------- #

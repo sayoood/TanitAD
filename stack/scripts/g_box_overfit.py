@@ -1165,6 +1165,7 @@ class TrainerAdapter:
                 banded_near_m=float(tr._mbf.near_m(a)))
             m._map_hires = _mhr.build_map_hires_branch(m, _hcfg).to(dev)
             m._w_map_hires = float(a.w_map_hires)
+            tr._mgs.attach(m, a)                  # train(): --map-hires-trunk-grad-scale (1.0: nothing set)
             if tr._mbf.is_on(a):                  # train() (refc_v3_train.py:10001-10002): the attribute the LOSS reads; absent when off
                 setattr(m, tr._mbf.MODEL_ATTR, True)
             m._map_hires_class_weight, m._map_hires_class_weight_stamp = _hcw.to(dev), _hcws
