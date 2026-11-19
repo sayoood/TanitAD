@@ -1,0 +1,328 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD50",
+ "tier": "TIER: T1-kin (kinematic rollout on the model's own actions; the lead does not react); never driving performance",
+ "controls": {
+  "d1_rerun_equals_banked": {
+   "line": "CMP files=141 differing=0",
+   "PASS": true
+  },
+  "d2_closing_read_T0": {
+   "per_seed": {
+    "0": {
+     "n_ticks": 1199,
+     "pearson_r": 0.2754275410453611,
+     "mae_mps": 1.9384968133909404,
+     "mae_of_zero_mps": 1.9323576384529253,
+     "mean_fed_mps": -0.1378343612533059,
+     "mean_label_mps": 0.04419614306283665,
+     "n_reader_present": 2816,
+     "n_with_closing_read": 1686,
+     "share_with_closing_read": 0.5987215909090909,
+     "PASS": false
+    },
+    "1": {
+     "n_ticks": 1342,
+     "pearson_r": 0.19818697145215036,
+     "mae_mps": 1.9965479880347834,
+     "mae_of_zero_mps": 1.928874433928914,
+     "mean_fed_mps": -0.2145780978817251,
+     "mean_label_mps": -0.01322010741326202,
+     "n_reader_present": 3062,
+     "n_with_closing_read": 1923,
+     "share_with_closing_read": 0.6280209013716526,
+     "PASS": false
+    }
+   },
+   "PASS": false
+  },
+  "d3_feed": {
+   "per_seed": {
+    "0": {
+     "max_abs_fed_minus_read_mps": 0.0,
+     "max_abs_identity_mps": 0.0,
+     "zero_where_no_read": true,
+     "closing_from_labels": 0,
+     "slope_run": 0.7708154241032367,
+     "slope_t0_file": 0.7708154241032367,
+     "k_diff": 25,
+     "PASS": true
+    },
+    "1": {
+     "max_abs_fed_minus_read_mps": 0.0,
+     "max_abs_identity_mps": 0.0,
+     "zero_where_no_read": true,
+     "closing_from_labels": 0,
+     "slope_run": 0.7831096226098508,
+     "slope_t0_file": 0.7831096226098508,
+     "k_diff": 25,
+     "PASS": true
+    }
+   },
+   "PASS": true
+  },
+  "d4_gather_at_zero": {
+   "per_seed": {
+    "0": {
+     "max_abs_gather_at_zero": 1.52587890625e-05,
+     "PASS": true
+    },
+    "1": {
+     "max_abs_gather_at_zero": 7.62939453125e-06,
+     "PASS": true
+    }
+   },
+   "PASS": true
+  },
+  "d5_earlier_read_recomputed": {
+   "per_seed": {
+    "0": {
+     "n_prev": 5364,
+     "max_abs_g_prev_m": 4.57763671875e-05,
+     "max_abs_p_prev": 2.980232238769531e-07,
+     "flags_equal": true,
+     "formula": true,
+     "PASS": true
+    },
+    "1": {
+     "n_prev": 5364,
+     "max_abs_g_prev_m": 4.38690185546875e-05,
+     "max_abs_p_prev": 2.384185791015625e-07,
+     "flags_equal": true,
+     "formula": true,
+     "PASS": true
+    }
+   },
+   "PASS": true
+  },
+  "d6_same_read": {
+   "per_seed": {
+    "0": {
+     "same_read_RQ50_RQ50d": true,
+     "same_ticks": true,
+     "PASS": true
+    },
+    "1": {
+     "same_read_RQ50_RQ50d": true,
+     "same_ticks": true,
+     "PASS": true
+    }
+   },
+   "PASS": true
+  },
+  "d7_counts": {
+   "dump_files": {
+    "I10RQ50d_s0": 141,
+    "I10RQ50d_s1": 141,
+    "I10RQ50Rd_s0": 141,
+    "I10RQ50x_s0": 141,
+    "I10RQ50x_s1": 141
+   },
+   "n_windows_total": 2399,
+   "n_lead_windows": 642,
+   "PASS": true
+  },
+  "d8_reused_dumps": {
+   "n_files": 10,
+   "differing": [],
+   "PASS": true
+  },
+  "d9_reader_controls": {
+   "headway": true,
+   "family": true,
+   "PASS": true
+  },
+  "d10_model_and_reader": {
+   "per_run": {
+    "I10RQ50d_s0": true,
+    "I10RQ50d_s1": true,
+    "I10RQ50Rd_s0": true,
+    "I10RQ50x_s0": true,
+    "I10RQ50x_s1": true
+   },
+   "crossed_reader_is_the_other_seed": {
+    "0": true,
+    "1": true
+   },
+   "PASS": true
+  }
+ },
+ "controls_all_pass": false,
+ "controls_of_block_X_pass": true,
+ "block_X": {
+  "what": "level 0.50 with the reader and the map of the other seed against the own reader; the spread a second reader gives; names nothing",
+  "RQ50x_minus_RQ50": {
+   "U": {
+    "per_seed": [
+     0.0178,
+     -0.0196
+    ],
+    "pooled": -0.0009,
+    "interval": [
+     -0.0377,
+     0.0297
+    ]
+   },
+   "C": {
+    "per_seed": [
+     0.0062,
+     -0.0016
+    ],
+    "pooled": 0.0023,
+    "interval": [
+     -0.0039,
+     0.009
+    ]
+   },
+   "F": {
+    "per_seed": [
+     -0.0125,
+     0.0125
+    ],
+    "pooled": 0.0,
+    "interval": [
+     -0.0328,
+     0.0338
+    ]
+   }
+  },
+  "reader_floor_U": 0.0196,
+  "levels_RQ50x_per_seed": {
+   "U": [
+    0.105,
+    0.0534
+   ],
+   "C": [
+    0.0374,
+    0.0202
+   ],
+   "F": [
+    0.215,
+    0.3037
+   ]
+  },
+  "families_RQ50x_minus_RQ50": {
+   "LONGITUDINAL:speed_mae_mps": {
+    "D": 0.0092,
+    "interval": [
+     -0.0405,
+     0.0569
+    ],
+    "per_seed": [
+     0.0173,
+     0.0012
+    ],
+    "verdict": "OPEN"
+   },
+   "LONGITUDINAL:along_mae_m": {
+    "D": 0.0072,
+    "interval": [
+     -0.0952,
+     0.1059
+    ],
+    "per_seed": [
+     0.0221,
+     -0.0078
+    ],
+    "verdict": "OPEN"
+   },
+   "LATERAL:cross_mae_m": {
+    "D": -0.0114,
+    "interval": [
+     -0.0251,
+     0.0018
+    ],
+    "per_seed": [
+     -0.008,
+     -0.0149
+    ],
+    "verdict": "OPEN"
+   },
+   "LATERAL:heading_mae_deg": {
+    "D": -0.0878,
+    "interval": [
+     -0.2822,
+     0.0873
+    ],
+    "per_seed": [
+     -0.029,
+     -0.1465
+    ],
+    "verdict": "OPEN"
+   },
+   "LATERAL:curvature_mae_1pm": {
+    "D": -0.0027,
+    "interval": [
+     -0.0094,
+     0.0037
+    ],
+    "per_seed": [
+     -0.0057,
+     0.0003
+    ],
+    "verdict": "OPEN"
+   },
+   "LATERAL:yaw_rate_mae_degps": {
+    "D": -0.1535,
+    "interval": [
+     -0.8589,
+     0.5188
+    ],
+    "per_seed": [
+     -0.268,
+     -0.0389
+    ],
+    "verdict": "OPEN"
+   },
+   "TACTICAL:lon_err_rate": {
+    "D": -0.0006,
+    "interval": [
+     -0.0083,
+     0.0065
+    ],
+    "per_seed": [
+     0.0017,
+     -0.0029
+    ],
+    "verdict": "OPEN"
+   },
+   "TACTICAL:lat_err_rate": {
+    "D": -0.006,
+    "interval": [
+     -0.0146,
+     0.0021
+    ],
+    "per_seed": [
+     -0.0038,
+     -0.0083
+    ],
+    "verdict": "OPEN"
+   },
+   "TACTICAL:joint_err_rate": {
+    "D": -0.0006,
+    "interval": [
+     -0.009,
+     0.0073
+    ],
+    "per_seed": [
+     0.0038,
+     -0.005
+    ],
+    "verdict": "OPEN"
+   },
+   "TACTICAL:ade_tac_m": {
+    "D": 0.0062,
+    "interval": [
+     -0.1331,
+     0.138
+    ],
+    "per_seed": [
+     0.0294,
+     -0.0169
+    ],
+    "verdict": "OPEN"
+   }
+  }
+ },
+ "names": null,
+ "beside": null
+}
