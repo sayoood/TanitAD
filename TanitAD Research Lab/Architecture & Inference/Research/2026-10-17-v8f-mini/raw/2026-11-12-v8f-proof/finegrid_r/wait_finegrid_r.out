@@ -1,0 +1,82 @@
+[2026-11-19T06:50:53Z] poll 1: [2026-11-19T06:50:09Z] finegrid_r: waiting for a slot for train A (360 s of 36000 s)
+[2026-11-19T07:21:05Z] poll 7: [tok_probe 8000/19164] 1439s
+[2026-11-19T07:51:17Z] poll 13: [tok_probe 18000/19164] 3215s
+[2026-11-19T08:21:28Z] poll 19: [2026-11-19T08:21:19Z] finegrid_r: slot probe: gpu_jobs=2 (need < 3), container free=37 GB (need > 28)
+[2026-11-19T08:51:39Z] poll 25: [2026-11-19T08:51:16Z] finegrid_r: slot probe: gpu_jobs=2 (need < 3), container free=40 GB (need > 28)
+[2026-11-19T09:21:50Z] poll 31: [tok_probe 6000/19164] 1204s
+[2026-11-19T09:52:00Z] poll 37: [tok_probe 15000/19164] 3017s
+[2026-11-19T10:22:11Z] poll 43: [tok_probe 500/2000] 104s
+[2026-11-19T10:27:13Z] run ended on the pod: DONE
+[2026-11-19T10:26:51Z] finegrid_r: slot probe: gpu_jobs=1 (need < 3), container free=44 GB (need > 28)
+[2026-11-19T10:26:51Z] finegrid_r: slot free on two probes 45 s apart: starting extract F16SH_s2
+[2026-11-19T10:26:51Z] finegrid_r: run: /workspace/venv/bin/python /workspace/v8proof/finegrid/tok_probe_gr.py extract --grid pool8x20 --tree /workspace/v8proof/tree_leadsup --run-dir /workspace/v8proof/runs/finegrid_r/p3_B --arm F16SH_s2 --cache /workspace/v8
+extract F16SH_s2 eval: 14237 rows, 13673 with a 5-frame history
+[2026-11-19T10:27:01Z] finegrid_r: DONE: /workspace/v8proof/runs/finegrid_r/FINEGRID_R_DONE.txt
+[2026-11-19T10:27:01Z] finegrid_r: ZZ FINEGRID-R DONE
+{
+ "pass": true,
+ "n_a": 200,
+ "n_b": 200,
+ "idx_equal": true,
+ "full_equal": true,
+ "first_mismatch_batch": null,
+ "sampler_chunk_a": 41,
+ "sampler_chunk_b": 41,
+ "sequence_sha256_a": "b705ae234c13a2ab2452395f2369ffba288519fd3991678f4c57bb4fe4273afe",
+ "sequence_sha256_b": "b705ae234c13a2ab2452395f2369ffba288519fd3991678f4c57bb4fe4273afe",
+ "files": [
+  "/workspace/v8proof/runs/finegrid_r/train_A/r1_batches.json",
+  "/workspace/v8proof/runs/finegrid_r/train_B/r1_batches.json"
+ ],
+ "card": "PREREG_V8F_PROOF_ADD43 control r1"
+}
+1362	/workspace/v8proof/finegrid_r/states
+[2026-11-19T10:28:16Z] reader started on the pod
+[2026-11-19T10:33:20Z] reader ended: rc=2 2026-11-19T10:29:02Z
+[2026-11-19T10:27:18Z] container memory free 44 GB: starting the reader
+[2026-11-19T10:29:02Z] ZZ POD-READ-R DONE rc=2
+[2026-11-19T10:33:25Z] pulled RESULT_FINEGRID_R.json sha256 55c2a1c123f42ed3
+[2026-11-19T10:33:28Z] pulled VERDICT_FINEGRID_R.md sha256 bf38c0e8581f22f4
+[2026-11-19T10:33:31Z] pulled read_r.out sha256 2420704be675d857
+[2026-11-19T10:33:35Z] pulled R1_SAMPLER.json sha256 b0798648b1c4c129
+[2026-11-19T10:33:38Z] pulled G2_GRIDS.json sha256 56156b2880929122
+[2026-11-19T10:33:41Z] pulled train_A_TRAIN_DONE.json sha256 f941db2552c79520
+[2026-11-19T10:33:44Z] pulled train_B_TRAIN_DONE.json sha256 ddeb47eb45f2e71c
+[2026-11-19T10:33:47Z] pulled train_A_r1_batches.json sha256 175ac086c4e1aeb3
+[2026-11-19T10:33:51Z] pulled train_B_r1_batches.json sha256 068acfa1a33808b7
+[2026-11-19T10:33:54Z] pulled p3_A_TRAIN_DONE.json sha256 0f3c55543de8cfbb
+[2026-11-19T10:33:57Z] pulled p3_B_TRAIN_DONE.json sha256 71260f556a509197
+[2026-11-19T10:34:01Z] pulled finegrid_r.log sha256 6df23a8b84591181
+[2026-11-19T10:34:04Z] pulled checks_pod.log sha256 5ddcb06424bed268
+[2026-11-19T10:34:07Z] pulled controls_devbox_r_pod.json sha256 ee8b17e86c530251
+# VERDICT_FINEGRID_R: card PREREG_V8F_PROOF_ADD43 (FINEGRID-R)
+
+Tier T0 (a diagnostic on logged frames, never driving performance). LONGITUDINAL (distance keeping) is the family this lever serves and it is not measured by this read; LATERAL, TACTICAL: not measured by this read; STRATEGIC: NOT COMPUTED (a token probe reads no strategic quantity; n = 0).
+Evidence class of every number: MEASURED once run. B 2000; two-level bootstrap (seed indices, then episodes; rng 0); the 429 scored windows of 48 evaluation episodes.
+
+## Controls (card section 4; all must pass before any outcome is named)
+
+- a1_records|F16SH_s2: PASS
+- a1_records|F16_s2: PASS
+- a1_records|F16_s3: PASS
+- a1_records|F16_s4: PASS
+- a1_records|F16_s5: PASS
+- a1_records|F16_s6: PASS
+- a1_records|F16_s7: PASS
+- a1_records|F16_s8: PASS
+- a1_records|F16_s9: PASS
+- a1_records|TK16SH_s2: PASS
+- a1_records|TK16_s0: PASS
+- a1_records|TK16_s1: PASS
+- a1_records|TK16_s2: PASS
+- a1_records|TK16_s3: PASS
+- a1_records|TK16_s4: PASS
+- a1_records|TK16_s5: PASS
+- a1_records|TK16_s6: PASS
+- a1_records|TK16_s7: PASS
+- a1_records|TK16_s8: PASS
+- a1_records|TK16_s9: PASS
+- a1_records|TK64_s0: PASS
+- a1_records|TK64_s1: PASS
+- a1_records|TK64_s2: PASS
+ZZ FINEGRID-R-WAIT DONE 2026-11-19T10:34:07Z

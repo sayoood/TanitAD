@@ -1,0 +1,325 @@
+{
+ "mutations": [
+  {
+   "id": "m1_min_dropped_the_quantile_alone_is_the_gap",
+   "file": "src/v8f_t1_eval_imagplan_q.py",
+   "old": "g_h = QM.used_gap(g_h, q_h)",
+   "new": "g_h = q_h",
+   "expect": [
+    "test_imag_plan_q.py::test_the_min_of_a_hand_computed_case_and_the_gate_stays_on_the_head_gap"
+   ],
+   "rc": 0,
+   "n_tests": 5,
+   "failed": [
+    "test_imag_plan_q.py::test_the_min_of_a_hand_computed_case_and_the_gate_stays_on_the_head_gap",
+    "test_imag_plan_q.py::test_a_quantile_constant_of_1e9_is_the_identity_of_cand_cv_and_a_constant_of_0_makes_the_gap_zero",
+    "test_imag_plan_q.py::test_the_head_is_read_at_the_tick_frame_and_scaled_to_metres"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 10,
+   "err": ""
+  },
+  {
+   "id": "m2_max_instead_of_min",
+   "file": "src/v8f_t1_eval_imagplan_q.py",
+   "old": "g_h = QM.used_gap(g_h, q_h)",
+   "new": "g_h = np.maximum(g_h, q_h)",
+   "expect": [
+    "test_imag_plan_q.py::test_the_min_of_a_hand_computed_case_and_the_gate_stays_on_the_head_gap"
+   ],
+   "rc": 0,
+   "n_tests": 5,
+   "failed": [
+    "test_imag_plan_q.py::test_the_min_of_a_hand_computed_case_and_the_gate_stays_on_the_head_gap",
+    "test_imag_plan_q.py::test_a_quantile_constant_of_1e9_is_the_identity_of_cand_cv_and_a_constant_of_0_makes_the_gap_zero",
+    "test_imag_plan_q.py::test_the_head_is_read_at_the_tick_frame_and_scaled_to_metres"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 10,
+   "err": ""
+  },
+  {
+   "id": "m3_quantile_not_applied_the_head_gap_stays",
+   "file": "src/v8f_t1_eval_imagplan_q.py",
+   "old": "g_h = QM.used_gap(g_h, q_h)",
+   "new": "g_h = g_h",
+   "expect": [
+    "test_imag_plan_q.py::test_the_min_of_a_hand_computed_case_and_the_gate_stays_on_the_head_gap",
+    "test_imag_plan_q.py::test_a_quantile_constant_of_1e9_is_the_identity_of_cand_cv_and_a_constant_of_0_makes_the_gap_zero"
+   ],
+   "rc": 0,
+   "n_tests": 5,
+   "failed": [
+    "test_imag_plan_q.py::test_the_min_of_a_hand_computed_case_and_the_gate_stays_on_the_head_gap",
+    "test_imag_plan_q.py::test_a_quantile_constant_of_1e9_is_the_identity_of_cand_cv_and_a_constant_of_0_makes_the_gap_zero",
+    "test_imag_plan_q.py::test_the_head_is_read_at_the_tick_frame_and_scaled_to_metres"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 12,
+   "err": ""
+  },
+  {
+   "id": "m4_head_applied_to_another_source_cand_cv",
+   "file": "src/v8f_t1_eval_imagplan_q.py",
+   "old": "self.q_on = source == \"cand-cvq\"",
+   "new": "self.q_on = source in (\"cand-cvq\", \"cand-cv\")",
+   "expect": [
+    "test_imag_plan_q.py::test_other_sources_do_not_see_the_head"
+   ],
+   "rc": 0,
+   "n_tests": 5,
+   "failed": [
+    "test_imag_plan_q.py::test_the_min_of_a_hand_computed_case_and_the_gate_stays_on_the_head_gap",
+    "test_imag_plan_q.py::test_a_quantile_constant_of_1e9_is_the_identity_of_cand_cv_and_a_constant_of_0_makes_the_gap_zero",
+    "test_imag_plan_q.py::test_the_head_is_read_at_the_tick_frame_and_scaled_to_metres",
+    "test_imag_plan_q.py::test_refusals_without_a_head_file_for_another_source_for_a_head_that_is_not_the_banked_or_not_in_band",
+    "test_imag_plan_q.py::test_other_sources_do_not_see_the_head"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 3,
+   "err": ""
+  },
+  {
+   "id": "m5_head_read_at_another_frame_window_first_frames_of_the_batch",
+   "file": "src/v8f_t1_eval_imagplan_q.py",
+   "old": "f = feats[:, -hist:]",
+   "new": "f = feats[:, :hist]",
+   "expect": [
+    "test_imag_plan_q.py::test_the_head_is_read_at_the_tick_frame_and_scaled_to_metres"
+   ],
+   "rc": 0,
+   "n_tests": 5,
+   "failed": [
+    "test_imag_plan_q.py::test_the_head_is_read_at_the_tick_frame_and_scaled_to_metres"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 11,
+   "err": ""
+  },
+  {
+   "id": "m6_gate_moved_onto_the_used_gap",
+   "file": "src/v8f_t1_eval_imagplan_q.py",
+   "old": "g_gate, qh_c = gh_c, np.asarray(q_h, np.float64)",
+   "new": "g_gate, qh_c = None, np.asarray(q_h, np.float64)",
+   "expect": [
+    "test_imag_plan_q.py::test_the_min_of_a_hand_computed_case_and_the_gate_stays_on_the_head_gap"
+   ],
+   "rc": 0,
+   "n_tests": 5,
+   "failed": [
+    "test_imag_plan_q.py::test_the_min_of_a_hand_computed_case_and_the_gate_stays_on_the_head_gap"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 12,
+   "err": ""
+  },
+  {
+   "id": "m7_constant_ignored_the_head_output_always_used",
+   "file": "src/v8f_t1_eval_imagplan_q.py",
+   "old": "if self.q_const is not None:",
+   "new": "if False:",
+   "expect": [
+    "test_imag_plan_q.py::test_a_quantile_constant_of_1e9_is_the_identity_of_cand_cv_and_a_constant_of_0_makes_the_gap_zero"
+   ],
+   "rc": 0,
+   "n_tests": 5,
+   "failed": [
+    "test_imag_plan_q.py::test_the_min_of_a_hand_computed_case_and_the_gate_stays_on_the_head_gap",
+    "test_imag_plan_q.py::test_a_quantile_constant_of_1e9_is_the_identity_of_cand_cv_and_a_constant_of_0_makes_the_gap_zero"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 10,
+   "err": ""
+  },
+  {
+   "id": "m8_refusal_of_cand_cvq_without_a_head_removed",
+   "file": "src/v8f_t1_eval_imagplan_q.py",
+   "old": "if self.q_on and qhead is None:",
+   "new": "if False:",
+   "expect": [
+    "test_imag_plan_q.py::test_refusals_without_a_head_file_for_another_source_for_a_head_that_is_not_the_banked_or_not_in_band"
+   ],
+   "rc": 0,
+   "n_tests": 5,
+   "failed": [
+    "test_imag_plan_q.py::test_refusals_without_a_head_file_for_another_source_for_a_head_that_is_not_the_banked_or_not_in_band"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 11,
+   "err": ""
+  },
+  {
+   "id": "m9_head_given_to_another_source_not_refused",
+   "file": "src/v8f_t1_eval_imagplan_q.py",
+   "old": "if (not self.q_on) and (qhead is not None or q_const is not None):",
+   "new": "if False:",
+   "expect": [
+    "test_imag_plan_q.py::test_refusals_without_a_head_file_for_another_source_for_a_head_that_is_not_the_banked_or_not_in_band"
+   ],
+   "rc": 0,
+   "n_tests": 5,
+   "failed": [
+    "test_imag_plan_q.py::test_refusals_without_a_head_file_for_another_source_for_a_head_that_is_not_the_banked_or_not_in_band"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 12,
+   "err": ""
+  },
+  {
+   "id": "m10_env_for_another_mode_not_refused",
+   "file": "src/v8f_t1_eval_imagplan_q.py",
+   "old": "        if f or c != \"\":",
+   "new": "        if False:",
+   "expect": [
+    "test_imag_plan_q.py::test_refusals_without_a_head_file_for_another_source_for_a_head_that_is_not_the_banked_or_not_in_band"
+   ],
+   "rc": 0,
+   "n_tests": 5,
+   "failed": [
+    "test_imag_plan_q.py::test_refusals_without_a_head_file_for_another_source_for_a_head_that_is_not_the_banked_or_not_in_band"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 11,
+   "err": ""
+  },
+  {
+   "id": "m11_coverage_band_check_dropped",
+   "file": "src/v8f_t1_eval_imagplan_q.py",
+   "old": "if rec.get(\"h5_check_coverage_in_0.15_0.25\") is not True:",
+   "new": "if False:",
+   "expect": [
+    "test_imag_plan_q.py::test_refusals_without_a_head_file_for_another_source_for_a_head_that_is_not_the_banked_or_not_in_band"
+   ],
+   "rc": 0,
+   "n_tests": 5,
+   "failed": [
+    "test_imag_plan_q.py::test_refusals_without_a_head_file_for_another_source_for_a_head_that_is_not_the_banked_or_not_in_band"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 11,
+   "err": ""
+  },
+  {
+   "id": "m12_head_sha256_check_dropped",
+   "file": "src/v8f_t1_eval_imagplan_q.py",
+   "old": "if sha_head not in (rec.get(\"head_file_sha256\") or {}).values():",
+   "new": "if False:",
+   "expect": [
+    "test_imag_plan_q.py::test_refusals_without_a_head_file_for_another_source_for_a_head_that_is_not_the_banked_or_not_in_band"
+   ],
+   "rc": 0,
+   "n_tests": 5,
+   "failed": [
+    "test_imag_plan_q.py::test_refusals_without_a_head_file_for_another_source_for_a_head_that_is_not_the_banked_or_not_in_band"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 11,
+   "err": ""
+  },
+  {
+   "id": "m13_checkpoint_sha256_check_dropped",
+   "file": "src/v8f_t1_eval_imagplan_q.py",
+   "old": "if ckpt and os.path.isfile(ckpt) and QM.sha256_file(ckpt) != ck_rec:",
+   "new": "if False:",
+   "expect": [
+    "test_imag_plan_q.py::test_refusals_without_a_head_file_for_another_source_for_a_head_that_is_not_the_banked_or_not_in_band"
+   ],
+   "rc": 0,
+   "n_tests": 5,
+   "failed": [
+    "test_imag_plan_q.py::test_refusals_without_a_head_file_for_another_source_for_a_head_that_is_not_the_banked_or_not_in_band"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 11,
+   "err": ""
+  },
+  {
+   "id": "m14_evaluation_split_path_not_refused",
+   "file": "src/v8f_t1_eval_imagplan_q.py",
+   "old": "if QM.is_eval_path(f):",
+   "new": "if False:",
+   "expect": [
+    "test_imag_plan_q.py::test_refusals_without_a_head_file_for_another_source_for_a_head_that_is_not_the_banked_or_not_in_band"
+   ],
+   "rc": 0,
+   "n_tests": 5,
+   "failed": [
+    "test_imag_plan_q.py::test_refusals_without_a_head_file_for_another_source_for_a_head_that_is_not_the_banked_or_not_in_band"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 11,
+   "err": ""
+  },
+  {
+   "id": "m15_output_not_scaled_to_metres",
+   "file": "src/v8f_t1_eval_imagplan_q.py",
+   "old": "return (o * QM.GAP_SCALE_M).astype(np.float32)",
+   "new": "return (o * 1.0).astype(np.float32)",
+   "expect": [
+    "test_imag_plan_q.py::test_the_head_is_read_at_the_tick_frame_and_scaled_to_metres"
+   ],
+   "rc": 0,
+   "n_tests": 5,
+   "failed": [
+    "test_imag_plan_q.py::test_the_head_is_read_at_the_tick_frame_and_scaled_to_metres"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 10,
+   "err": ""
+  },
+  {
+   "id": "m16_log_g_used_is_the_head_gap",
+   "file": "src/v8f_t1_eval_imagplan_q.py",
+   "old": "g_head=gh_c, q_head=qh_c, g_used=g_src,",
+   "new": "g_head=gh_c, q_head=qh_c, g_used=gh_c,",
+   "expect": [
+    "test_imag_plan_q.py::test_the_min_of_a_hand_computed_case_and_the_gate_stays_on_the_head_gap"
+   ],
+   "rc": 0,
+   "n_tests": 5,
+   "failed": [
+    "test_imag_plan_q.py::test_the_min_of_a_hand_computed_case_and_the_gate_stays_on_the_head_gap",
+    "test_imag_plan_q.py::test_a_quantile_constant_of_1e9_is_the_identity_of_cand_cv_and_a_constant_of_0_makes_the_gap_zero",
+    "test_imag_plan_q.py::test_the_head_is_read_at_the_tick_frame_and_scaled_to_metres"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 12,
+   "err": ""
+  }
+ ],
+ "written_utc": "2026-11-19T09:13:27Z",
+ "control": {
+  "rc": 0,
+  "n_tests": 5,
+  "failed": [],
+  "ignored_environment_failures": [],
+  "green": true,
+  "seconds": 10,
+  "err": ""
+ },
+ "control_after": {
+  "rc": 0,
+  "n_tests": 5,
+  "failed": [],
+  "ignored_environment_failures": [],
+  "green": true,
+  "seconds": 12,
+  "err": ""
+ }
+}
