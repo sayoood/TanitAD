@@ -18968,3 +18968,18 @@ instruments; only an undeclared one is a finding.
 **What is true (MEASURED 2026-11-18, `.../e2/e2raw/e2wise/woff/README_E2WISE_WOFF.md`; source at 1783717d):** WIRE-OFF reproduced the map points to 1e-9 and K0's box points exactly, but K2DC's box AP@2m moved 0.307623 -> 0.307658. The W-MAP-2 projection is added to the pooled BEV (`stack/tanitad/models/refcv6_perception_branch.py:357`), and that pooled BEV (`bev_feats`) is also what the box head's anchor heatmap reads (`:720`, `self.box_heat(bev_feats)`). The wire is a planner wire by name and a shared-BEV wire by wiring. The lateral reading is unchanged in direction: removing both wires from every consumer left the seed-0 lateral gaps at their tail values.
 
 **Class / rule:** A MODULE NAMED FOR ONE CONSUMER, READ BY TWO. "Planner BEV pool" named the destination the wire was built for, not every reader of the tensor it writes into. Rule: before pre-registering that an intervention cannot reach a metric, trace the modified tensor's readers in source (grep the output's name, not the module's) and cite file:line for each; a bit-equality precondition then tests the trace instead of standing in for it.
+
+## 2026-11-19 — R-RBSTACK-N1D8-1: "N1D8 needs no new model code" was false, and the 8x20 lever was carded without reading its own prior results (Master Mind)
+
+**What was written (`raw/2026-11-16-v8f-strat1/rbstack/MM_READING_RBSTACK.md` and its GOALS_AND_CLAIMS row, landed 3e7efd41):** "This is an existing `v8f_mini_train.py` flag ... so the arm needs no new model code", with N1D8 (N1D + `--grid pool8x20`, s0 / s1) costed at about 1.5 to 2.5 LoRA pod-h.
+
+**What is true (from source at 3e7efd41, not executed; `raw/2026-11-16-v8f-strat1/rbstack/MM_READING_RBSTACK_ADDENDUM1.md`):**
+* The N1R / N1D arms are fine-tunes that start from M2b_s0 / M2b_s1.
+* `n_tok` is in `INIT_CKPT_MATCH` (`stack/scripts/v8f_mini_train.py:657`), and the scene positional table is `nn.Parameter(torch.randn(cfg.n_tok, d))` (`stack/tanitad/models/v8f_mini.py:695`): 40 rows at 4x10, 160 at 8x20.
+* So an 8x20 argv on an M2b start is refused before training.
+* The only 8x20 base is H-V8F-GRID-1's G at seed 0; seed 1 was never trained.
+* RB-JOINT had already measured RAW8 - RAW4 at +0.0071 [-0.0046, +0.0191], not separated, and H-V8F-GRID-1 read FAIL-NO-MECHANISM. N1D already reads the 4x10 grid.
+
+**Class / rule:** A FLAG IN ARGPARSE IS NOT AN ARM. This is the "built, tested, and unreachable from its caller" class seen from the init side: the flag reaches the loss, but the arm's warm start refuses the model it builds. Before carding an arm as "existing flag, no new code":
+1. Trace the argv through the arm's actual init checkpoint (`INIT_CKPT_MATCH` / `load_init_ckpt`, or the trainer's `--selfcheck-only` on that init) and cite file:line.
+2. Grep GOALS_AND_CLAIMS for the lever's name and read every earlier row on it before writing an expected size.
