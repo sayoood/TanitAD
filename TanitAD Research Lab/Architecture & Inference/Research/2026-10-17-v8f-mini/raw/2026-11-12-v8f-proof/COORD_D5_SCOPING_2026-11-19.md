@@ -26,7 +26,7 @@ NAVSIM frames encoded with our encoder at the v8F token grid, a fine-tune on nav
 
 | step | what | cost | who decides |
 |---|---|---|---|
-| S0 | latency proxy of the v8F-specific part on the pod: world-model step, K-candidate imagined rollout to 6 s as one batch, heads; eager and compiled; labelled a proxy (the pod GPU is not Thor); the encoder is taken from the measured earlier line until S2 | minutes of one pod slot, a build of a timing tool | coordinator (inside approved compute) |
+| S0 | latency proxy of the v8F-specific part on the pod: world-model step, K-candidate imagined rollout as one batch at the planner's own horizon (10 steps, 2.0 s; 6 s beside), heads; eager and compiled; labelled a proxy (the pod GPU is not Thor); the encoder is taken from the measured earlier line until S2 | minutes of one pod slot, a build of a timing tool | coordinator (inside approved compute) |
 | S1 | yardstick scoping measurement: encode the navtest front camera (12,146 tokens) with our encoder and time it; a 2,000-step fine-tune of one v8F-mini seed on a navtrain subset; one navtest PDMS read labelled T1 by the programme's ruling, beside the teacher and the refcv7 numbers | needs navtest and a navtrain subset on a GPU machine; ESTIMATED 10 to 20 GPU-h after the data is in place; data placement is the open cost | PI (new data on the pod, spend) |
 | S2 | Thor latency of the integrated candidate (encoder with 4 cameras + world model + planner fan as a batch engine) | Thor time after the refcv9 run; engine build | PI and the Thor owner session |
 

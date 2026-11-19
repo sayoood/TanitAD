@@ -284,3 +284,4 @@ PREREG_V8F_PROOF_ADD10.md  frozen 2026-11-13 02:29:04  (file time; no LATVIS out
 2026-11-19T06:10:18Z D6a capped launcher built and reads restarted; card ADD43 build agent running
 2026-11-19T06:15:23Z note PREREG_V8F_PROOF_ADD37_N7.md frozen (sha256 2fc11a4373ebaeeb709e); written after the early reads of RLVa and RLVb, before RLVc/RLVd are built; RLAh not yet read
 2026-11-19T06:32:37Z note PREREG_V8F_PROOF_ADD43_N1.md frozen (sha256 6055488801a46a4da0df); before any run of card ADD43; sampler chunk finding of the build, crossed bootstrap form, name guard, budget 3-5 pod-h
+2026-11-19T07:11:36Z  readers of source cand-imag on RLA3 (card ADD40 section 4 as written, note N6 section 4) written before any run of chain_k9 has produced a dump: 21a23726f5dfdf46 *imagplan/read_i9.py; 460741721e1def1b *imagplan/read_i9.sh; 198ada0e53576343 *imagplan/pod_cmp_subset_i.sh; 399e87185cc285a6 *imagplan/chain_k9.sh; 
