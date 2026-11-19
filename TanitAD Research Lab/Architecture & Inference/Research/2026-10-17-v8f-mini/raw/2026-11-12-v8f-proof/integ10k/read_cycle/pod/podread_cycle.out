@@ -1,0 +1,94 @@
+[17:11:24Z] container free 45 GB
+[17:11:42Z] e1 headway rc 0
+[17:11:50Z] e1 families rc 0
+e1 hw/RESULT_HEADWAY.json     PASS leaves 1836 / 1836 differing 0 only-bank 0 only-got 0 max abs diff 0
+e1 q3/RESULT_Q3.json          PASS leaves 1897 / 1897 differing 0 only-bank 0 only-got 0 max abs diff 1.44e-15
+ZZ ENV-E1 PASS
+[17:12:07Z] headway rc 0
+[17:12:16Z] families rc 0
+[17:12:16Z] read rc 0
+TIER: T1-kin (kinematic rollout on the model's own actions; the lead does not react); never driving performance
+== controls (y1 to y8)
+   y1_rerun_equals_banked PASS {"line": "CMP files=141 differing=0", "PASS": true}
+   y2_interval_applied PASS {"per_run": {"NORULE_s0": {"banked": 10, "M5": 5, "PASS": true}, "LABEL_s0": {"banked": 10, "M5": 5, "rows_banked": 7197, "rows_M5": 14394, "ticks_M5": [0, 1, 2, 3, 4, 5], "result_file_M5": 5, "PASS": true}, "READER_s0": {"banked": 10, "M5": 5, "rows_banked": 7197, "rows_M5": 14394, "ticks_M5": [0, 1, 2, 3, 4, 5], "result_file_M5": 5, "PASS": true}, "NORULE_s1": {"banked": 10, "M5": 5, "PASS": true}
+   y3_first_tick_inputs_equal PASS {"per_run": {"LABEL_s0": {"n_first_ticks": 2399, "max_abs_first_tick_inputs": 0.0, "PASS": true}, "READER_s0": {"n_first_ticks": 2399, "max_abs_first_tick_inputs": 0.0, "PASS": true}, "LABEL_s1": {"n_first_ticks": 2399, "max_abs_first_tick_inputs": 0.0, "PASS": true}, "READER_s1": {"n_first_ticks": 2399, "max_abs_first_tick_inputs": 0.0, "PASS": true}}, "PASS": true}
+   y4_same_read_at_shared_ticks PASS {"per_run": {"0": {"n_shared_ticks": 7197, "n_banked_ticks": 7197, "same_reader_reads": true, "PASS": true}, "1": {"n_shared_ticks": 7197, "n_banked_ticks": 7197, "same_reader_reads": true, "PASS": true}}, "PASS": true}
+   y5_counts PASS {"dump_files": {"I10RLcM10_s0": 141, "I10R0M5_s0": 141, "I10RLcM5_s0": 141, "I10RQ50M5_s0": 141, "I10R0M5_s1": 141, "I10RLcM5_s1": 141, "I10RQ50M5_s1": 141}, "n_windows_total": 2399, "n_lead_windows": 642, "PASS": true}
+   y6_reused_dumps PASS {"n_files": 10, "differing": [], "PASS": true}
+   y7_reader_controls PASS {"headway": true, "family": true, "PASS": true}
+   y8_model PASS {"per_run": {"I10RLcM10_s0": true, "I10R0M5_s0": true, "I10RLcM5_s0": true, "I10RQ50M5_s0": true, "I10R0M5_s1": true, "I10RLcM5_s1": true, "I10RQ50M5_s1": true}, "PASS": true}
+== names
+   cycle_NORULE   CYCLE10K-NORULE-FASTER-CYCLE-RAISES-UNSAFE
+   cycle_LABEL    CYCLE10K-LABEL-FASTER-CYCLE-RAISES-UNSAFE
+   cycle_READER   CYCLE10K-READER-FASTER-CYCLE-RAISES-UNSAFE
+   rule_LABEL     CYCLE10K-LABEL-RULE-CUTS-UNSAFE-AT-1S
+   rule_READER    CYCLE10K-READER-RULE-CUTS-UNSAFE-AT-1S
+== levels (per model seed)
+   I10R0      U [0.1459, 0.1139]  C [0.0763, 0.0421]  F [0.095, 0.1854]
+   I10R0M5    U [0.8505, 0.8968]  C [0.6495, 0.7321]  F [0.0701, 0.0607]
+   I10RLc     U [0.0463, 0.0302]  C [0.0, 0.0031]  F [0.1838, 0.2523]
+   I10RLcM5   U [0.4698, 0.5036]  C [0.0171, 0.0202]  F [0.2305, 0.2212]
+   I10RQ50    U [0.0872, 0.073]  C [0.0312, 0.0218]  F [0.2274, 0.2913]
+   I10RQ50M5  U [0.5445, 0.6068]  C [0.1075, 0.1262]  F [0.2804, 0.215]
+== the cycle: 1.0 s minus 2.0 s, per form (pooled [interval], per seed)
+   NORULE  U +0.7438 [+0.6709, +0.8132] [0.7046, 0.7829]  C +0.6316 [+0.5353, +0.7204] [0.5732, 0.69]  F -0.0748 [-0.1589, +0.0028] [-0.0249, -0.1246]
+   LABEL   U +0.4484 [+0.3789, +0.5189] [0.4235, 0.4733]  C +0.0171 [+0.0090, +0.0256] [0.0171, 0.0171]  F +0.0078 [-0.0595, +0.0746] [0.0467, -0.0312]
+   READER  U +0.4956 [+0.4216, +0.5718] [0.4573, 0.5338]  C +0.0903 [+0.0526, +0.1306] [0.0763, 0.1044]  F -0.0117 [-0.0997, +0.0776] [0.053, -0.0763]
+== the rule against no rule, at 1.0 s and at 2.0 s
+   LABEL   M5     U -0.3870 [-0.4477, -0.3273] [-0.3808, -0.3932]  C -0.6721 [-0.7414, -0.5945] [-0.6324, -0.7118]  F +0.1604 [+0.0951, +0.2265] [0.1604, 0.1604]
+   LABEL   banked U -0.0916 [-0.1372, -0.0509] [-0.0996, -0.0836]  C -0.0576 [-0.0966, -0.0270] [-0.0763, -0.0389]  F +0.0779 [+0.0369, +0.1246] [0.0888, 0.067]
+   READER  M5     U -0.2980 [-0.3568, -0.2437] [-0.306, -0.29]  C -0.5740 [-0.6446, -0.4965] [-0.5421, -0.6059]  F +0.1822 [+0.1127, +0.2589] [0.2103, 0.1542]
+   READER  banked U -0.0498 [-0.0868, -0.0174] [-0.0587, -0.0409]  C -0.0327 [-0.0577, -0.0128] [-0.0452, -0.0202]  F +0.1192 [+0.0710, +0.1710] [0.1324, 0.1059]
+== families
+   families_cycle       NORULE  LONGITUDINAL:speed_mae_mps         D +11.0122 [+9.6755, +12.2970] [10.0703, 11.9542] WORSE
+   families_cycle       NORULE  LONGITUDINAL:along_mae_m           D +13.1803 [+11.2596, +15.0195] [11.6936, 14.6671] WORSE
+   families_cycle       NORULE  LATERAL:cross_mae_m                D  +4.0575 [+3.5384, +4.6282] [3.8253, 4.2896] WORSE
+   families_cycle       NORULE  LATERAL:heading_mae_deg            D  +4.9115 [+3.9533, +6.1583] [5.4728, 4.3501] WORSE
+   families_cycle       NORULE  LATERAL:curvature_mae_1pm          D  -0.0805 [-0.1135, -0.0541] [-0.0647, -0.0964] BETTER
+   families_cycle       NORULE  LATERAL:yaw_rate_mae_degps         D +16.6389 [+10.5730, +22.6852] [20.2784, 12.9993] WORSE
+   families_cycle       NORULE  TACTICAL:lon_err_rate              D  +0.2637 [+0.2152, +0.3097] [0.2755, 0.2518] WORSE
+   families_cycle       NORULE  TACTICAL:lat_err_rate              D  +0.2470 [+0.1354, +0.3559] [0.1571, 0.3368] WORSE
+   families_cycle       NORULE  TACTICAL:joint_err_rate            D  +0.2643 [+0.2278, +0.2982] [0.2651, 0.2634] WORSE
+   families_cycle       NORULE  TACTICAL:ade_tac_m                 D +21.6787 [+18.5772, +24.6430] [19.335, 24.0224] WORSE
+   families_cycle       LABEL   LONGITUDINAL:speed_mae_mps         D  +7.9962 [+6.9605, +9.0757] [7.3267, 8.6658] WORSE
+   families_cycle       LABEL   LONGITUDINAL:along_mae_m           D  +9.7894 [+8.2902, +11.3232] [8.7317, 10.8471] WORSE
+   families_cycle       LABEL   LATERAL:cross_mae_m                D  +3.1449 [+2.7647, +3.5690] [3.0637, 3.2261] WORSE
+   families_cycle       LABEL   LATERAL:heading_mae_deg            D  +6.9029 [+6.0499, +7.7900] [7.1021, 6.7037] WORSE
+   families_cycle       LABEL   LATERAL:curvature_mae_1pm          D  -0.0323 [-0.0664, -0.0008] [-0.0129, -0.0516] BETTER
+   families_cycle       LABEL   LATERAL:yaw_rate_mae_degps         D +29.4722 [+24.5205, +34.7422] [31.7615, 27.1829] WORSE
+   families_cycle       LABEL   TACTICAL:lon_err_rate              D  +0.2045 [+0.1547, +0.2488] [0.2201, 0.1888] WORSE
+   families_cycle       LABEL   TACTICAL:lat_err_rate              D  +0.2628 [+0.1661, +0.3578] [0.1872, 0.3385] WORSE
+   families_cycle       LABEL   TACTICAL:joint_err_rate            D  +0.2411 [+0.2056, +0.2742] [0.2426, 0.2397] WORSE
+   families_cycle       LABEL   TACTICAL:ade_tac_m                 D +16.2091 [+13.8067, +18.6225] [14.5814, 17.8368] WORSE
+   families_cycle       READER  LONGITUDINAL:speed_mae_mps         D  +6.6413 [+5.8701, +7.4382] [6.2152, 7.0674] WORSE
+   families_cycle       READER  LONGITUDINAL:along_mae_m           D  +8.5804 [+7.4337, +9.7087] [7.9004, 9.2604] WORSE
+   families_cycle       READER  LATERAL:cross_mae_m                D  +2.7140 [+2.3708, +3.0901] [2.7037, 2.7243] WORSE
+   families_cycle       READER  LATERAL:heading_mae_deg            D  +7.2827 [+6.3364, +8.3598] [7.7177, 6.8476] WORSE
+   families_cycle       READER  LATERAL:curvature_mae_1pm          D  -0.0113 [-0.0428, +0.0191] [0.0093, -0.0318] OPEN
+   families_cycle       READER  LATERAL:yaw_rate_mae_degps         D +32.0896 [+26.7738, +37.5162] [35.0273, 29.1518] WORSE
+   families_cycle       READER  TACTICAL:lon_err_rate              D  +0.1822 [+0.1305, +0.2282] [0.203, 0.1613] WORSE
+   families_cycle       READER  TACTICAL:lat_err_rate              D  +0.2518 [+0.1656, +0.3364] [0.1855, 0.318] WORSE
+   families_cycle       READER  TACTICAL:joint_err_rate            D  +0.2318 [+0.1972, +0.2669] [0.2272, 0.2363] WORSE
+   families_cycle       READER  TACTICAL:ade_tac_m                 D +14.1570 [+12.3498, +15.9668] [13.1092, 15.2048] WORSE
+   families_rule_at_1s  LABEL   LONGITUDINAL:speed_mae_mps         D  -2.9660 [-3.6742, -2.3220] [-2.6893, -3.2427] BETTER
+   families_rule_at_1s  LABEL   LONGITUDINAL:along_mae_m           D  -3.1565 [-4.0945, -2.3287] [-2.7095, -3.6035] BETTER
+   families_rule_at_1s  LABEL   LATERAL:cross_mae_m                D  -0.9386 [-1.3290, -0.6145] [-0.7888, -1.0884] BETTER
+   families_rule_at_1s  LABEL   LATERAL:heading_mae_deg            D  +2.4935 [+1.7232, +3.2543] [2.2909, 2.6961] WORSE
+   families_rule_at_1s  LABEL   LATERAL:curvature_mae_1pm          D  +0.0649 [+0.0471, +0.0855] [0.0687, 0.0611] WORSE
+   families_rule_at_1s  LABEL   LATERAL:yaw_rate_mae_degps         D +13.1809 [+9.7706, +16.7846] [12.4262, 13.9356] WORSE
+   families_rule_at_1s  LABEL   TACTICAL:lon_err_rate              D  -0.0594 [-0.0769, -0.0425] [-0.0588, -0.06] BETTER
+   families_rule_at_1s  LABEL   TACTICAL:lat_err_rate              D  +0.0219 [-0.0025, +0.0494] [0.0354, 0.0083] OPEN
+   families_rule_at_1s  LABEL   TACTICAL:joint_err_rate            D  -0.0188 [-0.0285, -0.0098] [-0.0213, -0.0163] INSIDE-SPREAD
+   families_rule_at_1s  LABEL   TACTICAL:ade_tac_m                 D  -5.1976 [-6.7519, -3.8536] [-4.4619, -5.9332] BETTER
+   families_rule_at_1s  READER  LONGITUDINAL:speed_mae_mps         D  -4.3137 [-5.2707, -3.4374] [-3.7971, -4.8303] BETTER
+   families_rule_at_1s  READER  LONGITUDINAL:along_mae_m           D  -4.2661 [-5.5611, -3.0531] [-3.4598, -5.0723] BETTER
+   families_rule_at_1s  READER  LATERAL:cross_mae_m                D  -1.3755 [-1.8722, -0.9906] [-1.1618, -1.5893] BETTER
+   families_rule_at_1s  READER  LATERAL:heading_mae_deg            D  +3.0443 [+2.1864, +3.9771] [3.1577, 2.931] WORSE
+   families_rule_at_1s  READER  LATERAL:curvature_mae_1pm          D  +0.0925 [+0.0681, +0.1209] [0.1006, 0.0844] WORSE
+   families_rule_at_1s  READER  LATERAL:yaw_rate_mae_degps         D +16.4499 [+12.5555, +20.4009] [16.7761, 16.1237] WORSE
+   families_rule_at_1s  READER  TACTICAL:lon_err_rate              D  -0.0842 [-0.1067, -0.0636] [-0.0779, -0.0905] BETTER
+   families_rule_at_1s  READER  TACTICAL:lat_err_rate              D  +0.0179 [-0.0127, +0.0535] [0.0383, -0.0025] OPEN
+   families_rule_at_1s  READER  TACTICAL:joint_err_rate            D  -0.0263 [-0.0375, -0.0148] [-0.0317, -0.0208] BETTER
+   families_rule_at_1s  READER  TACTICAL:ade_tac_m                 D  -7.1229 [-9.2239, -5.1935] [-5.837, -8.4088] BETTER
+STRATEGIC: as note N1 of card ADD46 (T0 first tick: the banked read of the two models without the rule; along the rollout NOT COMPUTED, n = 0, no instrument)
+ZZ PODREAD-CYCLE DONE 17:12:16Z
