@@ -1,0 +1,16 @@
+ACCWIN2S10K_REUSED_FILES.txt -- result files of the reused runs that control v6 of card PREREG_V8F_PROOF_ADD58 hashes (pod-relative to /workspace/v8proof/integ10k/, one per run and model seed)
+t1/I10R0_s0/t1v8f_I10R0_s0_m10_causal_heads.json
+t1/I10R0_s1/t1v8f_I10R0_s1_m10_causal_heads.json
+t1/I10R0M5_s0/t1v8f_I10R0M5_s0_m10_causal_heads.json
+t1/I10R0M5_s1/t1v8f_I10R0M5_s1_m10_causal_heads.json
+t1/I10R0W5_s0/t1v8f_I10R0W5_s0_m10_causal_heads.json
+t1/I10R0W5_s1/t1v8f_I10R0W5_s1_m10_causal_heads.json
+t1/I10R0Z5_s0/t1v8f_I10R0Z5_s0_m10_causal_heads.json
+t1/I10R0Z5_s1/t1v8f_I10R0Z5_s1_m10_causal_heads.json
+t1/I10R0W10_s0/t1v8f_I10R0W10_s0_m10_causal_heads.json
+t1/I10R0W10_s1/t1v8f_I10R0W10_s1_m10_causal_heads.json
+JSON layout the reader expects (as HANDOVER10K_REUSED.json): {"card": ..., "control": "v6", "files": {"integ10k/pull/<run>_s<k>/<file name>": "<sha256 hex>", ...}, "what": ...}
+The key is a path relative to the folder that holds integ10k/ (the reader takes the parent of the parent of the record file as that base); on the pod the record sits in
+/workspace/v8proof/podread/root/integ10k/ and integ10k/pull/<run>_s<k> are links to /workspace/v8proof/integ10k/t1/<run>_s<k>. Ten entries are required.
+The dumps of the same runs (141 npz files each) are read through the same links (control v6 known values, v4, beside pairs). ACCWIN2S10K_REUSED.json beside this file holds the ten
+hashes, taken from the dev-box pulled copies.

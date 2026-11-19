@@ -1,0 +1,31 @@
+container free 45 GB
+manifest clips 4572 half 2286 eval 141
+lead file f0440deb3884ee35
+precheck: pass True -> /workspace/v8proof/dscale_lead/selftest_191903/PRECHECK.json {'counts': True, 'd1_no_leak': True, 'd2_labels_one_clock': True, 'd2j_join_matches_lead_file': True, 'd2n_join_matches_lead_file_new_clips': True, 'd2g_join_labels_per_group': True}
+precheck rc 0 (expected 0)
+precheck: pass False -> /workspace/v8proof/dscale_lead/selftest_191903/PRECHECK_PLANT.json {'counts': True, 'd1_no_leak': False, 'd2_labels_one_clock': True, 'd2j_join_matches_lead_file': True, 'd2n_join_matches_lead_file_new_clips': True, 'd2g_join_labels_per_group': True}
+precheck with a planted shared id rc 2 (expected 2)
+   counts {"pass": true, "union_manifest_clips": 4572, "expect_union": 4572, "corpus_ids": 2286, "expect_corpus": 2286, "corpus_ids_missing_from_union": 0}
+   d1_no_leak {"pass": true, "n_eval_ids": 141, "n_shared_with_union": 0, "first_shared": [], "planted": false}
+   d2_labels_one_clock {"pass": true, "n_clips": 200, "seed": 45, "tol": 0.0001, "columns": ["lead", "gap"], "rows_compared": 38497, "rows_in_one_file_only": 0, "rows_mismatching": 0, "clips_absent_from_union_file": 0, "first_bad_clips": []}
+   d2_rows {"lead_union_rows": 838130, "lead_corpus_rows": 838130}
+   d2j_join_matches_lead_file {"pass": true, "rows_compared": 20188, "rows_mismatching": 0, "clips_absent": 0, "n_clips_in_join": 4572}
+   d2n_join_matches_lead_file_new_clips {"pass": true, "rows_compared": 20181, "rows_mismatching": 0, "clips_absent": 0, "n_clips_in_join": 4572, "new_clips": 2286, "new_clips_with_rows_in_the_lead_file": 2180, "sampled": 200, "seed": 46}
+   d2g_join_labels_per_group {"pass": true, "corpus": {"clips": 200, "clips_absent_from_join": 0, "frames": 20188, "presence_frames": 8321, "gap_label_frames": 5856, "clips_with_a_gap_label": 99, "presence_share": 0.4122, "gap_label_share": 0.2901, "pass": true}, "new": {"clips": 200, "clips_absent_from_join": 0, "frames": 20181, "presence_frames": 7587, "gap_label_frames": 5268, "clips_with_a_gap_label": 90, "presence_share": 0.3759, "gap_label
+train ok rc 2
+TRAIN_DONE {"steps": 20, "p5_all_pass": false, "seconds": 6}
+train shuf rc 2
+TRAIN_DONE {"steps": 20, "p5_all_pass": false, "seconds": 5}
+train guard rc 1
+REFUSED: 2 evaluation clip ids are among the training clips (first: 19c3a370-5299-41e2-916a-6793c54f22aa)
+train missing rc 1
+REFUSED: 1 listed clip ids are not among the built clips (first: not_a_clip_id)
+train nosteps rc 1
+REFUSED: --clip-list changes the window count, so the step count must be given (--steps N): matched compute
+train badw rc 1
+REFUSED: --w-clos 0.5: only 1.0 (the source loss) or 0.0 (closing part exactly absent) are built
+TK16_s0 TRAIN_DONE.json r1_batches.json train_meta.json 
+191903/ok/train_meta.json {'n_windows': 10878, 'n_windows_all_clips': 310642, 'n_clips': 160, 'train_window_list_sha256': '1f4bd50323e7e261c56e396c8143a36f2ef1bb23abd076b460523850434595de', 'shuffle_closing': None, 'shuffle_gap': None, 'w_clos': 0.0, 'clip_list': {'path': '/workspace/v8proof/dscale_lead/selftest_191903/small.txt', 'sha256': 'a7570dbaa95e9acfddd353d69f0587dfbc56a7836602a78e58d127c41d5ac0d2', 'n_listed': 160, 'n_kept': 160}, 'eval_guard': {'path': '/workspace/v8proof/dscale_lead/selftest_191903/eval_
+191903/shuf/train_meta.json {'n_windows': 10878, 'n_windows_all_clips': 310642, 'n_clips': 160, 'train_window_list_sha256': '1f4bd50323e7e261c56e396c8143a36f2ef1bb23abd076b460523850434595de', 'shuffle_closing': None, 'shuffle_gap': {'n_shuffled': 123416, 'rng_seed': 12345}, 'w_clos': 0.0, 'clip_list': {'path': '/workspace/v8proof/dscale_lead/selftest_191903/small.txt', 'sha256': 'a7570dbaa95e9acfddd353d69f0587dfbc56a7836602a78e58d127c41d5ac0d2', 'n_listed': 160, 'n_kept': 160}, 'eval_guard': None, 'clip_grad': 1.0,
+{"step": 20, "first": false, "lr": 2.9999999999999997e-05, "grad_norm": 0.21435017883777618, "lead_sup": 0.7205100059509277, "lead_sup_bce": 0.6793084740638733, "lead_sup_gap": 0.041201502084732056, "lead_sup_clos": 0.0, "lead_sup_mean": 0.7345203757286072, "lead_sup_bce_mean": 0.6855349540710449, "
+ZZ SELFTEST DONE /workspace/v8proof/dscale_lead/selftest_191903
