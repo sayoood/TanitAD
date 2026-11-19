@@ -11,6 +11,8 @@
 # is resumable through marker files ($OUT/markers/), never overwrites an existing output folder, and writes $OUT/DSCALE_LEAD_STOP.txt (with the reason) on a stop, $OUT/DSCALE_LEAD_DONE.txt after checklog.
 # Nothing is deleted or moved. Exit codes: 0 ok, 1 stop, 3 refused to start, 4 estimate above the bar.
 set -u
+# Note N3: the evaluation set is read from a VIEW folder ($OUT/eval_view) whose manifest holds the lines of the pod's own evaluation manifest in the study's order
+# (dscale_evalview.py; clips linked, nothing copied, no line edited). Every stage builds or re-checks the view; control d2e is checked on the view.
 STAGE=${1:-}
 PY=${PY:-/root/venv/bin/python}
 KIT=${KIT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}
@@ -47,6 +49,8 @@ TP=$KIT/tok_probe_u.py
 PC=$KIT/dscale_precheck.py
 CK=$KIT/dscale_clockcheck.py
 TS=$KIT/dscale_tokens_same.py
+EV=$KIT/dscale_evalview.py
+EVAL_SRC=$EVAL_CACHE                            # the pod's own evaluation cache; after resolve_eval $EVAL_CACHE is the view folder (note N3)
 CACHE_T=$CACHE                                  # the folder the trainer is given: $CACHE, or a view folder of two links (resolve_cache)
 # the trainer argv of every arm (no --exclude: the merge already dropped the 60 holdout clips; --out, --device, --grid are replaced by the tool)
 set_targv() { TARGV="--arm M2b --seed 0 --grid pool4x10 --wm-state grid --wm-cell-dim 16 --lead-sup on --w-lead-sup 1.0 --lead-sup-detach on --out X --cache-dir $CACHE_T --v9-train $V9_UNION --v9-train-md5 $V9_MD5 --lead-train $LEAD_UNION --speed-train $SPEED_UNION --join-train $JOIN_UNION --p10 $P10 --kin-mode yaw --tracks $TRACKS --batch 64 --steps-mult 4 --device cuda"; }
@@ -109,8 +113,18 @@ check_pins() {   # lines: <sha256> <base>:<relpath>   base = tree (under $TREE) 
     [ "$got" = "$sha" ] || { echo "REFUSED: sha256 of $p is '$got', the pin says '$sha'"; exit 3; }
     n=$((n+1))
   done < "$PINS"
-  [ "$n" -ge 9 ] || { echo "REFUSED: the pins file holds $n pins, need the three tree files and six kit files (9)"; exit 3; }
+  [ "$n" -ge 10 ] || { echo "REFUSED: the pins file holds $n pins, need the three tree files and seven kit files (10)"; exit 3; }
   say "pins ok: $n files"
+}
+
+resolve_eval() {   # note N3: the kit reads the evaluation set from a view folder: the lines of $EVAL_SRC's manifest in the order of STUDY_EVAL_MD5.tsv, every other entry linked
+  if [ "$DRY" = 1 ]; then echo "DRY: resolve_eval: $PY $EV --eval-cache $EVAL_SRC --study-eval-tsv $KIT/STUDY_EVAL_MD5.tsv --view $OUT/eval_view --out $OUT/eval_view/EVALVIEW.$STAGE.json ; then EVAL_CACHE=$OUT/eval_view"; EVAL_CACHE=$OUT/eval_view; return 0; fi
+  mkdir -p "$OUT/eval_view"
+  "$PY" "$EV" --eval-cache "$EVAL_SRC" --study-eval-tsv "$KIT/STUDY_EVAL_MD5.tsv" --view "$OUT/eval_view" --out "$OUT/eval_view/EVALVIEW.$STAGE.json" > "$OUT/eval_view/evalview.$STAGE.out" 2>&1
+  local rc=$?
+  say "evaluation view rc=$rc: $(tail -n 1 "$OUT/eval_view/evalview.$STAGE.out" | cut -c1-220)"
+  [ $rc -eq 0 ] || stop "the evaluation view was not built, or differs from the view of an earlier stage (note N3, rc $rc): read $OUT/eval_view/EVALVIEW.$STAGE.json" 1
+  EVAL_CACHE=$OUT/eval_view
 }
 
 resolve_cache() {   # the trainer reads <cache>/train/manifest.jsonl and <cache>/train/clips/; a cache with manifest.jsonl and clips/ at its root gets a view folder of two links (nothing is copied)
@@ -294,6 +308,7 @@ st_checklog() {
 }
 
 preflight
+[ "$STAGE" = checklog ] || resolve_eval
 [ "$STAGE" = checklog ] || resolve_cache
 case "$STAGE" in
   precheck) st_precheck;;

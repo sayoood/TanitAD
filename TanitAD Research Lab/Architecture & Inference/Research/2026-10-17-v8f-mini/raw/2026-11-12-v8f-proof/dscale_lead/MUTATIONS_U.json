@@ -178,6 +178,38 @@
    "new": "d.get(\"planted_swap\") is False",
    "test_file": "test_dscale_lead_read.py",
    "k": "evalset_controls"
+  },
+  {
+   "name": "evalview_keeps_the_source_order",
+   "target": "evalview",
+   "old": "    body = b\"\".join(by[c] + b\"\\n\" for c in want)\n",
+   "new": "    body = b\"\".join(by[c] + b\"\\n\" for c in ids)\n",
+   "test_file": "test_dscale_evalview.py",
+   "k": "study_order"
+  },
+  {
+   "name": "evalview_does_not_compare_the_id_sets",
+   "target": "evalview",
+   "old": "    if set(ids) != set(want):\n",
+   "new": "    if False:\n",
+   "test_file": "test_dscale_evalview.py",
+   "k": "another_id_set"
+  },
+  {
+   "name": "evalview_accepts_a_changed_existing_view",
+   "target": "evalview",
+   "old": "        if open(vman, \"rb\").read() != body:\n",
+   "new": "        if False:\n",
+   "test_file": "test_dscale_evalview.py",
+   "k": "existing_view_manifest_that_differs"
+  },
+  {
+   "name": "evalview_overwrites_a_real_entry",
+   "target": "evalview",
+   "old": "            if not (os.path.islink(lnk) and os.path.realpath(lnk) == os.path.realpath(tgt)):\n",
+   "new": "            if False:\n",
+   "test_file": "test_dscale_evalview.py",
+   "k": "not_the_link"
   }
  ]
 }

@@ -17,9 +17,9 @@ import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 WORK = os.path.join(HERE, "work_mut_u")
-TARGET_FILE = {"tool": "tok_probe_u.py", "precheck": "dscale_precheck.py", "reader": "dscale_lead_read.py"}
-TARGET_ENV = {"tool": "TOK_PROBE_U_FILE", "precheck": "DSCALE_PRECHECK_FILE", "reader": "DSCALE_LEAD_READ_FILE"}
-SUITE_OF = {"tool": "test_tok_probe_u.py", "precheck": "test_dscale_precheck.py", "reader": "test_dscale_lead_read.py"}
+TARGET_FILE = {"tool": "tok_probe_u.py", "precheck": "dscale_precheck.py", "reader": "dscale_lead_read.py", "evalview": "dscale_evalview.py"}
+TARGET_ENV = {"tool": "TOK_PROBE_U_FILE", "precheck": "DSCALE_PRECHECK_FILE", "reader": "DSCALE_LEAD_READ_FILE", "evalview": "DSCALE_EVALVIEW_FILE"}
+SUITE_OF = {"tool": "test_tok_probe_u.py", "precheck": "test_dscale_precheck.py", "reader": "test_dscale_lead_read.py", "evalview": "test_dscale_evalview.py"}
 
 
 def pytest(py, test_file, env_extra, k, base):
