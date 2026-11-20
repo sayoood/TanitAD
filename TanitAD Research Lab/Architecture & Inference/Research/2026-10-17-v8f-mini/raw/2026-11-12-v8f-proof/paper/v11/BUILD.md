@@ -23,3 +23,7 @@ Fragments added or changed: `frag_row126.tex` (row 126), `frag_row127.tex` (rows
 Fragments changed: `frag_row127.tex` (the paragraph of row 128 rewritten to the re-read of row 129, with the readings of row 128 that do not stand named as such; a new paragraph for row 130), `frag_status_run.tex` (item iv). `patch_tex_v11.py`: `ok edits 11`. Build: rc 0, 40 pages, 0 overfull boxes, 0 undefined references. Number check with `ROW100.md` to `ROW130.md`: 967 tokens checked, 0 not in the rows. The wording rule of the register was checked on the new text (grep, no hit).
 
 PDF of record after rows 129 and 130: `tanitad_4b_paper_r130.pdf` (40 pages). The file `tanitad_4b_paper.pdf` on the branch is the build after rows 126 to 128 and quotes readings of row 128 that do not stand; the landing route rewrites text files only, so the rebuilt PDF is landed under the new name.
+
+## Update after row 131 (2026-11-20)
+
+Fragments changed: `frag_row127.tex` (a paragraph for row 131 appended), `frag_status_run.tex` (item iv). `patch_tex_v11.py`: `ok edits 11`. Build: rc 0, 41 pages, 0 overfull boxes, 0 undefined references. Number check with `ROW100.md` to `ROW131.md`: 997 tokens checked, 0 not in the rows. A first build of this update printed one macro of the new paragraph as text (a tab had replaced its first two characters when the paragraph was written through a shell); found by a check of the fragment for tab characters, repaired, rebuilt. PDF of record: `tanitad_4b_paper_r131.pdf`.
