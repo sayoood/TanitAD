@@ -1,0 +1,40 @@
+{
+ "task": "ROLLHIST study-side gate kinds RH / B0",
+ "date": "2026-11-20",
+ "staged_only": true,
+ "commit_of_record": "2bda9e1a382986cfdce3bb455822678b42a816e2",
+ "live_checker": {
+  "pod_path": "/root/dscale10k/study/dscale10k_check.py",
+  "sha256": "7467e5d7c05ed00971e29dd9c293b7be9a28fa76b998b2aa51e2ea3aed8accc",
+  "repo_path_at_tip_09469d00": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-11-15-v8f-datascale/gate10k/pod_out/study/dscale10k_check.py (blob 4805a393)",
+  "note": "ran stage B of U_s0 / U_s1 via /root/dscale10k/chk_arm.sh (CHK default $D/study). Later pod copies: block3/study 89fd80a6 (steps rule), blockx 2ec3b830, blockum 839bfbcc, blockreps1/study ac37c1b6 (UE_s1 + UM arms; repo raw/.../reps1/build/pod_copy/dscale10k_check_reps1.py blob 6b72055f). Stage-B code identical study -> reps1 (diff = steps rule + arms).",
+  "base_of_new_file": "blockreps1 copy ac37c1b61aa5213d4b5d015d882cc4440396fda68124fa9253ced2e1e3d9b47b (latest superset)",
+  "merge_module": "study/dscale10k_merge.py 89d40399 (byte-identical to repo build/pod/study copy)"
+ },
+ "findings": [
+  "no UE_sK.B argv was ever minted or banked (UE arms are stage-A-only in ARMS; bank_ok has only UE_sK.A); the identity test therefore uses the U_s0.B template filled as a UE_s0 stage-B argv",
+  "rollhist_pair_check.py hard-codes causal_g1x: causal_g1 REFUSED with a message (needs a flag, MM-owned committed-code change). b2 render_argv_rh.py patches DECL in process: NOT used; patched rh_arm.sh calls the stock CLI",
+  "evidence for G-HYG/G-LIVE/G-CLOCK/G-EVAL/G-CKPT is INHERITED from evidence_UE_sK.json (cdbff971), G-SUITE fresh at 2bda9e1a (rh_evidence.py); labelled inside the evidence file",
+  "pod-side paths of chk_arm_rh.sh / rh_evidence.py wiring UNTESTED on the pod (bash -n, py_compile, CLI-level pytest on fakes only); CLI mint/run proven on fakes",
+  "union data checks (C-MERGE rerun, C-MASK, C-JOIN-EQ) are stubbed in the unit tests in BOTH modules; everything else runs for real"
+ ],
+ "tests": {
+  "file": "test_dscale10k_check_rh.py",
+  "log": "pytest_log_new.txt",
+  "passed": 37,
+  "failed": 0
+ },
+ "mutation": {
+  "record": "MUTATION_RECORD.md",
+  "mutant_log": "pytest_log_mutant.txt",
+  "header_without_generator_test_red": true,
+  "failed": [
+   "test_bank_header_without_generator_record_refused",
+   "test_wrong_declared_token_refused"
+  ]
+ },
+ "identity": "test_identity_ue_s0_stage_b_token_equals_the_original: tokens equal field for field except at/checker_sha256/body_sha256 (the file's own identity); required_checks and argv_diff_problems equal for all 16 original arms x 2 stages",
+ "files_protected_untouched": true,
+ "deletions": "DELETIONS.log (pytest basetemp 10.3 MB, bytecode 144 KB, own temp)",
+ "propose_landing_path": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-11-15-v8f-datascale/rollhist_gate/ (study files, outside stack/)"
+}
