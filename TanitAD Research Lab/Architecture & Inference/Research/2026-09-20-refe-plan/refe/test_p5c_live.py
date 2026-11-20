@@ -233,7 +233,7 @@ MUTATIONS = [
     ("p5c_gate.py", '    if step0.get("opt_state_entries") != 0:\n', "    if False:\n", "warm_identity"),                                                      # a stateful optimiser passes
     ("gate_checks.py", "                    cap.step0 = PG.step0_facts(cap.model, self, a.out)\n", "                    pass\n", "warm_identity"),                           # the build capture no longer digests the model
     ("gate_checks.py", '        if arm_is("warm_not_loaded", arm):', '        if False:', "warm_identity"),                                                          # the regression arm is inert
-    ("gate_checks.py", "        rs_, dt_ = p5c_live_rows(cap, build_cap, profile)", "        rs_, dt_ = [], {}", "wiring"),                                         # (f)/(h) not wired into G-LIVE
+    ("gate_checks.py", "        rs_, dt_ = p5c_live_rows(cap, build_cap, profile)         # PREREG_P5C 10.2 (f) warm-start identity and (h) lever isolation on the real model", "        rs_, dt_ = [], {}         # PREREG_P5C 10.2 (f) warm-start identity and (h) lever isolation on the real model", "wiring"),                                         # (f)/(h) not wired into G-LIVE
     ("launch_gate.py", "build_cap=b))", "build_cap=None))", "wiring"),                                                                              # G-LIVE is given no build capture
 ]
 

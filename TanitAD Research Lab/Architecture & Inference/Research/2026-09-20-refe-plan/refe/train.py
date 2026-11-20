@@ -40,6 +40,7 @@ import ckpt_io  # noqa: E402
 import nav_command as NC  # noqa: E402
 import traj_label_table as TLT  # noqa: E402  (P5-C: the row -> Tc20s trajectory label table behind --traj-label-table; stdlib only, nothing is read unless the flag is set)
 import ego_yaw_table as EYT  # noqa: E402  (WP YAW: the token -> nuPlan ego_pose.angular_rate_z table behind --ego-yaw-table; imports only the stdlib, and nothing is read unless the flag is set)
+import rank_loss as RK  # noqa: E402  (SCORER-FT, DESIGN_SCORER_FT.md 2.2: the within-token ranking term; built and called ONLY under --rank-w > 0)
 import aux_drivable_head as AUX  # noqa: E402  (P7.1, SPEC_AUX_DRIVABLE_HEAD.md: the TRAINING-ONLY drivable-area head. Built ONLY under --aux-drv; the module imports no map API and no label-store code at import time)
 
 
@@ -1095,14 +1096,53 @@ IDENTITY_ARGS = ("backbone", "synthetic", "n_cameras", "undistort", "detach_scor
                  "seed", "spread", "overfit", "overfit_n", "epoch_unit", "amp", "tf32",
                  "fused_adam", "compile", "grow", "grow_scenes", "scorer_mode", "init_from", "pdm_labels",
                  "pdm_only", "yaw_wrap", "nav_mode", "labeller", "label_backend",
-                 "w_field", "field_margin", "field_interp", "field_labels", "field_shuffle_seed") + AUX.AUX_IDENTITY_ARGS      # P7.1: a resume with a different head is refused
+                 "w_field", "field_margin", "field_interp", "field_labels", "field_shuffle_seed",
+                 "rank_w", "rank_heads", "rank_ep_gap", "rank_gate_topk") + AUX.AUX_IDENTITY_ARGS      # P7.1: a resume with a different head is refused
 # ⭐ an identity key ADDED after runs began: an OLD checkpoint lacks it and must read as the value
 # those runs actually used, or every pre-existing run would refuse its own resume
 IDENTITY_DEFAULTS = {"scorer_mode": "fixed", "init_from": None, "pdm_labels": None, "pdm_only": False,
                      "yaw_wrap": "on", "nav_mode": "goal", "labeller": "bank", "label_backend": "pdm",
                      "w_field": 0.0, "field_margin": 0.25, "field_interp": "5hz", "field_labels": None, "field_shuffle_seed": None,
+                     # SCORER-FT: every pre-SCORER-FT checkpoint was trained WITHOUT the ranking term, so it reads as rank-off and still resumes under this trainer
+                     "rank_w": 0.0, "rank_heads": "", "rank_ep_gap": 0.02, "rank_gate_topk": 8,
                      # P7.1: every pre-P7 checkpoint was trained WITHOUT the head, so it reads as head-off and still resumes under this trainer
                      "aux_drv": False, "w_aux_drv": 0.0, "aux_drv_tap": "visual", "aux_drv_depth": 2, "aux_drv_feed": "off", "aux_drv_labels": "", "aux_drv_shuffle_seed": None}
+
+
+def rank_refusals(a, n_proposals: int = 64) -> list:
+    """SCORER-FT (DESIGN_SCORER_FT.md 2.4): the reasons --rank-* is refused, before any build.  [] = fine.  The defaults (--rank-w 0.0, no heads) build and compute nothing.
+    A lever that would be configured and never trained is refused: heads or a non-default gap/top-k named without a weight, a gap named without `ep`, a top-k without `gate`."""
+    bad = []
+    w = a.rank_w
+    if not (isinstance(w, (int, float)) and 0.0 <= w < float("inf")):                                # NaN and inf fail the chained comparison
+        bad.append(f"--rank-w {w} must be a finite number >= 0")
+    try:
+        heads = RK.parse_heads(a.rank_heads)
+    except ValueError as e:
+        bad.append(f"--rank-heads: {e}")
+        heads = ()
+    gap, k = a.rank_ep_gap, a.rank_gate_topk
+    if not (isinstance(gap, (int, float)) and 0.0 < gap <= 1.0):
+        bad.append(f"--rank-ep-gap {gap} must be in (0, 1]")
+    if not (isinstance(k, int) and not isinstance(k, bool) and 1 <= k <= n_proposals):
+        bad.append(f"--rank-gate-topk {k} must be an int in [1, {n_proposals}]")
+    if isinstance(w, (int, float)) and w > 0.0:
+        if a.labeller != "online":
+            bad.append("--rank-w > 0 needs --labeller online (the only path the term is built on)")
+        if not heads:
+            bad.append("--rank-w > 0 needs --rank-heads (a comma list of ep, gate, ttc): the term would have no pairs")
+    elif isinstance(w, (int, float)):
+        if heads:
+            bad.append(f"--rank-heads {','.join(heads)} named with --rank-w 0: configured and never trained")
+        if gap != 0.02:
+            bad.append(f"--rank-ep-gap {gap} named with --rank-w 0: configured and never trained")
+        if k != 8:
+            bad.append(f"--rank-gate-topk {k} named with --rank-w 0: configured and never trained")
+    if gap != 0.02 and heads and "ep" not in heads:
+        bad.append(f"--rank-ep-gap {gap} named without `ep` in --rank-heads")
+    if k != 8 and heads and "gate" not in heads:
+        bad.append(f"--rank-gate-topk {k} named without `gate` in --rank-heads")
+    return bad
 
 
 def warm_start(model, path: str) -> dict:
@@ -1265,6 +1305,12 @@ def run(a) -> int:
         print("  REFUSING: --w-field > 0 needs --field-labels (the SDF label store): the term would have no label."); return 4
     if a.field_shuffle_seed is not None and not a.field_labels:
         print("  REFUSING: --field-shuffle-seed needs --field-labels."); return 4
+    # SCORER-FT (DESIGN_SCORER_FT.md 2.4): the ranking term's refusals, before any build
+    bad_rank = rank_refusals(a, cfg.n_proposals)
+    if bad_rank:
+        for r_ in bad_rank:
+            print(f"  REFUSING: {r_}.")
+        return 4
     # P7.1 (SPEC_AUX_DRIVABLE_HEAD.md section 4, SPEC_P7 section 1). EVERY default builds nothing (--w-aux-drv 0.0, no --aux-drv): a head-less arm cannot silently carry one, and an arm that
     # means the head NAMES --aux-drv AND --w-aux-drv > 0. A lever named without the head, a head without labels, a head with no weight, a feed this trainer does not build: refused.
     bad_aux = list(AUX.aux_refusals(a))
@@ -1541,6 +1587,11 @@ def run(a) -> int:
         lab = OL.OnlineLabeller(backend=a.label_backend, workers=a.label_workers, metric_cache=a.metric_cache or None, timeout_s=a.label_timeout_s,
                                 python=a.label_python or None, n_prop=cfg.n_proposals, horizon=cfg.horizon_steps, chunks=a.label_chunks)
         print(f"  ONLINE LABELLER: backend {a.label_backend}  workers {a.label_workers}  chunks/set {a.label_chunks}  metric cache {a.metric_cache}  timeout {a.label_timeout_s:g} s")
+    # SCORER-FT: the ranking term is built ONLY under --rank-w > 0; None otherwise, and every use below is behind `rank is not None` (the OFF path executes no extra op)
+    rank = RK.RankLoss(a.rank_heads, ep_gap=a.rank_ep_gap, gate_topk=a.rank_gate_topk) if a.rank_w > 0.0 else None
+    if rank is not None:
+        print(f"  RANK TERM: w {a.rank_w:g}  heads {','.join(rank.heads)}  ep_gap {rank.ep_gap:g}  gate_topk {rank.gate_topk}  aggregate navsim_v1  reduce set-wmean/const-B"
+              + (f"  MUTATION {rank.mutate}" if rank.mutate else ""))
     print(f"  score-loss normaliser: {cov_norm:.4f} covered candidates/sample x batch "
           f"(CONSTANT, so --accum is exactly equivalent to one large batch)")
     opt.zero_grad(set_to_none=True)          # the window is opened here, then after every step
@@ -1750,8 +1801,13 @@ def run(a) -> int:
         _append_jsonl(run_dir / "metrics.jsonl", {"event": "aux", "step": step, **aux.built_facts(), "tap": a.aux_drv_tap, "feed": a.aux_drv_feed, "shuffle_seed": a.aux_drv_shuffle_seed,
                                                   "store_sha256": ds.aux.manifest["store_sha256"], "store_keys": ds.aux_cov["store_keys"], "rows": ds.aux_cov["rows"],
                                                   "rows_labelled": ds.aux_cov["labelled"], "at": _now()})
+    if rank is not None and run_dir is not None:
+        # SCORER-FT: what the term was BUILT with, written by the trainer itself (G-DVB reads it)
+        _append_jsonl(run_dir / "metrics.jsonl", {"event": "rank", "step": step, "rank_w": a.rank_w, **rank.facts(), "at": _now()})
     pend = None                              # online labeller: the micro-batch whose labels have not been consumed yet (its graph is alive)
     bce_comp = [float("nan")] * 6
+    l_rank = rk_last = None                  # SCORER-FT: the last labelled micro-batch's L_rank (unweighted) and its pair / set counts
+    rank_v1 = [0.0, 0.0, 0.0]                   # SCORER-FT monitor, no gradient: navsim_v1 pick / random / best over the labelled sets since the last log line
     t_log0 = time.time()
     field_on = bool(a.field_labels)
     while step < a.steps:
@@ -1803,6 +1859,11 @@ def run(a) -> int:
             if aux is not None:
                 l_aux, aux_bce, aux_hub = aux.loss(aux_logit, aux_sdf, aux_lab, aux_valid)
                 aux_cap["taps"].clear()
+            score_rk = None
+            if rank is not None and rank.mutate == "traj_leak":
+                # DELIBERATE-REGRESSION ARM (REFE_RANK_MUTATE=traj_leak): L_rank on the detach_scorer=False forward (model.py:711-712): the trajectory decoder then gets a gradient
+                with torch.autocast("cuda", dtype=torch.bfloat16, enabled=(a.amp == "bf16" and dev == "cuda")):
+                    score_rk = model(img, ego, goal, detach_scorer=False, calib=cal if cal.numel() else None)[1].float()
             n_cand = float(cand_m.sum())
             if online:
                 # ⭐ P6 / D1 + D2 + D4. The scorer scored ITS OWN proposals (`score`, candidates detached inside the model); their detached copies go to the
@@ -1810,7 +1871,7 @@ def run(a) -> int:
                 props_np = traj.detach().double().cpu().numpy()
                 metas = [{k: ds.rows[int(j)].get(k) for k in ("log_name", "token", "rank", "aug", "step")} for j in ridx]
                 cur = {"stamp": micro, "step": step, "B": int(img.shape[0]), "score": score, "l_traj": l_traj, "l_pos": l_pos, "l_yaw": l_yaw,
-                       "idx": idx, "props": props_np, "h": lab.submit(micro, step, metas, props_np), "l_field": l_field, "fparts": fparts,
+                       "idx": idx, "props": props_np, "h": lab.submit(micro, step, metas, props_np), "l_field": l_field, "fparts": fparts, "score_rk": score_rk,
                        "l_aux": l_aux, "aux_bce": aux_bce, "aux_hub": aux_hub}
                 l_score = None
             elif OP is not None:
@@ -1932,12 +1993,25 @@ def run(a) -> int:
                             op_win[2] += float(ta.max(1).values.sum())
                             op_win[3] += int(has.sum())
                             op_win[4] += 0.0                      # label lag in steps: asserted 0 above
+                            if rank is not None:
+                                # SCORER-FT monitor in the HARNESS aggregate (navsim_v1; the v2_shape pick above is not what the planner deploys): no gradient
+                                pv, tv = RK.navsim_v1(torch.sigmoid(P["score"][has])), RK.navsim_v1(lab_t[has])
+                                rank_v1[0] += float(tv.gather(1, pv.argmax(1, keepdim=True)).squeeze(1).sum())
+                                rank_v1[1] += float(tv.mean(1).sum())
+                                rank_v1[2] += float(tv.max(1).values.sum())
                         else:
                             n_uncovered += 1
                         n_cov += int(has.sum())
                     tot_ = P["l_traj"] + l_score
                     if a.w_field > 0.0:
                         tot_ = tot_ + a.w_field * P["l_field"]          # L_field rides the same deferred backward as the other two terms
+                    if rank is not None:
+                        # SCORER-FT: the within-token ranking term, UNWEIGHTED value logged, weighted by --rank-w into the SAME deferred backward. The denominator is the CONSTANT --batch,
+                        # so --accum stays exactly equivalent to one large batch. REFE_RANK_MUTATE=drop computes it and does NOT add it (the gate's deliberate-regression arm).
+                        l_rank = rank.term(score=P["score_rk"] if P["score_rk"] is not None else P["score"], labels=lab_t, msk=msk, batch=a.batch)
+                        rk_last = {"pairs": dict(rank.last["pairs"]), "sets": dict(rank.last["sets"])}
+                        if rank.mutate != "drop":
+                            tot_ = tot_ + a.rank_w * l_rank
                     if aux is not None:
                         tot_ = aux.combine(tot_, P["l_aux"])           # P7.1 SITE 1 of 2: L_aux rides the SAME deferred backward (always multiplied by w_aux)
                     (tot_ / a.accum).backward()
@@ -1997,6 +2071,10 @@ def run(a) -> int:
                         # P6: the six BCE components (NC, DAC, EP, TTC, C, DDC), unweighted, of the step's last micro-batch: score == score_w * mean(bce_*)
                         row.update({"bce_nc": bce_comp[0], "bce_dac": bce_comp[1], "bce_ep": bce_comp[2],
                                     "bce_ttc": bce_comp[3], "bce_c": bce_comp[4], "bce_ddc": bce_comp[5]})
+                        if l_rank is not None:
+                            # SCORER-FT: the unweighted L_rank of the step's last labelled micro-batch, the multiplier the trainer applied, and the pair / set counts per named head
+                            row.update({"rank_L": float(l_rank), "rank_w": float(a.rank_w),
+                                        **{f"rank_pairs_{h_}": rk_last["pairs"][h_] for h_ in rank.heads}, **{f"rank_sets_{h_}": rk_last["sets"][h_] for h_ in rank.heads}})
                     _append_jsonl(run_dir / "metrics.jsonl", row)
                     if online:
                         ls = lab.take_stats()
@@ -2021,8 +2099,12 @@ def run(a) -> int:
                         _append_jsonl(run_dir / "metrics.jsonl", {
                             "step": step, "event": "onpolicy", "sets": n_w, "pick": pk,
                             "random": rd, "best": bs, "skill": sk, "drift_m": assign_d,
-                            "lag_steps": lag, "cov_norm": cov_norm})
+                            "lag_steps": lag, "cov_norm": cov_norm,
+                            **({"pick_v1": rank_v1[0] / n_w, "random_v1": rank_v1[1] / n_w, "best_v1": rank_v1[2] / n_w,
+                                "skill_v1": ((rank_v1[0] - rank_v1[1]) / (rank_v1[2] - rank_v1[1])) if n_w and rank_v1[2] - rank_v1[1] > 1e-9 * n_w else float("nan")}
+                               if (rank is not None and n_w) else {})})
                     op_win = [0.0, 0.0, 0.0, 0, 0.0]
+                    rank_v1 = [0.0, 0.0, 0.0]
             step += 1
             # checkpoint only HERE, right after an optimiser step: every consumed sample is then
             # in the weights, so (epoch, pos) is exact and no half-filled window is lost or doubled
@@ -2262,6 +2344,15 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--field-margin", type=float, default=0.25, help="L_field's margin in metres (registered 0.25)")
     ap.add_argument("--field-interp", choices=("5hz", "navsim2hz"), default="5hz",
                     help="L_field's pose up-sampling: 5hz = 20 poses at 5 Hz -> 10 Hz linear from the origin (registered); navsim2hz = NAVSIM's own 2 Hz chain")
+    # ---- SCORER-FT (DESIGN_SCORER_FT.md 2.4): the within-token ranking term. EVERY default reproduces the trainer without the term bit for bit; an arm that means it NAMES --rank-w.
+    ap.add_argument("--rank-w", type=float, default=0.0,
+                    help="weight of L_rank (refe/rank_loss.py): pairwise logistic losses inside each labelled 64-proposal set, weighted by the navsim_v1 PDMS gap. 0.0 = OFF: the term is not "
+                         "computed. Set once by the committed gradient-norm rule (refe/weight_rule_rank.py), never tuned on PDMS. Needs --labeller online and --rank-heads.")
+    ap.add_argument("--rank-heads", default="",
+                    help="comma list of the pair families, a subset of ep, gate, ttc (ep: safe-vs-safe EP order; gate: safe vs an unsafe proposal in the scorer's own top-k; ttc: TTC-1 vs TTC-0 among safe). "
+                         "Named with --rank-w 0 is refused.")
+    ap.add_argument("--rank-ep-gap", type=float, default=0.02, help="minimum EP-label gap for an EP pair, in (0, 1] (registered 0.02)")
+    ap.add_argument("--rank-gate-topk", type=int, default=8, help="the gate pairs' unsafe member must sit in the scorer's own top-k by navsim_v1, k in [1, n_proposals] (registered 8)")
     ap.add_argument("--field-labels", default=None,
                     help="the int8 SDF label store directory (aux_label_store.py; the pinned store). The loader then also delivers (sdf, valid) per sample. Absent = the item tuple "
                          "is unchanged.")

@@ -438,7 +438,7 @@ def chk_gate_registry():
     from types import SimpleNamespace
     ok(C.DVB_KINDS.get("ego_yaw_table") == "built" and C.EGO_YAW_SLOT == EYT.EGO_YAW_SLOT == 4)
     dests = {x.dest for x in T.build_parser()._actions if x.dest != "help"}
-    ok(set(C.DVB_KINDS) == dests and len(dests) == 70, (sorted(dests ^ set(C.DVB_KINDS))))
+    ok(set(C.DVB_KINDS) == dests and len(dests) == 74, (sorted(dests ^ set(C.DVB_KINDS))))
     # RED: the entry removed -> the gate refuses the trainer's flag as "NO declared-vs-built entry"
     dummy = SimpleNamespace(parser_unknown=[], rc="X", error=None, log="-")
     saved = C.DVB_KINDS.pop("ego_yaw_table")

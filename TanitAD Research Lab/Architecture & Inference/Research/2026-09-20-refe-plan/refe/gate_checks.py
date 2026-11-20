@@ -45,6 +45,8 @@ import traceback
 from pathlib import Path
 from types import SimpleNamespace
 
+import numpy as np
+
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 ARM_ENV = "TANITAD_GATE_ARM"
@@ -110,7 +112,7 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
                           field_calls=[], field_grads=[], field_first=None,
                           aux=None, aux_facts=None, aux_loss_calls=[], aux_loss_grads=[], aux_first=None, aux_tap_obs=[], aux_grads=[], aux_adam=None, opt_param_ids=None,
                           sp_ptrs=[], sctx_ptr=None, scorer_in_width=None, ego4_abs_max=0.0, ego_col_grads=[],
-                          step0=None, bank_objs=[])
+                          step0=None, bank_objs=[], rank_calls=[], rank_grads=[], rank_first=[], lab_submits=[], rank_traj_reach=None)
     ap = T.build_parser()
     a, unknown = ap.parse_known_args(list(argv))
     cap.parser_unknown, cap.args = unknown, a
@@ -266,6 +268,38 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
             out = out.detach()
         return (out,) + tuple(r[1:]) if isinstance(r, tuple) else out
 
+    def rank_term_recorder():
+        """SCORER-FT: a recorder around `rank_loss.RankLoss.term` (the trainer's own term; the API is DESIGN 6 item 1: `.term(score, labels, msk, batch)`, rule on the instance).  It records, per CALL, the rule the term was built with, the
+        captured (logits, labels, mask, batch) for the L4 audit and the L3 probe, the returned value and its per-head pair counts when the term reports them; and measures the multiplier at the graph (a hook on the term's own
+        output sees d(total loss)/d(L_rank), which is `rank_w / accum` when the trainer adds `rank_w * L_rank` once per micro-batch, and never fires when the term is computed but not added)."""
+        import importlib.util
+        if importlib.util.find_spec("rank_loss") is None:
+            return None
+        import rank_loss as RLm
+        term0 = RLm.RankLoss.term
+
+        def term(self, score, labels, msk, batch, *a_, **k_):
+            r = term0(self, score, labels, msk, batch, *a_, **k_)
+            out = r[0] if isinstance(r, tuple) else r
+            f = self.facts() if hasattr(self, "facts") else {}
+            call = {"heads": f.get("heads", getattr(self, "heads", None)), "ep_gap": f.get("ep_gap", getattr(self, "ep_gap", None)), "gate_topk": f.get("gate_topk", getattr(self, "gate_topk", None)),
+                    "batch": int(batch), "value": float(out.detach()) if hasattr(out, "detach") else float(out),
+                    "pairs": (dict(self.last["pairs"]) if isinstance(getattr(self, "last", None), dict) and "pairs" in self.last else None)}
+            if cap.rank_traj_reach is None and cap.model is not None and hasattr(cap.model, "traj_head") and getattr(score, "requires_grad", False):
+                # R-LEAK observer: does the score the term was GIVEN have an autograd path to the trajectory head?  (the scorer reads traj.detach(): the answer must be NO)
+                gs = torch.autograd.grad(score.float().sum(), [p_ for p_ in cap.model.traj_head.parameters()], retain_graph=True, allow_unused=True)
+                cap.rank_traj_reach = {"n": len(gs), "n_none": sum(g_ is None for g_ in gs), "abs_sum": float(sum(float(g_.double().abs().sum()) for g_ in gs if g_ is not None))}
+            if len(cap.rank_calls) < 3:
+                call.update({"logits": score.detach().float().cpu().numpy().copy(), "labels": labels.detach().float().cpu().numpy().copy(), "msk": msk.detach().float().cpu().numpy().copy()})
+            if len(cap.rank_first) < 1:
+                cap.rank_first.append({"labels": labels.detach().float().cpu().numpy().copy(), "msk": msk.detach().float().cpu().numpy().copy()})
+            cap.rank_calls.append(call)
+            if getattr(out, "requires_grad", False):
+                out.register_hook(lambda g: cap.rank_grads.append(float(g)))
+            return r
+        return RLm, term0, term
+
+
     def rec_aux_cls(base):
         """P7.1: a recording subclass of AuxDrivable.  `predict` records WHICH tensor the head read (its storage against scene_proj's two outputs and the scorer's context); `loss` records the labels
         it RECEIVED and measures the multiplier at the graph (a hook on the term's own output sees d(total loss)/d(L_aux) = w_aux / accum when the trainer adds `combine(l, L_aux)` once per
@@ -376,6 +410,9 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
             patch(T, nm, wrap_sampler(nm))
         patch(T, "DataLoader", RecDL)
         patch(T, "wta_loss", rec_wta)
+        _rk = rank_term_recorder()
+        if _rk is not None:
+            patch(_rk[0].RankLoss, "term", _rk[2])
         if fl0 is not None:
             patch(T, "field_loss", rec_field)
         if a.aux_drv:
@@ -388,6 +425,20 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
             def __init__(self, *a_, **k_):
                 cap.banks.setdefault("OnlineLabeller", []).append({"args": [plain(x) for x in a_], "kwargs": {k: plain(v) for k, v in k_.items()}})
                 super().__init__(*a_, **k_)
+
+            def submit(self, stamp, step, metas, props):                  # SCORER-FT L5: the first 8 (meta, proposal 0) pairs, to be compared with NAVSIM's own pdm_score
+                h = super().submit(stamp, step, metas, props)
+                for j, mt in enumerate(metas):
+                    if len(cap.lab_submits) < 8:
+                        cap.lab_submits.append({"meta": dict(mt), "props0": np.asarray(props)[j, 0].copy(), "labels0": None, "_h": h, "_j": j})
+                return h
+
+            def collect(self, h, step_now):
+                r = super().collect(h, step_now)
+                for sb in cap.lab_submits:
+                    if sb.get("_h") is h and sb["labels0"] is None:
+                        sb["labels0"] = np.asarray(r[0])[sb["_j"], 0].copy()
+                return r
         RecLab.__name__ = "OnlineLabeller"
         patch(OLm, "OnlineLabeller", RecLab)
         patch(T, "warm_start", rec_warm)
@@ -526,6 +577,8 @@ DVB_KINDS = {
     # actually RECEIVED); its EFFECT is observed by test_traj_label_table.py (item[3] == the table label bit for bit through the real loader; flag-off == raw; the arm traj_label_not_passed must FAIL).
     # Default OFF: an arm that means the label table NAMES --traj-label-table.  Held-out / eval banks never get it.
     "traj_label_table": "built",
+    # SCORER-FT (DESIGN_SCORER_FT 2.4 / 3.2): the within-token ranking term.  Observed rows: `rank_dvb_rows` (a hook on the term's output, the trainer's `rank` start event, the kwargs the term was called with).  ALL default OFF.
+    "rank_w": "built", "rank_heads": "built", "rank_ep_gap": "built", "rank_gate_topk": "built",
 }
 DVB_REASON = {"score_w": "weights the score BCE inside run(); observed through the live `score` term (G-LIVE), statically traced here",
               "log_every": "logging cadence", "out": "output directory", "resume": "supervised relaunch",
@@ -841,6 +894,7 @@ def dvb_rows(a, b, s, field_min_coverage: float = FIELD_MIN_COVERAGE, profile=No
     rows += aux_dvb_rows(a, b, s, profile)
     rows += ego_yaw_dvb_rows(a, b, profile)
     rows += traj_label_dvb_rows(a, b, profile)
+    rows += rank_dvb_rows(a, b, s, profile)
     rows += p5c_init_rows(a, profile)
     return rows
 
@@ -1999,6 +2053,326 @@ def judge_field_reach(fr: dict, w_field: float) -> list:
     return out
 
 
+# ---- SCORER-FT (DESIGN_SCORER_FT section 3.2 / 3.3): the within-token ranking term L_rank.  Its observed rows are `rank_dvb_rows` (G-DVB) and `rank_live_rows` (G-LIVE).  Everything the rows judge is OBSERVED (a recorder around
+# `rank_loss.RankLoss.term` in the SMOKE run, the trainer's `rank` start event and per-row log fields), never read off the namespace.  The L4 audit re-derives the pairs and the loss from the captured (labels, logits) with its OWN numpy
+# reference below (DESIGN 2.2), so a trainer whose term pairs the wrong things (R-UNSAFE, R-SHUF) or weights them wrongly is caught by VALUE, not by inspection.
+RANK_HEAD_COLS = {"nc": 0, "dac": 1, "ep": 2, "ttc": 3, "c": 4, "ddc": 5}             # the scorer's six outputs, in `online_labeller.COMPONENTS` order
+RANK_PDMS_W = (5.0, 5.0, 2.0)                                                           # navsim_v1: NC x DAC x (5 EP + 5 TTC + 2 C) / 12  (planner.py V1_W)
+RANK_TRAINED_ROWS = {"ep": ("nc", "dac", "ep"), "gate": ("nc", "dac", "ep"), "ttc": ("nc", "dac", "ep", "ttc")}     # (documentary) rows of score_head a named head trains; the reach probe derives the real set from `heads`
+RANK_REL_TOL = 1e-6                                                                     # L4: L_rank within 1e-6 relative of the reference
+RANK_TRUNK_GROUPS = ("backbone.lora", "scene_proj")                                     # --scorer-sees-trunk: the rank gradient must reach these
+RANK_ZERO_GROUPS = ("traj_head", "dec", "queries")                                      # the trajectory side: the scorer reads `traj.detach()`, so EXACTLY 0.0 (R-LEAK)
+
+
+def _rank_heads_set(v) -> set:
+    if v is None:
+        return set()
+    if isinstance(v, str):
+        return {x.strip() for x in v.split(",") if x.strip()}
+    return {str(x) for x in v}
+
+
+def rank_reference(logits, labels, msk, batch, heads, ep_gap, gate_topk) -> dict:
+    """The L_rank DEFINITION (DESIGN 2.2) in plain numpy, independent of the trainer's implementation.  logits / labels [B, M, 6] (order NC, DAC, EP, TTC, C, DDC), msk [B], `batch` the constant denominator.
+      safe = (y_NC > .5) & (y_DAC > .5);  pdms = y_NC y_DAC (5 y_EP + 5 y_TTC + 2 y_C)/12;  agg = navsim_v1(sigmoid(logits));  topk = the gate_topk largest agg
+      EP   pairs: safe_i & safe_j & y_EP,i - y_EP,j >= ep_gap            weight (5/12)(y_EP,i - y_EP,j)     z = s_EP
+      gate pairs: safe_i & !safe_j & j in topk & pdms_i > pdms_j          weight pdms_i - pdms_j             z = logsigmoid(s_NC) + logsigmoid(s_DAC)
+      TTC  pairs: safe_i & safe_j & y_TTC,i == 1 & y_TTC,j == 0          weight 5/12                        z = s_TTC
+      L_h(b) = sum a_ij softplus(-(z_i - z_j)) / sum a_ij (0 without a pair);  L = (1/batch) sum_b msk_b sum_h L_h(b)
+    Returns {"L", "pairs": {head: n}, "sets": {head: n sets with a pair}, "pair_sets": {head: sorted [(b, i, j)]}}."""
+    s = np.asarray(logits, dtype=np.float64)
+    y = np.asarray(labels, dtype=np.float64)
+    msk = np.asarray(msk, dtype=np.float64).reshape(-1)
+    B, M, _ = s.shape
+
+    def sig(x):
+        return 1.0 / (1.0 + np.exp(-x))
+
+    def logsig(x):
+        return -np.logaddexp(0.0, -x)
+
+    def softplus(x):
+        return np.logaddexp(0.0, x)
+    heads = [h for h in ("ep", "gate", "ttc") if h in _rank_heads_set(heads)]
+    out = {"L": 0.0, "pairs": {h: 0 for h in heads}, "sets": {h: 0 for h in heads}, "pair_sets": {h: [] for h in heads}}
+    w1 = np.asarray(RANK_PDMS_W)
+    for b in range(B):
+        safe = (y[b, :, 0] > 0.5) & (y[b, :, 1] > 0.5)
+        pdms = y[b, :, 0] * y[b, :, 1] * (y[b, :, 2] * w1[0] + y[b, :, 3] * w1[1] + y[b, :, 4] * w1[2]) / w1.sum()
+        p = sig(s[b])
+        agg = p[:, 0] * p[:, 1] * (p[:, 2] * w1[0] + p[:, 3] * w1[1] + p[:, 4] * w1[2]) / w1.sum()
+        top = set(np.argsort(-agg, kind="stable")[:int(gate_topk)].tolist())
+        for h in heads:
+            num = den = 0.0
+            ps = []
+            for i in range(M):
+                for j in range(M):
+                    if i == j:
+                        continue
+                    if h == "ep":
+                        if not (safe[i] and safe[j] and y[b, i, 2] - y[b, j, 2] >= ep_gap):
+                            continue
+                        a, z = (5.0 / 12.0) * (y[b, i, 2] - y[b, j, 2]), s[b, i, 2] - s[b, j, 2]
+                    elif h == "gate":
+                        if not (safe[i] and not safe[j] and j in top and pdms[i] > pdms[j]):
+                            continue
+                        zi = logsig(s[b, i, 0]) + logsig(s[b, i, 1])
+                        zj = logsig(s[b, j, 0]) + logsig(s[b, j, 1])
+                        a, z = pdms[i] - pdms[j], zi - zj
+                    else:
+                        if not (safe[i] and safe[j] and y[b, i, 3] == 1.0 and y[b, j, 3] == 0.0):
+                            continue
+                        a, z = 5.0 / 12.0, s[b, i, 3] - s[b, j, 3]
+                    num += a * softplus(-z)
+                    den += a
+                    ps.append((b, i, j))
+            out["pairs"][h] += len(ps)
+            out["sets"][h] += int(bool(ps))
+            out["pair_sets"][h] += ps
+            if den > 0.0:
+                out["L"] += msk[b] * (num / den) / float(batch)
+    for h in heads:
+        out["pair_sets"][h] = sorted(out["pair_sets"][h])
+    return out
+
+
+def rank_dvb_rows(a, b, s, profile=None) -> list:
+    """G-DVB's rows for the four rank levers (DESIGN 3.2).  The BUILT side is what the term actually did, never the namespace:
+      rank_w          a hook on `L_rank`'s output reads d(total)/d(L_rank) x accum on EVERY call of the SMOKE (== rank_w; a term computed but not added never fires it, R-DROP; one wired off by a factor reads the factor),
+                      the term is called once per micro-batch, and the trainer's logged `rank_w` on every row is the argv's.  Control (rank_w == 0): the hook NEVER fires, there are no calls.
+      rank_heads      the `rank` start event's built heads;   rank_ep_gap / rank_gate_topk   the event's built rule AND the kwargs the term was constructed with (SMOKE capture)
+      control         no `rank` event and no `rank_L` on any logged row.
+    NOT done here, by design: a lever whose value the arm does not name (default OFF) is judged only as `absent` (control) -- the profile's `required_flags` / `scorerft_refusals` make the arm NAME it."""
+    rows = []
+
+    def add(dest, declared, built, how, ok=None):
+        rows.append({"dest": dest, "flag": "--" + dest.replace("_", "-"), "declared": declared, "built": built, "how": how,
+                     "ok": _close(declared, built) if ok is None else bool(ok)})
+    if s is None:
+        return rows
+    sa = s.args
+    w = float(getattr(a, "rank_w", 0.0) or 0.0)
+    calls, grads = list(getattr(s, "rank_calls", [])), list(getattr(s, "rank_grads", []))
+    ev = next((e for e in s.metrics if e.get("event") == "rank"), None)
+    has_L = any("rank_L" in r for r in s.metrics)
+    if w == 0.0:
+        add("rank_w", True, bool(not calls and not grads), "control: the rank term is never called and its hook never fires (rank_w == 0 => not computed)")
+        add("rank_w", True, bool(ev is None and not has_L), "control: no `rank` start event and no `rank_L` on any logged row")
+        return rows
+    n_micro = int(sa.steps) * int(sa.accum)
+    add("rank_w", n_micro, len(calls), "the rank term is called once per micro-batch (steps x accum of the SMOKE run)")
+    mult = [g * int(sa.accum) for g in grads]
+    add("rank_w", w, (min(mult), max(mult)) if mult else None,
+        f"the multiplier measured at the graph: d(loss)/d(L_rank) x accum on {len(mult)} of {len(calls)} calls (a hook on the term's output)",
+        ok=bool(calls) and len(mult) == len(calls) and all(math.isclose(m_, w, rel_tol=1e-5) for m_ in mult))
+    rw = {r["rank_w"] for r in s.metrics if "rank_w" in r}
+    add("rank_w", w, (sorted(rw)[0] if len(rw) == 1 else sorted(rw)) if rw else None, "the trainer's logged rank_w on every logged row",
+        ok=bool(rw) and all(math.isclose(float(x), w, rel_tol=1e-12) for x in rw))
+    if ev is None:
+        add("rank_heads", "a `rank` event", None, "the trainer writes one `rank` start event (heads, gap, top-k, aggregate, reduce)", ok=False)
+        return rows
+    add("rank_heads", sorted(_rank_heads_set(a.rank_heads)), sorted(_rank_heads_set(ev.get("heads"))), "the `rank` event: the heads the term was built with",
+        ok=sorted(_rank_heads_set(a.rank_heads)) == sorted(_rank_heads_set(ev.get("heads"))))
+    add("rank_ep_gap", a.rank_ep_gap, ev.get("ep_gap"), "the `rank` event: the EP gap threshold")
+    add("rank_gate_topk", a.rank_gate_topk, ev.get("gate_topk"), "the `rank` event: the gate's top-k")
+    want_h = tuple(sorted(_rank_heads_set(a.rank_heads)))
+    got_h = sorted({tuple(sorted(_rank_heads_set(c.get("heads")))) for c in calls})
+    add("rank_heads", [want_h], got_h, "the heads the term was CALLED with on every call (SMOKE capture)", ok=bool(calls) and got_h == [want_h])
+    add("rank_ep_gap", a.rank_ep_gap, sorted({c.get("ep_gap") for c in calls}) if calls else None, "the gap the term was called with on every call",
+        ok=bool(calls) and {c.get("ep_gap") for c in calls} == {a.rank_ep_gap})
+    add("rank_gate_topk", a.rank_gate_topk, sorted({c.get("gate_topk") for c in calls}) if calls else None, "the top-k the term was called with on every call",
+        ok=bool(calls) and {c.get("gate_topk") for c in calls} == {a.rank_gate_topk})
+    add("rank_w", None, ev.get("mutate"), "the `rank` event: the term was built under NO deliberate-regression mutation (REFE_RANK_MUTATE unset)")
+    add("rank_w", "navsim_v1", ev.get("aggregate"), "the `rank` event: the planner's own aggregate rule drives the gate's top-k")
+    add("rank_w", "set-wmean/const-B", ev.get("reduce"), "the `rank` event: per-set weighted mean over the constant --batch (the accumulation lesson, train.py:1858-1871)")
+    return rows
+
+
+def rank_reach(cap, profile, arm=None) -> dict:
+    """L3 (DESIGN 3.3): `rank_w x L_rank` ALONE, backward through the smoke's real model on ONE labelled micro-batch (the first captured (labels, mask)), at the declared weight and at weight 0.0.  Per parameter group the |grad| sum
+    and the number of parameters with NO path, and per ROW of `score_head.weight` the |grad| sum.  The term is the TRAINER's own (`rank_loss.RankLoss`, built with the rule the arm declares); the probe widens the gate's top-k to the
+    whole set for this probe only (the captured labels belong to the proposals of an EARLIER weight state, so the live top-k may hold no unsafe proposal; a wider k changes WHICH pairs exist, never which parameters a pair reaches)."""
+    import torch
+    import rank_loss as RL
+    m = cap.model
+    if m is None or cap.first_batch is None or not getattr(cap, "rank_first", None):
+        return {"ran": False}
+    lab_np, msk_np = cap.rank_first[0]["labels"], cap.rank_first[0]["msk"]
+    img, ego, goal, calib = cap.first_batch
+    dev = next(m.parameters()).device
+    sl = slice(0, 1)
+    cal = calib[sl].to(dev) if calib is not None and getattr(calib, "numel", lambda: 0)() else None
+    a = cap.args
+    heads = ",".join(sorted(_rank_heads_set(a.rank_heads)))
+    term = RL.RankLoss(heads=heads, ep_gap=a.rank_ep_gap, gate_topk=int(lab_np.shape[1]))
+    labels = torch.as_tensor(np.asarray(lab_np)[sl], dtype=torch.float32, device=dev)
+    msk = torch.ones(1, dtype=torch.float32, device=dev)
+    m.train()
+    out = {"ran": True, "labelled": int(float(np.asarray(msk_np)[0]) > 0.0) if np.size(msk_np) else 0}
+    for tag, scale in (("declared", float(a.rank_w)), ("zero", 0.0)):
+        m.zero_grad(set_to_none=True)
+        score = m(img[sl].to(dev), ego[sl].to(dev), goal[sl].to(dev), calib=cal)[1]
+        r = term.term(score.float(), labels, msk, 1)
+        r = r[0] if isinstance(r, tuple) else r
+        loss = r * scale
+        if loss.requires_grad:                                        # a term that returns a graph-less value (R-DROP) reads zero everywhere
+            loss.backward()
+        groups: dict = {}
+        for n, p in m.named_parameters():
+            g_ = groups.setdefault(group_of(n), {"abs_sum": 0.0, "n": 0, "n_none": 0})
+            g_["n"] += 1
+            if p.grad is None:
+                g_["n_none"] += 1
+            else:
+                g_["abs_sum"] += float(p.grad.double().abs().sum())
+        wg = m.score_head.weight.grad
+        rowsum = {h: (0.0 if wg is None else float(wg[k].double().abs().sum())) for h, k in RANK_HEAD_COLS.items()}
+        out[tag] = {"loss": float(loss.detach()), "groups": groups, "score_head_rows": rowsum}
+    m.zero_grad(set_to_none=True)
+    return out
+
+
+def judge_rank_reach(fr: dict, heads) -> list:
+    """The reach probe re-judged from its RAW FIELDS.  [] = proved: non-zero on score_head rows NC / DAC / EP (+ TTC when named), score_dec, score_q_mlp and the trunk (LoRA + scene_proj); EXACTLY 0.0 on the rows of every head
+    the arm does not train, and on the trajectory side; the weight-0 control reads exactly 0.0 everywhere."""
+    if not fr.get("ran"):
+        return ["L3 rank reach probe could not run (no model / first batch / captured labels): the reach is unproved"]
+    if not fr.get("labelled"):
+        return ["L3 rank reach probe: the first captured set carries no label (mask 0): the term was not exercised"]
+    out = []
+    g, rows = fr["declared"]["groups"], fr["declared"]["score_head_rows"]
+    trained = {"nc", "dac", "ep"} | ({"ttc"} if "ttc" in _rank_heads_set(heads) else set())
+    for h in sorted(trained):
+        if not rows.get(h, 0.0) > 0.0:
+            out.append(f"L3 rank-only backward reads EXACTLY zero on score_head row {h.upper()}: the term does not reach a head it trains")
+    for h in sorted(set(RANK_HEAD_COLS) - trained):
+        if rows.get(h, 0.0) != 0.0:
+            out.append(f"L3 rank-only backward reaches score_head row {h.upper()} ({rows[h]}): that head must read EXACTLY 0.0 (R-HEAD: the gate's z read the wrong logit)")
+    for grp in ("score_dec", "score_q_mlp") + RANK_TRUNK_GROUPS:
+        if not g.get(grp, {"abs_sum": 0.0})["abs_sum"] > 0.0:
+            out.append(f"L3 rank-only backward reads EXACTLY zero on {grp!r}: the term does not reach it")
+    for grp in RANK_ZERO_GROUPS:
+        x = g.get(grp)
+        if x is not None and x["abs_sum"] != 0.0:
+            out.append(f"L3 rank-only backward reaches the trajectory side {grp!r} ({x['abs_sum']}): the scorer reads traj.detach(); it must read EXACTLY 0.0 (R-LEAK)")
+    g0 = fr["zero"]["groups"]
+    bad0 = {k: v["abs_sum"] for k, v in g0.items() if v["abs_sum"] != 0.0}
+    bad0 |= {f"row:{k}": v for k, v in fr["zero"]["score_head_rows"].items() if v != 0.0}
+    if bad0:
+        out.append(f"the weight-0 control does not read exactly 0.0 (the probe cannot be trusted): {bad0}")
+    return out
+
+
+def judge_rank_audit(calls: list, args, max_calls: int = 3) -> tuple:
+    """L4 (DESIGN 3.3): for each captured call, `rank_reference` re-derives the pairs and L_rank from the captured (labels, logits) with the gate's OWN numpy code.  L_rank must equal the call's recorded value within
+    1e-6 relative, and (when the call recorded its per-head pair counts) the counts must be the reference's.  Returns (reasons, details)."""
+    reasons, det = [], {"calls_audited": 0}
+    if not calls:
+        return ["L4 pair audit: no call of the rank term was captured"], det
+    for k, c in enumerate(calls[:max_calls]):
+        ref = rank_reference(c["logits"], c["labels"], c["msk"], c["batch"], c["heads"], c["ep_gap"], c["gate_topk"])
+        det["calls_audited"] += 1
+        det[f"call{k}"] = {"ref_L": ref["L"], "trainer_L": c.get("value"), "ref_pairs": ref["pairs"], "trainer_pairs": c.get("pairs")}
+        v = c.get("value")
+        if v is None or not math.isfinite(v):
+            reasons.append(f"L4 call {k}: the term's recorded value {v!r} is not finite")
+        elif not math.isclose(v, ref["L"], rel_tol=RANK_REL_TOL, abs_tol=1e-12):
+            reasons.append(f"L4 call {k}: L_rank {v!r} != the reference {ref['L']!r} (rel tol {RANK_REL_TOL}); the pairs or the weighting differ from DESIGN 2.2")
+        if c.get("pairs") is not None:
+            tp = {h: int(n) for h, n in c["pairs"].items() if h in ref["pairs"]}
+            if tp != ref["pairs"]:
+                reasons.append(f"L4 call {k}: the term's per-head pair counts {tp} != the reference's {ref['pairs']}")
+    return reasons, det
+
+
+def harness_identity_facts(cap, n_tokens: int = 8) -> dict:
+    """L5 (DESIGN 3.3; closes the 1.5 UNVERIFIED): for up to 8 smoke tokens, the labeller's six labels of proposal 0 against NAVSIM's OWN `pdm_score` on the same pose array and the same cached parts.  Pod-only (needs
+    NAVSIM and the D9 metric cache): a host without them returns {"ran": False, "why": ...}, which the judge FAILS (unproved).  The submits and the collected labels come from the SMOKE capture (`cap.lab_submits`)."""
+    subs = list(getattr(cap, "lab_submits", []) or [])
+    if not subs:
+        return {"ran": False, "why": "no labeller submit was captured"}
+    try:
+        import navsim_pdm_targets as PT
+        import online_labeller as OLm
+        from types import SimpleNamespace as NS
+        from navsim.common.dataclasses import Trajectory
+        from navsim.evaluate.pdm_score import pdm_score
+        S = PT._setup()
+    except Exception as e:                                                                    # noqa: BLE001
+        return {"ran": False, "why": f"NAVSIM is not importable here ({type(e).__name__}: {e})"}
+    root = (cap.args.metric_cache,)
+    worst, n = 0.0, 0
+    names = {"nc": "no_at_fault_collisions", "dac": "drivable_area_compliance", "ep": "ego_progress", "ttc": "time_to_collision_within_bound", "c": "comfort", "ddc": "driving_direction_compliance"}
+    try:
+        for sb in subs[:n_tokens]:
+            meta, prop0, lab0 = sb["meta"], sb["props0"], sb["labels0"]
+            parts = OLm.load_parts(OLm.parts_path(root[0], meta["log_name"], meta["token"], meta.get("aug")))
+            mc = NS(trajectory=parts[0], ego_state=parts[1], observation=parts[2], centerline=parts[3], route_lane_ids=parts[4], drivable_area_map=parts[5])
+            plan8 = PT.executed_plans8(np.asarray(prop0)[None], repair=True)[0]
+            row = pdm_score(mc, Trajectory(np.asarray(plan8, dtype=np.float32), S["samp8"]), S["samp"], S["sim"], S["scorer"]).iloc[0]
+            for k, c in enumerate(OLm.COMPONENTS):
+                worst = max(worst, abs(float(np.clip(row[names[c]], 0.0, 1.0)) - float(lab0[k])))
+            n += 1
+    except Exception as e:                                                                    # noqa: BLE001
+        return {"ran": False, "why": f"the identity probe raised {type(e).__name__}: {e}"}
+    return {"ran": True, "tokens": n, "max_abs_diff": worst}
+
+
+def judge_harness_identity(f: dict, tol: float = 1e-9) -> list:
+    if not f.get("ran"):
+        return [f"L5 harness identity on navtrain is UNPROVED: {f.get('why')} (the labeller's labels were never compared to NAVSIM's own pdm_score)"]
+    if not f.get("tokens"):
+        return ["L5 harness identity: no token was compared"]
+    if not f["max_abs_diff"] <= tol:
+        return [f"L5 harness identity: the labeller's labels differ from NAVSIM's pdm_score by up to {f['max_abs_diff']} (tol {tol}) on {f['tokens']} tokens"]
+    return []
+
+
+def rank_live_rows(cap, profile, arm=None) -> tuple:
+    """G-LIVE's rows L1-L5 for a SCORER-FT arm (DESIGN 3.3).  A CONTROL (rank_w == 0) proves the term ABSENT: no `rank` event, no `rank_L`, no call.  Returns (reasons, details)."""
+    reasons, det = [], {}
+    a = cap.args
+    w = float(getattr(a, "rank_w", 0.0) or 0.0)
+    steps = [r for r in cap.metrics if "traj_L1" in r]
+    ev = next((e for e in cap.metrics if e.get("event") == "rank"), None)
+    calls = list(getattr(cap, "rank_calls", []) or [])
+    if w == 0.0:
+        det["control"] = True
+        if any("rank_L" in r for r in cap.metrics) or ev is not None or calls:
+            reasons.append("L1 control: the control arm (--rank-w 0.0) logged rank_L / a `rank` event / called the term: the term is not OFF")
+        return reasons, det
+    heads = _rank_heads_set(a.rank_heads)
+    miss = [r.get("step") for r in steps if "rank_L" not in r]
+    bad = [r.get("step") for r in steps if "rank_L" in r and not _finite(r["rank_L"])]
+    if miss or not steps:
+        reasons.append(f"L1 rank_L ABSENT from the trainer's logged rows on steps {miss[:4]}")
+    if bad:
+        reasons.append(f"L1 rank_L not finite on steps {bad[:4]}")
+    pairs = {h: sum(int(r.get(f"rank_pairs_{h}", 0) or 0) for r in steps) for h in sorted(heads)}
+    det["pairs_logged"] = pairs
+    for h, n in pairs.items():
+        if n <= 0:
+            reasons.append(f"L2 head {h!r} formed ZERO pairs over the whole smoke (structurally dead: the 'built, tested, unreachable' class)")
+    try:
+        fr = rank_reach(cap, profile, arm)
+    except Exception as e:                                                                    # noqa: BLE001
+        fr = {"ran": False}
+        reasons.append(f"L3 rank reach probe could not run: {type(e).__name__}: {e}")
+    det["rank_reach"] = {k: (v if k in ("ran", "labelled") else {"loss": v["loss"], "groups": v["groups"], "score_head_rows": v["score_head_rows"]}) for k, v in fr.items()}
+    reasons += judge_rank_reach(fr, heads)
+    tr = getattr(cap, "rank_traj_reach", None)
+    det["traj_reach"] = tr
+    if tr is not None and (tr["abs_sum"] != 0.0 or tr["n_none"] != tr["n"]):
+        reasons.append(f"L3 the score handed to the rank term has an autograd path to traj_head ({tr}): the scorer reads traj.detach(), so it must have none (R-LEAK)")
+    rs4, d4 = judge_rank_audit(calls, a)
+    det["audit"] = d4
+    reasons += rs4
+    f5 = harness_identity_facts(cap)
+    det["harness_identity"] = f5
+    reasons += judge_harness_identity(f5)
+    return reasons, det
+
+
 # ---- P7.1: the training-only drivable-area head (SPEC_P7 section 1; SPEC_AUX_DRIVABLE_HEAD sections 2.1 and 7).  The probe reads what L_aux ALONE does to the trained model on the first REAL labelled
 # sample of the smoke run, at the DECLARED weight and at weight 0.0 (the probe's own control: every group must then read exactly 0.0, so a zero elsewhere is a property of the model).
 AUX_REACH = {"visual": ("aux_head", "backbone.lora", "scene_proj", "pos3d_mlp"),
@@ -2228,13 +2602,14 @@ def p5c_live_rows(cap, build_cap, profile) -> tuple:
     if not banks:
         return reasons + ["(h) the smoke run built no train bank to probe"], det
     ds = banks[0]
-    if profile.get("p5c_arm") != "C1":
+    needs_table = profile["traj_label_required"] if "traj_label_required" in profile else profile.get("p5c_arm") == "C1"       # SCORER-FT: all four arms carry C1's table, so (h) keys on the PROFILE, not the arm's name
+    if not needs_table:
         if ds.traj_label is not None:
             reasons.append(f"(h) arm {profile.get('p5c_arm') or profile.get('p7field_arm')} must not carry a label table, but the live train bank holds one ({ds.traj_label_sha256})")
         det["isolation"] = "no table (control arm)"
         return reasons, det
     if ds.traj_label is None or cap.model is None:
-        return reasons + ["(h) C1's live train bank carries no label table (or the smoke model is gone): nothing to isolate"], det
+        return reasons + ["(h) the table arm's live train bank carries no label table (or the smoke model is gone): nothing to isolate"], det
     import copy
     raw = copy.copy(ds)
     raw.traj_label, raw.traj_label_sha256, raw.traj_label_cov = None, None, None
@@ -2349,6 +2724,13 @@ def check_live(argv: list, cap, profile: dict, arm=None, rehearsal=False, contro
         rs_, dt_ = p5c_live_rows(cap, build_cap, profile)         # PREREG_P5C 10.2 (f) warm-start identity and (h) lever isolation on the real model
         reasons += rs_
         det["p5c"] = dt_
+    if profile.get("scorerft_rules"):                                   # SCORER-FT arms T / C / Ts / Cs: the same (f) warm-start identity and (h) table isolation as C1, then L1-L5 of the ranking term
+        rs_, dt_ = p5c_live_rows(cap, build_cap, profile)
+        reasons += rs_
+        det["p5c"] = dt_
+        rs_, dt_ = rank_live_rows(cap, profile, arm)
+        reasons += rs_
+        det["rank"] = dt_
     return verdict("G-LIVE", reasons, det, arm=arm, rehearsal=rehearsal)
 
 
@@ -2690,7 +3072,7 @@ def check_clock(argv: list, b, profile: dict, arm=None, rehearsal=False) -> dict
                 reasons.append(f"step-0 bank has {bl.get('n_scenes')} scenes != registered {exp['epoch_len']}")
         # P7-WIRE-INTEGRATE-2: the bank's CONTENT.  A tuple count cannot tell two same-size banks apart; the trainer's own `targets_sha256` of the SAME files the build just loaded can.  Only a profile that
         # registers `targets_sha256_by_bank` (refe_p7) is asked; refe_p6 has no such key and takes none of these lines (its G-CLOCK evidence is byte-for-byte what it was).
-        want_sha, how_sha = clock_bank_sha256(argv, exp, required=bool(profile.get("p7_rules") or profile.get("p5c_rules") or profile.get("p7field_rules")))
+        want_sha, how_sha = clock_bank_sha256(argv, exp, required=bool(profile.get("p7_rules") or profile.get("p5c_rules") or profile.get("p7field_rules") or profile.get("scorerft_rules")))
         if how_sha is not None:
             import gate_token as GT_
             tg = (GT_.flag_values(argv, "--targets") or [None])[0]

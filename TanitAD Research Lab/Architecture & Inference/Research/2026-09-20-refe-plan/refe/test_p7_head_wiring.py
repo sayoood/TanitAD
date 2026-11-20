@@ -188,7 +188,7 @@ def s_argv() -> None:
     # the registry: the head's seven dests are classified, and the table is still EQUAL to the parser's dests
     import train as T
     dests = {x.dest for x in T.build_parser()._actions if x.dest != "help"}
-    ck("S3 DVB_KINDS == the parser's dests (70)", set(C.DVB_KINDS) == dests and len(dests) == 70, str((sorted(dests - set(C.DVB_KINDS)), sorted(set(C.DVB_KINDS) - dests))))
+    ck("S3 DVB_KINDS == the parser's dests (74)", set(C.DVB_KINDS) == dests and len(dests) == 74, str((sorted(dests - set(C.DVB_KINDS)), sorted(set(C.DVB_KINDS) - dests))))
     ck("S3 the seven head dests are in the parser AND the registry", all(d in dests and C.DVB_KINDS.get(d) == "built" for d in AUX_DESTS))
     ap = T.build_parser()
     d0 = ap.parse_args(["--targets", "/x"])
@@ -521,7 +521,7 @@ def s_census() -> None:
     old_l, new_l = raw.decode("utf-8").splitlines(), src.splitlines()
     sm = difflib.SequenceMatcher(None, old_l, new_l, autojunk=False)
     hunks = [(tag, i1, i2, j1, j2) for tag, i1, i2, j1, j2 in sm.get_opcodes() if tag != "equal"]
-    stray = [(i1 + 1, "\n".join(old_l[i1:i2] + new_l[j1:j2])[:160]) for tag, i1, i2, j1, j2 in hunks if not re.search(r"aux|AUX|P7\.1|WP YAW|ego_yaw|EYT\.|ego_t\[|P5-C|traj_label|TLT\.|tgt_t", "\n".join(old_l[i1:i2] + new_l[j1:j2]))]       # P5-C (2026-11-12): the label-table hunks are named too; WP YAW (2026-11-06): the yaw-table hunks are a later, separate lever
+    stray = [(i1 + 1, "\n".join(old_l[i1:i2] + new_l[j1:j2])[:160]) for tag, i1, i2, j1, j2 in hunks if not re.search(r"aux|AUX|P7\.1|WP YAW|ego_yaw|EYT\.|ego_t\[|P5-C|traj_label|TLT\.|tgt_t|rank|RK\.|SCORER-FT", "\n".join(old_l[i1:i2] + new_l[j1:j2]))]       # SCORER-FT (2026-11-20): the ranking-term hunks are named too; P5-C (2026-11-12): the label-table hunks are named too; WP YAW (2026-11-06): the yaw-table hunks are a later, separate lever
     ck("S6 every changed hunk of train.py relative to the frozen tip mentions the head (nothing else moved)", not stray and len(hunks) >= 20, f"{len(hunks)} hunks; unrelated: {stray[:3]}")
 
 

@@ -107,7 +107,7 @@ def chk_registry():
     for nm in ALL_NAMES.values():
         pr = L.PROFILES[nm]
         ok((pr["field_store_sha256"], pr["field_store_keys"], pr["field_loss_sha256"]) == (L.FIELD_P7_STORE_SHA256, L.FIELD_P7_STORE_KEYS, L.FIELD_P7_LOSS_SHA256))
-    ok(L.FIELD_P7_ARM_SEED == {"F": 0, "C": 0, "Cs": 1, "Fs": 1} and L.FIELD_P7_REP_BASE == {"Cs": "C", "Fs": "F"} and len(L.PROFILES) == 33)
+    ok(L.FIELD_P7_ARM_SEED == {"F": 0, "C": 0, "Cs": 1, "Fs": 1} and L.FIELD_P7_REP_BASE == {"Cs": "C", "Fs": "F"} and len(L.PROFILES) == 37)  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)
     ok(L.FIELD_P7_LOSS_SHA256 == hashlib.sha256((HERE / "field_loss.py").read_bytes().replace(b"\r\n", b"\n")).hexdigest(), "the registered field_loss.py hash is the shipped file's")
 
 
@@ -344,7 +344,7 @@ def chk_live_wiring():
     src = (HERE / "launch_gate.py").read_text(encoding="utf-8")
     ok('    need_b = need_b or bool("G-LIVE" in want and prof.get("p7field_rules"))' in src, "run_checks builds the capture for G-LIVE alone on a field arm (need_b)")
     gsrc = (HERE / "gate_checks.py").read_text(encoding="utf-8")
-    ok('required=bool(profile.get("p7_rules") or profile.get("p5c_rules") or profile.get("p7field_rules")))' in gsrc, "G-CLOCK requires the bank content pin for a field arm")
+    ok('required=bool(profile.get("p7_rules") or profile.get("p5c_rules") or profile.get("p7field_rules") or profile.get("scorerft_rules")))' in gsrc, "G-CLOCK requires the bank content pin for a field arm")   # + SCORER-FT (PREREG_SCORER_FT, 2026-11-20)
 
 
 CHECKS = {"registry": chk_registry, "argv_delta": chk_argv_delta, "clean": chk_clean, "levers": chk_levers, "pins": chk_pins, "fresh_out": chk_fresh_out, "untouched": chk_untouched, "unchanged": chk_unchanged,
@@ -379,7 +379,7 @@ MUTATIONS = [
     ("launch_gate.py", '    a[j + 1] = f"{P[\'out_root\']}/p7field_{arm.lower()}"\n', '    a[j + 1] = f"{P[\'out_root\']}/p7field_{arm.lower()[0]}"\n', 'argv_delta'),    # a replicate writes into its twin out dir
     ("gate_checks.py", "    if profile.get(\"p5c_rules\") or profile.get(\"p7field_rules\"):", "    if profile.get(\"p5c_rules\"):", "live_wiring"),            # G-LIVE never runs (f)/(h) on a field arm
     ("gate_checks.py", "{profile.get('p5c_arm') or profile.get('p7field_arm')} must not carry", "{profile.get('p5c_arm')} must not carry", "live_wiring"),   # (h) no longer names the field arm
-    ("gate_checks.py", " or profile.get(\"p5c_rules\") or profile.get(\"p7field_rules\")))", " or profile.get(\"p5c_rules\")))", "live_wiring"),         # G-CLOCK skips the content pin
+    ("gate_checks.py", " or profile.get(\"p5c_rules\") or profile.get(\"p7field_rules\") or profile.get(\"scorerft_rules\")))", " or profile.get(\"p5c_rules\") or profile.get(\"scorerft_rules\")))", "live_wiring"),         # G-CLOCK skips the content pin for a field arm (target + SCORER-FT, 2026-11-20)
     ("launch_gate.py", "    need_b = need_b or bool(\"G-LIVE\" in want and prof.get(\"p7field_rules\"))", "    need_b = need_b", "live_wiring"),                  # no build capture for G-LIVE alone
     ("launch_gate.py", "        out.append(f\"{name}: --out {ow} already holds ckpt_last.pt: a field arm starts FRESH (fresh AdamW; a seeded checkpoint would resume an old optimiser)\")", "        pass", "fresh_out"),
 ]

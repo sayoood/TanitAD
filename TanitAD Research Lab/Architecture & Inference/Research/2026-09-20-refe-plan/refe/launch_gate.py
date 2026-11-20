@@ -694,6 +694,154 @@ def p7field_refusals(prof: dict, argv: list) -> list:
     return out
 
 
+# ============================================================================================ SCORER-FT arms T, C (+ seed-1 replicates Ts, Cs)  (DESIGN_SCORER_FT section 3; PI go 2026-11-20, base C1, 1,000 steps)
+# FOUR profiles, built by `scorerft_profile(arm)` from `refe_p5c` (C1) WITHOUT editing any existing profile dict: `refe_scorerft_t` (T: the within-token ranking term L_rank on heads ep+gate), `refe_scorerft_c` (C: its own control,
+# `--rank-w 0.0` NAMED), and the seed-1 replicates `refe_scorerft_t_s1` (Ts) / `refe_scorerft_c_s1` (Cs).  Every arm fine-tunes FROM C1's final checkpoint (`--init-from`, pinned by sha256) on C1's own recipe, label table
+# (`--traj-label-table`, pinned) and bank, at SCORERFT_STEPS steps.  Template `scorerft_argv(arm)`:
+#   argv(T) - argv(C) = {--rank-w (value), --rank-heads, --rank-ep-gap, --rank-gate-topk, --out};   argv(Ts) - argv(T) = {--seed, --out};   argv(Cs) - argv(C) = {--seed, --out}.
+# The profiles do NOT set `p5c_rules` (`test_p5c_profile.chk_untouched` pins that key to the three P5-C profiles) nor `p7field_rules`; they set `scorerft_rules`, which `profile_refusals` routes to `scorerft_refusals`.
+# `traj_label_required: True` makes G-LIVE (h) key on the PROFILE (all four arms carry C1's table) and not on the arm name "C1".  `live_terms` carries `rank_L` on T / Ts ONLY (a control that declared its term FAILED
+# G-LIVE: field_L ABSENT, C, 2026-11-19).  `forbidden_env`: REFE_RANK_MUTATE (the deliberate-regression arms' environment switch) refuses a launch environment that sets it.
+# PINS THE MM FILLS (None = REFUSE, never launched from): SCORERFT_BASE_SHA256 (C1's final model_final.pt, banked first) and SCORERFT_RANK_W (the output of weight_rule_rank.py, SCORER-FT design 2.5).
+SCORERFT_STEPS = 1000
+SCORERFT_BASE_SHA256 = "f09949e2a5f2f9661ad47457e77ddfd10f49117d64e095487809c1d04f7a34a4"   # FILLED BY THE MM 2026-11-20: sha256 of C1's final model_final.pt (/workspace/data/refe_runs/p5c_c1/); MEASURED: the pod sha file == the verified HF pull (Sayood/tanitad-refe-p5c) == the s2_c1 read preflight
+SCORERFT_RANK_W = None                       # FILLED BY THE MM: --rank-w of T / Ts = the committed weight rule's output (smallest w with r(w) >= 1.0); the gate may only veto it
+SCORERFT_RANK_HEADS = "ep,gate"
+SCORERFT_RANK_EP_GAP = 0.02
+SCORERFT_RANK_GATE_TOPK = 8
+SCORERFT_ARM_NAME = {"T": "refe_scorerft_t", "C": "refe_scorerft_c", "Ts": "refe_scorerft_t_s1", "Cs": "refe_scorerft_c_s1"}
+SCORERFT_ARM_SEED = {"T": 0, "C": 0, "Ts": 1, "Cs": 1}
+SCORERFT_ARM_RANK = {"T": True, "C": False, "Ts": True, "Cs": False}          # does the arm train the term?
+SCORERFT_ENV_FORBIDDEN = ("REFE_RANK_MUTATE",)
+SCORERFT_DEFAULT_INIT = "/workspace/data/refe_runs/p5c_c1/model_final.pt"
+SCORERFT_SUITE_EXTRA = [{"script": "test_rank_loss.py", "args": ["--fast"], "token": "ZZRANK_PASS"},
+                        {"script": "test_scorerft_profile.py", "args": ["--fast"], "token": "ZZSCORERFTPROF_PASS"}]
+
+
+def scorerft_argv(arm: str, paths: dict | None = None, rank_w=None) -> list:
+    """The arm's launch argv TEMPLATE: `p5c_argv("C1")` (C1's recipe, ITS label table) with `--init-from` = C1's final checkpoint, `--steps` SCORERFT_STEPS, the arm's `--seed`, its own `--out`, and the rank flags after
+    `--w-field 0.0`: T / Ts name all four (rank_w, heads, gap, top-k), C / Cs name `--rank-w 0.0` ALONE (a default-off lever named in the arm's argv; naming heads at weight 0 is refused by the trainer).
+    `rank_w` (default SCORERFT_RANK_W) is the weight of a ranking arm: None raises (an unfilled pin has no template)."""
+    if arm not in SCORERFT_ARM_NAME:
+        raise ValueError(f"arm {arm!r}")
+    P = dict(P5C_DEFAULT_PATHS, init_from=SCORERFT_DEFAULT_INIT, **(paths or {}))
+    a = p5c_argv("C1", paths=P)
+    a[a.index("--steps") + 1] = str(SCORERFT_STEPS)
+    a[a.index("--seed") + 1] = str(SCORERFT_ARM_SEED[arm])
+    a[a.index("--out") + 1] = f"{P['out_root']}/scorerft_{arm.lower()}"
+    if SCORERFT_ARM_RANK[arm]:
+        w = SCORERFT_RANK_W if rank_w is None else rank_w
+        if w is None:
+            raise ValueError("SCORERFT_RANK_W is unfilled: the ranking arms have no template until the MM registers the weight rule's output")
+        rk = ["--rank-w", repr(float(w)), "--rank-heads", SCORERFT_RANK_HEADS, "--rank-ep-gap", repr(float(SCORERFT_RANK_EP_GAP)), "--rank-gate-topk", str(SCORERFT_RANK_GATE_TOPK)]
+    else:
+        rk = ["--rank-w", "0.0"]
+    i = a.index("--w-field")
+    a[i + 2:i + 2] = rk
+    return a
+
+
+def scorerft_profile(arm: str) -> dict:
+    """The arm's profile (see the block comment): `refe_p5c` (C1) with the steps, seed and rank levers of the arm, and the SCORER-FT rules."""
+    if arm not in SCORERFT_ARM_NAME:
+        raise ValueError(f"arm {arm!r}")
+    c1 = PROFILES["refe_p5c"]
+    ranking = SCORERFT_ARM_RANK[arm]
+    req = dict(c1["required_flags"])
+    req.update({"--steps": str(SCORERFT_STEPS), "--seed": str(SCORERFT_ARM_SEED[arm]),
+                "--rank-w": (repr(float(SCORERFT_RANK_W)) if SCORERFT_RANK_W is not None else None) if ranking else "0.0"})
+    if ranking:
+        req.update({"--rank-heads": SCORERFT_RANK_HEADS, "--rank-ep-gap": repr(float(SCORERFT_RANK_EP_GAP)), "--rank-gate-topk": str(SCORERFT_RANK_GATE_TOPK)})
+    prof = {k: v for k, v in c1.items() if k not in ("p5c_rules", "p5c_arm", "p5c_base")}
+    exp = dict(c1["expect_schedule"])
+    exp["steps"] = SCORERFT_STEPS
+    prof.update({"name": SCORERFT_ARM_NAME[arm], "scorerft_rules": True, "scorerft_arm": arm, "traj_label_required": True,
+                 "suite": list(c1["suite"]) + SCORERFT_SUITE_EXTRA, "required_flags": req, "expect_schedule": exp,
+                 "live_terms": P6_TERMS + (("rank_L",) if ranking else ()), "forbidden_env": SCORERFT_ENV_FORBIDDEN,
+                 "init_from_sha256": SCORERFT_BASE_SHA256, "traj_label_sha256": P5C_LABEL_TABLE_SHA256, "traj_label_rank_policy": P5C_RANK_POLICY,
+                 "rank_w": (float(SCORERFT_RANK_W) if SCORERFT_RANK_W is not None else None) if ranking else 0.0,
+                 "rank_heads": SCORERFT_RANK_HEADS if ranking else "", "rank_ep_gap": SCORERFT_RANK_EP_GAP, "rank_gate_topk": SCORERFT_RANK_GATE_TOPK})
+    return prof
+
+
+for _sarm in SCORERFT_ARM_NAME:                   # NOT `_arm` / `_farm`: those module names keep their values
+    PROFILES[SCORERFT_ARM_NAME[_sarm]] = scorerft_profile(_sarm)
+
+
+def scorerft_refusals(prof: dict, argv: list) -> list:
+    """What `required_flags` cannot say for a SCORER-FT arm: registered pins (C1's final checkpoint, C1's label table, the weight), the arm's flag SET and every non-path lever == `scorerft_argv(arm)`, the 1,000-step schedule on
+    the P7 bank by count AND content, a fresh `--out`, and a launch environment free of REFE_RANK_MUTATE."""
+    out, name, arm = [], prof["name"], prof.get("scorerft_arm")
+    if arm not in SCORERFT_ARM_NAME or SCORERFT_ARM_NAME[arm] != name:
+        return [f"{name}: scorerft_rules without a known arm ({arm!r})"]
+    ranking = SCORERFT_ARM_RANK[arm]
+    for ev in tuple(prof.get("forbidden_env", ())) + SCORERFT_ENV_FORBIDDEN:
+        if os.environ.get(ev):
+            out.append(f"{name}: the launch environment sets {ev}={os.environ[ev]!r}, a deliberate-regression switch of the ranking term: it can never be part of a launch")
+    if not _p5c_hex64(prof.get("init_from_sha256")):
+        out.append(f"{name}: C1's final checkpoint's sha256 is not REGISTERED (init_from_sha256 = {prof.get('init_from_sha256')!r}; SCORERFT_BASE_SHA256): the MM measures and banks it first; an unpinned base is never launched from")
+    if not _p5c_hex64(prof.get("traj_label_sha256")):
+        out.append(f"{name}: C1's label table's sha256 is not REGISTERED (traj_label_sha256 = {prof.get('traj_label_sha256')!r}): all four SCORER-FT arms carry the table")
+    elif prof["traj_label_sha256"] != P5C_LABEL_TABLE_SHA256:
+        out.append(f"{name}: the registered table sha256 {prof['traj_label_sha256']} is not C1's ({P5C_LABEL_TABLE_SHA256})")
+    if prof.get("traj_label_rank_policy") != P5C_RANK_POLICY:
+        out.append(f"{name}: the table's rank policy is {prof.get('traj_label_rank_policy')!r}; C1's is {P5C_RANK_POLICY!r}")
+    rw = prof.get("rank_w")
+    if type(rw) is not float or not math.isfinite(rw):
+        out.append(f"{name}: the registered weight rank_w = {rw!r} is not a finite float (SCORERFT_RANK_W: the weight rule's output, filled by the MM)")
+    elif ranking and not rw > 0.0:
+        out.append(f"{name}: arm {arm} trains the ranking term and registers rank_w = {rw!r} (must be > 0)")
+    elif not ranking and rw != 0.0:
+        out.append(f"{name}: control arm {arm} registers rank_w = {rw!r} (must be EXACTLY 0.0)")
+    if ranking and (prof.get("rank_heads"), prof.get("rank_ep_gap"), prof.get("rank_gate_topk")) != (SCORERFT_RANK_HEADS, SCORERFT_RANK_EP_GAP, SCORERFT_RANK_GATE_TOPK):
+        out.append(f"{name}: the registered rule {prof.get('rank_heads')!r} / gap {prof.get('rank_ep_gap')!r} / top-k {prof.get('rank_gate_topk')!r} is not the card's ({SCORERFT_RANK_HEADS!r} / {SCORERFT_RANK_EP_GAP} / {SCORERFT_RANK_GATE_TOPK})")
+    if not ranking and prof.get("rank_heads"):
+        out.append(f"{name}: control arm {arm} registers rank_heads {prof.get('rank_heads')!r}: it must train no ranking head")
+    terms = tuple(prof.get("live_terms", ()))
+    if ranking and "rank_L" not in terms:
+        out.append(f"{name}: arm {arm} trains the ranking term but its live_terms omit rank_L (the term would never be required in the log)")
+    if not ranking and "rank_L" in terms:
+        out.append(f"{name}: control arm {arm} declares rank_L live: a control that declares a term it does not train FAILS G-LIVE (field_L ABSENT, C, 2026-11-19)")
+    if prof.get("traj_label_required") is not True:
+        out.append(f"{name}: traj_label_required is not True: G-LIVE (h) would judge the arms' label table by their NAME, and every SCORER-FT arm carries C1's table")
+    exp = prof.get("expect_schedule") or {}
+    if not (exp.get("epochs") == 0 and exp.get("steps") == SCORERFT_STEPS and exp.get("epoch_len") == P7_SCENES):
+        out.append(f"{name}: the registered schedule {exp.get('epochs')} epochs / {exp.get('steps')} steps / epoch_len {exp.get('epoch_len')} is not the card's {SCORERFT_STEPS} steps over {P7_SCENES} scenes")
+    tg = (GT.flag_values(argv, "--targets") or [None])[0]
+    bank = Path(str(tg).rstrip("/\\")).name if tg else None
+    for key, what in (("n_tuples_by_bank", "tuple count"), ("targets_sha256_by_bank", "content sha256")):
+        reg = exp.get(key)
+        if not isinstance(reg, dict) or bank not in reg:
+            out.append(f"{name}: --targets {tg!r} names bank {bank!r}, which has no registered {what} ({key}): the P7 bank is pinned by count AND content")
+    if exp.get("targets_sha256_by_bank") and not all(_p5c_hex64(h) for h in exp["targets_sha256_by_bank"].values()):
+        out.append(f"{name}: a registered targets_sha256 is not 64 lowercase hex digits")
+    if rw is not None and type(rw) is float and math.isfinite(rw):
+        want = {f: v for f, v in GT.flag_pairs(scorerft_argv(arm, rank_w=rw if ranking else None))}
+    else:
+        want = {f: v for f, v in GT.flag_pairs(scorerft_argv(arm, rank_w=1.0 if ranking else None))}          # the weight is already refused above: the flag SET is still judged
+    got: dict = {}
+    for f, v in GT.flag_pairs(argv):
+        got.setdefault(f, []).append(v)
+    for f in sorted(set(want) - set(got) - {"--resume"}):
+        out.append(f"{name}: the argv does not carry {f}, which arm {arm}'s argv carries (the arm's lever set is exactly the card's: nothing dropped)")
+    for f in sorted(set(got) - set(want) - {"--resume"}):
+        out.append(f"{name}: the argv carries {f} {' '.join(got[f][0])}, which arm {arm}'s argv does not (the arms differ by the card's levers alone)")
+    for f, vs in sorted(got.items()):
+        if len(vs) > 1:
+            out.append(f"{name}: {f} is carried {len(vs)} times")
+        elif f in want and f not in P5C_PATH_FLAGS and f != "--resume":
+            w, g = want[f], vs[0]
+            same = len(w) == len(g) and all((float(a) == float(b)) if re.fullmatch(r"-?[0-9.eE+-]+", a) and re.fullmatch(r"-?[0-9.eE+-]+", b) else a == b for a, b in zip(w, g))
+            if not same and not (f == "--rank-w" and ranking and not (type(rw) is float and math.isfinite(rw))):
+                out.append(f"{name}: arm {arm} fixes {f} {' '.join(w)}; the argv has {f} {' '.join(g)}")
+    if not (GT.flag_values(argv, "--traj-label-table") or [None])[0]:
+        out.append(f"{name}: arm {arm} needs --traj-label-table <C1's pinned table>")
+    ow = (GT.flag_values(argv, "--out") or [None])[0]
+    if ow and (Path(str(ow)) / "ckpt_last.pt").exists():
+        out.append(f"{name}: --out {ow} already holds ckpt_last.pt: a SCORER-FT arm starts FRESH (fresh AdamW; a seeded checkpoint would resume an old optimiser)")
+    return out
+
+
 # the replicate = refe_p2 (same checks, same G-P2GATE sub-check, same data flags, same forbidden flags, same P2 levers asserted) + `--seed 1` required + the WHOLE argv pinned + its own chain test in G-SUITE
 PROFILES["refe_p2rep"] = {**PROFILES["refe_p2"], "name": "refe_p2rep", "suite": SUITE + [{"script": "test_p2rep_chain.py", "token": "ZZTEST_PASS"}],
                           "required_flags": {**PROFILES["refe_p2"]["required_flags"], "--seed": str(P2REP_SEED)}, "pinned_argv": tuple(P2REP_ARGV)}
@@ -1340,6 +1488,8 @@ def profile_refusals(prof: dict, argv: list) -> list:
         out += p5c_refusals(prof, argv)
     if prof.get("p7field_rules"):
         out += p7field_refusals(prof, argv)
+    if prof.get("scorerft_rules"):
+        out += scorerft_refusals(prof, argv)
     if prof.get("field_arm"):
         got = GT.flag_values(argv, "--w-field")
         try:
@@ -1992,6 +2142,7 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
         ckpt_ev = C.check_ckpt(s_argv, work / "ckpt", prof2, arm=arm, rehearsal=rehearsal)
     need_b = any(c in want for c in ("G-DVB", "G-CLOCK")) or bool("G-LIVE" in want and prof.get("p5c_rules"))        # P5-C: G-LIVE (f) reads the build capture's step-0 digest
     need_b = need_b or bool("G-LIVE" in want and prof.get("p7field_rules"))      # the P7 field arms: G-LIVE (f) reads the same step-0 digest (G5)
+    need_b = need_b or bool("G-LIVE" in want and prof.get("scorerft_rules"))   # the SCORER-FT arms: G-LIVE (f) reads the same step-0 digest
     need_s = any(c in want for c in ("G-LIVE", "G-EVAL", "G-DVB", "G-LIVE-LAB"))
     b = C.instrumented_run(b_argv, mode="build", work=work / "build", arm=arm) if need_b else None
     if b is not None:
