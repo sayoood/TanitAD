@@ -66,3 +66,7 @@ Fragments added: `frag_row144.tex` (card ADD83, the estimate of another clip as 
 ## Update after row 146 (2026-11-20)
 
 Fragment added: `frag_row146.tex` (card ADD84, the token head in the rule and the requirement curve of a closing read, with the control that did not pass), appended to `frag_row127.tex`; the item of this fork in `frag_status_run.tex` changed (card ADD85 frozen). `patch_tex_v11.py`: `ok edits 11`; row id 146 found once in the patched source. `check_numbers_v11.py`: 1923 tokens, 0 not found. PDF `tanitad_4b_paper_r146.pdf` (c11d4c7bac483913), 45 pages, 2572256 bytes (the build after rows 144 and 145: 44 pages, 2,546,008 bytes).
+
+## Update after row 147 (2026-11-20)
+
+Fragment added: `frag_row147.tex` (card ADD85, the requirement for a closing read with a smooth error, with the two statements of the other session), appended to `frag_row127.tex`; the item of this fork in `frag_status_run.tex` changed (cards ADD86 to ADD88 frozen). `patch_tex_v11.py`: `ok edits 11`; row id 147 found once in the patched source. `check_numbers_v11.py`: 2042 tokens, 0 not found. PDF `tanitad_4b_paper_r147.pdf` (a178cffe26020506), 45 pages, xdv 2599760 bytes (the build after row 146: 45 pages, 2572256 bytes).
