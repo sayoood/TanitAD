@@ -24,6 +24,7 @@ EVERY PATH IS AN ARGUMENT (it must run on box 2): --ckpt, --m2b-argv, --cache-di
 from __future__ import annotations
 
 import argparse
+import contextlib
 import glob
 import json
 import math
@@ -43,14 +44,53 @@ from tanitad.data import v8f_dagger as G  # noqa: E402
 from tanitad.data import v8f_mini_data as D  # noqa: E402
 from tanitad.models import v8f_mini as M  # noqa: E402
 import v8f_t1_eval as T1  # noqa: E402
+import v8f_t1_eval_hb as HB  # noqa: E402
+import v8f_t1_readout as RO  # noqa: E402
 
 H = D.HORIZON
 ROLL = {k: v for k, v in G.ROLLOUT.items() if k != "post_map"}        # the decisive T1-kin flags, as v8f_t1_eval.rollout takes them
-TOOL_FILES = ("stack/tanitad/data/v8f_dagger.py", "stack/scripts/v8f_dagger_bank.py", "stack/scripts/v8f_t1_eval.py", "stack/tanitad/data/v8f_mini_data.py", "stack/tanitad/models/v8f_mini.py")
+TOOL_FILES = ("stack/tanitad/data/v8f_dagger.py", "stack/scripts/v8f_dagger_bank.py", "stack/scripts/v8f_t1_eval.py", "stack/tanitad/data/v8f_mini_data.py", "stack/tanitad/models/v8f_mini.py",
+              "stack/scripts/v8f_t1_readout.py", "stack/scripts/v8f_t1_eval_hb.py")
+KAPPA_CHOICES = ("none", "0.2")                                                         # PREREG_V8F_ROLLHIST N2: no heading bound (today) | the executor of record
 
 
 class _Done(Exception):
     """Raised by the hook once the last bank tick has been captured: the rollout is not carried to its end."""
+
+
+# ------------------------------------------------------------------------------------------------ the executor the bank is rolled under (PREREG_V8F_ROLLHIST N2)
+def generator_record(a) -> dict:
+    """The flags that decide what the own history IS, as ONE record: written to the bank header (and so to every shard's provenance and to ``bank.json``) and read back by
+    ``DaggerSwap.built_levers`` (``dagger_bank_readout`` / ``dagger_bank_kappa``). The defaults ``pinned`` / ``none`` are today's generator. A parameter that would do nothing is refused."""
+    readout, kappa = getattr(a, "readout", "pinned"), str(getattr(a, "kappa_max", "none"))
+    gain, pex = getattr(a, "acc_gain", None), bool(getattr(a, "path_exec", False))
+    if readout not in RO.READOUTS:
+        raise SystemExit(f"REFUSED: --readout {readout!r} is not one of {RO.READOUTS}")
+    if kappa not in KAPPA_CHOICES:
+        raise SystemExit(f"REFUSED: --kappa-max {kappa!r} is not one of {KAPPA_CHOICES}")
+    if readout == "pinned" and (gain is not None or pex):
+        raise SystemExit("REFUSED: --acc-gain / --path-exec are readout causal_g's parameters; with --readout pinned they are declared and do nothing")
+    if readout == "causal_g" and gain is None:
+        raise SystemExit("REFUSED: --readout causal_g needs --acc-gain (the study readout C* is --acc-gain 1 --path-exec)")
+    return {"readout": readout, "acc_gain": None if gain is None else float(gain), "path_exec": pex, "kappa_max": kappa}
+
+
+def is_default_generator(gen) -> bool:
+    """True for today's generator: readout ``pinned`` (so gain and path-exec are at their defaults, generator_record refuses otherwise) and no heading bound."""
+    return gen["readout"] == "pinned" and gen["acc_gain"] is None and not gen["path_exec"] and gen["kappa_max"] == "none"
+
+
+@contextlib.contextmanager
+def executor_installed(tool, gen):
+    """For the duration of the block ``tool.hermite_frames`` is ``hb.bounded_frames(readout_frames(orig), kappa)``; then the original object is restored. With the defaults both layers return ``orig`` itself, so
+    the pinned tool runs untouched (the very same function object)."""
+    orig = tool.hermite_frames
+    frames = RO.readout_frames(orig, gen["readout"], gen["acc_gain"], gen["path_exec"])
+    tool.hermite_frames = HB.bounded_frames(frames, HB.parse_kappa(gen["kappa_max"]))
+    try:
+        yield tool
+    finally:
+        tool.hermite_frames = orig
 
 
 # ------------------------------------------------------------------------------------------------ the snapshot of one own state
@@ -236,6 +276,8 @@ def cmd_gen(a, log=print):
         torch.set_num_threads(a.threads)
     if not (0 <= a.shard < a.n_shards):
         raise SystemExit(f"REFUSED: --shard {a.shard} is not in [0, {a.n_shards})")
+    gen = generator_record(a)
+    gen_rec = None if is_default_generator(gen) else gen          # PREREG_V8F_ROLLHIST N2: the record is written ONLY for a non-default generator; a default bank is byte-identical to today's
     model, cfg, ck = load_ckpt(a.ckpt, device)
     rows = check_readable_rows(cfg)
     ns, TR = train_list(a)
@@ -263,7 +305,7 @@ def cmd_gen(a, log=print):
             "train_sha256": info["train_sha256"], "limit_clips": a.limit_clips, "partial": bool(a.limit_clips), "shard_clips": len(positions), "shard_windows": len(wins_shard),
             "chunks": n_chunks, "batch": a.batch, "est_records": 2 * len(wins_shard), "est_shard_bytes": 2 * len(wins_shard) * (cfg.hmax * (8 * 4 + 3 * 8 + 8) + 3 * 8 + 48),
             "replay_chunks": len(replay_chunks), "eval_clips": len(eval_clips), "eval_overlap": 0, "ckpt_sha256": G.sha256_file(a.ckpt) if a.dry_run else None, "hmax": cfg.hmax,
-            "readable_rows": rows, "device": str(device)}
+            "readable_rows": rows, "device": str(device), **({} if gen_rec is None else {"generator": gen_rec})}
     if a.dry_run:
         log(json.dumps(plan, indent=1))
         return 0
@@ -275,15 +317,16 @@ def cmd_gen(a, log=print):
     ckpt_sha = G.sha256_file(a.ckpt)
     t_roll = time.time()
     kb5 = G.Kb5Accumulator()                                                            # K-B5, measured on the records this run makes
-    arrays, k0, replay = run_windows(wins_shard, planner_factory=lambda: T1.model_planner(model, device), store=store, tracks=tracks, J=J, ds_log=ds_log, ds_own=ds_own, proxy=ds_proxy,
-                                     hmax=cfg.hmax, batch=a.batch, device=device, replay_chunks=replay_chunks, log=log, kb5=kb5)
+    with executor_installed(T1, gen):                                                   # the own history is rolled under THIS executor (defaults: the pinned tool, untouched)
+        arrays, k0, replay = run_windows(wins_shard, planner_factory=lambda: T1.model_planner(model, device), store=store, tracks=tracks, J=J, ds_log=ds_log, ds_own=ds_own, proxy=ds_proxy,
+                                         hmax=cfg.hmax, batch=a.batch, device=device, replay_chunks=replay_chunks, log=log, kb5=kb5)
     t_roll = time.time() - t_roll
     controls = {"K-B4": G.kb4_record(), "K-B5": kb5.record()}                           # PREREG section 6: the matcher's synthetic cases and the re-anchoring, RUN HERE and written to this shard's provenance
     names = {int(c): str(J["clip"][c]) for c in sorted(shard_ci)}
     inputs = {"ckpt": input_digest(a.ckpt), "m2b_argv": input_digest(a.m2b_argv), "tracks": input_digest(ns.tracks), "join_train": input_digest(ns.join_train), "eval_grid": input_digest(a.eval_grid)}
     thr = a.thresholds_file or os.path.join(REPO, "TanitAD Research Lab", "Architecture & Inference", "Research", "2026-10-17-v8f-mini", "raw", "2026-10-26-dagger-draft", "probe", "THRESHOLDS_FIXED.txt")
     header = {"schema": G.SCHEMA, "ckpt_sha256": ckpt_sha, "cfg": {k: getattr(cfg, k) for k in ("hist", "hmax", "max_age_t", "max_age_s", "window_start", "kin_mode")},
-              "rollout": G.ROLLOUT, "constants": G.constants(), "constants_sha256": G.constants_sha256(), "thresholds_file_sha256": G.sha256_file(thr) if os.path.exists(thr) else None,
+              "rollout": G.ROLLOUT, **({} if gen_rec is None else {"generator": gen_rec}), "constants": G.constants(), "constants_sha256": G.constants_sha256(), "thresholds_file_sha256": G.sha256_file(thr) if os.path.exists(thr) else None,
               "train": {"n_clips": len(clips), "n_windows": len(wins), "train_sha256": info["train_sha256"], "exclude": ns.exclude, "n_excluded": info["n_excluded"]},
               "window_list_sha256": wsha, "eval": {"n_clips": len(eval_clips), "clips": sorted(eval_clips), "grid_sha256": inputs["eval_grid"]["sha256"], "overlap": 0},
               "inputs_sha256": {k: v["sha256"] for k, v in inputs.items() if k != "ckpt"}, "limit_clips": a.limit_clips, "partial": bool(a.limit_clips),
@@ -298,7 +341,7 @@ def cmd_gen(a, log=print):
         warnings.append(f"K-B1 FAILED: {replay['mismatch_chunks']} of {replay['chunks']} replayed chunks differ from their stored rows")
     stem = os.path.join(a.out_dir, f"shard_{a.shard:03d}of{a.n_shards:03d}")
     G.save_shard(stem + ".npz", arrays, header)
-    prov = {"schema": G.SCHEMA, "kind": "shard", "created_unix": time.time(), "argv": sys.argv, "plan": plan, "inputs": inputs, "tool_sha256": {f: G.sha256_file(os.path.join(REPO, f)) for f in TOOL_FILES if os.path.exists(os.path.join(REPO, f))},
+    prov = {"schema": G.SCHEMA, "kind": "shard", "created_unix": time.time(), "argv": sys.argv, "plan": plan, **({} if gen_rec is None else {"generator": gen_rec}), "inputs": inputs, "tool_sha256": {f: G.sha256_file(os.path.join(REPO, f)) for f in TOOL_FILES if os.path.exists(os.path.join(REPO, f))},
             "versions": {"torch": torch.__version__, "numpy": np.__version__, "python": sys.version.split()[0]}, "device": str(device), "threads": torch.get_num_threads(),
             "n_records": int(len(arrays["ci"])), "reasons_by_tick": by_tick, "coverage": cov, "kb0_tick0_identity": k0, "kb1_replay": {**replay, "frac": a.replay_frac, "seed": a.replay_seed},
             "kb3_eval_disjoint": {"n_eval_clips": len(eval_clips), "overlap": 0}, "controls": controls, "causal_bucket_stats": T1.CAUSAL_STATS, "file_sha256": G.sha256_file(stem + ".npz"),
@@ -365,7 +408,7 @@ def cmd_merge(a, log=print):
            "reasons_by_tick": by_tick, "coverage": cov}
     prov_path = os.path.join(a.out_dir, "PROVENANCE.json")
     prov_common = {"schema": G.SCHEMA, "kind": "bank", "created_unix": time.time(), "shard_provenance": [os.path.basename(f)[:-4] + ".provenance.json" for f in files],
-                   "n_records": man["n_records"], "coverage": cov, "reasons_by_tick": by_tick, "partial": man["partial"], "controls": controls,
+                   "n_records": man["n_records"], "coverage": cov, "reasons_by_tick": by_tick, "partial": man["partial"], "controls": controls, **({"generator": common["generator"]} if "generator" in common else {}),
                    "warnings": [w for p in provs for w in p["warnings"]]}
     if failed_controls:                                                                 # a failed control: PROVENANCE.json records PASS false, and NO bank.json is written (a stale one cannot match bank_sha256 = null)
         with open(prov_path, "w", encoding="utf-8") as fh:
@@ -405,6 +448,11 @@ def build_parser():
     g.add_argument("--expect-clips", type=int, default=0, help="refuse unless the TRAIN list has this many clips (M2b: 4512)")
     g.add_argument("--expect-windows", type=int, default=0, help="refuse unless the TRAIN list has this many windows (M2b: 306566)")
     g.add_argument("--thresholds-file", default="", help="probe/THRESHOLDS_FIXED.txt: its sha256 is recorded in the header")
+    g.add_argument("--readout", choices=RO.READOUTS, default="pinned", help="PREREG_V8F_ROLLHIST N2: how the own history is read off the executed knots. pinned (default) = the pinned tool as it is = today's bank; causal_g = speed and "
+                                                                       "one-frame acceleration (x --acc-gain) from the EXECUTED steps only (v8f_t1_readout.py)")
+    g.add_argument("--acc-gain", type=float, default=None, help="causal_g only: the gain on the executed one-frame acceleration (1.0 = the executed one, 0.0 = none). Required with causal_g, refused with pinned")
+    g.add_argument("--path-exec", action="store_true", help="causal_g only: positions and headings from the executed knots only (the study readout C* = --acc-gain 1 --path-exec)")
+    g.add_argument("--kappa-max", choices=KAPPA_CHOICES, default="none", help="the heading bound of the T1-kin executor of record (v8f_t1_eval_hb.py), 1/m: none (default) = today's old executor | 0.2")
     g.add_argument("--dry-run", action="store_true", help="apply every guard, print the plan, write nothing")
     m = sub.add_parser("merge")
     m.add_argument("--out-dir", required=True)

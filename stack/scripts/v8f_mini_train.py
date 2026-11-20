@@ -92,6 +92,9 @@ FLAG_CHECKS = {
     # argv -> make_dagger (bank load + K-B2 + K-B3 + COVERAGE) -> the swap -> declared_vs_built (bad_dagger) -> G-LIVE on a swapped batch + dagger_probe (the swapped own-state tensors reach the loss
     # gradient, a p = 0 control reads EXACTLY 0.0) -> `b = dag.apply(b, step)` in the loop. With --dagger-p 0 (the default) no bank is read and no row is swapped.
     "dagger_p": "dagger:dagger_p", "dagger_bank": "dagger:dagger_bank", "dagger_bank_sha256": "dagger:dagger_bank_sha256", "dagger_seed": "dagger:dagger_seed",
+    # PREREG_V8F_ROLLHIST N4: the declaration of WHAT the bank's own history is (the bank sha256 binds the bank, the argv must also NAME it). `dagger:<k>` = equals the LOADED bank header's generator record as read by
+    # DaggerSwap.built_levers(): argv -> make_dagger -> the swap -> declared_vs_built (bad_dagger: declared != the header's -> REFUSED; non-default at --dagger-p 0 -> REFUSED).
+    "dagger_bank_readout": "dagger:dagger_bank_readout", "dagger_bank_kappa": "dagger:dagger_bank_kappa",
     # AMEND1 (DAG-ORC re-based on DAG-OACC) section 1: the two levers above composed in ONE arm. `compose:<k>` = equals the BUILT stage's lever (EgoDaggerCompose.built_levers(), the object the loop calls `.apply` on):
     # argv -> make_compose -> the stage -> declared_vs_built (bad_ego_dagger; bad_dagger lifts the exclusivity ONLY for an argv that names it) -> G-LIVE on a COMPOSED batch (ego_dagger_compose_probe: both levers reach the
     # loss gradient, the p = 0 controls read EXACTLY 0.0) -> `b = comp.apply(b, step)` in the loop. Off (the default): the stage is never called and the loop runs its two original lines.
@@ -118,6 +121,13 @@ FLAG_CHECKS = {
 
 LORA_PARSER_DEFAULTS = {"lora_r": 32, "lora_alpha": 32.0, "lora_targets": "q,v", "lora_lr": None, "frames_root": None, "accum": 1, "enc_ckpt": False}
 LIVE_PROBE_WINDOWS_LORA = 16          # G-LIVE through the real encoder: windows of the first batch (<= 16 x hmax frames), not all 64
+
+
+def _readout_token_arg(v):
+    try:
+        return DG.parse_readout_token(v)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e))
 
 
 def build_parser():
@@ -192,6 +202,13 @@ def build_parser():
                          "differs. Default \"\" = none")
     ap.add_argument("--dagger-seed", dest="dagger_seed", type=int, default=DG.DAGGER_DEFAULTS["seed"],
                     help="the swap's own seed: the draws of step k are a function of (seed, k) only, on a private generator (a resumed run draws what an uninterrupted run drew)")
+    ap.add_argument("--dagger-bank-readout", dest="dagger_bank_readout", type=_readout_token_arg, default="pinned", metavar="TOKEN",
+                    help="PREREG_V8F_ROLLHIST N4: the WHOLE readout the bank's own history was generated under, as the token of the card's arm table: pinned | causal_g<gain>[x] (x = --path-exec; the study readout C* is causal_g1x). "
+                         "Must equal the token of the LOADED bank header's generator record (readout, gain, path-exec; a bank without the record reads pinned) "
+                         "or the launch gate refuses; refused when non-default at --dagger-p 0. Default pinned = every earlier bank")
+    ap.add_argument("--dagger-bank-kappa", dest="dagger_bank_kappa", choices=("none", "0.2"), default="none",
+                    help="PREREG_V8F_ROLLHIST N4: the heading bound the bank's own history was generated under (v8f_dagger_bank.py --kappa-max). Must equal the LOADED bank header's generator.kappa_max (a bank without the field "
+                         "reads none) or the launch gate refuses; refused when non-default at --dagger-p 0. Default none = every earlier bank")
     ap.add_argument("--ego-perturb-with-dagger", dest="ego_perturb_with_dagger", action="store_true", default=False,
                     help="AMEND1 section 1: lift the exclusivity of --dagger-p and --ego-perturb-p for THIS arm and compose them. The DAgger swap is drawn first; the ego perturbation is then drawn (its own p, its own seeded "
                          "generator) ONLY on the samples the swap did not replace, so no sample is both swapped and perturbed (the run record carries ego_dagger_overlap_n, exactly 0). REFUSED unless --dagger-p > 0 AND "
@@ -483,7 +500,7 @@ def bad_dagger(a, dag, cfg=None, data_info=None) -> list:
     """The DAgger half of the launch gate (G-DVB). Empty = pass. Every flag is read back from the BUILT swap (``dag``); with no swap built every one must be at its default (a flag that builds nothing is
     refused, not ignored). Beyond the flags: the bank's path and sha256 against the declaration (the file on disk is re-hashed), K-B2 / K-B3 / COVERAGE were read (the record exists and says so), the bank's
     generating configuration equals PREREG section 1's and this model's, the exclusivity with --ego-perturb-p, and a lever declared without an effect (DAG-only flags at p = 0) is refused."""
-    dfl = {k: build_parser().get_default(k) for k in ("dagger_p", "dagger_bank", "dagger_bank_sha256", "dagger_seed")}
+    dfl = {k: build_parser().get_default(k) for k in ("dagger_p", "dagger_bank", "dagger_bank_sha256", "dagger_seed", "dagger_bank_readout", "dagger_bank_kappa")}
     declared = {k: getattr(a, k) for k in dfl}
     if dag is None:
         moved = sorted(k for k in dfl if declared[k] != dfl[k])
@@ -493,6 +510,11 @@ def bad_dagger(a, dag, cfg=None, data_info=None) -> list:
     for k in ("dagger_p", "dagger_seed"):
         if lv.get(k) != declared[k]:
             bad.append(f"lever {k}: declared {declared[k]!r} but built {lv.get(k)!r}")
+    for k in ("dagger_bank_readout", "dagger_bank_kappa"):                                       # PREREG_V8F_ROLLHIST N4: the declaration against the LOADED bank header (built_levers reads it)
+        if lv.get(k) != declared[k]:
+            bad.append(f"lever {k}: declared {declared[k]!r} but the loaded bank's header says {lv.get(k)!r} (a header without the field reads {dfl[k]!r})")
+        if a.dagger_p <= 0 and declared[k] != dfl[k]:
+            bad.append(f"--{k.replace('_', '-')} {declared[k]!r} is declared while --dagger-p is {a.dagger_p}: a lever that is declared and does nothing (DAG-0 names only --dagger-p 0)")
     if lv.get("kin_mode") != a.kin_mode:
         bad.append(f"DAgger swap kin_mode: declared {a.kin_mode} but built {lv.get('kin_mode')}")
     bad += [f"DAgger swap: {m}" for m in dag.problems()]
