@@ -1,0 +1,19 @@
+wrapper rzgfh sha256 373ffe72f2655c35d8c5033867cc5b37268ece2eb21a41d5d865fb8dcbb517b9
+pinned tool v8f_t1_eval.py
+k5 brake: rule every 5 ends the block farther from the lead    holds | windows 48, strictly farther 48, none closer True, median gain 1.440 m, max gain 2.998 m
+k5 hold: lead holding its speed, the two plans are equal       holds | windows 48, bit-identical plans True, later looks that changed a plan 0
+k5 planted fault (look fed the tick's own inputs) FAILS the direction check holds | strictly farther 0 of 48 (the real run: 48); the direction check on the fault run reads False
+k4 cap only: logged excess of every later look (float64 rule output) holds | looks 48, largest excess 0.000e+00 m (limit 1e-9)
+k4 cap only: final plan never farther along the road than the tick plan holds | largest excess 0.000e+00 m by an independent road-arc measure (chord sag of the plan path and float32 knots allow 1e-3)
+INFO (not a check of the tool; the card's second clause of control k4 is read on the real dumps): rule every 2 against rule every 5 at the first block, synthetic brake windows: largest excess over steps 1 to 10 4.800e-01 m, windows ahead (> 1e-3 m) at some step 38 of 48, at step 10 0; per-step largest excess 0.000 0.000 0.000 0.000 0.000 0.240 0.287 0.480 0.267 -0.380
+k4 cap only, every 2: logged excess of every later look        holds | looks 192, largest excess 0.000e+00 m
+k2 steps up to q are not changed; a look that changes nothing leaves the plan bit for bit holds | steps 1-5 equal (every 5) True, steps 1-2 equal (every 2) True, windows with an unchanged look 0: plan equal True
+k2 the tick rows of the log do not depend on the parameter     holds | one row per window and tick: 48 rows in each, columns 21
+k1 (wrapper part): --rule-every 10 is the rule at the tick only holds | plan equal to the unextended tick path True, later-look and p1 rows written 0
+k1 (wrapper part): --rule-every above the replan interval is the rule at the tick only holds | equal True
+k6 counts of the later-look rows (one tick)                    holds | every 5: 48 rows (expected 48), every 2: 192 rows (expected 192), q values [2, 4, 6, 8]
+k3 label look at step 5 equals the real tick at frame j + 5 (brake) holds | windows 48, largest difference of (frame, label read, logged speed, logged arc, progress, corrected gap) 0.000e+00 (limit 1e-6)
+k3 label look at step 5 equals the real tick at frame j + 5 (hold) holds | windows 48, largest difference of (frame, label read, logged speed, logged arc, progress, corrected gap) 0.000e+00 (limit 1e-6)
+k3 reader look at step 5 equals the real tick at frame j + 5 (fake token reader) holds | windows 24, present 11, rule inputs worst 0.000e+00, reader reads (p, gap read, gap used) worst 0.000e+00, full-history flags equal True
+the wrapper has the parameter (default 10), its refusals and the save of the later-look log holds | text anchors present True
+ZZ CHECK-RULE-EVERY all hold: True
