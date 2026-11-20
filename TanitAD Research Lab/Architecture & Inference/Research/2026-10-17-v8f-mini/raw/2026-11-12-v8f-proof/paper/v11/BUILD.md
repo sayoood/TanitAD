@@ -41,3 +41,7 @@ Fault of the build after row 133, found here: that build ran the typesetter with
 ## Update after row 136 (2026-11-20)
 
 Fragments changed: `frag_row127.tex` (the paragraph of row 135 replaced by `frag_row135b.tex`: card ADD45 has no name, rows 135 and 136), `frag_status_run.tex` (item iv). `patch_tex_v11.py`: `ok edits 11`; row ids 134, 135, 136 found once each in the paper source. Build: rc 0, 42 pages, 0 overfull boxes, 0 undefined references. Number check with `ROW100.md` to `ROW136.md`: 1335 tokens checked, 0 not found. PDF saved as `tanitad_4b_paper_r136.pdf` (sha256 cc337ca4f48d0c3a). The PDF `tanitad_4b_paper_r135.pdf` says in its paragraph of row 135 that the lead-gap read is flat with scale; by row 136 that name does not stand, and the PDF after row 136 is the one to read.
+
+## Update after rows 137 and 138 (2026-11-20)
+
+Fragments added: `frag_row137.tex` (card ADD76, the second-look arm), `frag_row138.tex` (card ADD77 without a name), both appended to `frag_row127.tex`; `frag_status_run.tex` item on this fork changed. `patch_tex_v11.py`: `ok edits 11`; row ids 136, 137, 138 found once each in the paper source. Build: rc 0, 42 pages (the page count of the build after row 136; the xdv byte count differs, see the log line below), 0 overfull boxes, 0 undefined references. Number check with `ROW100.md` to `ROW138.md`: 1520 tokens checked, 0 not found. PDF saved as `tanitad_4b_paper_r138.pdf` (sha256 f2c0127a9caf2846).
