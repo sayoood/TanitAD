@@ -600,15 +600,29 @@ class REFePlanner(AbstractPlanner):
             if "::" in p:                       # containerised: "<log>_<cam>.zip::<member>"
                 import zipfile
                 zp, member = p.split("::", 1)
-                try:
-                    buf = np.frombuffer(zipfile.ZipFile(zp).read(member), dtype=np.uint8)
-                    im = cv2.imdecode(buf, cv2.IMREAD_COLOR)
-                except Exception:
+                im, err = None, "not attempted"
+                # ⚠️ ONE RETRY, and a NAMED miss. MEASURED 2026-11-19 (P5-C read, attempt 1): a transient
+                # load failure under low commit memory lost 1 of 12,146 tokens after 5 h, and the old bare
+                # `except Exception: return None` left the seam's miss reason EMPTY ("no frames: "), so a
+                # load error read like missing data. The same token's four frames decoded fine on re-probe.
+                for _attempt in range(2):
+                    try:
+                        with zipfile.ZipFile(zp) as zf:
+                            buf = np.frombuffer(zf.read(member), dtype=np.uint8)
+                        im = cv2.imdecode(buf, cv2.IMREAD_COLOR)
+                        if im is not None:
+                            break
+                        err = "cv2.imdecode returned None"
+                    except Exception as e:      # noqa: BLE001 -- named below, never swallowed silently
+                        err = f"{type(e).__name__}: {e}"
+                if im is None:
+                    self.frames.miss_reason = f"frame load failed after 2 attempts ({member}): {err}"[:300]
                     return None
             else:
                 im = cv2.imread(p)
-            if im is None:
-                return None
+                if im is None:
+                    self.frames.miss_reason = f"cv2.imread returned None ({p})"[:300]
+                    return None
             # ⚠️ BGR -> RGB is the `[:, :, ::-1]` here and it is load-bearing: cv2 decodes BGR and
             # the frozen trunk's ImageNet normalisation is defined on RGB. Same class-A defect the
             # package advisory names; kept explicit so a refactor cannot drop it silently.

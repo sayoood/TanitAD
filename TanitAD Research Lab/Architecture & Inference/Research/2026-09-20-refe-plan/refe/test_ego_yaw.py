@@ -32,7 +32,7 @@ import ego_yaw_table as EYT  # noqa: E402
 N = 0
 MIRROR = Path("C:/Users/Admin/tanitad-push/.git")
 TIP_TRAIN_BLOB = "0b2170eb5c1357471a06152374f4b463a86e2c3c"           # refe/train.py at the tip this work started from (a521c0736a70)
-TIP_PLANNER_BLOB = "6fb6598a2ecf230153a4d7adfb790afc30728070"
+TIP_PLANNER_BLOB = "36e6d1db5b85ae42a178511aaad660d7ec3aa52e"
 DB_ROOT = Path("E:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits")
 TABLES = Path("E:/Projects/TanitAD-artifacts/yawrate_wp/tables")
 
