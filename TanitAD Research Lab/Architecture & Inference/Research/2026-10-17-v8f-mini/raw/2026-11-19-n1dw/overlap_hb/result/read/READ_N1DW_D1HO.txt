@@ -1,0 +1,261 @@
+READ_N1DW_D1HO (MEASURED; T1-kin; D1-HO 5,736 windows / 497 held-out episodes; pod CPU; B 2,000 seed 0 paired episode-cluster bootstrap = 'another draw of EPISODES' only)
+card PREREG_V8F_N1DW.md sha256 59f2b7f9 + Amendment 1; eval-141 guard and STRATEGIC NOT computed here: every label that needs them is PENDING-GUARD
+problems: ['K-RE: N1D - N1R recomputed from the dumps != RESULT_NAVRBD.json']
+
+CONTROLS
+  K-RE   : FAIL (N1R/N1D/N1D-zero accuracies and N1D-N1R deltas recomputed from dumps vs RESULT_NAVRBD.json)
+           N1R_s0   live 0.610181 banked 0.590481 equal False
+           N1R_s1   live 0.634763 banked 0.632845 equal False
+           N1D_s0   live 0.634589 banked 0.619596 equal False
+           N1D_s1   live 0.651499 banked 0.649930 equal False
+           N1D_s0Z  live 0.596932 banked 0.573222 equal False
+           N1D_s1Z  live 0.632497 banked 0.629707 equal False
+  K1     : N1R_s0 self-pair delta 0.0 lo 0.0 hi 0.0 -> PASS
+  K-CONST: majority turn_right share 0.338215, constant predictor 0.338215 (must read 0.338215) -> PASS
+
+FLOORS: F_HO banked 0.042364, live 0.024582; seed draws |N1D_s1-N1D_s0| 0.0169, |N1DW2_s1-N1DW2_s0| 0.0178, |N1DW4_s1-N1DW4_s0| 0.0160
+  bar w2 = 0.042364   bar w4 = 0.042364   (rule max(0.0383, F_HO, |N1D seed draw|, |N1DW_w seed draw|))
+
+D1-HO accuracy by arm: N1R_s0 0.6102, N1R_s1 0.6348, N1D_s0 0.6346, N1D_s1 0.6515, N1DW2_s0 0.6513, N1DW2_s1 0.6691, N1DW4_s0 0.6491, N1DW4_s1 0.6651
+
+DECIDING  D1-HO N1DW - N1R (paired, same windows)       delta [95% CI]            sep  gain(>=bar & lo>0)  cost   | beside N1DW - N1D delta [CI] sep
+  N1DW2_s0   +0.0411 [+0.0271,+0.0549]  sep True  gain False cost False bar 0.0424 | +0.0167 [+0.0068,+0.0261] sep True
+  N1DW2_s1   +0.0343 [+0.0217,+0.0464]  sep True  gain False cost False bar 0.0424 | +0.0176 [+0.0061,+0.0286] sep True
+  N1DW4_s0   +0.0389 [+0.0262,+0.0510]  sep True  gain False cost False bar 0.0424 | +0.0145 [+0.0044,+0.0238] sep True
+  N1DW4_s1   +0.0303 [+0.0174,+0.0430]  sep True  gain False cost False bar 0.0424 | +0.0136 [+0.0018,+0.0246] sep True
+
+Z-USE (channel real - zero, D1-HO TAC-LAT)
+  N1DW2_s0   +0.0439 [+0.0290,+0.0590] sep True
+  N1DW2_s1   +0.0268 [+0.0140,+0.0386] sep True
+  N1DW4_s0   +0.0410 [+0.0270,+0.0536] sep True
+  N1DW4_s1   +0.0352 [+0.0228,+0.0477] sep True
+  N1D_s0     +0.0377 [+0.0239,+0.0508] sep True
+  N1D_s1     +0.0190 [+0.0054,+0.0316] sep True
+
+K-CLIP (share of logged steps with grad_norm > 1.0)
+  N1DW2_s0   {'status': 'not re-read under T1-kin/hb0.2 (training-log property, executor-independent); see the T1-kin/old read', 'path': '/root/strat1/n1dw/runs/N1DW2_s0/train/train_log.jsonl'}
+  N1DW2_s1   {'status': 'not re-read under T1-kin/hb0.2 (training-log property, executor-independent); see the T1-kin/old read', 'path': '/root/strat1/n1dw/runs/N1DW2_s1/train/train_log.jsonl'}
+  N1DW4_s0   {'status': 'not re-read under T1-kin/hb0.2 (training-log property, executor-independent); see the T1-kin/old read', 'path': '/root/strat1/n1dw/runs/N1DW4_s0/train/train_log.jsonl'}
+  N1DW4_s1   {'status': 'not re-read under T1-kin/hb0.2 (training-log property, executor-independent); see the T1-kin/old read', 'path': '/root/strat1/n1dw/runs/N1DW4_s1/train/train_log.jsonl'}
+  N1D_s0     {'status': 'not re-read under T1-kin/hb0.2 (training-log property, executor-independent); see the T1-kin/old read', 'path': '/root/strat1/navrbd/runs/N1D_s0/train/train_log.jsonl'}
+  N1D_s1     {'status': 'not re-read under T1-kin/hb0.2 (training-log property, executor-independent); see the T1-kin/old read', 'path': '/root/strat1/navrbd/runs/N1D_s1/train/train_log.jsonl'}
+
+D2-HO beside (turn recall / false-turn share / side-given-turn), N1DW vs N1R
+  N1DW2_s0   recall 0.879 vs 0.877 (+0.002 sep False); false-turn 0.426 vs 0.416 (+0.009 sep False); side 0.785 vs 0.711
+  N1DW2_s1   recall 0.865 vs 0.844 (+0.021 sep True); false-turn 0.408 vs 0.404 (+0.004 sep False); side 0.819 vs 0.775
+  N1DW4_s0   recall 0.864 vs 0.877 (-0.013 sep True); false-turn 0.399 vs 0.416 (-0.018 sep False); side 0.780 vs 0.711
+  N1DW4_s1   recall 0.866 vs 0.844 (+0.022 sep True); false-turn 0.417 vs 0.404 (+0.012 sep False); side 0.816 vs 0.775
+
+R1 LONGITUDINAL / LATERAL on D1-HO, no bar (delta [CI], * = separated); N1DW - N1R then N1DW - N1D. dk (headway / time gap) cells: NOT-COMPUTABLE, n = 0 (no lead block for held-out clips)
+  N1DW2_s0 N1DW-N1R
+     operative_0_2s:ade_m                 [PRIM] -0.0085 [-0.0116,-0.0055]*
+     operative_0_2s:fde_m                 [PRIM] -0.0363 [-0.0463,-0.0267]*
+     operative_0_2s:speed_mae_mps         [LONG] -0.0023 [-0.0050,+0.0005]
+     operative_0_2s:along_mae_m           [LONG] +0.0022 [+0.0002,+0.0043]*
+     operative_0_2s:accel_mae_mps2        [LONG] -0.0077 [-0.0112,-0.0040]*
+     operative_0_2s:cross_mae_m           [LATE] -0.0132 [-0.0160,-0.0104]*
+     operative_0_2s:heading_mae_deg       [LATE] -0.2449 [-0.2928,-0.2006]*
+     operative_0_2s:yaw_rate_mae_degps    [LATE] -0.5089 [-0.6101,-0.4169]*
+     operative_0_2s:curvature_mae_1pm     [LATE] -0.0087 [-0.0118,-0.0061]*
+     operative_0_2s:dk_hw_abs_err_m       NOT-COMPUTABLE n=0
+     operative_0_2s:dk_tg_abs_err_s       NOT-COMPUTABLE n=0
+     tactical_2_6s:ade_m                  [PRIM] -0.5490 [-0.6255,-0.4703]*
+     tactical_2_6s:fde_m                  [PRIM] -1.2852 [-1.4627,-1.0993]*
+     tactical_2_6s:speed_mae_mps          [LONG] -0.0906 [-0.1203,-0.0580]*
+     tactical_2_6s:along_mae_m            [LONG] -0.2725 [-0.3193,-0.2242]*
+     tactical_2_6s:accel_mae_mps2         [LONG] -0.0814 [-0.1427,-0.0147]*
+     tactical_2_6s:cross_mae_m            [LATE] -0.4016 [-0.4755,-0.3300]*
+     tactical_2_6s:heading_mae_deg        [LATE] -3.5032 [-3.9559,-3.0377]*
+     tactical_2_6s:yaw_rate_mae_degps     [LATE] -5.0712 [-6.1522,-4.0095]*
+     tactical_2_6s:curvature_mae_1pm      [LATE] -0.0704 [-0.0851,-0.0550]*
+     tactical_2_6s:dk_hw_abs_err_m        NOT-COMPUTABLE n=0
+     tactical_2_6s:dk_tg_abs_err_s        NOT-COMPUTABLE n=0
+     TAC-LAT                              [TACT] +0.0411 [+0.0271,+0.0549]*
+     TAC-LON                              [TACT] +0.0284 [+0.0162,+0.0399]*
+  N1DW2_s0 N1DW-N1D
+     operative_0_2s:ade_m                 [PRIM] +0.0010 [-0.0008,+0.0029]
+     operative_0_2s:fde_m                 [PRIM] +0.0013 [-0.0041,+0.0068]
+     operative_0_2s:speed_mae_mps         [LONG] -0.0011 [-0.0030,+0.0009]
+     operative_0_2s:along_mae_m           [LONG] +0.0038 [+0.0026,+0.0052]*
+     operative_0_2s:accel_mae_mps2        [LONG] -0.0099 [-0.0123,-0.0075]*
+     operative_0_2s:cross_mae_m           [LATE] -0.0029 [-0.0045,-0.0013]*
+     operative_0_2s:heading_mae_deg       [LATE] -0.0587 [-0.0887,-0.0330]*
+     operative_0_2s:yaw_rate_mae_degps    [LATE] -0.1843 [-0.2537,-0.1259]*
+     operative_0_2s:curvature_mae_1pm     [LATE] -0.0033 [-0.0052,-0.0015]*
+     operative_0_2s:dk_hw_abs_err_m       NOT-COMPUTABLE n=0
+     operative_0_2s:dk_tg_abs_err_s       NOT-COMPUTABLE n=0
+     tactical_2_6s:ade_m                  [PRIM] -0.1218 [-0.1620,-0.0811]*
+     tactical_2_6s:fde_m                  [PRIM] -0.3245 [-0.4291,-0.2246]*
+     tactical_2_6s:speed_mae_mps          [LONG] -0.0555 [-0.0756,-0.0356]*
+     tactical_2_6s:along_mae_m            [LONG] -0.0772 [-0.1085,-0.0453]*
+     tactical_2_6s:accel_mae_mps2         [LONG] -0.1085 [-0.1554,-0.0610]*
+     tactical_2_6s:cross_mae_m            [LATE] -0.0958 [-0.1349,-0.0601]*
+     tactical_2_6s:heading_mae_deg        [LATE] -1.0700 [-1.2860,-0.8616]*
+     tactical_2_6s:yaw_rate_mae_degps     [LATE] -2.9971 [-3.6884,-2.3369]*
+     tactical_2_6s:curvature_mae_1pm      [LATE] -0.0333 [-0.0436,-0.0237]*
+     tactical_2_6s:dk_hw_abs_err_m        NOT-COMPUTABLE n=0
+     tactical_2_6s:dk_tg_abs_err_s        NOT-COMPUTABLE n=0
+     TAC-LAT                              [TACT] +0.0167 [+0.0068,+0.0261]*
+     TAC-LON                              [TACT] +0.0178 [+0.0090,+0.0263]*
+  N1DW2_s1 N1DW-N1R
+     operative_0_2s:ade_m                 [PRIM] -0.0035 [-0.0069,-0.0002]*
+     operative_0_2s:fde_m                 [PRIM] -0.0221 [-0.0324,-0.0120]*
+     operative_0_2s:speed_mae_mps         [LONG] -0.0016 [-0.0051,+0.0019]
+     operative_0_2s:along_mae_m           [LONG] +0.0037 [+0.0012,+0.0062]*
+     operative_0_2s:accel_mae_mps2        [LONG] +0.0010 [-0.0037,+0.0054]
+     operative_0_2s:cross_mae_m           [LATE] -0.0064 [-0.0092,-0.0033]*
+     operative_0_2s:heading_mae_deg       [LATE] -0.1202 [-0.1627,-0.0775]*
+     operative_0_2s:yaw_rate_mae_degps    [LATE] -0.2723 [-0.3485,-0.1957]*
+     operative_0_2s:curvature_mae_1pm     [LATE] -0.0042 [-0.0064,-0.0022]*
+     operative_0_2s:dk_hw_abs_err_m       NOT-COMPUTABLE n=0
+     operative_0_2s:dk_tg_abs_err_s       NOT-COMPUTABLE n=0
+     tactical_2_6s:ade_m                  [PRIM] -0.4304 [-0.5050,-0.3578]*
+     tactical_2_6s:fde_m                  [PRIM] -1.0315 [-1.2087,-0.8596]*
+     tactical_2_6s:speed_mae_mps          [LONG] -0.1403 [-0.1694,-0.1104]*
+     tactical_2_6s:along_mae_m            [LONG] -0.2513 [-0.3082,-0.1950]*
+     tactical_2_6s:accel_mae_mps2         [LONG] -0.1595 [-0.2186,-0.0996]*
+     tactical_2_6s:cross_mae_m            [LATE] -0.2611 [-0.3230,-0.1955]*
+     tactical_2_6s:heading_mae_deg        [LATE] -2.4378 [-2.8519,-2.0187]*
+     tactical_2_6s:yaw_rate_mae_degps     [LATE] -6.7975 [-8.0737,-5.5765]*
+     tactical_2_6s:curvature_mae_1pm      [LATE] -0.0772 [-0.0934,-0.0613]*
+     tactical_2_6s:dk_hw_abs_err_m        NOT-COMPUTABLE n=0
+     tactical_2_6s:dk_tg_abs_err_s        NOT-COMPUTABLE n=0
+     TAC-LAT                              [TACT] +0.0343 [+0.0217,+0.0464]*
+     TAC-LON                              [TACT] +0.0295 [+0.0177,+0.0408]*
+  N1DW2_s1 N1DW-N1D
+     operative_0_2s:ade_m                 [PRIM] +0.0036 [+0.0010,+0.0062]*
+     operative_0_2s:fde_m                 [PRIM] +0.0040 [-0.0040,+0.0121]
+     operative_0_2s:speed_mae_mps         [LONG] -0.0030 [-0.0059,+0.0000]
+     operative_0_2s:along_mae_m           [LONG] +0.0060 [+0.0041,+0.0080]*
+     operative_0_2s:accel_mae_mps2        [LONG] -0.0136 [-0.0172,-0.0099]*
+     operative_0_2s:cross_mae_m           [LATE] -0.0007 [-0.0030,+0.0016]
+     operative_0_2s:heading_mae_deg       [LATE] -0.0340 [-0.0632,-0.0046]*
+     operative_0_2s:yaw_rate_mae_degps    [LATE] -0.1591 [-0.2286,-0.0942]*
+     operative_0_2s:curvature_mae_1pm     [LATE] -0.0035 [-0.0054,-0.0018]*
+     operative_0_2s:dk_hw_abs_err_m       NOT-COMPUTABLE n=0
+     operative_0_2s:dk_tg_abs_err_s       NOT-COMPUTABLE n=0
+     tactical_2_6s:ade_m                  [PRIM] -0.1663 [-0.2192,-0.1164]*
+     tactical_2_6s:fde_m                  [PRIM] -0.4490 [-0.5787,-0.3274]*
+     tactical_2_6s:speed_mae_mps          [LONG] -0.0740 [-0.1003,-0.0489]*
+     tactical_2_6s:along_mae_m            [LONG] -0.1357 [-0.1786,-0.0924]*
+     tactical_2_6s:accel_mae_mps2         [LONG] -0.0598 [-0.1154,-0.0031]*
+     tactical_2_6s:cross_mae_m            [LATE] -0.0675 [-0.1118,-0.0212]*
+     tactical_2_6s:heading_mae_deg        [LATE] -1.0208 [-1.2912,-0.7528]*
+     tactical_2_6s:yaw_rate_mae_degps     [LATE] -4.0572 [-5.1871,-2.9973]*
+     tactical_2_6s:curvature_mae_1pm      [LATE] -0.0535 [-0.0693,-0.0383]*
+     tactical_2_6s:dk_hw_abs_err_m        NOT-COMPUTABLE n=0
+     tactical_2_6s:dk_tg_abs_err_s        NOT-COMPUTABLE n=0
+     TAC-LAT                              [TACT] +0.0176 [+0.0061,+0.0286]*
+     TAC-LON                              [TACT] +0.0127 [+0.0033,+0.0217]*
+  N1DW4_s0 N1DW-N1R
+     operative_0_2s:ade_m                 [PRIM] -0.0129 [-0.0160,-0.0099]*
+     operative_0_2s:fde_m                 [PRIM] -0.0404 [-0.0497,-0.0311]*
+     operative_0_2s:speed_mae_mps         [LONG] -0.0073 [-0.0099,-0.0045]*
+     operative_0_2s:along_mae_m           [LONG] -0.0020 [-0.0040,+0.0001]
+     operative_0_2s:accel_mae_mps2        [LONG] -0.0087 [-0.0121,-0.0051]*
+     operative_0_2s:cross_mae_m           [LATE] -0.0149 [-0.0177,-0.0123]*
+     operative_0_2s:heading_mae_deg       [LATE] -0.2431 [-0.2885,-0.2003]*
+     operative_0_2s:yaw_rate_mae_degps    [LATE] -0.5476 [-0.6623,-0.4380]*
+     operative_0_2s:curvature_mae_1pm     [LATE] -0.0100 [-0.0135,-0.0069]*
+     operative_0_2s:dk_hw_abs_err_m       NOT-COMPUTABLE n=0
+     operative_0_2s:dk_tg_abs_err_s       NOT-COMPUTABLE n=0
+     tactical_2_6s:ade_m                  [PRIM] -0.4932 [-0.5611,-0.4203]*
+     tactical_2_6s:fde_m                  [PRIM] -1.1298 [-1.2966,-0.9562]*
+     tactical_2_6s:speed_mae_mps          [LONG] -0.1018 [-0.1319,-0.0703]*
+     tactical_2_6s:along_mae_m            [LONG] -0.2551 [-0.3045,-0.2028]*
+     tactical_2_6s:accel_mae_mps2         [LONG] -0.0906 [-0.1482,-0.0292]*
+     tactical_2_6s:cross_mae_m            [LATE] -0.3442 [-0.4104,-0.2762]*
+     tactical_2_6s:heading_mae_deg        [LATE] -3.3473 [-3.7864,-2.8841]*
+     tactical_2_6s:yaw_rate_mae_degps     [LATE] -6.4628 [-7.5913,-5.3302]*
+     tactical_2_6s:curvature_mae_1pm      [LATE] -0.0808 [-0.0970,-0.0653]*
+     tactical_2_6s:dk_hw_abs_err_m        NOT-COMPUTABLE n=0
+     tactical_2_6s:dk_tg_abs_err_s        NOT-COMPUTABLE n=0
+     TAC-LAT                              [TACT] +0.0389 [+0.0262,+0.0510]*
+     TAC-LON                              [TACT] +0.0235 [+0.0123,+0.0344]*
+  N1DW4_s0 N1DW-N1D
+     operative_0_2s:ade_m                 [PRIM] -0.0033 [-0.0055,-0.0012]*
+     operative_0_2s:fde_m                 [PRIM] -0.0028 [-0.0088,+0.0036]
+     operative_0_2s:speed_mae_mps         [LONG] -0.0061 [-0.0083,-0.0038]*
+     operative_0_2s:along_mae_m           [LONG] -0.0004 [-0.0019,+0.0013]
+     operative_0_2s:accel_mae_mps2        [LONG] -0.0109 [-0.0141,-0.0078]*
+     operative_0_2s:cross_mae_m           [LATE] -0.0046 [-0.0063,-0.0027]*
+     operative_0_2s:heading_mae_deg       [LATE] -0.0586 [-0.0887,-0.0284]*
+     operative_0_2s:yaw_rate_mae_degps    [LATE] -0.2360 [-0.3163,-0.1636]*
+     operative_0_2s:curvature_mae_1pm     [LATE] -0.0052 [-0.0075,-0.0030]*
+     operative_0_2s:dk_hw_abs_err_m       NOT-COMPUTABLE n=0
+     operative_0_2s:dk_tg_abs_err_s       NOT-COMPUTABLE n=0
+     tactical_2_6s:ade_m                  [PRIM] -0.0660 [-0.1146,-0.0182]*
+     tactical_2_6s:fde_m                  [PRIM] -0.1691 [-0.2880,-0.0501]*
+     tactical_2_6s:speed_mae_mps          [LONG] -0.0667 [-0.0931,-0.0421]*
+     tactical_2_6s:along_mae_m            [LONG] -0.0598 [-0.0981,-0.0211]*
+     tactical_2_6s:accel_mae_mps2         [LONG] -0.1177 [-0.1750,-0.0582]*
+     tactical_2_6s:cross_mae_m            [LATE] -0.0384 [-0.0770,+0.0006]
+     tactical_2_6s:heading_mae_deg        [LATE] -0.8865 [-1.1443,-0.6203]*
+     tactical_2_6s:yaw_rate_mae_degps     [LATE] -4.3651 [-5.3054,-3.5104]*
+     tactical_2_6s:curvature_mae_1pm      [LATE] -0.0429 [-0.0547,-0.0319]*
+     tactical_2_6s:dk_hw_abs_err_m        NOT-COMPUTABLE n=0
+     tactical_2_6s:dk_tg_abs_err_s        NOT-COMPUTABLE n=0
+     TAC-LAT                              [TACT] +0.0145 [+0.0044,+0.0238]*
+     TAC-LON                              [TACT] +0.0129 [+0.0029,+0.0234]*
+  N1DW4_s1 N1DW-N1R
+     operative_0_2s:ade_m                 [PRIM] -0.0075 [-0.0111,-0.0039]*
+     operative_0_2s:fde_m                 [PRIM] -0.0206 [-0.0322,-0.0100]*
+     operative_0_2s:speed_mae_mps         [LONG] -0.0067 [-0.0108,-0.0027]*
+     operative_0_2s:along_mae_m           [LONG] +0.0002 [-0.0027,+0.0030]
+     operative_0_2s:accel_mae_mps2        [LONG] -0.0099 [-0.0150,-0.0050]*
+     operative_0_2s:cross_mae_m           [LATE] -0.0087 [-0.0118,-0.0056]*
+     operative_0_2s:heading_mae_deg       [LATE] -0.1566 [-0.2036,-0.1111]*
+     operative_0_2s:yaw_rate_mae_degps    [LATE] -0.4320 [-0.5254,-0.3470]*
+     operative_0_2s:curvature_mae_1pm     [LATE] -0.0082 [-0.0112,-0.0057]*
+     operative_0_2s:dk_hw_abs_err_m       NOT-COMPUTABLE n=0
+     operative_0_2s:dk_tg_abs_err_s       NOT-COMPUTABLE n=0
+     tactical_2_6s:ade_m                  [PRIM] -0.3949 [-0.4736,-0.3180]*
+     tactical_2_6s:fde_m                  [PRIM] -0.9692 [-1.1542,-0.7943]*
+     tactical_2_6s:speed_mae_mps          [LONG] -0.1499 [-0.1826,-0.1188]*
+     tactical_2_6s:along_mae_m            [LONG] -0.2193 [-0.2793,-0.1598]*
+     tactical_2_6s:accel_mae_mps2         [LONG] -0.1873 [-0.2516,-0.1240]*
+     tactical_2_6s:cross_mae_m            [LATE] -0.2503 [-0.3149,-0.1848]*
+     tactical_2_6s:heading_mae_deg        [LATE] -2.5578 [-2.9880,-2.1204]*
+     tactical_2_6s:yaw_rate_mae_degps     [LATE] -7.7824 [-9.1886,-6.4036]*
+     tactical_2_6s:curvature_mae_1pm      [LATE] -0.0968 [-0.1142,-0.0793]*
+     tactical_2_6s:dk_hw_abs_err_m        NOT-COMPUTABLE n=0
+     tactical_2_6s:dk_tg_abs_err_s        NOT-COMPUTABLE n=0
+     TAC-LAT                              [TACT] +0.0303 [+0.0174,+0.0430]*
+     TAC-LON                              [TACT] +0.0300 [+0.0167,+0.0424]*
+  N1DW4_s1 N1DW-N1D
+     operative_0_2s:ade_m                 [PRIM] -0.0004 [-0.0032,+0.0024]
+     operative_0_2s:fde_m                 [PRIM] +0.0054 [-0.0036,+0.0147]
+     operative_0_2s:speed_mae_mps         [LONG] -0.0080 [-0.0118,-0.0044]*
+     operative_0_2s:along_mae_m           [LONG] +0.0025 [+0.0002,+0.0048]*
+     operative_0_2s:accel_mae_mps2        [LONG] -0.0244 [-0.0293,-0.0195]*
+     operative_0_2s:cross_mae_m           [LATE] -0.0030 [-0.0053,-0.0007]*
+     operative_0_2s:heading_mae_deg       [LATE] -0.0691 [-0.1053,-0.0334]*
+     operative_0_2s:yaw_rate_mae_degps    [LATE] -0.3089 [-0.4060,-0.2266]*
+     operative_0_2s:curvature_mae_1pm     [LATE] -0.0072 [-0.0099,-0.0049]*
+     operative_0_2s:dk_hw_abs_err_m       NOT-COMPUTABLE n=0
+     operative_0_2s:dk_tg_abs_err_s       NOT-COMPUTABLE n=0
+     tactical_2_6s:ade_m                  [PRIM] -0.1308 [-0.1935,-0.0643]*
+     tactical_2_6s:fde_m                  [PRIM] -0.3867 [-0.5311,-0.2353]*
+     tactical_2_6s:speed_mae_mps          [LONG] -0.0836 [-0.1144,-0.0522]*
+     tactical_2_6s:along_mae_m            [LONG] -0.1037 [-0.1626,-0.0429]*
+     tactical_2_6s:accel_mae_mps2         [LONG] -0.0876 [-0.1505,-0.0204]*
+     tactical_2_6s:cross_mae_m            [LATE] -0.0567 [-0.1013,-0.0119]*
+     tactical_2_6s:heading_mae_deg        [LATE] -1.1474 [-1.4361,-0.8501]*
+     tactical_2_6s:yaw_rate_mae_degps     [LATE] -5.1391 [-6.4550,-3.8752]*
+     tactical_2_6s:curvature_mae_1pm      [LATE] -0.0769 [-0.0941,-0.0607]*
+     tactical_2_6s:dk_hw_abs_err_m        NOT-COMPUTABLE n=0
+     tactical_2_6s:dk_tg_abs_err_s        NOT-COMPUTABLE n=0
+     TAC-LAT                              [TACT] +0.0136 [+0.0018,+0.0246]*
+     TAC-LON                              [TACT] +0.0132 [+0.0011,+0.0249]*
+
+OUTCOME (card section 7, as far as D1-HO alone allows)
+  RBW-GAIN / RBW-GAIN-ONE-COST (D1-HO gain at both seeds at a weight): not fired: no weight gains at both seeds on D1-HO
+  RBW-ONE-SEED (gain at exactly one seed at a weight, guard holds): not fired: no weight gains at exactly one seed
+  RBW-SPLIT (no weight gains at both seeds; w4 gains at one seed and w2 at the other): not fired
+  RBW-DOSE (no gain at either weight; N1DW4-N1D separated >0 at both seeds and >= N1DW2-N1D at both seeds): not fired
+  RBW-NO-GAIN (no gain at either weight and RBW-DOSE does not hold): FIRED (D1-HO alone decides; the probe of section 10 picks the next lever)
+  RBW-COSTS: PENDING-GUARD (D1-HO shows no cost at both seeds at any weight; the guard-cell part needs eval-141)
+  RBW-FLOOR-HIGH (bar above 0.0383 and above every observed N1DW - N1R): FIRED (per weight: {'w2': True, 'w4': True})
+  mean two-seed N1DW - N1R: w2 +0.0377, w4 +0.0346
+  N1DWx read: NOT-APPLICABLE (no N1DWx arm)
+wall 126.8 s
