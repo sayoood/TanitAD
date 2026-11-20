@@ -171,7 +171,9 @@ NAV_RB_DIM = {"state": 1, "exitdist": 15}
 #: PREREG_V8F_NAVRB2: the ROUNDABOUT state channel of the route-text nav (``--nav-rb``): its state-dict prefix and its batch key (read with the nav, for a model built with it; NOT in INFERENCE_INPUT_KEYS, which tests pin)
 NAV_RB_KEY_PREFIXES = ("e_nav_rb.",)
 NAV_RB_KEYS = frozenset({"nav_rb"})
-NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + ("e_stok.",) + CTX_KEY_PREFIXES + NAV_RB_KEY_PREFIXES      # PREREG_V8F_OTBAND adds the strategic-token embedding
+#: PREREG_V8F_N1DC: the skip from T's code into O's plan head (``--o-code-skip``): its state-dict prefix (a fine-tune from a checkpoint without it leaves the key fresh = zero, and the gate must accept exactly that)
+O_CODE_KEY_PREFIXES = ("o_code.",)
+NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + ("e_stok.",) + CTX_KEY_PREFIXES + NAV_RB_KEY_PREFIXES + O_CODE_KEY_PREFIXES      # PREREG_V8F_OTBAND adds the strategic-token embedding
 #: identifiers the lead head's own code (``V8FMini._lead``) and the aux-token assembly (``V8FMini._aux_in``) must not mention (the level list + the lead labels): the head is VISION ONLY
 LEAD_FORBIDDEN_NAMES = LEVEL_FORBIDDEN_NAMES + ("lead_y", "lead_has", "lead_near", "lead_gap_h", "s_h", "pose_now")
 LEAD_ALLOWED_KEYS = frozenset({"frame_ok"})
@@ -257,6 +259,8 @@ class V8FMiniConfig:
 
     rb_window_w: float = 1.0           # PREREG_V8F_N1DW (`--rb-window-w`): w, the weight of O's trajectory terms (ADE / 3 + 0.5 FDE / 6) on ROUNDABOUT samples (`rb` mask = c0 of the sample's nav_rb row at NOW; training only). 1.0 = the term is NOT
                                        # computed and NOT in the total = every earlier arm, bit for bit (no new tensor op, no new T key). > 1 = the batch must carry `rb`; the total gains w_traj x (w - 1) x rb_traj
+    o_code_skip: bool = False          # PREREG_V8F_N1DC (`--o-code-skip on|off`): False = nothing built and no RNG draw = every earlier arm, bit for bit; True = o_code, Linear(CODE_DIM, n_q * d, bias=False), zero-init, built LAST under a forked RNG, and
+                                       # ``run_o`` adds ``o_code(code)`` to the flattened reader output right before ``head_o`` (the SAME code tensor ``e_code`` reads: after teacher forcing, detach_upper and o_interface)
     w_op: float = 0.0                  # PREREG_V8F_OTBAND (`--w-op`): weight of the operative-band term (ADE over knots 1-10 / 3 + 0.5 x FDE at knot 10 / 6). 0.0 = NOT in the total and NOT computed = every earlier arm, bit for bit
     w_tac_traj: float = 0.0            # PREREG_V8F_OTBAND (`--w-tac-traj`): weight of the tactical-band term (ADE over knots 11-30 / 3 + 0.5 x FDE at knot 30 / 6). 0.0 = NOT in the total
     stok_dim: int = 0                  # PREREG_V8F_OTBAND (`--t-stok-dir`): the strategic token's dimension, read from the stok file's metadata. 0 = no token = every earlier arm, bit for bit (no module, no key added)
@@ -294,6 +298,8 @@ class V8FMiniConfig:
             raise ValueError(f"launch_intent_w must be a finite number >= 0, got {self.launch_intent_w!r}")
         if not (math.isfinite(self.rb_window_w) and self.rb_window_w >= 1.0):
             raise ValueError(f"rb_window_w must be a finite number >= 1, got {self.rb_window_w!r}")
+        if not isinstance(self.o_code_skip, bool):
+            raise ValueError(f"o_code_skip must be a bool, got {self.o_code_skip!r}")
         for nm in ("w_op", "w_tac_traj"):
             if not (math.isfinite(getattr(self, nm)) and getattr(self, nm) >= 0.0):
                 raise ValueError(f"{nm} must be a finite number >= 0, got {getattr(self, nm)!r}")
@@ -930,6 +936,11 @@ class V8FMini(nn.Module):
             with torch.random.fork_rng(devices=[]):
                 self.e_nav_rb = nn.Linear(NAV_RB_DIM[cfg.nav_rb_feat], d, bias=False)       # PREREG_V8F_NAVRBD: the width from the feat (state = 1 = NAVRB2)
             nn.init.zeros_(self.e_nav_rb.weight)
+        self.o_code = None
+        if cfg.o_code_skip:                                                # PREREG_V8F_N1DC: built LAST (after e_nav_rb) under a forked RNG (no draw reaches the global stream) and zeroed: h + 0.0 == h, so the step-0 forward is the off model's, bit for bit
+            with torch.random.fork_rng(devices=[]):
+                self.o_code = nn.Linear(CODE_DIM, fl, bias=False)          # fl = n_q * d = the flattened width head_o reads
+            nn.init.zeros_(self.o_code.weight)
         self.p_gt = 1.0
 
     # ---- helpers -------------------------------------------------------------------------------------------
@@ -1064,6 +1075,8 @@ class V8FMini(nn.Module):
         cond = torch.stack(toks, 1)
         sc, pad = self._scene(adapt, b["frame_ok"], i)
         h = self.read_o(cond, sc, pad).flatten(1)
+        if self.o_code is not None:                                     # PREREG_V8F_N1DC: ONE line (a mutation deletes it): head_o reads T's code linearly as well, the SAME tensor e_code read above (zero-init: h + 0.0 == h)
+            h = h + self.o_code(code)
         with torch.autocast(device_type=h.device.type, enabled=False):          # geometry + the prior stay fp32
             coef = self.head_o(h.float()).reshape(-1, 2, cfg.nb) * cfg.res_scale_m      # [B, 2, nb]
             res = torch.einsum("tk,bck->btc", self.basis, coef)                # [B, 60, 2]
@@ -1392,6 +1405,8 @@ class V8FMini(nn.Module):
             g["CTX"] = [self.ctx_head]                                              # PREREG_V8F_STRAT1
         if self.e_nav_rb is not None:
             g["NAVRB"] = [self.e_nav_rb]                                            # PREREG_V8F_NAVRB2: G-LIVE then requires its gradient
+        if self.o_code is not None:
+            g["OCODE"] = [self.o_code]                                              # PREREG_V8F_N1DC: G-LIVE then requires its gradient
         return g
 
     def built_levers(self) -> dict:
@@ -1419,6 +1434,8 @@ class V8FMini(nn.Module):
                       "w_tac": cfg.w_tac, "w_cons": cfg.w_cons}}                       # PREREG_V8F_WC: T's constraint term is w_tac x w_cons
         if self.cfg.rb_window_w != 1.0:
             lv["rb_window_w"] = self.cfg.rb_window_w          # PREREG_V8F_N1DW: ABSENT at 1.0, so every earlier arm's levers equal the tip's (the gate reads .get("rb_window_w", 1.0))
+        if self.o_code is not None:
+            lv["o_code_skip"] = "on"          # PREREG_V8F_N1DC: ABSENT when off, so every earlier arm's levers equal the tip's (the gate reads .get("o_code_skip", "off")); the BUILT module is o_code
         if self.e_nav_rb is not None:
             if self.cfg.nav_rb_feat != "state":
                 lv["nav_rb_feat"] = self.cfg.nav_rb_feat      # PREREG_V8F_NAVRBD: ABSENT for state, so every earlier arm's levers equal the tip's (the gate reads .get("nav_rb_feat", "state"); the BUILT width is e_nav_rb.weight.shape[1])

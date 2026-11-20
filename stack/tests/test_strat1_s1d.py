@@ -155,7 +155,7 @@ def _mutant(tmp_path, name, old, new):
 
 
 MUTATIONS = {
-    "kinds_drop_s1d": ('KINDS = ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx", "N1DW4", "N1DW2")', 'KINDS = ("C0", "N1", "S1", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx", "N1DW4", "N1DW2")'),      # PREREG_V8F_N1DW: the literal now ends with the two W kinds
+    "kinds_drop_s1d": ('KINDS = ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx", "N1DW4", "N1DW2", "N1DC")', 'KINDS = ("C0", "N1", "S1", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx", "N1DW4", "N1DW2", "N1DC")'),      # PREREG_V8F_N1DW: the literal ends with the two W kinds; PREREG_V8F_N1DC adds the C kind
     "render_detach_off": ('"--ctx-detach", "on" if bk == "S1d" else "off"]', '"--ctx-detach", "off"]'),
     "ctx_kinds_drop_s1d": ('CTX_KINDS = ("S1", "S1d", "S1R", "S1dR")', 'CTX_KINDS = ("S1", "S1R", "S1dR")'),
     "nav_kinds_drop_s1d": ('NAV_KINDS = ("N1", "S1", "S1d") + RB_KINDS', 'NAV_KINDS = ("N1", "S1") + RB_KINDS'),
