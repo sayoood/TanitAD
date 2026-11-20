@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 """read_agerule10k.py -- reader of part A of card PREREG_V8F_PROOF_ADD71 (AGERULE10K).
 
-It is the reader of card ADD70 under its note N3 (read_longroll10k.py through read_longroll10k_n3.py, both unedited) with the run and pair tables of card ADD71. What differs, and only this:
+It is the reader of card ADD70 under its notes N3 and N4 (read_longroll10k.py through read_longroll10k_n3.py and read_longroll10k_n4.py; note N1 of card ADD71) with the run and pair tables of card ADD71. What differs, and only this:
   * tables: three new runs at P = 30 (both model seeds), six named pairs, three pairs on fresh windows and two rule pairs beside, no P = 60 run (that grid read and control l11 are stated
     as not applicable);
   * control l8 for R0C10XP30Hb20 expects the causal readout on the executed path with gain 1 (the reader's own check expects gain 0 for every readout that is not the pinned one);
-  * control a1: the pair R0KP30Hb20 minus R0KHb20 read here equals the pair AGE-K of the banked result of card ADD70 (file --add70-n3-json) on every headway share and family cell to 1e-9;
+  * control a1: the pair R0KP30Hb20 minus R0KHb20 read here equals the pair AGE-K of the banked result of card ADD70 read under its note N4 (file --add70-n3-json) on every headway share and family cell to 1e-9;
     when a1 fails the names, pairs, cells, readings and the beside block are removed from the result and not printed;
   * the sentences of section 2 of the card.
 Usage: the arguments of read_longroll10k.py plus --add70-n3-json <file>.
@@ -18,8 +18,9 @@ import json
 import os
 import sys
 
-import read_longroll10k_n3 as N3  # noqa: E402  (patches the reader's file controls and grid read by note N3)
+import read_longroll10k_n4 as N4  # noqa: E402  (the reader of card ADD70 under its notes N3 and N4: own start point of a pre-rolled window)
 
+N3 = N4.N3
 R = N3.R
 np = R.np
 R.CARD, R.PRE = "PREREG_V8F_PROOF_ADD71", "AGERULE10K"
@@ -144,6 +145,7 @@ def main(argv=None):
         print("ZZ READ-AGERULE rc %s (no result file)" % rc)
         return rc or 3
     res = json.load(io.open(out_path, encoding="utf-8"))
+    res, text = N4.finish(res, text, None)                                                    # controls n1 to n3 of note N4; removes the names when one fails
     banked = R.jl(banked_path)
     if res.get("controls_all_pass") is True:
         a1 = a1_check(res, banked) if banked else {"PASS": False, "why": "banked result of card ADD70 missing"}

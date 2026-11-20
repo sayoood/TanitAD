@@ -1,0 +1,632 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD71",
+ "tier": "TIER: T1-kin (kinematic rollout on the model's own actions; logged camera frames; the lead does not react); never driving performance; heading bound 0.2 1/m",
+ "controls": {
+  "b1_zero_offset_identity": {
+   "PASS": true,
+   "cells_compared": [
+    "ade6_m",
+    "ade_tac_m",
+    "along_mae_m",
+    "cross_mae_m",
+    "curvature_mae_1pm",
+    "heading_mae_deg",
+    "speed_mae_mps",
+    "yaw_rate_mae_degps"
+   ],
+   "track_identical": true
+  },
+  "b2_one_metre_ahead": {
+   "PASS": true,
+   "along_change_m": 1.0,
+   "lateral_cells_max_abs_change": {
+    "cross_mae_m": 0.0,
+    "heading_mae_deg": 0.0,
+    "curvature_mae_1pm": 0.0,
+    "yaw_rate_mae_degps": 0.0
+   }
+  },
+  "b3_ninety_degrees": {
+   "PASS": true,
+   "max_abs_x": 2.204364238465236e-15,
+   "max_abs_y_minus_old_x": 0.0,
+   "max_length_difference_m": 0.0,
+   "heading_error_deg": 89.99999999999999
+  },
+  "b4_sum_of_parts_equals_bank": {
+   "PASS": true,
+   "largest_abs_dev_sum_of_parts": 3.552713678800501e-15,
+   "largest_abs_dev_total": 0.0,
+   "cells_missing_in_bank": [],
+   "tolerance": 1e-09,
+   "n_cells": 10
+  },
+  "b5_first_point_at_offset": {
+   "PASS": true,
+   "required_share": 0.99,
+   "slack_m": 0.5,
+   "per_seed": {
+    "seed0": {
+     "share_within": 1.0,
+     "max_dist_m": 7.310094355164504,
+     "n": 1271,
+     "offsets_file": {
+      "max_abs_dpos_diff_m": 7.105427357601002e-15,
+      "max_abs_dpsi_diff_deg": 0.0
+     }
+    },
+    "seed1": {
+     "share_within": 1.0,
+     "max_dist_m": 7.097475440338259,
+     "n": 1271,
+     "offsets_file": {
+      "max_abs_dpos_diff_m": 3.552713678800501e-15,
+      "max_abs_dpsi_diff_deg": 0.0
+     }
+    }
+   }
+  },
+  "b6_window_identity": {
+   "PASS": true,
+   "n_dumps": 6,
+   "n_windows": 1271,
+   "order_of_the_grid": true,
+   "g_ws_eid_clip_v0_identical": true,
+   "aged_tick0_rows_exactly_the_grid": true
+  }
+ },
+ "controls_all_pass": true,
+ "names": {
+  "LONGITUDINAL": "AGERULE10K-DECOMP-LONGITUDINAL-STATE-LARGER",
+  "LATERAL": "AGERULE10K-DECOMP-LATERAL-BOTH",
+  "TACTICAL": "AGERULE10K-DECOMP-TACTICAL-BOTH",
+  "STRATEGIC": "not decomposed (card section 3)"
+ },
+ "parts": {
+  "LONGITUDINAL:speed_mae_mps": {
+   "POSE": {
+    "D": -8.6714336209843e-17,
+    "interval": [
+     -1.8536471672739262e-16,
+     6.318474068312942e-18
+    ],
+    "per_seed": [
+     -9.014010798380192e-17,
+     -8.328856443588409e-17
+    ],
+    "verdict": "OPEN"
+   },
+   "STATE": {
+    "D": 1.5431385638497006,
+    "interval": [
+     1.3595620294217783,
+     1.745330664302048
+    ],
+    "per_seed": [
+     1.5975830284776145,
+     1.488694099221787
+    ],
+    "verdict": "WORSE"
+   },
+   "TOTAL": {
+    "D": 1.5431385638497008,
+    "interval": [
+     1.3595620294217785,
+     1.7453306643020479
+    ],
+    "per_seed": [
+     1.597583028477615,
+     1.4886940992217867
+    ],
+    "verdict": "WORSE"
+   },
+   "SMP": {
+    "D": 1.543138563849701,
+    "interval": [
+     1.3595620294217785,
+     1.745330664302048
+    ],
+    "per_seed": [
+     1.597583028477615,
+     1.488694099221787
+    ],
+    "verdict": null
+   }
+  },
+  "LONGITUDINAL:along_mae_m": {
+   "POSE": {
+    "D": 4.235489132762914,
+    "interval": [
+     3.865988728468072,
+     4.610299392224151
+    ],
+    "per_seed": [
+     4.28498976063264,
+     4.185988504893188
+    ],
+    "verdict": "WORSE"
+   },
+   "STATE": {
+    "D": 5.889933380332256,
+    "interval": [
+     5.314678842201879,
+     6.5224756303466105
+    ],
+    "per_seed": [
+     6.061043233657922,
+     5.718823527006591
+    ],
+    "verdict": "WORSE"
+   },
+   "TOTAL": {
+    "D": 10.12542251309517,
+    "interval": [
+     9.249729935520968,
+     11.066356059846695
+    ],
+    "per_seed": [
+     10.34603299429056,
+     9.904812031899779
+    ],
+    "verdict": "WORSE"
+   },
+   "SMP": {
+    "D": 1.654444247569343,
+    "interval": [
+     1.220352008373631,
+     2.081806207134931
+    ],
+    "per_seed": [
+     1.776053473025283,
+     1.5328350221134028
+    ],
+    "verdict": null
+   }
+  },
+  "LATERAL:cross_mae_m": {
+   "POSE": {
+    "D": 4.563621757114387,
+    "interval": [
+     3.8846164979949904,
+     5.279977878481029
+    ],
+    "per_seed": [
+     4.629225764930222,
+     4.498017749298551
+    ],
+    "verdict": "WORSE"
+   },
+   "STATE": {
+    "D": 0.36614309094429187,
+    "interval": [
+     0.11516892989137423,
+     0.6090368037399785
+    ],
+    "per_seed": [
+     0.4619727866057751,
+     0.2703133952828086
+    ],
+    "verdict": "WORSE"
+   },
+   "TOTAL": {
+    "D": 4.929764848058679,
+    "interval": [
+     4.137208709756639,
+     5.762504310283689
+    ],
+    "per_seed": [
+     5.091198551535997,
+     4.768331144581361
+    ],
+    "verdict": "WORSE"
+   }
+  },
+  "LATERAL:heading_mae_deg": {
+   "POSE": {
+    "D": 4.945014773119063,
+    "interval": [
+     4.148158167400989,
+     5.790561786644597
+    ],
+    "per_seed": [
+     4.99487570936377,
+     4.895153836874354
+    ],
+    "verdict": "WORSE"
+   },
+   "STATE": {
+    "D": 2.6864186437576096,
+    "interval": [
+     2.085761514408261,
+     3.326102106513784
+    ],
+    "per_seed": [
+     2.7547915949770325,
+     2.6180456925381868
+    ],
+    "verdict": "WORSE"
+   },
+   "TOTAL": {
+    "D": 7.631433416876672,
+    "interval": [
+     6.358196070810621,
+     9.02069111562081
+    ],
+    "per_seed": [
+     7.749667304340804,
+     7.513199529412541
+    ],
+    "verdict": "WORSE"
+   },
+   "SMP": {
+    "D": -2.258596129361452,
+    "interval": [
+     -2.9389482982004207,
+     -1.6022000727014782
+    ],
+    "per_seed": [
+     -2.240084114386737,
+     -2.277108144336167
+    ],
+    "verdict": null
+   }
+  },
+  "LATERAL:curvature_mae_1pm": {
+   "POSE": {
+    "D": 1.9762092976368734e-17,
+    "interval": [
+     -5.926885004315343e-17,
+     1.1659387065959787e-16
+    ],
+    "per_seed": [
+     7.432170748071359e-17,
+     -3.479752152797612e-17
+    ],
+    "verdict": "OPEN"
+   },
+   "STATE": {
+    "D": 0.06860180444347347,
+    "interval": [
+     0.0175677318480321,
+     0.1236565236167446
+    ],
+    "per_seed": [
+     0.08752295500762987,
+     0.04968065387931708
+    ],
+    "verdict": "WORSE"
+   },
+   "TOTAL": {
+    "D": 0.0686018044434735,
+    "interval": [
+     0.01756773184803209,
+     0.12365652361674463
+    ],
+    "per_seed": [
+     0.08752295500762994,
+     0.04968065387931705
+    ],
+    "verdict": "WORSE"
+   }
+  },
+  "LATERAL:yaw_rate_mae_degps": {
+   "POSE": {
+    "D": 8.600619439006043e-17,
+    "interval": [
+     -3.3152138383054362e-15,
+     3.8140883720068905e-15
+    ],
+    "per_seed": [
+     1.1768903877732313e-15,
+     -1.0048779989931104e-15
+    ],
+    "verdict": "OPEN"
+   },
+   "STATE": {
+    "D": 1.830169748099863,
+    "interval": [
+     -0.4741650188799382,
+     4.0663580884251145
+    ],
+    "per_seed": [
+     2.3524791530457154,
+     1.3078603431540106
+    ],
+    "verdict": "OPEN"
+   },
+   "TOTAL": {
+    "D": 1.830169748099863,
+    "interval": [
+     -0.4741650188799404,
+     4.0663580884251145
+    ],
+    "per_seed": [
+     2.3524791530457168,
+     1.3078603431540095
+    ],
+    "verdict": "OPEN"
+   },
+   "SMP": {
+    "D": 1.8301697480998629,
+    "interval": [
+     -0.47416501887993656,
+     4.066358088425115
+    ],
+    "per_seed": [
+     2.352479153045714,
+     1.3078603431540117
+    ],
+    "verdict": null
+   }
+  },
+  "TACTICAL:lon_err_rate": {
+   "POSE": {
+    "D": 0.0,
+    "interval": [
+     0.0,
+     0.0
+    ],
+    "per_seed": [
+     0.0,
+     0.0
+    ],
+    "verdict": "OPEN"
+   },
+   "STATE": {
+    "D": 0.04130605822187254,
+    "interval": [
+     0.01653543307086614,
+     0.06915171232260524
+    ],
+    "per_seed": [
+     0.03383162863886703,
+     0.04878048780487805
+    ],
+    "verdict": "INSIDE-SPREAD"
+   },
+   "TOTAL": {
+    "D": 0.04130605822187254,
+    "interval": [
+     0.01653543307086614,
+     0.06915171232260524
+    ],
+    "per_seed": [
+     0.03383162863886703,
+     0.04878048780487805
+    ],
+    "verdict": "INSIDE-SPREAD"
+   }
+  },
+  "TACTICAL:lat_err_rate": {
+   "POSE": {
+    "D": 0.0,
+    "interval": [
+     0.0,
+     0.0
+    ],
+    "per_seed": [
+     0.0,
+     0.0
+    ],
+    "verdict": "OPEN"
+   },
+   "STATE": {
+    "D": 0.05468135326514556,
+    "interval": [
+     0.022785215567846094,
+     0.08802934598122608
+    ],
+    "per_seed": [
+     0.07081038552321008,
+     0.03855232100708104
+    ],
+    "verdict": "WORSE"
+   },
+   "TOTAL": {
+    "D": 0.05468135326514556,
+    "interval": [
+     0.022785215567846094,
+     0.08802934598122608
+    ],
+    "per_seed": [
+     0.07081038552321008,
+     0.03855232100708104
+    ],
+    "verdict": "WORSE"
+   }
+  },
+  "TACTICAL:joint_err_rate": {
+   "POSE": {
+    "D": 0.0,
+    "interval": [
+     0.0,
+     0.0
+    ],
+    "per_seed": [
+     0.0,
+     0.0
+    ],
+    "verdict": "OPEN"
+   },
+   "STATE": {
+    "D": 0.04760031471282455,
+    "interval": [
+     0.026728913776177535,
+     0.07126432499905322
+    ],
+    "per_seed": [
+     0.042486231313926044,
+     0.05271439811172305
+    ],
+    "verdict": "WORSE"
+   },
+   "TOTAL": {
+    "D": 0.04760031471282455,
+    "interval": [
+     0.026728913776177535,
+     0.07126432499905322
+    ],
+    "per_seed": [
+     0.042486231313926044,
+     0.05271439811172305
+    ],
+    "verdict": "WORSE"
+   }
+  },
+  "TACTICAL:ade_tac_m": {
+   "POSE": {
+    "D": 7.287952825673246,
+    "interval": [
+     6.482761035319389,
+     8.139737752021585
+    ],
+    "per_seed": [
+     7.349751886494337,
+     7.226153764852156
+    ],
+    "verdict": "WORSE"
+   },
+   "STATE": {
+    "D": 7.326301088544442,
+    "interval": [
+     6.5549503495009915,
+     8.178168069624533
+    ],
+    "per_seed": [
+     7.614368223033548,
+     7.038233954055335
+    ],
+    "verdict": "WORSE"
+   },
+   "TOTAL": {
+    "D": 14.614253914217684,
+    "interval": [
+     13.309001334941263,
+     15.934931226918772
+    ],
+    "per_seed": [
+     14.964120109527885,
+     14.264387718907486
+    ],
+    "verdict": "WORSE"
+   },
+   "SMP": {
+    "D": 0.038348262871195984,
+    "interval": [
+     -0.9585240555119791,
+     1.0165995547077629
+    ],
+    "per_seed": [
+     0.26461633653921135,
+     -0.18791981079681938
+    ],
+    "verdict": null
+   }
+  }
+ },
+ "share_pose_of_total": {
+  "LONGITUDINAL:speed_mae_mps": -5.619348660013712e-17,
+  "LONGITUDINAL:along_mae_m": 0.41830245871569033,
+  "LATERAL:heading_mae_deg": 0.6479798096886124,
+  "LATERAL:yaw_rate_mae_degps": 4.699356137831183e-17,
+  "TACTICAL:ade_tac_m": 0.4986879842414027
+ },
+ "common_windows_note_n2": {
+  "seed0:curvature_mae_1pm": {
+   "finite_F": 1237,
+   "finite_D": 1237,
+   "finite_A": 1244,
+   "common": 1234,
+   "n": 1271
+  },
+  "seed0:heading_mae_deg": {
+   "finite_F": 1240,
+   "finite_D": 1240,
+   "finite_A": 1249,
+   "common": 1238,
+   "n": 1271
+  },
+  "seed0:yaw_rate_mae_degps": {
+   "finite_F": 1237,
+   "finite_D": 1237,
+   "finite_A": 1244,
+   "common": 1234,
+   "n": 1271
+  },
+  "seed1:curvature_mae_1pm": {
+   "finite_F": 1239,
+   "finite_D": 1239,
+   "finite_A": 1240,
+   "common": 1232,
+   "n": 1271
+  },
+  "seed1:heading_mae_deg": {
+   "finite_F": 1244,
+   "finite_D": 1244,
+   "finite_A": 1246,
+   "common": 1239,
+   "n": 1271
+  },
+  "seed1:yaw_rate_mae_degps": {
+   "finite_F": 1239,
+   "finite_D": 1239,
+   "finite_A": 1240,
+   "common": 1232,
+   "n": 1271
+  }
+ },
+ "offsets_at_t0_from_tick_files": {
+  "seed0": {
+   "position_m": {
+    "n": 1271,
+    "mean": 6.267845544247476,
+    "median": 4.493289549030071,
+    "p90": 13.870333412125609,
+    "max": 40.10777737921202
+   },
+   "heading_abs_deg": {
+    "n": 1271,
+    "mean": 7.248075244135173,
+    "median": 2.6403966734045197,
+    "p90": 19.815593314342152,
+    "max": 73.44303811677314
+   },
+   "own_speed_mps": {
+    "n": 1271,
+    "mean": 11.054134049633873,
+    "median": 10.215698266684305,
+    "p90": 21.974590381265237,
+    "max": 35.347829708512606
+   }
+  },
+  "seed1": {
+   "position_m": {
+    "n": 1271,
+    "mean": 6.079116017115322,
+    "median": 4.40773080884531,
+    "p90": 13.234937494681672,
+    "max": 37.87993830443508
+   },
+   "heading_abs_deg": {
+    "n": 1271,
+    "mean": 7.11346135775197,
+    "median": 2.7778694610463632,
+    "p90": 20.1049136402248,
+    "max": 82.81928630769198
+   },
+   "own_speed_mps": {
+    "n": 1271,
+    "mean": 10.813033093757017,
+    "median": 9.747364436672635,
+    "p90": 21.501428202659397,
+    "max": 34.647773964842536
+   }
+  }
+ },
+ "counts": {
+  "n_windows": 1271,
+  "n_episodes": 141,
+  "spread_run": "R0Hb20",
+  "n_boot": 2000
+ }
+}

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # podread_agerule.sh -- pod-side read of part A of card PREREG_V8F_PROOF_ADD71 (AGERULE10K); CPU only. Adapted from podread_longroll.sh and podread_longroll_n3.sh (card ADD70).
 # Order: control e1 first (the pod reproduces the banked dev-box read of card ADD46, same reader command); only if e1 passes, ONE call of read_agerule10k.py (the reader of card ADD70
-# under note N3 with the tables of card ADD71 and control a1 against the banked result of card ADD70). Never reads twice into one folder. No rm, no mv, no kill. Starts no rollout.
+# under notes N3 and N4 with the tables of card ADD71 and control a1 against the result of card ADD70 as re-read under note N4). Never reads twice into one folder. No rm, no mv, no kill. Starts no rollout.
 # Last line: ZZ PODREAD-AGERULE DONE or ZZ PODREAD-AGERULE STOP <why>.
 set -u
 P=/workspace/v8proof/podread; W=/workspace/v8proof/integ10k; PY=/workspace/venv/bin/python
@@ -22,9 +22,9 @@ mkdir -p "$OUT/e1ar" "$AR"
 PL=$P/root/integ10k/pull; mkdir -p "$PL"
 for d in "$W"/t1/*_s[01]; do n=$(basename "$d"); [ -e "$PL/$n" ] || ln -s "$d" "$PL/$n"; done
 ADD67JSON=$P/out/read_headbound/READ_HEADBOUND10K.json
-ADD70JSON=$OUT/read_longroll_n3/READ_LONGROLL10K_N3.json
+ADD70JSON=$OUT/read_longroll_n5/READ_LONGROLL10K_N5.json
 HF=$OUT/read_longroll/POD_HASHES.txt
-for f in "$P/root/integ10k/read_longroll10k.py" "$P/root/integ10k/read_longroll10k_n3.py" "$P/root/integ10k/read_agerule10k.py" "$P/root/integ10k/LONGROLL10K_REUSED.json" "$P/root/integ10k/strat_roll_read.py" "$HF" "$ADD67JSON" "$ADD70JSON" \
+for f in "$P/root/integ10k/read_longroll10k.py" "$P/root/integ10k/read_longroll10k_n3.py" "$P/root/integ10k/read_longroll10k_n4.py" "$P/root/integ10k/read_agerule10k.py" "$P/root/integ10k/LONGROLL10K_REUSED.json" "$P/root/integ10k/strat_roll_read.py" "$HF" "$ADD67JSON" "$ADD70JSON" \
          "$LR/grid_p30.json" "$LR/grid_p60.json" "$GRIDFULL" "$TST/CHECK_PREROLL_B.txt" "$TST/v8f_t1_eval_reader_rule_rzgfhq.py" "$BLD/v8f_t1_eval_reader_rule_rzgfhq.py" "$BLD/v8f_t1_eval_reader_rule_rzgfh.py"; do
   [ -f "$f" ] || stop "MISSING-INPUT $f"
 done
@@ -32,7 +32,7 @@ grep -q '"controls_all_pass": true' "$ADD70JSON" || stop "ADD70-READ-NOT-ADMITTE
 for r in RLcP30Hb20 RQ50P30Hb20 R0C10XP30Hb20 R0P30Hb20 R0KP30Hb20 RLcKF5P30Hb20 RQ50KF5P30Hb20 RLcHb20 RQ50Hb20 R0C10XHb20 R0KHb20 R0Hb20 RLcKF5Hb20 RQ50KF5Hb20 R0; do
   for s in 0 1; do [ -d "$W/t1/I10${r}_s$s" ] || stop "MISSING-RUN I10${r}_s$s"; done
 done
-sha256sum "$P/root/integ10k/read_longroll10k.py" "$P/root/integ10k/read_longroll10k_n3.py" "$P/root/integ10k/read_agerule10k.py" "$ADD70JSON" > "$AR/READER_HASHES.txt"
+sha256sum "$P/root/integ10k/read_longroll10k.py" "$P/root/integ10k/read_longroll10k_n3.py" "$P/root/integ10k/read_longroll10k_n4.py" "$P/root/integ10k/read_agerule10k.py" "$ADD70JSON" > "$AR/READER_HASHES.txt"
 cut -c1-16,65- "$AR/READER_HASHES.txt"
 
 # ---- control e1: the banked read of card ADD46, same command (pairs and order of read_i10k_n2.sh)
