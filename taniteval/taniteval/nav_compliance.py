@@ -93,7 +93,7 @@ __all__ = [
     "informative_mask", "derive_tolerance", "complies", "compliance_arm",
     "control_arm", "nav_compliance_report", "verdict", "seam_reading",
     "load_labels", "join_windows_to_labels", "time_base_control",
-    "from_refcv3_dump", "FALSIFIABILITY", "flip_nav", "assign_strata",
+    "from_refcv3_dump", "scatter_selbank", "FALSIFIABILITY", "flip_nav", "assign_strata",
     "unavailable_block", "REQUIRED_CONDITIONS", "STRATA", "kinematic_end_signals",
     "window_and_clip_n", "side_clip_counts",
 ]
@@ -812,7 +812,7 @@ def nav_compliance_report(*, readouts: Mapping[str, Mapping[str, np.ndarray]],
                           tolerance: Mapping[str, float] | None = None,
                           n_boot: int = 2000, seed: int = 0, tier: str = "T1",
                           tag: str | None = None, min_delta: float = 0.0,
-                          clip_id=None) -> dict:
+                          clip_id=None, exclude_nonfinite=frozenset()) -> dict:
     """Assemble the block. ``readouts`` = ``{"plan": {cond: heading[N]}, "gstr":
     {cond: bearing[N]}, "anchor": {cond: heading[N]}}`` (plus optional
     ``plan_bearing``, ``plan_lateral``). ``gt_signal`` = ``{"plan": gt_heading
@@ -938,9 +938,33 @@ def nav_compliance_report(*, readouts: Mapping[str, Mapping[str, np.ndarray]],
     for name, sig in readouts.items():
         if name not in masks:
             continue
+        # ⛔ A NON-FINITE SIGNAL IS NOT A NON-COMPLIANT ONE. ``complies`` maps NaN to 0.0
+        # (``sign(NaN) == sign(side)`` is False), so a NaN row would be silently scored as a
+        # MISS. For a readout NAMED in ``exclude_nonfinite`` (from_refcv3_dump names the
+        # sel_bank-scattered ``anchor``, whose NaN rows it created) the window is dropped from
+        # the mask instead, under EVERY conditioning of the readout (the paired deltas need one
+        # common window set), and the drop is reported. MM 2026-11-19: every OTHER readout keeps
+        # the old scoring BYTE-FOR-BYTE (other consumers: refcv6/r7 panels, nav-tau derivation,
+        # panel_preflight); it only gains a diagnostic count when a NaN was scored as a miss.
+        fin = np.ones(N, dtype=bool)
+        for _v in sig.values():
+            if _v is not None:
+                fin &= np.isfinite(np.asarray(_v, dtype=np.float64))
+        m_name = np.asarray(masks[name], dtype=bool)
+        dropped = m_name & ~fin
+        excl = name in exclude_nonfinite
         out["readouts"][name] = compliance_arm(
-            sig, nav_fed_by_cond, nav_true, masks[name], eid, tau=tol[name],
-            n_boot=n_boot, seed=seed)
+            sig, nav_fed_by_cond, nav_true, (m_name & fin) if excl else masks[name], eid,
+            tau=tol[name], n_boot=n_boot, seed=seed)
+        if dropped.any() and excl:
+            out["readouts"][name]["n_excluded_nonfinite_signal"] = int(dropped.sum())
+            out["readouts"][name]["n_informative_before_exclusion"] = int(m_name.sum())
+            out["readouts"][name]["_exclusion_rule"] = (
+                "windows whose signal is NaN under ANY conditioning of this readout are "
+                "removed from every conditioning and every paired delta; a NaN is never "
+                "counted as compliant or as non-compliant")
+        elif dropped.any():
+            out["readouts"][name]["n_nonfinite_signal_scored_as_miss"] = int(dropped.sum())
     # ---- nav-blind controls on the PLAN windows, PER READOUT ---------------- #
     # A control is scored with the SAME signal and tolerance as the readout it
     # floors — a heading-signal floor quoted against a bearing or a lateral
@@ -1130,6 +1154,76 @@ def resolve_labels_path(labels_path, corpus):
     return labels_path
 
 
+def scatter_selbank(sel_idx_by_ep: Sequence, bank_by_ep: Sequence) -> tuple:
+    """⭐ Put a RAGGED ``sel_bank_*`` back on the window axis.
+
+    ``refcv3_arm.py`` writes ``bank[si:si + 1]`` with ``si = sel_idx`` indexing the REFINED
+    candidate set, which is WIDER than the bank, so a window whose selected candidate lies
+    at or beyond the bank size gets an EMPTY slice and vanishes: the per-episode row count
+    is ``count(sel_idx < B)``, not ``n``. MEASURED 2026-11-19 on the K2DC E2 dump: 70/70
+    episodes obey ``rows == count(sel_idx < 110)``.
+
+    Derives the SMALLEST ``B`` for which that holds in EVERY episode (the whole bank
+    partition is then consistent), builds ``[N, S, 2]`` with NaN rows where
+    ``sel_idx >= B``, and returns ``(array, info)``. ``B`` is only bounded to
+    ``[bank_size_min, bank_size_max]`` by the data (no window selected a value in between);
+    the scatter is identical anywhere in it. No consistent ``B`` -> ``(None, info)`` with
+    ``info["status"] == "UNAVAILABLE"`` and the reason.
+
+    ⚠️ Not checkable from the dump: that the kept rows ARE the windows with
+    ``sel_idx < B`` in window order (a row carries no window index). The writer appends one
+    row per window in order, so this is the only partition the writer can produce; the
+    per-episode counts are the whole of what can be verified.
+    """
+    def _fail(reason):
+        return None, {"status": "UNAVAILABLE", "reason": reason}
+
+    if len(sel_idx_by_ep) != len(bank_by_ep) or not len(bank_by_ep):
+        return _fail("sel_idx and sel_bank are not present in the same episodes")
+    si_l = [np.asarray(s) for s in sel_idx_by_ep]
+    bk_l = [np.asarray(b) for b in bank_by_ep]
+    trail = {b.shape[1:] for b in bk_l}
+    if any(b.ndim != 3 or b.shape[-1] != 2 or b.shape[1] < 2 for b in bk_l) or len(trail) != 1:
+        return _fail(f"sel_bank is not [rows, S>=2, 2] with one trailing shape (got {sorted(trail)})")
+    if any(s.ndim != 1 for s in si_l):
+        return _fail("sel_idx is not one index per window")
+    allv = np.concatenate([s.astype(np.float64) for s in si_l])
+    if allv.size and (not np.all(np.isfinite(allv)) or allv.min() < 0
+                      or np.any(allv != np.floor(allv))):
+        return _fail("sel_idx holds a negative, fractional or non-finite value")
+    rows = [int(b.shape[0]) for b in bk_l]
+    if any(r > len(s) for r, s in zip(rows, si_l)):
+        return _fail("an episode holds more sel_bank rows than windows")
+    cands = sorted({0} | {int(v) + 1 for v in allv})
+    b_min = None
+    best = (None, None)
+    for c in cands:
+        bad = sum(int((s < c).sum()) != r for s, r in zip(si_l, rows))
+        if best[0] is None or bad < best[0]:
+            best = (bad, c)
+        if bad == 0:
+            b_min = c
+            break
+    if b_min is None:
+        return _fail(f"no bank size B makes rows == count(sel_idx < B) in every episode "
+                     f"(best B={best[1]} still fails {best[0]} of {len(rows)} episodes)")
+    above = allv[allv >= b_min]
+    b_max = int(above.min()) if above.size else None
+    S = int(bk_l[0].shape[1])
+    n_tot = int(sum(len(s) for s in si_l))
+    out = np.full((n_tot, S, 2), np.nan, dtype=np.float64)
+    off = 0
+    for s, b in zip(si_l, bk_l):
+        keep = np.flatnonzero(s < b_min)
+        out[off + keep] = b.astype(np.float64)
+        off += len(s)
+    n_beyond = int(np.sum(allv >= b_min))
+    return out, {"status": "OK", "bank_size_min": int(b_min), "bank_size_max": b_max,
+                 "n_windows": n_tot, "n_windows_selected_beyond_bank": n_beyond,
+                 "_rule": "bank size = smallest B with rows == count(sel_idx < B) in every "
+                          "episode; windows with sel_idx >= B are NaN and excluded"}
+
+
 def from_refcv3_dump(dump_dir: str, labels_path: str | None = None, *,
                      n_boot: int = 2000, seed: int = 0, tag: str | None = None,
                      min_delta: float = 0.0) -> dict:
@@ -1167,12 +1261,27 @@ def from_refcv3_dump(dump_dir: str, labels_path: str | None = None, *,
         clip_of_window += [cid] * n
         eid += [e["_file"]] * n
         ep_yaw_by_clip[cid] = np.asarray(e["ep_poses"])[:, 2]
-        for k, v in e.items():
-            if k.startswith("_") or k == "ep_poses":
-                continue
-            v = np.asarray(v)
-            if v.shape[0] == n:
-                cols.setdefault(k, []).append(v)
+    # ⛔ A KEY IS CONCATENATED ONLY IF IT IS ONE-ROW-PER-WINDOW IN **EVERY** EPISODE. The old
+    # per-episode ``if v.shape[0] == n`` kept the episodes that happened to match and silently
+    # dropped the rest, so ``sel_bank_*`` (rows == count(sel_idx < B)) came out 855 long
+    # against N = 2397 and the first per-window operation raised -- on EVERY refcv9 E2 dump,
+    # losing the whole STRATEGIC family. A partially concatenated key is worse than a missing one.
+    all_keys = []
+    for e in eps:
+        for k in e:
+            if not k.startswith("_") and k != "ep_poses" and k not in all_keys:
+                all_keys.append(k)
+    ragged: dict = {}
+    for k in all_keys:
+        if k.startswith("sel_bank_"):
+            continue                       # scatter-back below, never concatenated
+        ok_eps = [k in e and np.ndim(e[k]) >= 1 and np.asarray(e[k]).shape[0] == int(e["ws"].shape[0])
+                  for e in eps]
+        if all(ok_eps):
+            cols[k] = [np.asarray(e[k]) for e in eps]
+        else:
+            ragged[k] = {"n_episodes_one_row_per_window": int(sum(ok_eps)),
+                         "n_episodes": len(eps)}
     A = {k: np.concatenate(v) for k, v in cols.items()}
     N = len(eid)
     eid = np.asarray(eid)
@@ -1229,6 +1338,8 @@ def from_refcv3_dump(dump_dir: str, labels_path: str | None = None, *,
     readouts: dict = {"plan": {}, "gstr": {}, "anchor": {}, "plan_bearing": {},
                       "plan_lateral": {}}
     fan: dict = {}
+    anchor_fail: list = []
+    scatter_info: dict = {}
     nav_fed = {"nav_true": nav_true, "nav_shuffled": nav_shuf,
                "nav_zero": np.zeros(N, dtype=np.int64)}
     if "nav_cmd_flip" in A:
@@ -1242,11 +1353,23 @@ def from_refcv3_dump(dump_dir: str, labels_path: str | None = None, *,
         if f"gstr_{c}" in A:
             g = A[f"gstr_{c}"].astype(np.float64)
             readouts["gstr"][c] = np.arctan2(g[:, 1], g[:, 0])
-        if f"sel_bank_{c}" in A:
-            readouts["anchor"][c] = terminal_heading(A[f"sel_bank_{c}"].astype(np.float64))
+        has_bank = [f"sel_bank_{c}" in e for e in eps]
+        if any(has_bank):
+            if not all(has_bank) or not all(f"sel_idx_{c}" in e for e in eps):
+                anchor_fail.append(f"{c}: sel_bank/sel_idx not present in every episode")
+            else:
+                arr, info = scatter_selbank([e[f"sel_idx_{c}"] for e in eps],
+                                            [e[f"sel_bank_{c}"] for e in eps])
+                if arr is None:
+                    anchor_fail.append(f"{c}: {info['reason']}")
+                else:
+                    readouts["anchor"][c] = terminal_heading(arr)
+                    scatter_info[c] = info
         if f"fan_term_heading_{c}" in A:
             fan[c] = {"heading": A[f"fan_term_heading_{c}"],
                       "keep": A.get(f"reach_keep_{c}")}
+    if anchor_fail:
+        readouts.pop("anchor", None)       # all-or-nothing: plan / gstr are kept
     readouts = {k: v for k, v in readouts.items() if v}
     # ---- nav-blind controls -------------------------------------------------- #
     ego = A["ego_t0"].astype(np.float64)                     # (v0, a_long, yaw_rate, curvature)
@@ -1264,7 +1387,23 @@ def from_refcv3_dump(dump_dir: str, labels_path: str | None = None, *,
         t_start_s=join["t_start_s"], t_end_s=join["t_end_s"], arc_to_turn_m=arc,
         gt_signal={"plan": gt_dpsi, "gstr": gt_bear}, controls=controls,
         fan=fan or None, n_boot=n_boot, seed=seed, tag=tag, min_delta=min_delta,
+        exclude_nonfinite=frozenset({"anchor"}) if scatter_info else frozenset(),
         clip_id=np.asarray(clip_of_window))
+    if anchor_fail:
+        why = ("anchor readout UNAVAILABLE: the sel_bank partition is not consistent ("
+               + "; ".join(anchor_fail) + "); plan and gstr are unaffected")
+        st = {"status": "UNAVAILABLE", "reason": why, "n": 0}
+        rep["readouts"]["anchor"] = {
+            "status": "UNAVAILABLE", "reason": why,
+            "conditionings": {"nav_true": {"compliance_with_TRUE_command": dict(st)}},
+            "paired_true_minus_shuffled": dict(st), "paired_true_minus_zero": dict(st)}
+    if scatter_info:
+        rep["sel_bank_scatter"] = scatter_info
+    if ragged:
+        rep["_ragged_keys"] = {
+            "excluded": ragged,
+            "_reads": ("these sidecar keys are not one-row-per-window in every episode and "
+                       "were EXCLUDED ENTIRELY; none was partially concatenated")}
     rep["time_base_control"] = tb
     rep["join"] = {"labels": labels_path, "n_windows_with_record": int(join["has_record"].sum()),
                    "n_windows_with_commanded_turn": int(np.isfinite(join["t_start_s"]).sum()),
