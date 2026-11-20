@@ -61,13 +61,30 @@ K0_SET_LINES = [
     "(the gate binds it by content; operator: confirm this tree path)"]
 
 #: K2 variants: name -> the E1 map arm whose banded flags the variant carries (None = C0's 8-code head, no banded head).
-VARIANTS = {"K2": None, "K2M1N20": "M1N20", "K2M3": "M3", "K2M3N20": "M3N20", "K2DC": "M1N20", "K2DC02": "M1N20", "K2SG": "M1N20"}
+VARIANTS = {"K2": None, "K2M1N20": "M1N20", "K2M3": "M3", "K2M3N20": "M3N20", "K2DC": "M1N20", "K2DC02": "M1N20", "K2SG": "M1N20",
+            "K2DC02s1": "M1N20", "K2DC02nh": "M1N20"}
 T1H_ARM = "T1h"
 #: variant -> the E1 T1 arm whose levers it composes. K2M1N20 / K2M3N20 compose T1v (`--r9-hist-supervise-geom`, ONE flag) INSTEAD of the four T1h flags: REFCV9_E1_T1V_PREREG.md committed outcome 0
 #: (T1v KEEP vs C0 and the replacement read vs T1h passed, 2026-11-09 -- `r9_e1_verdict.T1V_OUTCOMES`). K2 and K2M3 keep T1h (their committed files regenerate byte-equal; K2M3 is the refused-near-lift
 #: variant, K2 has no banded head).
 T1V_ARM = "T1v"
-T1_ARM_OF = {"K2": T1H_ARM, "K2M1N20": T1V_ARM, "K2M3": T1H_ARM, "K2M3N20": T1V_ARM, "K2DC": T1V_ARM, "K2DC02": T1V_ARM, "K2SG": T1V_ARM}
+T1_ARM_OF = {"K2": T1H_ARM, "K2M1N20": T1V_ARM, "K2M3": T1H_ARM, "K2M3N20": T1V_ARM, "K2DC": T1V_ARM, "K2DC02": T1V_ARM, "K2SG": T1V_ARM,
+              "K2DC02s1": T1V_ARM, "K2DC02nh": None}      # None: NO T1 lever at all (K2DC02nh = K2DC02 minus --r9-hist-supervise-geom)
+#: K2DC02 follow-ups (MM 4a3d05, 2026-11-20; PREREG_K2DC02_2026-11-18.md section 4). CANDIDATE arms: running either is a PI decision (no approval recorded). Each is COMPOSED as its base variant
+#: (every per-variant table below -- MAP_W_REDOSE, DOSE_CTL -- is read through ``base_of``, so those tables and their pinned tests do not move) plus exactly ONE change:
+#:   K2DC02s1  section 4.4: the replicate -- the same flags, ``--seed`` 0 -> 1 (``--out`` names the arm; nothing else moves; ``--r8-seed`` keeps its default, the dedicated generator is NOT re-seeded)
+#:   K2DC02nh  section 4.3: K2 minus ``--r9-hist-supervise-geom`` (the other trunk-shaping lever) -- the token is removed; nothing else moves (the flag is a plain switch, no value)
+REPLICATE_OF = {"K2DC02s1": "K2DC02", "K2DC02nh": "K2DC02"}
+SEED_OF = {"K2DC02s1": 1}
+HSG_FLAG = "--r9-hist-supervise-geom"
+K2DC02_FOLLOWUP_PREREG = "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/e2/e2raw/PREREG_K2DC02_2026-11-18.md"
+
+
+def base_of(variant: str) -> str:
+    """The variant whose per-variant tables (MAP_W_REDOSE, DOSE_CTL, TRUNK_GS) a follow-up arm reads: itself, or its base (K2DC02s1 / K2DC02nh -> K2DC02)."""
+    return REPLICATE_OF.get(variant, variant)
+
+
 MAP_W = 1.0                      # --w-map-hires of every banded variant (E1's M1N20 fixed 1.0; M3 / M3N20 PREREG_M3: M1's 1.0) == K0's own value
 #: K2M1N20 RE-DOSE (MM 4a3d05, 2026-11-10): K2M1N20 failed G-LIVE's SHARE-ALARM at w 1.0 (banded map 0.00125 of the trunk gradient < 0.05); it is re-dosed to w 25, everything
 #: else unchanged. Pre-registered in E:/Projects/TanitAD-artifacts/dagland/e2/PREREG_K2_REDOSE_2026-11-10.md (sha256 2c5c147bf10368bb88677f964f9474acf2b6eef4b96dfe06f72fa8e22043b5df).
@@ -190,26 +207,35 @@ def compose(k0_doc: dict, variant: str, w_drivable: float, out: str | None = Non
     argv = _check_k0(k0_doc)
     out = E1._thor_path(out or RUN_OUT % variant, "--out")
     arm = VARIANTS[variant]
-    argv = E1.t1_arm_argv(argv, T1_ARM_OF[variant], out)            # the crowned T1 lever (T1h bundle, or T1v's one flag), right after --map-hires-near-refine-blocks
+    b = base_of(variant)
+    if T1_ARM_OF[variant] is None:                                   # K2DC02nh: NO T1 lever -- only the run directory is set (t1_arm_argv would have set it)
+        argv = flat([(f, [out] if f == "--out" else v) for f, v in pairs(argv)])
+    else:
+        argv = E1.t1_arm_argv(argv, T1_ARM_OF[variant], out)        # the crowned T1 lever (T1h bundle, or T1v's one flag), right after --map-hires-near-refine-blocks
     if arm is not None:
         w = MAP_W if arm in E1.OWN_ENC_ARMS else None
         argv = E1.map_arm_argv(argv, arm, out, w=w)                 # banded [+ own-enc] [+ near-m 20], near lift 10 / 20, --w-map-hires = the arm's
-    if variant in MAP_W_REDOSE:                                     # K2M1N20 re-dose (PREREG_K2_REDOSE): the banded map weight, the ONLY value changed
-        argv = flat([(f, [repr(float(MAP_W_REDOSE[variant]))] if f == "--w-map-hires" else v) for f, v in pairs(argv)])
+    if b in MAP_W_REDOSE:                                           # K2M1N20 re-dose (PREREG_K2_REDOSE): the banded map weight, the ONLY value changed
+        argv = flat([(f, [repr(float(MAP_W_REDOSE[b]))] if f == "--w-map-hires" else v) for f, v in pairs(argv)])
+    if variant in SEED_OF:                                          # K2DC02s1: the training seed, the ONLY value changed
+        if [f for f, _ in pairs(argv)].count("--seed") != 1:
+            raise SystemExit("[r9-e2-argv] %s: K0's argv must carry --seed exactly once" % variant)
+        argv = flat([(f, [str(SEED_OF[variant])] if f == "--seed" else v) for f, v in pairs(argv)])
     wires = ([PLAN_MAP] if arm is not None else []) + [PLAN_BOX, CRITIC, W_CRITIC, repr(float(w_drivable))]
     res = []
     for f, vals in pairs(argv):
         res += [f] + vals
         if f == PLAN_ANCHOR:
             res += wires
-    return res + list(DOSE_CTL.get(variant, [])) + list(TRUNK_GS.get(variant, []))   # K2DC: the controller flags; K2SG: the stop-gradient flag; each last
+    return res + list(DOSE_CTL.get(b, [])) + list(TRUNK_GS.get(b, []))   # K2DC: the controller flags; K2SG: the stop-gradient flag; each last
 
 
 def variant_doc(k0_doc: dict, k0_bytes: bytes, variant: str, w_drivable: float, *, provisional: bool, w_source: str, out: str | None = None) -> dict:
     argv = compose(k0_doc, variant, w_drivable, out)
     arm = VARIANTS[variant]
     t1 = T1_ARM_OF[variant]
-    lever = {("t1h_bundle" if t1 == T1H_ARM else "t1v"): [t for t in E1.T1_ARMS[t1]], "w_box": PLAN_BOX, "w_map_1": [CRITIC, W_CRITIC, repr(float(w_drivable))],
+    b = base_of(variant)
+    lever = {**({} if t1 is None else {("t1h_bundle" if t1 == T1H_ARM else "t1v"): [t for t in E1.T1_ARMS[t1]]}), "w_box": PLAN_BOX, "w_map_1": [CRITIC, W_CRITIC, repr(float(w_drivable))],
              "w_map_1_critic": "banded (reads the banded head's drv / drv_sdf / unobs)" if arm else "non-banded (the 8-code head's softmax sum)",
              "w_map_2": PLAN_MAP if arm else "NOT AVAILABLE without the banded head (plan_wires_flag.pin_args: needs --r9-map-banded)",
              "map_arm": arm, "map_config": "banded head" if arm else "C0's 8-code head",
@@ -222,27 +248,41 @@ def variant_doc(k0_doc: dict, k0_bytes: bytes, variant: str, w_drivable: float, 
         lever["w_r8_drivable_status"] = (("PROVISIONAL -- NOT the argv a token may bind. The W-COST ratio R in the T1h K2 files (K2M1N20 1.545, K2M3N20 1.5425) was measured WITH T1h and is NOT "
                                           "carried over to this T1v composition: regenerate with --w-cost-ratio R --w-cost-source <log> from the K2 explore smoke's W-COST line (T1v)")
                                          if provisional else "MEASURED with T1v (0.1 / R, the K2 explore smoke's W-COST ratio)")
+    if variant in REPLICATE_OF:                                      # K2DC02s1 / K2DC02nh: the W-COST weight is INHERITED from K2M1N20's smoke (T1v, seed 0); the gate re-measures it
+        lever["w_r8_drivable_status"] = ("INHERITED from the K2M1N20 explore smoke's W-COST line (T1v, seed 0; K2DC02's file carries the same 0.1 / R). This composition's own step-0 ratio is NOT measured here: "
+                                         "G-LIVE (launch_gate.wcost_reasons) holds --w-r8-drivable to 0.1 / R of ITS OWN smoke, and refuses on a mismatch")
+        lever["followup_of"] = "r9e2_" + b
+        lever["followup_prereg"] = K2DC02_FOLLOWUP_PREREG
+    if variant in SEED_OF:
+        lever["seed"] = {"changed": ["--seed", str(SEED_OF[variant])], "from": "0", "note": "section 4.4 replicate: the SAME flags, seed + 1; --r8-seed (default 20261004, the dedicated generator) is NOT in the argv and does not move"}
+    if t1 is None:
+        lever["t1"] = ("NONE: --r9-hist-supervise-geom REMOVED (K2DC02nh, section 4.3). No parameter, no buffer and no state_dict entry changes (bev_warp.HistGeom is a plain-Python holder); the 10 cm map loss and the "
+                       "banded loss supervise lift_valid_now ALONE (bev_warp_flag.supervise_hist_on False -> supervised_lift_valid returns lv itself)")
     if arm is not None:
         lever["banded_flags"] = [E1.BANDED_FLAG] + ([E1.OWN_ENC_FLAG] if arm in E1.OWN_ENC_ARMS else []) + ([E1.NEAR_M_FLAG, "20"] if arm in E1.NEAR20_ARMS else [])
         lever["map_near_lift_m"] = float(E1.banded_near_lift_m(arm))
-        lever["w_map_hires"] = MAP_W_REDOSE.get(variant, MAP_W)
-        if variant in MAP_W_REDOSE:
-            lever["w_map_hires_redose"] = "w_map_hires %s (re-dose, %s; sha256 %s)" % (MAP_W_REDOSE[variant], REDOSE_PREREG, REDOSE_PREREG_SHA256)
+        lever["w_map_hires"] = MAP_W_REDOSE.get(b, MAP_W)
+        if b in MAP_W_REDOSE:
+            lever["w_map_hires_redose"] = "w_map_hires %s (re-dose, %s; sha256 %s)" % (MAP_W_REDOSE[b], REDOSE_PREREG, REDOSE_PREREG_SHA256)
         lever["pending"] = (("BUILD-LEVEL checks PENDING: the trainer refuses --r9-bev-warp-supervise-hist with --r9-map-banded today (bev_warp_flag.py:178-179; another "
                              "agent implements it). The gate's STATIC admission does not read the trainer's pin.") if t1 == T1H_ARM else
                             ("GATE: launch_gate (refcv9-e2 / -full / -full-d1) admits --r9-hist-supervise-geom by exact name (_R9F_T1V_ADMITTED, 926820a9). The trainer's pin (bev_warp_flag._pin_geom) "
                              "accepts it with --r9-map-banded / --r9-map-banded-near-m 20 / --r9-map-own-enc."))
-    if variant in DOSE_CTL:
-        lever["dose_ctl"] = list(DOSE_CTL[variant])
-        if variant == "K2DC02":
+        if t1 is None:
+            lever["pending"] = "no T1 flag: the gate's T1v rules (judge_hist_geom_live, _R9F_T1V_ADMITTED, G-DVB gview) are inert without --r9-hist-supervise-geom"
+    if b in DOSE_CTL:
+        lever["dose_ctl"] = list(DOSE_CTL[b])
+        if b == "K2DC02":
             lever["dose_ctl_provenance"] = ("K2DC02 = K2DC with --map-hires-share-target 0.02 and --map-hires-w-bounds 0.1,25 (every other token is K2DC's; the initial --w-map-hires 25 is "
                                             "K2M1N20's re-dose). Pre-registered next arm if E2-TAIL fails clause (d): %s section 5. Why the floor moves from 1 to 0.1 (at 0.02 a floor of 1 would bind "
                                             "on about half the updates): %s. PI-approved 2026-11-17, CONDITIONAL (starts only if E2-WISE points to the trunk: WISE-PLAN fails (d) and WISE-ENC passes (d)): \"1 i approve it\"." % (K2DC02_PREREG, K2DC02_BOUNDS_NOTE))
         else:
             lever["dose_ctl_provenance"] = ("K2DC = K2M1N20 + the map-hires share controller (target 0.10 of the trunk gradient, every 250 rows, bounds 1..25; the initial "
                                             "--w-map-hires 25 is K2M1N20's re-dose). %s. PI-approved 2026-11-12: \"Approve K2DC\"." % DOSE_PREREG)
-    if variant in TRUNK_GS:
-        lever["trunk_grad_scale"] = list(TRUNK_GS[variant])
+    if variant in REPLICATE_OF:
+        lever["dose_ctl_provenance"] += " NOTE: that PI approval covers r9e2_%s ONLY; it does NOT cover %s (a separate PI decision, no approval recorded)." % (b, variant)
+    if b in TRUNK_GS:
+        lever["trunk_grad_scale"] = list(TRUNK_GS[b])
         lever["trunk_grad_scale_provenance"] = ("K2SG = K2M1N20 + --map-hires-trunk-grad-scale 0.0 (the map->trunk stop-gradient, stack/tanitad/train/map_trunk_gs.py), appended after every "
                                                 "other token; every other token is K2M1N20's. Pre-registered in %s: candidate arm; running it is a PI decision (no approval recorded)." % K2SG_PREREG)
     what = (("%s = K0 + the crowned E1 lever bundle T1h + the C8 planner wires (REFCV9_DESIGN 4.4 K2; map config: %s). Composed by stack/scripts/r9_e2_make_argv.py from "
@@ -250,15 +290,20 @@ def variant_doc(k0_doc: dict, k0_bytes: bytes, variant: str, w_drivable: float, 
             ("%s = K0 + E1 lever T1v (--r9-hist-supervise-geom) INSTEAD of the four T1h flags + the C8 planner wires (REFCV9_DESIGN 4.4 K2; map config: %s). T1v: REFCV9_E1_T1V_PREREG.md "
              "committed outcome 0, 2026-11-09 (KEEP vs C0; replacement read vs T1h passed). W-COST: %s. Composed by "
              "stack/scripts/r9_e2_make_argv.py from stack/ops/runs.d/r9e2_K0.argv.json -- never hand-written; base_sha256 = sha256 of the K0 FILE bytes." % (variant, lever["map_config"], "PROVISIONAL until the K2 explore smoke measures it with T1v" if provisional else "MEASURED with T1v at the K2 explore smoke")))
-    if variant in DOSE_CTL:
-        if variant == "K2DC02":
-            what += (" K2DC02: K2DC with the controller target 0.02 and bounds 0.1,25: %s (%s; %s). PI-approved 2026-11-17, CONDITIONAL (starts only if E2-WISE points to the trunk: WISE-PLAN fails (d) and WISE-ENC passes (d)): \"1 i approve it\"." % (" ".join(DOSE_CTL[variant]), K2DC02_PREREG, K2DC02_BOUNDS_NOTE))
+    if b in DOSE_CTL:
+        if b == "K2DC02":
+            what += (" K2DC02: K2DC with the controller target 0.02 and bounds 0.1,25: %s (%s; %s). PI-approved 2026-11-17, CONDITIONAL (starts only if E2-WISE points to the trunk: WISE-PLAN fails (d) and WISE-ENC passes (d)): \"1 i approve it\"." % (" ".join(DOSE_CTL[b]), K2DC02_PREREG, K2DC02_BOUNDS_NOTE))
         else:
-            what += " K2DC: the same composition as K2M1N20 + the map-dose share controller %s (%s)." % (" ".join(DOSE_CTL[variant]), DOSE_PREREG)
-    if variant in TRUNK_GS:
+            what += " K2DC: the same composition as K2M1N20 + the map-dose share controller %s (%s)." % (" ".join(DOSE_CTL[b]), DOSE_PREREG)
+    if b in TRUNK_GS:
         what += (" K2SG: the same composition as K2M1N20 + %s (the map->trunk stop-gradient; %s). Candidate arm; running it is a PI decision (no approval recorded)."
-                 % (" ".join(TRUNK_GS[variant]), K2SG_PREREG))
-    return {"schema": "r9e2-argv-v1", "arm": "r9e2_%s" % variant, "seed": 0, "steps": E2_STEPS, "argv": argv,
+                 % (" ".join(TRUNK_GS[b]), K2SG_PREREG))
+    if variant in REPLICATE_OF:
+        what = ("%s = r9e2_%s %s. PREREG_K2DC02_2026-11-18.md section %s. Composed by stack/scripts/r9_e2_make_argv.py from stack/ops/runs.d/r9e2_K0.argv.json -- never hand-written; "
+                "base_sha256 = sha256 of the K0 FILE bytes. Every other token is r9e2_%s's. CANDIDATE arm: running it is a PI decision (no approval recorded)."
+                % (variant, b, "with --seed 1 instead of 0 (the replicate)" if variant in SEED_OF else "minus --r9-hist-supervise-geom (the token removed, nothing else moves)",
+                   "4.4" if variant in SEED_OF else "4.3", b))
+    return {"schema": "r9e2-argv-v1", "arm": "r9e2_%s" % variant, "seed": SEED_OF.get(variant, 0), "steps": E2_STEPS, "argv": argv,
             "base_sha256": hashlib.sha256(k0_bytes).hexdigest(), "derived_from": "r9e2_K0", "lever": lever,
             "what": what,
             "profile": "refcv9-e2"}
