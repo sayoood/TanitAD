@@ -50,7 +50,15 @@ SHARE_BAND = (0.05, 0.15)   # in-training validity: logged trunk share, design 2
 SHARE_MIN_STEP = 3000
 SHARE_MIN_PROBES = 2
 ARM_DEFAULT = "K2DC"        # the default arm: every constant above is K2DC's (share target 0.10); `--arm K2DC` and no --arm read bit-for-bit as before
-ARM_ARGV = {"K2DC02": "r9e2_K2DC02.argv.json"}      # arms whose dose settings are READ from stack/ops/runs.d/<file>, never typed here
+ARM_ARGV = {"K2DC02": "r9e2_K2DC02.argv.json", "K2DC02s1": "r9e2_K2DC02s1.argv.json"}      # arms whose dose settings are READ from stack/ops/runs.d/<file>, never typed here
+# the pre-registration sentence each derived arm's document carries (MM 11-20: K2DC02s1 = the PREREG_K2DC02 section 4.4 replicate; K2DC02's text is unchanged byte for byte)
+ARM_PREREG_NOTE = {
+    "K2DC02": "Pre-registered for K2DC02 in e2/e2raw/PREREG_K2DC02_2026-11-18.md (landed 75d9ca52, before any K2DC02 training step): K2DC is the comparator "
+              "in K2's slot (--k2-read = E2_READ_K2DC's read); `reason` text naming next arms is K2DC's, and that PREREG's section 4 replaces it.",
+    "K2DC02s1": "Pre-registered for K2DC02s1 in e2/e2raw/PREREG_K2DC02S1_2026-11-20.md (landed 48c797f3, before any K2DC02s1 training step): K2DC (EMA) or K2DC-tail "
+                "is the comparator in K2's slot; with K2DC02 (EMA) or K2DC02-tail in K2's slot the document is that PREREG's section 4 training-run FLOOR, "
+                "a noise reading and never a lever verdict; `reason` text naming next arms is K2DC's, and that PREREG's section 6 replaces it.",
+}
 ARGV_DIR = Path(__file__).resolve().parents[1] / "ops" / "runs.d"
 BAND_REL = (0.5, 1.5)       # K2DC's band [0.05, 0.15] is 0.5x..1.5x of its target 0.10; a derived arm keeps the same RELATIVE band around its own target
 EXIT = {"SUPPORTED": 0, "REFUTED": 1, "INCONCLUSIVE": 2, "DOSE-VOID": 3, "OP-VOID": 3}
@@ -430,8 +438,7 @@ def build(numbers: dict, void: dict, extra: dict | None = None, arm: dict | None
     elif arm is not None:          # a derived arm only; the K2DC document has no `arm` key and its thresholds are untouched
         doc["thresholds"]["share_band"] = list(arm["share_band"])
         doc["arm"] = {**arm, "note": "the pre-registered decision constants (bar, band, jitter clause, two seeds) are PREREG_K2DC_2026-11-12's, applied UNCHANGED to this arm; the in-training share band is "
-                                     "BAND_REL x this arm's own target (read from its argv json). Pre-registered for K2DC02 in e2/e2raw/PREREG_K2DC02_2026-11-18.md (landed 75d9ca52, before any K2DC02 training step): K2DC is the comparator "
-                                     "in K2's slot (--k2-read = E2_READ_K2DC's read); `reason` text naming next arms is K2DC's, and that PREREG's section 4 replaces it."}
+                                     "BAND_REL x this arm's own target (read from its argv json). " + ARM_PREREG_NOTE[arm["arm"]]}
     return doc
 
 
