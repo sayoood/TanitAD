@@ -486,3 +486,64 @@ def test_load_rawdac_binds_to_the_dump_sha_and_refuses_red_headers(tmp_path):
     hp.write_text(json.dumps({"proposals_sha256": FR.sha256_file(str(dump)), "red": True}), encoding="utf-8")
     with pytest.raises(PR.Refused, match="RED"):
         FR.load_rawdac([str(rows)], str(dump), "F")
+
+
+# ---- v3 (2026-11-20) POLARITY: min_ttc_s / headway_min_m / time_gap_min_s are higher-is-safer, corrected INSIDE field_read
+def _old_fam_direction(m):
+    """the inherited rule verbatim (an OLD harness export of p5c_read): the three margins fall through to 'lower'."""
+    m = m.lower()
+    if "within_" in m or "accuracy" in m or "kappa" in m:
+        return "higher"
+    if "bias" in m:
+        return "magnitude"
+    if "progress_ratio" in m:
+        return "closer_to_1"
+    return "lower"
+
+
+def _margin_json(lo, hi, pt, k="min_ttc_s"):
+    def ent(lo_, hi_, pt_):
+        return {"status": "OK", "A": {"point": 1, "lo": 0.9, "hi": 1.1}, "B": {"point": 1, "lo": 0.9, "hi": 1.1}, "diff_B_minus_A": {"point": pt_, "lo": lo_, "hi": hi_}}
+    return {"label_a": "C", "label_b": "F", "estimator": "x", "frames": {"executed_tracked": {"families": {
+        "longitudinal": {k: ent(lo, hi, pt), "along_mae_m": ent(-0.1, 0.1, 0.0)}, "lateral": {"cross_mae_m": ent(-0.1, 0.1, 0.0)}, "tactical": {}}}}}
+
+
+@pytest.mark.parametrize("k", ["min_ttc_s", "headway_min_m", "time_gap_min_s"])
+def test_polarity_margin_rise_is_not_adverse_fall_is(k):
+    g = FR.family_guard(_margin_json(0.157, 0.436, 0.297, k))          # the banked P5-C C1-vs-C0 min_ttc_s numbers: a separated RISE
+    assert g["status"] == "PASS" and g["adverse"] == []
+    g = FR.family_guard(_margin_json(-0.436, -0.157, -0.297, k))
+    assert g["status"] == "FAIL" and [a["component"] for a in g["adverse"]] == [k] and g["adverse"][0]["direction"] == "higher"
+
+
+def test_polarity_correction_holds_on_an_old_harness_and_prints_both_readings(monkeypatch):
+    monkeypatch.setattr(PR, "fam_direction", _old_fam_direction)        # what FIELD_READ_P5C_DIR=F:/TanitAD_p5cread_tip imports: no margin rule
+    j = _margin_json(0.157, 0.436, 0.297)
+    assert PR.entry_adverse("min_ttc_s", j["frames"]["executed_tracked"]["families"]["longitudinal"]["min_ttc_s"]) is True      # the inherited reading is the defect
+    g = FR.family_guard(j)
+    assert g["status"] == "PASS"                                        # the corrected guard
+    (c,) = g["polarity_corrections"]
+    assert c["component"] == "min_ttc_s" and c["inherited_reading"] == {"direction": "lower", "adverse": True} and c["corrected_reading"] == {"direction": "higher", "adverse": False}
+    assert "higher-is-safer" in c["reason"] or "bigger = safer" in c["reason"]
+    gi = g["guard_status_under_inherited_rule"]
+    assert gi["status"] == "FAIL" and gi["flipped_by_correction"] is True and gi["adverse_inherited_only"] == ["longitudinal.min_ttc_s"]
+
+
+def test_polarity_no_correction_listed_when_nothing_changes():
+    g = FR.family_guard(fam_json())
+    assert g["polarity_corrections"] == [] and g["guard_status_under_inherited_rule"]["flipped_by_correction"] is False
+
+
+def test_polarity_matcher_agrees_with_p5c_read_when_it_carries_one():
+    if hasattr(PR, "is_safety_margin"):
+        assert tuple(FR.SAFETY_MARGIN_HIGHER) == tuple(PR.SAFETY_MARGIN_HIGHER)
+        for k in ("min_ttc_s", "longitudinal.min_ttc_s", "mean_headway_min_m", "lead_viol", "speed_mae_mps", "target_speed_acc.within_1.0_mps"):
+            assert FR.is_safety_margin(k) == PR.is_safety_margin(k)
+
+
+def test_RED_polarity_revert_is_caught(monkeypatch):
+    """deliberate regression: drop the correction (empty margin tuple) on an old harness -> the rise is flagged adverse, which the tests above forbid."""
+    monkeypatch.setattr(PR, "fam_direction", _old_fam_direction)
+    monkeypatch.setattr(FR, "SAFETY_MARGIN_HIGHER", ())
+    g = FR.family_guard(_margin_json(0.157, 0.436, 0.297))
+    assert g["status"] == "FAIL"                                        # the defect is back; test_polarity_margin_rise_is_not_adverse_fall_is would be RED here

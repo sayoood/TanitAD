@@ -3,7 +3,7 @@
 
 Thin wrapper, nothing re-implemented: `families_run.py --per-window` per arm (rows from transp_score), then `fam_ci.py` per pair.
 Frames (card 8.2): executed_tracked (PRIMARY, the only frame G2 reads), executed_transparent (reported, NEVER a guard), reference (diagnostic).
-STRATEGIC = PAUSED (PI 2026-09-19, item 25): printed as PAUSED, never a pass, never omitted.
+STRATEGIC = REPORTED_SEPARATELY (PI unpaused 2026-11-16): a pointer to strategic_family.py, never a pass, never omitted.
 Pairing direction: fam_ci's diff = B - A; the pair "C1-C0" runs --a C0 --b C1 so every difference reads x - y.
 
   python p5c_families.py --rows "<rows_s*.jsonl>" --arms C1 C0 base --pairs C1:C0 C0:base C1:base --out-dir D [--n-boot 2000]
@@ -81,7 +81,7 @@ def pair_ci(fx: str, fy: str, x: str, y: str, tokens: str, out_dir: str, python:
 
 
 def summarize(famci: dict) -> dict:
-    """per frame: every LONGITUDINAL / LATERAL component separated adverse (C1-side worse) with the frame's role; STRATEGIC PAUSED."""
+    """per frame: every LONGITUDINAL / LATERAL component separated adverse (C1-side worse) with the frame's role; STRATEGIC = pointer to strategic_family.py."""
     out = {"strategic": STRATEGIC, "frames": {}}
     for fr, role in ROLE.items():
         blk = (famci.get("frames") or {}).get(fr)

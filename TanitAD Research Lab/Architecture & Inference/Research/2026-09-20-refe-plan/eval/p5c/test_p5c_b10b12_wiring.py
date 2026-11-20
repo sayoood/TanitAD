@@ -136,9 +136,9 @@ def test_cli_real_read_needs_a_seal_and_the_required_controls(tmp_path):
 # ------------------------------------------------------------------------------------------------------ B12 reach
 def test_B12_absent_tactical_is_printed_not_dropped():
     res = positive(rehearsal="t")
-    assert res["tactical"]["command_adherence"]["status"] == "NOT COMPUTED" and res["tactical"]["strategic"]["status"] == "PAUSED"
+    assert res["tactical"]["command_adherence"]["status"] == "NOT COMPUTED" and res["tactical"]["strategic"]["status"] == "REPORTED_SEPARATELY"
     txt = X.render(res)
-    assert "TACTICAL family" in txt and "NOT COMPUTED" in txt and "tactical goal-setting" in txt and "STRATEGIC family: PAUSED" in txt
+    assert "TACTICAL family" in txt and "NOT COMPUTED" in txt and "tactical goal-setting" in txt and "STRATEGIC family: REPORTED_SEPARATELY" in txt
 
 
 def fake_block():

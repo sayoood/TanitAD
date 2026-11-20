@@ -362,10 +362,22 @@ def heading_metrics(dump, keep=None) -> dict:
 FAM_SKIP = ("gt_progress_mean_m", "t0_axis_gt_self_ratio")          # properties of the human future, not of the arm
 
 
+#: 2026-11-20 POLARITY FIX (MM brief BRIEF_FAMPOL): the lead-agent safety margins are HIGHER-IS-SAFER. The old rule's default "lower" read a RISE of
+#: min_ttc_s (+0.297 [+0.157, +0.436], C1 vs C0) as ADVERSE. Matched on the last dotted segment (any family prefix), also with a `mean_` prefix.
+SAFETY_MARGIN_HIGHER = ("min_ttc_s", "headway_min_m", "time_gap_min_s")
+
+
+def is_safety_margin(metric: str) -> bool:
+    seg = metric.lower().rsplit(".", 1)[-1]
+    return seg in SAFETY_MARGIN_HIGHER or (seg.startswith("mean_") and seg[5:] in SAFETY_MARGIN_HIGHER)
+
+
 def fam_direction(metric: str) -> str:
     # 2026-09-28: "acc" was a SUBSTRING test meant for "accuracy"; it also matched `accel_mae_mps2`, so a LOWER
     # (better) acceleration error was read as worse -- it flipped SPEC Amendment 8 to NOT PROVEN. Match the word.
     m = metric.lower()
+    if is_safety_margin(m):                                           # 2026-11-20: bigger = safer; must precede the default "lower"
+        return "higher"
     if "within_" in m or "accuracy" in m or "kappa" in m:
         return "higher"
     if "bias" in m:

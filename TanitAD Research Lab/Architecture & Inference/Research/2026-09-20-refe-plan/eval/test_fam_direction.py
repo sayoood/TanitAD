@@ -25,6 +25,10 @@ EXPECTED = {
     "target_speed_acc.within_2.0_mps": "higher",
     "cross_mae_m": "lower", "cross_final_mae_m": "lower", "curvature_mae_1pm": "lower", "heading_mae_deg": "lower",
     "yaw_rate_mae_degps": "lower", "cross_bias_m": "magnitude", "curvature_bias_1pm": "magnitude",
+    # 2026-11-20 POLARITY FIX: lead-agent safety margins are higher-is-safer (any family prefix; the battery's mean_ form too)
+    "min_ttc_s": "higher", "headway_min_m": "higher", "time_gap_min_s": "higher",
+    "longitudinal.min_ttc_s": "higher", "lead.headway_min_m": "higher", "mean_min_ttc_s": "higher", "mean_time_gap_min_s": "higher",
+    "lead_viol": "lower", "lead_at_risk": "lower",           # NOT margins: a violation / at-risk rate is lower-is-better (guards against a substring rule)
 }
 
 
@@ -51,6 +55,14 @@ def run_checks(PE) -> list:
                        fam({"target_speed_acc.within_1.0_mps": {"lo": 0.3, "hi": 0.4}}))
     if [x["metric"] for x in r["adverse"]] != ["target_speed_acc.within_1.0_mps"]:
         bad.append(f"a lower within-band rate was NOT flagged adverse: {r['adverse']}")
+    # 3b. the polarity fix: a RISE of a safety margin is NOT adverse, a FALL is (verbatim C1-vs-C0 min_ttc_s interval is a rise)
+    for k in ("min_ttc_s", "headway_min_m", "time_gap_min_s"):
+        r = PE.fam_adverse(fam({k: {"lo": 13.5, "hi": 13.8}}), fam({k: {"lo": 13.9, "hi": 14.2}}))
+        if r["adverse"]:
+            bad.append(f"a RISE of {k} was flagged adverse: {r['adverse']}")
+        r = PE.fam_adverse(fam({k: {"lo": 13.9, "hi": 14.2}}), fam({k: {"lo": 13.5, "hi": 13.8}}))
+        if [x["metric"] for x in r["adverse"]] != [k]:
+            bad.append(f"a FALL of {k} was NOT flagged adverse: {r['adverse']}")
     # 4. the skip list must match DOTTED components (properties of the human future are never compared)
     r = PE.fam_adverse(fam({"ego_progress.gt_progress_mean_m": {"lo": 1.0, "hi": 2.0}}),
                        fam({"ego_progress.gt_progress_mean_m": {"lo": 5.0, "hi": 6.0}}))
@@ -80,7 +92,19 @@ def main() -> int:
         mbad = run_checks(load(mp, "proxy_eval_mutant"))
     print("MUTANT (the historical 'acc' substring rule):", "RED as required" if mbad else "GREEN -- the test is blind",
           *mbad[:2], sep="\n  ")
-    return 0 if (not bad and mbad) else 1
+    # polarity mutation arm: revert ONE of the three margins -> this file's checks must go RED, for each of the three
+    tup = 'SAFETY_MARGIN_HIGHER = ("min_ttc_s", "headway_min_m", "time_gap_min_s")'
+    assert src.count(tup) == 1, "the polarity tuple is not present verbatim"
+    pol_ok = True
+    for drop in ("min_ttc_s", "headway_min_m", "time_gap_min_s"):
+        keep = tuple(x for x in ("min_ttc_s", "headway_min_m", "time_gap_min_s") if x != drop)
+        with tempfile.TemporaryDirectory() as td:
+            mp = os.path.join(td, "proxy_eval_pol_mutant.py")
+            open(mp, "w", encoding="utf-8").write(src.replace(tup, "SAFETY_MARGIN_HIGHER = " + repr(keep)))
+            pbad = run_checks(load(mp, "proxy_eval_pol_mutant_" + drop))
+        print(f"POLARITY MUTANT (revert {drop}):", "RED as required" if pbad else "GREEN -- the test is blind", *pbad[:1], sep="\n  ")
+        pol_ok = pol_ok and bool(pbad)
+    return 0 if (not bad and mbad and pol_ok) else 1
 
 
 if __name__ == "__main__":

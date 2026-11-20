@@ -1,0 +1,1207 @@
+{
+ "instrument": "scorerft_read.py",
+ "card": "PREREG_SCORER_FT.md (FROZEN 2026-11-20)",
+ "card_sha256": "adc1b2ae8d3cc9b3dfed00a20a3c39197428cda8492be34af3bb9ed24010ec91",
+ "evidence": "MEASURED on the rows supplied; T1 (NAVSIM v1 PDMS, open-loop pseudo-simulation of the executed LQR-tracked plan; not closed loop, not T0)",
+ "tier": "T1 (NAVSIM v1 PDMS, open-loop pseudo-simulation of the executed LQR-tracked plan; not closed loop, not T0)",
+ "estimator": {
+  "kind": "paired log-cluster bootstrap",
+  "draws": 10000,
+  "seed": 20260927,
+  "interval": "95 % percentile",
+  "statistic": "ratio of sums over drawn logs (rates, shares and subset statistics too)",
+  "shared": "ONE draw matrix for every arm and contrast",
+  "answers": "another draw of LOGS only; another TRAINING run = the seed pair (Ts - Cs, F = |Cs - C|; H-ESTIM-SEED-1); another INFERENCE run = none (deterministic argmax, CTRL-DET)"
+ },
+ "ledger": "look 1 of H-SCORERFT-1 (Stage 1: T, C)",
+ "multiplicity": "multiplicity across cards is not corrected",
+ "n_tokens": 12146,
+ "n_logs": 136,
+ "units": "PDMS, sub-scores x 100",
+ "arms": {
+  "T": "C1",
+  "C": "C1"
+ },
+ "self_read": true,
+ "stage": 1,
+ "controls": [
+  {
+   "control": "CTRL-SET",
+   "pass": true,
+   "n": 12146,
+   "unequal": {},
+   "population_problems": [],
+   "arms": [
+    "rows:C1",
+    "dump:T",
+    "dump:C"
+   ]
+  },
+  {
+   "control": "CTRL-T",
+   "arm": "T",
+   "pass": true,
+   "fails": [],
+   "n_tokens": 12146,
+   "n_over_bar": 0,
+   "bar": 1e-09,
+   "max_abs_diff": {
+    "nc": 0.0,
+    "dac": 0.0,
+    "ddc": 0.0,
+    "ep": 2.5355273436389325e-11,
+    "ttc": 0.0,
+    "c": 0.0,
+    "pdms": 1.056488230233299e-11
+   },
+   "table_pick_equals_dump_pick": true,
+   "csv": "E:\\Projects\\TanitAD\\data\\refe_navtest\\score\\refe_stage2_p5c_c1\\refe_stage2_p5c_c1.csv",
+   "csv_sha256": "7ae39f85d3c3dc875ccbbb43036f59b03fe953d09f47356ad134dd30e9a49d25"
+  },
+  {
+   "control": "CTRL-T",
+   "arm": "C",
+   "pass": true,
+   "fails": [],
+   "n_tokens": 12146,
+   "n_over_bar": 0,
+   "bar": 1e-09,
+   "max_abs_diff": {
+    "nc": 0.0,
+    "dac": 0.0,
+    "ddc": 0.0,
+    "ep": 2.5355273436389325e-11,
+    "ttc": 0.0,
+    "c": 0.0,
+    "pdms": 1.056488230233299e-11
+   },
+   "table_pick_equals_dump_pick": true,
+   "csv": "E:\\Projects\\TanitAD\\data\\refe_navtest\\score\\refe_stage2_p5c_c1\\refe_stage2_p5c_c1.csv",
+   "csv_sha256": "7ae39f85d3c3dc875ccbbb43036f59b03fe953d09f47356ad134dd30e9a49d25"
+  },
+  {
+   "arm": "T",
+   "bar": 1e-09,
+   "n_expected": 12146,
+   "n_scored": 12146,
+   "n_missing": 0,
+   "n_error_rows": 0,
+   "n_not_in_csv": 0,
+   "n_over_bar": 0,
+   "max_abs_diff": {
+    "nc": 0.0,
+    "dac": 0.0,
+    "ddc": 0.0,
+    "ep": 2.5355273436389325e-11,
+    "ttc": 0.0,
+    "c": 0.0,
+    "pdms": 1.056488230233299e-11
+   },
+   "over_first10": [],
+   "missing_first5": [],
+   "pass": true,
+   "verdict": "PASS",
+   "control": "CTRL-CSV",
+   "csv": "E:\\Projects\\TanitAD\\data\\refe_navtest\\score\\refe_stage2_p5c_c1\\refe_stage2_p5c_c1.csv",
+   "csv_sha256": "7ae39f85d3c3dc875ccbbb43036f59b03fe953d09f47356ad134dd30e9a49d25",
+   "arm_name": "C1"
+  },
+  {
+   "arm": "C",
+   "bar": 1e-09,
+   "n_expected": 12146,
+   "n_scored": 12146,
+   "n_missing": 0,
+   "n_error_rows": 0,
+   "n_not_in_csv": 0,
+   "n_over_bar": 0,
+   "max_abs_diff": {
+    "nc": 0.0,
+    "dac": 0.0,
+    "ddc": 0.0,
+    "ep": 2.5355273436389325e-11,
+    "ttc": 0.0,
+    "c": 0.0,
+    "pdms": 1.056488230233299e-11
+   },
+   "over_first10": [],
+   "missing_first5": [],
+   "pass": true,
+   "verdict": "PASS",
+   "control": "CTRL-CSV",
+   "csv": "E:\\Projects\\TanitAD\\data\\refe_navtest\\score\\refe_stage2_p5c_c1\\refe_stage2_p5c_c1.csv",
+   "csv_sha256": "7ae39f85d3c3dc875ccbbb43036f59b03fe953d09f47356ad134dd30e9a49d25",
+   "arm_name": "C1"
+  },
+  {
+   "control": "CTRL-SEAM",
+   "pass": true,
+   "fails": [],
+   "arms": {
+    "T": {
+     "seam": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\stage2_p5c_c1.npz",
+     "seam_sha256": "8df306ff940e50d6699942b9e61836c8193b4ed5ef21c32ec0d755859d349995",
+     "dump": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\stage2_p5c_c1.proposals.npz",
+     "dump_sha256": "b258e50a722101c090861c6f1f0c26d05b38de966fffeb84f0ea17c3dce95007"
+    },
+    "C": {
+     "seam": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\stage2_p5c_c1.npz",
+     "seam_sha256": "8df306ff940e50d6699942b9e61836c8193b4ed5ef21c32ec0d755859d349995",
+     "dump": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\stage2_p5c_c1.proposals.npz",
+     "dump_sha256": "b258e50a722101c090861c6f1f0c26d05b38de966fffeb84f0ea17c3dce95007"
+    }
+   },
+   "ledger": "none supplied",
+   "convert_report": "none supplied"
+  },
+  {
+   "control": "CTRL-ID",
+   "arm": "C1",
+   "pass": true,
+   "nonzero_deltas": [],
+   "verdict": "O4",
+   "P1": false
+  }
+ ],
+ "controls_all_pass": true,
+ "controls_not_available": [
+  {
+   "control": "CTRL-ARGV",
+   "reason": "no pod argv files exist for these arms (stand-ins): a real read REFUSES without --argv-t/-c(/-ts/-cs)"
+  },
+  {
+   "control": "CTRL-W0",
+   "reason": "no step-0 digest of C and no C1 reference digest for these arms (stand-ins): a real read REFUSES without --w0-digest-c and --w0-ref"
+  },
+  {
+   "control": "CTRL-DET",
+   "reason": "no re-run seam of T on 200 tokens (--det-seam-t): a real read REFUSES without it"
+  }
+ ],
+ "levels": {
+  "T": {
+   "nc": {
+    "tracked": {
+     "point": 98.80207475712169,
+     "lo": 98.43025537531705,
+     "hi": 99.15330924009841
+    },
+    "transparent": {
+     "point": 98.59212909599869,
+     "lo": 98.19514586863058,
+     "hi": 98.976677129803
+    },
+    "TD": {
+     "point": 0.20994566112300106,
+     "lo": 0.03377793543161687,
+     "hi": 0.38543547725268784
+    }
+   },
+   "dac": {
+    "tracked": {
+     "point": 98.22163675284044,
+     "lo": 97.70650978468814,
+     "hi": 98.66514316972179
+    },
+    "transparent": {
+     "point": 96.78906635929525,
+     "lo": 96.12548767134541,
+     "hi": 97.4084058422516
+    },
+    "TD": {
+     "point": 1.4325703935451912,
+     "lo": 1.0101010101010104,
+     "hi": 1.8679709299787581
+    }
+   },
+   "ddc": {
+    "tracked": {
+     "point": 96.17981228387947,
+     "lo": 95.31110594632315,
+     "hi": 97.01966273509699
+    },
+    "transparent": {
+     "point": 95.66112300345793,
+     "lo": 94.68369385327661,
+     "hi": 96.60544303065713
+    },
+    "TD": {
+     "point": 0.5186892804215404,
+     "lo": 0.30427560289810424,
+     "hi": 0.7483382296994563
+    }
+   },
+   "ttc": {
+    "tracked": {
+     "point": 95.33179647620616,
+     "lo": 94.45770875342625,
+     "hi": 96.1599522433946
+    },
+    "transparent": {
+     "point": 95.01893627531697,
+     "lo": 94.15888954885517,
+     "hi": 95.84885491989711
+    },
+    "TD": {
+     "point": 0.3128602008891903,
+     "lo": 0.0,
+     "hi": 0.636741050897675
+    }
+   },
+   "ep": {
+    "tracked": {
+     "point": 89.72110325160683,
+     "lo": 88.80132052608947,
+     "hi": 90.5766208324612
+    },
+    "transparent": {
+     "point": 88.10055728259108,
+     "lo": 87.13700642388937,
+     "hi": 89.02537473697417
+    },
+    "TD": {
+     "point": 1.620545969015751,
+     "lo": 1.175083743366224,
+     "hi": 2.051841433466371
+    }
+   },
+   "c": {
+    "tracked": {
+     "point": 99.97530051045612,
+     "lo": 99.94111510894132,
+     "hi": 100.0
+    },
+    "transparent": {
+     "point": 22.558867116746253,
+     "lo": 19.808247144947224,
+     "hi": 25.416321879152452
+    },
+    "TD": {
+     "point": 77.41643339370987,
+     "lo": 74.55479045532768,
+     "hi": 80.16776968742025
+    }
+   },
+   "pdms": {
+    "tracked": {
+     "point": 92.55477798611807,
+     "lo": 91.79824105849693,
+     "hi": 93.25791427388175
+    },
+    "transparent": {
+     "point": 78.74390169820137,
+     "lo": 77.7766178790057,
+     "hi": 79.73008264301168
+    },
+    "TD": {
+     "point": 13.810876287916699,
+     "lo": 13.213662686314857,
+     "hi": 14.385831881228254
+    }
+   }
+  },
+  "C": {
+   "nc": {
+    "tracked": {
+     "point": 98.80207475712169,
+     "lo": 98.43025537531705,
+     "hi": 99.15330924009841
+    },
+    "transparent": {
+     "point": 98.59212909599869,
+     "lo": 98.19514586863058,
+     "hi": 98.976677129803
+    },
+    "TD": {
+     "point": 0.20994566112300106,
+     "lo": 0.03377793543161687,
+     "hi": 0.38543547725268784
+    }
+   },
+   "dac": {
+    "tracked": {
+     "point": 98.22163675284044,
+     "lo": 97.70650978468814,
+     "hi": 98.66514316972179
+    },
+    "transparent": {
+     "point": 96.78906635929525,
+     "lo": 96.12548767134541,
+     "hi": 97.4084058422516
+    },
+    "TD": {
+     "point": 1.4325703935451912,
+     "lo": 1.0101010101010104,
+     "hi": 1.8679709299787581
+    }
+   },
+   "ddc": {
+    "tracked": {
+     "point": 96.17981228387947,
+     "lo": 95.31110594632315,
+     "hi": 97.01966273509699
+    },
+    "transparent": {
+     "point": 95.66112300345793,
+     "lo": 94.68369385327661,
+     "hi": 96.60544303065713
+    },
+    "TD": {
+     "point": 0.5186892804215404,
+     "lo": 0.30427560289810424,
+     "hi": 0.7483382296994563
+    }
+   },
+   "ttc": {
+    "tracked": {
+     "point": 95.33179647620616,
+     "lo": 94.45770875342625,
+     "hi": 96.1599522433946
+    },
+    "transparent": {
+     "point": 95.01893627531697,
+     "lo": 94.15888954885517,
+     "hi": 95.84885491989711
+    },
+    "TD": {
+     "point": 0.3128602008891903,
+     "lo": 0.0,
+     "hi": 0.636741050897675
+    }
+   },
+   "ep": {
+    "tracked": {
+     "point": 89.72110325160683,
+     "lo": 88.80132052608947,
+     "hi": 90.5766208324612
+    },
+    "transparent": {
+     "point": 88.10055728259108,
+     "lo": 87.13700642388937,
+     "hi": 89.02537473697417
+    },
+    "TD": {
+     "point": 1.620545969015751,
+     "lo": 1.175083743366224,
+     "hi": 2.051841433466371
+    }
+   },
+   "c": {
+    "tracked": {
+     "point": 99.97530051045612,
+     "lo": 99.94111510894132,
+     "hi": 100.0
+    },
+    "transparent": {
+     "point": 22.558867116746253,
+     "lo": 19.808247144947224,
+     "hi": 25.416321879152452
+    },
+    "TD": {
+     "point": 77.41643339370987,
+     "lo": 74.55479045532768,
+     "hi": 80.16776968742025
+    }
+   },
+   "pdms": {
+    "tracked": {
+     "point": 92.55477798611807,
+     "lo": 91.79824105849693,
+     "hi": 93.25791427388175
+    },
+    "transparent": {
+     "point": 78.74390169820137,
+     "lo": 77.7766178790057,
+     "hi": 79.73008264301168
+    },
+    "TD": {
+     "point": 13.810876287916699,
+     "lo": 13.213662686314857,
+     "hi": 14.385831881228254
+    }
+   }
+  }
+ },
+ "goal": {
+  "T": {
+   "goal": 94.55,
+   "level_tracked": {
+    "point": 92.55477798611807,
+    "lo": 91.79824105849693,
+    "hi": 93.25791427388175
+   },
+   "status": "BELOW GOAL",
+   "ci_hi_below_goal": true
+  },
+  "C": {
+   "goal": 94.55,
+   "level_tracked": {
+    "point": 92.55477798611807,
+    "lo": 91.79824105849693,
+    "hi": 93.25791427388175
+   },
+   "status": "BELOW GOAL",
+   "ci_hi_below_goal": true
+  }
+ },
+ "T_minus_C": {
+  "nc": {
+   "tracked": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "transparent": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "TD": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   }
+  },
+  "dac": {
+   "tracked": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "transparent": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "TD": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   }
+  },
+  "ddc": {
+   "tracked": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "transparent": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "TD": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   }
+  },
+  "ttc": {
+   "tracked": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "transparent": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "TD": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   }
+  },
+  "ep": {
+   "tracked": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "transparent": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "TD": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   }
+  },
+  "c": {
+   "tracked": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "transparent": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "TD": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   }
+  },
+  "pdms": {
+   "tracked": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "transparent": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "TD": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   }
+  }
+ },
+ "mechanism": {
+  "M1_ep_spearman": {
+   "delta": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_tokens": 10471
+   },
+   "moved": false,
+   "rule": "delta >= +0.1 and CI-lo > 0 (tokens with >= 3 safe proposals in BOTH arms)"
+  },
+  "M2_boundary": {
+   "zeroed_pick_rate_pp": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_tokens": 12146
+   },
+   "zeroed_by_dac": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_tokens": 12146
+   },
+   "zeroed_by_nc": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_tokens": 12146
+   },
+   "confidently_wrong_dac_share": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_a": 198,
+    "n_b": 198
+   },
+   "confidently_wrong_nc_share": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_a": 138,
+    "n_b": 138
+   },
+   "reported_only": true
+  },
+  "M3_regret": {
+   "oracle_minus_pick": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_tokens": 12146
+   },
+   "gate": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_tokens": 12146
+   },
+   "ep": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_tokens": 12146
+   },
+   "ttc": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_tokens": 12146
+   },
+   "c": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_tokens": 12146
+   },
+   "other": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_tokens": 12146
+   },
+   "moved": false,
+   "rule": "CI-hi < 0 of T - C regret (oracle - pick)"
+  },
+  "M4_generation_guard": {
+   "oracle_of_64": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_tokens": 12146
+   },
+   "damaged": false,
+   "rule": "CI-hi < 0 of T - C oracle-of-64"
+  },
+  "mechanism_moved": false,
+  "m4_damaged": false
+ },
+ "mechanism_Ts_minus_Cs": null,
+ "replicate": {
+  "status": "PENDING (Stage 2)",
+  "note": "Cs, Ts not supplied: P2 and P3 print PENDING; ADOPT is not reachable"
+ },
+ "comfort_transparent": {
+  "rule": "descriptive; enters NO clause (G1's C is NAVSIM's tracked comfort sub-score); C1's own transparent-comfort GUARD-FAIL stays open on the lineage",
+  "forms": {
+   "transparent_20_pose_plan": "table tp20_pick.c (the 20-pose pick scored without the tracker; the P5-C pass-1 transparent row)",
+   "transparent_8_submitted_poses": "table tp.c[pick] (the 8 submitted poses executed as given)"
+  },
+  "level_x100": {
+   "transparent_20_pose_plan": {
+    "T": {
+     "point": 22.558867116746253,
+     "lo": 19.808247144947224,
+     "hi": 25.416321879152452
+    },
+    "C": {
+     "point": 22.558867116746253,
+     "lo": 19.808247144947224,
+     "hi": 25.416321879152452
+    }
+   },
+   "transparent_8_submitted_poses": {
+    "T": {
+     "point": 94.48378066853284,
+     "lo": 93.17876554851603,
+     "hi": 95.77999025894289
+    },
+    "C": {
+     "point": 94.48378066853284,
+     "lo": 93.17876554851603,
+     "hi": 95.77999025894289
+    }
+   }
+  },
+  "delta_T_minus_C": {
+   "transparent_20_pose_plan": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "transparent_8_submitted_poses": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   }
+  },
+  "rows_transparent_c_equals_20_pose": {
+   "T": 0.0,
+   "C": 0.0
+  }
+ },
+ "families": {
+  "pooled": false,
+  "rule": "each family stands alone; no composite; a separated adverse cell is a verdict QUALIFIER, only G1 blocks ADOPT (card section 6)",
+  "LONGITUDINAL": {
+   "status": "NOT SUPPLIED",
+   "reason": "no fam_ci JSON (T vs C)",
+   "adverse": []
+  },
+  "LATERAL": {
+   "status": "NOT SUPPLIED",
+   "reason": "no fam_ci JSON (T vs C)",
+   "adverse": []
+  },
+  "lead_agent_components": null,
+  "TACTICAL": {
+   "(a)_manoeuvre_decision_command_adherence": {
+    "status": "NOT SUPPLIED",
+    "reason": "no p5c_tactical.py JSON"
+   },
+   "(a2)_fam_ci_tactical_components": {
+    "status": "NOT SUPPLIED",
+    "reason": "no fam_ci JSON (T vs C)",
+    "adverse": []
+   },
+   "(b)_selection_quality": {
+    "definition": "from each arm's 64-proposal table (p5c_prop_score.py) and proposals dump; tracked PDMS x100; never pooled with another family",
+    "levels": {
+     "T": {
+      "oracle": {
+       "point": 99.35302046290921,
+       "lo": 99.19592590094798,
+       "hi": 99.49052238009664,
+       "n_tokens": 12146
+      },
+      "pick": {
+       "point": 92.55477798611807,
+       "lo": 91.79824105849693,
+       "hi": 93.25791427388175,
+       "n_tokens": 12146
+      },
+      "regret": {
+       "point": 6.798242476791135,
+       "lo": 6.167485779104466,
+       "hi": 7.47547952490809,
+       "n_tokens": 12146
+      },
+      "regret_gate": {
+       "point": 2.7230703980267816,
+       "lo": 2.2648136690993805,
+       "hi": 3.2285779863430006,
+       "n_tokens": 12146
+      },
+      "regret_ep": {
+       "point": 2.631240326015525,
+       "lo": 2.413219742194802,
+       "hi": 2.8700192224130894,
+       "n_tokens": 12146
+      },
+      "regret_ttc": {
+       "point": 1.3824853175256604,
+       "lo": 1.1562376268479393,
+       "hi": 1.622222425127831,
+       "n_tokens": 12146
+      },
+      "regret_c": {
+       "point": 0.004116581590647126,
+       "lo": 0.0,
+       "hi": 0.009814148509781013,
+       "n_tokens": 12146
+      },
+      "regret_other": {
+       "point": 0.057329853632521584,
+       "lo": 0.01373132218521497,
+       "hi": 0.11098061570881211,
+       "n_tokens": 12146
+      },
+      "top1": {
+       "point": 47.80997859377573,
+       "lo": 45.03852495279823,
+       "hi": 50.479796008901495,
+       "n_tokens": 12146
+      },
+      "zeroed": {
+       "point": 2.9392392557220486,
+       "lo": 2.43081008800404,
+       "hi": 3.499804061866098,
+       "n_tokens": 12146
+      },
+      "ttc0_alt": {
+       "point": 3.4085295570558207,
+       "lo": 2.8383541916387527,
+       "hi": 4.006583120474392,
+       "n_tokens": 12146
+      },
+      "random": {
+       "point": 68.39355844130438,
+       "lo": 66.91250518412508,
+       "hi": 69.87061886479204,
+       "n_tokens": 12146
+      },
+      "zeroed_by_dac": {
+       "point": 1.7783632471595587,
+       "lo": 1.3348568302782113,
+       "hi": 2.293490215311864,
+       "n_tokens": 12146
+      },
+      "zeroed_by_nc": {
+       "point": 1.1608760085624896,
+       "lo": 0.8212260633519798,
+       "hi": 1.51736486604473,
+       "n_tokens": 12146
+      },
+      "auc_nc": {
+       "point": 0.9287314760416127,
+       "lo": 0.9218357287580948,
+       "hi": 0.9355269254265134,
+       "n_tokens": 6667
+      },
+      "auc_dac": {
+       "point": 0.9622319637230876,
+       "lo": 0.954576213799924,
+       "hi": 0.9692802742964188,
+       "n_tokens": 7514
+      },
+      "auc_ttc": {
+       "point": 0.8995636473351408,
+       "lo": 0.8900527235261732,
+       "hi": 0.9095474300054144,
+       "n_tokens": 8073
+      },
+      "ep_spearman": {
+       "point": 0.41339442008682575,
+       "lo": 0.388903976764359,
+       "hi": 0.43507160202982964,
+       "n_tokens": 10471
+      },
+      "conf_wrong_nc": {
+       "point": 58.69565217391305,
+       "lo": 50.0,
+       "hi": 68.36756497470783,
+       "n_tokens": 138
+      },
+      "conf_wrong_dac": {
+       "point": 70.20202020202021,
+       "lo": 58.65908358401376,
+       "hi": 80.69328643390655,
+       "n_tokens": 198
+      }
+     },
+     "C": {
+      "oracle": {
+       "point": 99.35302046290921,
+       "lo": 99.19592590094798,
+       "hi": 99.49052238009664,
+       "n_tokens": 12146
+      },
+      "pick": {
+       "point": 92.55477798611807,
+       "lo": 91.79824105849693,
+       "hi": 93.25791427388175,
+       "n_tokens": 12146
+      },
+      "regret": {
+       "point": 6.798242476791135,
+       "lo": 6.167485779104466,
+       "hi": 7.47547952490809,
+       "n_tokens": 12146
+      },
+      "regret_gate": {
+       "point": 2.7230703980267816,
+       "lo": 2.2648136690993805,
+       "hi": 3.2285779863430006,
+       "n_tokens": 12146
+      },
+      "regret_ep": {
+       "point": 2.631240326015525,
+       "lo": 2.413219742194802,
+       "hi": 2.8700192224130894,
+       "n_tokens": 12146
+      },
+      "regret_ttc": {
+       "point": 1.3824853175256604,
+       "lo": 1.1562376268479393,
+       "hi": 1.622222425127831,
+       "n_tokens": 12146
+      },
+      "regret_c": {
+       "point": 0.004116581590647126,
+       "lo": 0.0,
+       "hi": 0.009814148509781013,
+       "n_tokens": 12146
+      },
+      "regret_other": {
+       "point": 0.057329853632521584,
+       "lo": 0.01373132218521497,
+       "hi": 0.11098061570881211,
+       "n_tokens": 12146
+      },
+      "top1": {
+       "point": 47.80997859377573,
+       "lo": 45.03852495279823,
+       "hi": 50.479796008901495,
+       "n_tokens": 12146
+      },
+      "zeroed": {
+       "point": 2.9392392557220486,
+       "lo": 2.43081008800404,
+       "hi": 3.499804061866098,
+       "n_tokens": 12146
+      },
+      "ttc0_alt": {
+       "point": 3.4085295570558207,
+       "lo": 2.8383541916387527,
+       "hi": 4.006583120474392,
+       "n_tokens": 12146
+      },
+      "random": {
+       "point": 68.39355844130438,
+       "lo": 66.91250518412508,
+       "hi": 69.87061886479204,
+       "n_tokens": 12146
+      },
+      "zeroed_by_dac": {
+       "point": 1.7783632471595587,
+       "lo": 1.3348568302782113,
+       "hi": 2.293490215311864,
+       "n_tokens": 12146
+      },
+      "zeroed_by_nc": {
+       "point": 1.1608760085624896,
+       "lo": 0.8212260633519798,
+       "hi": 1.51736486604473,
+       "n_tokens": 12146
+      },
+      "auc_nc": {
+       "point": 0.9287314760416127,
+       "lo": 0.9218357287580948,
+       "hi": 0.9355269254265134,
+       "n_tokens": 6667
+      },
+      "auc_dac": {
+       "point": 0.9622319637230876,
+       "lo": 0.954576213799924,
+       "hi": 0.9692802742964188,
+       "n_tokens": 7514
+      },
+      "auc_ttc": {
+       "point": 0.8995636473351408,
+       "lo": 0.8900527235261732,
+       "hi": 0.9095474300054144,
+       "n_tokens": 8073
+      },
+      "ep_spearman": {
+       "point": 0.41339442008682575,
+       "lo": 0.388903976764359,
+       "hi": 0.43507160202982964,
+       "n_tokens": 10471
+      },
+      "conf_wrong_nc": {
+       "point": 58.69565217391305,
+       "lo": 50.0,
+       "hi": 68.36756497470783,
+       "n_tokens": 138
+      },
+      "conf_wrong_dac": {
+       "point": 70.20202020202021,
+       "lo": 58.65908358401376,
+       "hi": 80.69328643390655,
+       "n_tokens": 198
+      }
+     }
+    },
+    "T_minus_C": {
+     "oracle": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_tokens": 12146
+     },
+     "pick": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_tokens": 12146
+     },
+     "regret": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_tokens": 12146
+     },
+     "regret_gate": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_tokens": 12146
+     },
+     "regret_ep": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_tokens": 12146
+     },
+     "regret_ttc": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_tokens": 12146
+     },
+     "regret_c": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_tokens": 12146
+     },
+     "regret_other": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_tokens": 12146
+     },
+     "top1": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_tokens": 12146
+     },
+     "zeroed": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_tokens": 12146
+     },
+     "ttc0_alt": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_tokens": 12146
+     },
+     "random": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_tokens": 12146
+     },
+     "zeroed_by_dac": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_tokens": 12146
+     },
+     "zeroed_by_nc": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_tokens": 12146
+     },
+     "ep_spearman_both_defined": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_tokens": 10471
+     },
+     "auc_nc": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_a": 6667,
+      "n_b": 6667
+     },
+     "auc_dac": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_a": 7514,
+      "n_b": 7514
+     },
+     "auc_ttc": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_a": 8073,
+      "n_b": 8073
+     },
+     "ep_spearman": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_a": 10471,
+      "n_b": 10471
+     },
+     "conf_wrong_nc": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_a": 138,
+      "n_b": 138
+     },
+     "conf_wrong_dac": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_a": 198,
+      "n_b": 198
+     }
+    },
+    "separated_adverse": []
+   },
+   "(c)_goal_setting": {
+    "status": "NOT COMPUTABLE",
+    "reason": "REFe has no tactical goal head, and NAVSIM carries no manoeuvre label beyond the driving command; the command is an INPUT of the agent",
+    "n": 12146
+   }
+  },
+  "STRATEGIC": {
+   "status": "NOT SUPPLIED",
+   "reason": "no strategic_family.py JSON (--arm T=<T seam> --base C=<C seam>)",
+   "n": 12146
+  },
+  "separated_adverse_qualifiers": [],
+  "Ts_minus_Cs_fam_ci": null
+ },
+ "verdict": {
+  "verdict": "DRY RUN:O4",
+  "outcome": "O4",
+  "wording": "O4: FAIL: the representation path does not carry the margin at this dose. one seed per arm: training variance was NOT measured for this arm (a Stage-1 outcome is accepted on one seed, decided before data)",
+  "clauses": {
+   "P1_lo_gt_0": false,
+   "P1_delta": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "G1": "PASS",
+   "G1_adverse": [],
+   "P2": "PENDING (Stage 2)",
+   "P3": "PENDING (Stage 2)"
+  },
+  "next_arm": "the selection line closes. Generation TEACHER-N7 (`PREREG_P5C_NEXT` section 5 rank 3), OR explicit proposal-geometry inputs to the EP head (architecture: PI). Both are named blockers on the PI and the L40"
+ },
+ "ddc": {
+  "T_minus_C": {
+   "tracked": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "transparent": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "TD": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   }
+  },
+  "note": "DDC is reported, not a guard (navsim_v1 ignores it)"
+ },
+ "adopt_caveat": "ADOPT would not clear C1's own GUARD-FAIL (TM+C: transparent comfort, the longitudinal speed bias); those stay open on the lineage",
+ "snooping": "the lever, heads and sizes were chosen from C1's navtest diagnostics (SNOOPED); the arms train on navtrain only; this read tests trained models, not a rule fit on navtest",
+ "card_questions": [
+  "Q-S1 outcome for a CONTROL-INVALID read is INVALID, no outcome; Stage 1 with P1 and G1 prints STAGE-2-TRIGGERED, never ADOPT, with P2 / P3 PENDING (Stage 2), as the brief states.",
+  "Q-S2 the step-0 digest artifact format is not registered: CTRL-W0 reads the FIRST 64-hex string in the supplied file and compares it to the C1 reference (SCORERFT_BASE_SHA256).",
+  "Q-S3 CTRL-DET: the re-run seam must hold >= 200 tokens, all in T's full seam, with poses bit-identical (the card says 'T's seam re-run on 200 tokens is identical').",
+  "Q-S4 s_p is not defined by the card: reported beside P3 as |d0 - d1| / sqrt(2) (n = 2), decides nothing; P6's 0.179 is another rig and is not imported.",
+  "Q-S5 O5 names no head for a separated adverse C sub-score; the read says so rather than choosing.",
+  "Q-S6 M2 'DAC / NC boundary share on rescuable zeroed picks' is read as head_auc.py's share of rescuable zeroed picks whose pick has a head output above the passing median (the 70.2 % of the card), plus the zeroed-by-DAC / by-NC rates; UNVERIFIED reading.",
+  "Q-S7 M1 is the paired T - C difference on the tokens with >= 3 safe proposals in BOTH arms (the safe set differs per arm); each arm's own level (own defined set) is beside it.",
+  "Q-S8 BELOW GOAL: the arm's tracked PDMS POINT < 94.55 (the brief's 'under 94.55'); whether the CI-hi also lies below is printed.",
+  "Q-S9 P3 uses a strict '>' and F as the point |mean(Cs) - mean(C)| (as the field card's Q-F5).",
+  "Q-S11 POLARITY DEFECT found in the inherited rule: p5c_read.fam_direction (vendored from proxy_eval) has no entry for min_ttc_s / headway_min_m / time_gap_min_s and defaults to 'lower is better'; on C1 vs C0 it read a RISE of min_ttc_s (+0.297 [0.157, 0.436], safer) as separated adverse. This read overrides those three to higher-is-better in `adverse_cell` (descriptive qualifiers only); P5-C's G2 list is NOT re-derived here and its min_ttc_s entry should be re-read.",
+  "Q-S10 a separated adverse cell of TACTICAL fam_ci components is read for accuracy / kappa only (polarity-safe); per-class recall / precision and goal-setting components are descriptive."
+ ],
+ "STAMP": "DRY RUN \u2014 NOT A SCORER-FT VERDICT",
+ "DRY_RUN": {
+  "label": "CTRL-ID: C1 vs C1 (T == C)",
+  "claim": "none: the arms are stand-ins, the verdict string is a pipeline exercise",
+  "verdict_as_computed": "O4",
+  "controls_not_available_for_stand_ins": [
+   "CTRL-ARGV",
+   "CTRL-W0",
+   "CTRL-DET"
+  ]
+ }
+}

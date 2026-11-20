@@ -1,4 +1,4 @@
-"""Tests for p5c_families.py (B9): summary reads the tracked frame as the only guard, polarity, strategic PAUSED, token file order.
+"""Tests for p5c_families.py (B9): summary reads the tracked frame as the only guard, polarity, strategic REPORTED_SEPARATELY, token file order.
 Run: CUDA_VISIBLE_DEVICES=-1 python -m pytest test_p5c_families.py -q"""
 import json
 import os
@@ -19,7 +19,7 @@ def test_summary_marks_only_the_tracked_frame_as_guard():
     assert s["frames"]["executed_tracked"]["guard"] is True and s["frames"]["executed_transparent"]["guard"] is False
     assert [a["component"] for a in s["frames"]["executed_tracked"]["separated_adverse"]] == ["speed_mae_mps"]
     assert "NEVER A GUARD" in s["frames"]["executed_transparent"]["role"]
-    assert s["strategic"]["status"] == "PAUSED"
+    assert s["strategic"]["status"] == "REPORTED_SEPARATELY"
 
 
 def test_RED_polarity_of_dotted_names_keeps_the_decimal_point():
@@ -64,7 +64,7 @@ def test_polarity_rule_matches_proxy_eval_if_present():
         sp.loader.exec_module(m)
     except Exception:
         pytest.skip("proxy_eval not importable here")
-    for k in ("speed_mae_mps", "accel_mae_mps2", "target_speed_acc.within_1.0_mps", "heading_bias_deg", "lead_progress_ratio", "kappa"):
+    for k in ("speed_mae_mps", "accel_mae_mps2", "target_speed_acc.within_1.0_mps", "heading_bias_deg", "lead_progress_ratio", "kappa", "min_ttc_s", "headway_min_m", "time_gap_min_s", "longitudinal.min_ttc_s", "mean_min_ttc_s"):
         assert fam_direction(k) == m.fam_direction(k)
 
 

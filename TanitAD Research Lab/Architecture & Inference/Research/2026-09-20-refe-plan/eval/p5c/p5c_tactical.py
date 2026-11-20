@@ -3,7 +3,7 @@
 
 Card, TACTICAL row: command adherence (turn-active accuracy headline, kappa, 3x3 confusion, random-proposal floor; `command_adherence.py`);
 selection quality, random / actual / best-of-64 (`--dump-proposals`); computable as in P6's read. Tactical goal-setting is NOT computable (REFe has no tactical
-goal head; NAVSIM carries no manoeuvre label beyond the driving command; n = 12,146, reason stated). STRATEGIC is PAUSED (PI ruling 2026-09-19, item 25).
+goal head; NAVSIM carries no manoeuvre label beyond the driving command; n = 12,146, reason stated). STRATEGIC is REPORTED_SEPARATELY (strategic_family.py; PI unpaused it 2026-11-16).
 
 Reuse (imported, not copied):
   eval/command_adherence.py   run_read(arm, comparators, dump, exp, expect_full)  -> accuracy / kappa / confusion per arm, paired deltas, the 64-proposal floor, its own gates
@@ -36,7 +36,7 @@ GOAL_REASON = ("REFe has no tactical goal head, and NAVSIM carries no manoeuvre 
                "the command is an INPUT of the agent, so adherence to it is the tactical row, not goal-setting")
 SELQ_REASON = ("per-proposal PDMS needs the harness: 64 single-proposal seams scored per arm (~4 to 6.4 h CPU on the full navtest, P6 read gaps G2), "
                "built from the arm's --dump-proposals; no table was supplied")
-STRATEGIC = {"status": "PAUSED", "reason": "PI ruling 2026-09-19 (PI_DECISION_QUEUE item 25); not a pass, not omitted"}
+STRATEGIC = {"status": "REPORTED_SEPARATELY", "reason": "STRATEGIC is reported in full by eval/instruments/strategic_family.py (PI unpaused it 2026-11-16, superseding the 2026-09-19 pause); this block is a pointer, never a pass, never omitted", "instrument": "eval/instruments/strategic_family.py"}
 FAMILY_KEYS = ("command_adherence", "selection_quality", "goal_setting")
 
 
@@ -166,7 +166,7 @@ def build(seams: dict, dump: dict | None = None, tables: dict | None = None, exp
 
 
 def validate_block(t: dict) -> list:
-    """what a consumer (p5c_read / p5c_render) needs: every family present, none pooled, each NOT-COMPUTED with a reason and n, STRATEGIC paused."""
+    """what a consumer (p5c_read / p5c_render) needs: every family present, none pooled, each NOT-COMPUTED with a reason and n, STRATEGIC pointing at strategic_family.py."""
     bad = []
     if not isinstance(t, dict) or t.get("kind") != "P5C_TACTICAL":
         return ["not a P5C_TACTICAL block"]
@@ -175,8 +175,9 @@ def validate_block(t: dict) -> list:
             bad.append(f"family {k} absent (never silently dropped)")
     if t.get("pooled") is not False or "composite" in t or "pooled_score" in t:
         bad.append("a pooled / composite score is present: families are never pooled")
-    if (t.get("strategic") or {}).get("status") != "PAUSED":
-        bad.append("STRATEGIC is not PAUSED (PI ruling 2026-09-19): it may not be a pass or absent")
+    st = (t.get("strategic") or {}).get("status")
+    if st != "REPORTED_SEPARATELY":
+        bad.append("STRATEGIC must be REPORTED_SEPARATELY (strategic_family.py; PI unpaused 2026-11-16): never PAUSED, never a pass, never absent")
     g = t.get("goal_setting") or {}
     if g.get("status") != "NOT COMPUTABLE" or not g.get("reason") or not g.get("n"):
         bad.append("goal_setting must say NOT COMPUTABLE with its reason and n")

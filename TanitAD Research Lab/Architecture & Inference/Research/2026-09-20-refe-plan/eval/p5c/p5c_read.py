@@ -35,7 +35,7 @@ SUBS = ("nc", "dac", "ddc", "ttc", "ep", "c")
 G1_SUBS = ("nc", "dac", "ttc", "ep", "c")        # card 6.2 G1 list: NC, DAC, TTC, EP, C (DDC is reported, not a G1 term)
 METRICS = SUBS + ("pdms",)
 SCORERS = ("tracked", "transparent")
-STRATEGIC = {"status": "PAUSED", "reason": "PI ruling 2026-09-19 (PI_DECISION_QUEUE item 25); not a pass, not omitted"}
+STRATEGIC = {"status": "REPORTED_SEPARATELY", "reason": "STRATEGIC is reported in full by eval/instruments/strategic_family.py (PI unpaused it 2026-11-16, superseding the 2026-09-19 pause); this block is a pointer, never a pass, never omitted", "instrument": "eval/instruments/strategic_family.py"}
 NO_TRACKER = "no tracker in this number"
 
 
@@ -151,9 +151,21 @@ def rates_block(bt, P, arms, c1, c0, base):
 
 
 # ------------------------------------------------------------------------------------------------------ G2 (families, tracked-executed frame only)
+#: 2026-11-20 POLARITY FIX (MM brief BRIEF_FAMPOL): the lead-agent safety margins are HIGHER-IS-SAFER. The old rule's default "lower" read a RISE of
+#: min_ttc_s (+0.297 [+0.157, +0.436], C1 vs C0) as ADVERSE. Matched on the last dotted segment (any family prefix), also with a `mean_` prefix.
+SAFETY_MARGIN_HIGHER = ("min_ttc_s", "headway_min_m", "time_gap_min_s")
+
+
+def is_safety_margin(metric: str) -> bool:
+    seg = metric.lower().rsplit(".", 1)[-1]
+    return seg in SAFETY_MARGIN_HIGHER or (seg.startswith("mean_") and seg[5:] in SAFETY_MARGIN_HIGHER)
+
+
 def fam_direction(metric: str) -> str:
     """VENDORED from eval/proxy_eval.py::fam_direction (the polarity rule behind P6/P7's ADOPT guard; 2026-09-28 word-match fix included)."""
     m = metric.lower()
+    if is_safety_margin(m):                                           # 2026-11-20: bigger = safer; must precede the default "lower"
+        return "higher"
     if "within_" in m or "accuracy" in m or "kappa" in m:
         return "higher"
     if "bias" in m:

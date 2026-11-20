@@ -19015,3 +19015,30 @@ Before recommending a next arm from a verdict:
 1. Grep GOALS_AND_CLAIMS for every row on the same arm family.
 2. State which weight set (EMA / raw / tail) and which threshold (default / FIT) the failing clause was read on.
 3. Name the row that rules each candidate lever in or out.
+
+## 2026-11-20 — R-FAMPOL-1: the four-family direction rule read a RISE in min TTC / headway / time-gap as adverse, and could never see their FALL (Master Mind)
+
+**What was wrong:** `fam_direction` (`PK/eval/proxy_eval.py`, vendored in `PK/eval/p5c/p5c_read.py`) returned "higher" only for
+`within_` / `accuracy` / `kappa`, "magnitude" for `bias`, "closer_to_1" for `progress_ratio`, and **"lower" for every other name**.
+`min_ttc_s`, `headway_min_m` and `time_gap_min_s` are safety margins (bigger = safer), so a margin that grew was flagged separated
+ADVERSE, and a margin that shrank was never flagged at all. Found by the SCORER-FT read agent while building the T-vs-C read;
+confirmed in source by the MM; scoped by `PK/raw/2026-11-20-fampol/AUDIT_FAMPOL.md`.
+
+**What is true:** no banked verdict changes.
+* P5-C (`PK/raw/2026-11-20-p5c-read/read.json`): G2 named `min_ttc_s` +0.297 [+0.157, +0.436] (C1 safer) as adverse; GUARD-FAIL stands
+  on the other 14 separated longitudinal / lateral components. The register row had already written "(listed adverse by the card's
+  direction rule)".
+* The only list that would flip is a synthetic 2026-11-13 dry run (`time_gap_min_s` its sole entry), not a banked verdict.
+* Real falls of 0.4-0.9 s in these margins that the old rule could not flag exist in non-guard frames (e.g. `fam_ci_RJ5R_vs_R0R`, the
+  P7 rehearsal U400 vs P6RH; P5-C transparent frame `min_ttc_s` −0.50 [−0.75, −0.28]); none of those frames is a guard.
+
+**Fix:** the three margins are "higher" in the shared rule (matched on the last dotted segment), with one deliberate-regression arm each
+(`PK/eval/test_fam_direction.py`); `field_read.py` applies the correction itself (its `eval/p5c` import may come from an older export)
+and prints both readings for any cell it moves; `scorerft_read.py` calls the shared rule. Still WRONG and listed, not changed
+(unreachable today: nothing judges those cells adverse): tactical per-class recall/precision read "lower"; `goal_range_ratio` reads
+"lower" (should be closer to 1); `lead_progress_ratio` "closer to 1" needs a ruling.
+
+**Class / rule: A FALL-THROUGH DEFAULT IN A DIRECTION RULE.** A polarity function with a default branch silently assigns a direction to
+every metric nobody named, including ones added after it was written (the distance-keeping metrics came later than the rule). Same family
+as "a flag whose default disables it". Before a new metric enters any guard: name its direction explicitly in the rule and add the
+RED arm; a rule that returns a direction for an unknown name should be treated as a defect, not a convenience.

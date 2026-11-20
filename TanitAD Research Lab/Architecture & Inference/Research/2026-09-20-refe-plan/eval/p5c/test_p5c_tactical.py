@@ -1,5 +1,5 @@
 """Tests for p5c_tactical.py (B12). The wrapper must CONSUME the existing tools' output (identity with command_adherence.run_read on the same seams), never pool
-families, and say NOT COMPUTED with reason and n where it cannot compute. RED arms: pooled score, absent family, STRATEGIC not paused, a goal row without a
+families, and say NOT COMPUTED with reason and n where it cannot compute. RED arms: pooled score, absent family, STRATEGIC not REPORTED_SEPARATELY, a goal row without a
 reason, mismatched token sets (INVALID, never numbers), --tokens-from without --subset-ok.
 Integration tests use the banked P6 / u400 / deployed seams and the W3 export; they skip when those are not on this machine.
 Run: CUDA_VISIBLE_DEVICES=-1 python -m pytest test_p5c_tactical.py -q"""
@@ -38,7 +38,7 @@ def test_not_computed_block_is_valid_and_names_reason_and_n():
     assert T.validate_block(b) == []
     assert b["command_adherence"]["reason"] and b["command_adherence"]["n"] == 500
     assert b["goal_setting"]["status"] == "NOT COMPUTABLE" and "no tactical goal head" in b["goal_setting"]["reason"]
-    assert b["strategic"]["status"] == "PAUSED"
+    assert b["strategic"]["status"] == "REPORTED_SEPARATELY"
 
 
 def test_good_block_validates():
@@ -64,7 +64,7 @@ def test_RED_absent_family_refused(k):
 def test_RED_strategic_never_a_pass():
     b = good_block()
     b["strategic"] = {"status": "PASS"}
-    assert any("PAUSED" in x for x in T.validate_block(b))
+    assert any("REPORTED_SEPARATELY" in x for x in T.validate_block(b))
 
 
 def test_RED_goal_setting_needs_reason_and_n():
@@ -112,7 +112,7 @@ def test_reach_wrapper_equals_the_existing_tool_on_the_same_seams(tmp_path):
     assert ca["paired_C1_minus_x"]["C1-C0"]["turn_active"]["accuracy_delta"] == direct["paired_vs_comparators"]["C1_minus_C0_C0"]["turn_active"]["accuracy_delta"]
     assert set(ca["paired_C1_minus_x"]) == {"C1-C0", "C1-base", "C0-base"}
     assert ca["random_proposal_floor"]["status"] == "NOT COMPUTED" and ca["random_proposal_floor"]["n"] == 120 and ca["incomplete"]
-    assert blk["selection_quality"]["C1"]["status"] == "NOT COMPUTED" and blk["goal_setting"]["n"] == 120 and blk["strategic"]["status"] == "PAUSED"
+    assert blk["selection_quality"]["C1"]["status"] == "NOT COMPUTED" and blk["goal_setting"]["n"] == 120 and blk["strategic"]["status"] == "REPORTED_SEPARATELY"
 
 
 @needs

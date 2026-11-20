@@ -23,7 +23,7 @@ def good_result(d_t=0.03, d_p=0.0, c0r=False):
 
 def test_renders_a_complete_result():
     txt = X.render(good_result())
-    assert "tracked" in txt and "transparent" in txt and "QUALIFIER" in txt and "STRATEGIC family: PAUSED" in txt
+    assert "tracked" in txt and "transparent" in txt and "QUALIFIER" in txt and "STRATEGIC family: REPORTED_SEPARATELY" in txt
     assert txt.count("QUALIFIER ") == 1
 
 

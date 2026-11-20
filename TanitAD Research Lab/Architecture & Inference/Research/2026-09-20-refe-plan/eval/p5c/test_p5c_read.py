@@ -171,9 +171,9 @@ def test_G2_not_evaluated_blocks_a_positive_verdict():
     assert v["verdict"] == "INCOMPLETE"
 
 
-def test_strategic_is_paused_never_a_pass():
+def test_strategic_is_reported_separately_never_paused_never_a_pass():
     res = R.run(mk_rows(arms_with_shift()), "C1", "C0", "base", rehearsal="t")
-    assert res["strategic_family"]["status"] == "PAUSED"
+    assert res["strategic_family"]["status"] == "REPORTED_SEPARATELY" and "PAUSED" not in str(res["strategic_family"])
 
 
 # ---------------------------------------------------------------------------------------------- the verdict ladder (card 6.2)
@@ -279,3 +279,35 @@ def test_determinism_bit_identical():
 def test_rehearsal_label_prefixes_the_verdict():
     res = R.run(mk_rows(arms_with_shift(0.05)), "C1", "C0", "base", fam_ci=_fam(), rehearsal="stand-in arms")
     assert res["verdict"]["verdict"].startswith("REHEARSAL:") and "no P5-C" in res["REHEARSAL"]["claim"]
+
+
+# ---- 2026-11-20 POLARITY FIX: min_ttc_s / headway_min_m / time_gap_min_s are higher-is-safer (they defaulted to "lower")
+def _ent(lo, hi, pt):
+    return {"status": "OK", "A": {"point": 1, "lo": 0.9, "hi": 1.1}, "B": {"point": 1, "lo": 0.9, "hi": 1.1}, "diff_B_minus_A": {"point": pt, "lo": lo, "hi": hi}}
+
+
+@pytest.mark.parametrize("k", ["min_ttc_s", "headway_min_m", "time_gap_min_s", "longitudinal.min_ttc_s", "mean_min_ttc_s"])
+def test_safety_margin_polarity_is_higher(k):
+    assert R.fam_direction(k) == "higher"
+    assert R.entry_adverse(k, _ent(0.157, 0.436, 0.297)) is False       # the banked P5-C C1-vs-C0 min_ttc_s: a separated RISE of a margin is not adverse
+    assert R.entry_adverse(k, _ent(-0.436, -0.157, -0.297)) is True     # a separated FALL is
+
+
+def test_safety_margin_neighbours_keep_their_polarity():
+    assert R.fam_direction("lead_viol") == "lower" and R.fam_direction("lead_at_risk") == "lower"
+    assert R.fam_direction("speed_mae_mps") == "lower"
+    assert R.entry_adverse("speed_mae_mps", _ent(0.157, 0.436, 0.297)) is True
+
+
+def test_RED_polarity_revert_one_margin_is_caught(monkeypatch):
+    """deliberate-regression arm: re-introduce the defect for ONE margin; the polarity expectation must fail."""
+    for drop in R.SAFETY_MARGIN_HIGHER:
+        monkeypatch.setattr(R, "SAFETY_MARGIN_HIGHER", tuple(x for x in ("min_ttc_s", "headway_min_m", "time_gap_min_s") if x != drop))
+        assert R.fam_direction(drop) == "lower"                           # the mutant reads the old (wrong) polarity ...
+        assert R.entry_adverse(drop, _ent(0.157, 0.436, 0.297)) is True   # ... and flags the RISE adverse: exactly what the real test above forbids
+
+
+def test_g2_famci_min_ttc_rise_is_not_listed_adverse():
+    j = {"estimator": "x", "frames": {"executed_tracked": {"families": {"longitudinal": {"min_ttc_s": _ent(0.157, 0.436, 0.297), "speed_mae_mps": _ent(-0.1, 0.1, 0.0)}, "lateral": {}}}}}
+    g = R.g2_from_famci(j)
+    assert g["status"] == "PASS" and g["adverse"] == []

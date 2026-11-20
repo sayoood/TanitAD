@@ -3,7 +3,10 @@
 
 Implements PREREG_AUX_FIELD_LOSS_P7.md (FINAL 2026-11-17, Amendments A and B), section "Estimator, tier, endpoints, adverse checks, rule",
 "Kill conditions" (K4), "Reports: four families" and "Outcomes committed in advance". It decides nothing the card did not decide.
-Built on eval/p5c/p5c_read.py (Boot, per_token, contrast, entry_adverse, fam_direction): same draws, same seed, same polarity rule.
+Built on eval/p5c/p5c_read.py (Boot, per_token, contrast, entry_adverse, fam_direction): same draws, same seed, same polarity rule
+EXCEPT (v3, 2026-11-20) the three lead-agent safety margins min_ttc_s / headway_min_m / time_gap_min_s, which are higher-is-safer: the inherited
+fam_direction defaults them to lower-is-better, so a RISE read as ADVERSE. The correction is applied HERE (see entry_adverse_pol), so it holds even when
+FIELD_READ_P5C_DIR points at an old harness export; every cell the correction changes is printed with both readings and the reason.
 
 INPUT   transp_score rows (p5c_read_prep.py convert + score on the F and C seams; arms.<name>.{tracked,transparent}.{nc,dac,ddc,ttc,ep,pdms,c}),
         the two seams + proposals dumps (picked plan, 64-proposal fan), the harness CSVs, a seam ledger, the 64-proposal tables (M1, selection
@@ -182,6 +185,45 @@ def core(P, logs, F, C, geo, n_boot=NBOOT) -> dict:
     return out
 
 
+#: v3 POLARITY CORRECTION, applied here and not only in p5c_read so it survives an old harness export. ONE rule: same tuple + matcher as p5c_read / proxy_eval
+#: (test_field_read asserts they agree when the imported p5c_read carries them).
+SAFETY_MARGIN_HIGHER = ("min_ttc_s", "headway_min_m", "time_gap_min_s")
+POLARITY_REASON = "lead-agent safety margin (bigger = safer); the inherited fam_direction() has no rule for it and defaults to lower-is-better"
+
+
+def is_safety_margin(metric: str) -> bool:
+    seg = metric.lower().rsplit(".", 1)[-1]
+    return seg in SAFETY_MARGIN_HIGHER or (seg.startswith("mean_") and seg[5:] in SAFETY_MARGIN_HIGHER)
+
+
+def fam_direction_pol(k: str) -> str:
+    return "higher" if is_safety_margin(k) else PR.fam_direction(k)
+
+
+def entry_adverse_pol(k: str, e: dict):
+    """is F separated WORSE than C on this component (diff = B - A = F - C)? p5c_read.entry_adverse EXCEPT the safety margins, which are higher-is-better."""
+    if is_safety_margin(k):
+        if e.get("status") != "OK":
+            return None
+        return bool(e["diff_B_minus_A"]["hi"] < 0)
+    return PR.entry_adverse(k, e)
+
+
+def polarity_changes(j) -> list:
+    """every executed_tracked cell whose adverse flag the correction CHANGES vs the inherited (imported) rule, with both readings."""
+    out = []
+    fr = ((j or {}).get("frames") or {}).get("executed_tracked") or {}
+    for fam in ("longitudinal", "lateral"):
+        for k, e in ((fr.get("families") or {}).get(fam) or {}).items():
+            if not isinstance(e, dict) or "status" not in e:
+                continue
+            old, new = PR.entry_adverse(k, e), entry_adverse_pol(k, e)
+            if old != new:
+                out.append({"family": fam, "component": k, "diff_F_minus_C": e.get("diff_B_minus_A"), "inherited_reading": {"direction": PR.fam_direction(k), "adverse": old},
+                            "corrected_reading": {"direction": fam_direction_pol(k), "adverse": new}, "reason": POLARITY_REASON})
+    return out
+
+
 def family_guard(j, label_a="C", label_b="F") -> dict:
     """no LONGITUDINAL / LATERAL component of the TRACKED-EXECUTED frame separated adverse (fam_ci: diff = B - A = F - C)."""
     if j is None:
@@ -197,17 +239,24 @@ def family_guard(j, label_a="C", label_b="F") -> dict:
         for k, e in (fr["families"].get(fam) or {}).items():
             if k.split(".")[-1] in ("gt_progress_mean_m", "t0_axis_gt_self_ratio"):
                 continue
-            r = PR.entry_adverse(k, e)
+            r = entry_adverse_pol(k, e)
             if r is None:
                 und.append(f"{fam}.{k}:{e.get('status')}")
                 continue
             comp += 1
             if r:
-                adverse.append({"family": fam, "component": k, "direction": PR.fam_direction(k), "diff_F_minus_C": e["diff_B_minus_A"]})
+                adverse.append({"family": fam, "component": k, "direction": fam_direction_pol(k), "diff_F_minus_C": e["diff_B_minus_A"]})
     if comp == 0:
         return {"status": "NOT-EVALUATED", "reason": "0 comparable LONGITUDINAL / LATERAL components", "adverse": [], "components_compared": 0, "components_undecided": und}
+    changes = polarity_changes(j)
+    inh = [f"{c['family']}.{c['component']}" for c in changes if c["inherited_reading"]["adverse"]]       # flagged by the inherited rule only
+    still = [f"{a['family']}.{a['component']}" for a in adverse]
+    inherited_status = "FAIL" if (adverse or inh) else "PASS"
     return {"status": "FAIL" if adverse else "PASS", "adverse": adverse, "components_compared": comp, "components_undecided": und,
-            "frame": "executed_tracked", "estimator": j.get("estimator")}
+            "frame": "executed_tracked", "estimator": j.get("estimator"),
+            "polarity_corrections": changes,
+            "guard_status_under_inherited_rule": {"status": inherited_status, "flipped_by_correction": inherited_status != ("FAIL" if adverse else "PASS"),
+                                                  "adverse_inherited_only": inh, "adverse_both_rules": still}}
 
 
 # ------------------------------------------------------------------------------------------------------ the card's rule
@@ -519,7 +568,7 @@ def families_block(fam_json, tact, strat, sel, fam_guard) -> dict:
                 if not isinstance(e, dict) or "status" not in e:
                     continue
                 comp[k] = {"status": e["status"], "n_tokens": e.get("n_tokens"), "F": e.get("B"), "C": e.get("A"), "diff_F_minus_C": e.get("diff_B_minus_A"),
-                           "adverse": (PR.entry_adverse(k, e) if key != "tactical" else None)}
+                           "adverse": (entry_adverse_pol(k, e) if key != "tactical" else None)}
             out[fam] = comp
         out["frame"] = "executed_tracked (fam_ci diff = B - A = F - C)"
     out["TACTICAL_command_adherence"] = tact if tact is not None else {"status": "NOT SUPPLIED", "reason": "no p5c_tactical.py JSON for F vs C"}
@@ -650,6 +699,7 @@ def run_read(a) -> dict:
         "Q-F4 E1 and E2 hold, A1-A3 clear, but a longitudinal/lateral family component is separated adverse: the card forbids ADOPT but names no TRADE; this read prints NOT PROVEN with the component named.",
         "Q-F5 the replicate pair must be given as arms in the same rows; floor = |mean PDMS(Cs) - mean PDMS(C)| as the card writes it (a point, not an interval).",
         "Q-F6 CTRL-CSV bar is 1e-9 on the raw per-token values (all 7 metrics); the P5-C read used 1e-6.",
+        "Q-F7 POLARITY (v3, 2026-11-20): min_ttc_s / headway_min_m / time_gap_min_s are higher-is-safer; the inherited fam_direction defaulted them to lower-is-better (a rise read adverse). The correction is applied in this file (entry_adverse_pol), not only in p5c_read, and every cell it changes is listed under families.guard_longitudinal_lateral.polarity_corrections with both readings.",
     ]
     if dry:
         res["STAMP"] = DRY_STAMP
@@ -723,6 +773,13 @@ def text_report(r: dict) -> str:
     L.append("  STRATEGIC: " + str(f["STRATEGIC"].get("status")))
     g = f["guard_longitudinal_lateral"]
     L.append("  guard (longitudinal/lateral separated adverse): " + g["status"] + (f" ({g['reason']})" if g.get("reason") else ""))
+    for pc in g.get("polarity_corrections") or []:
+        d = pc["diff_F_minus_C"]
+        L.append(f"  POLARITY CORRECTED {pc['family']}.{pc['component']}: diff F-C {d['point']:+.4g} [{d['lo']:+.4g}, {d['hi']:+.4g}]; inherited rule ({pc['inherited_reading']['direction']}) -> "
+                 f"adverse={pc['inherited_reading']['adverse']}; corrected ({pc['corrected_reading']['direction']}) -> adverse={pc['corrected_reading']['adverse']}; {pc['reason']}")
+    gi = g.get("guard_status_under_inherited_rule")
+    if gi:
+        L.append(f"  guard under the inherited rule: {gi['status']} (flipped by the correction: {gi['flipped_by_correction']})")
     return "\n".join(L) + "\n"
 
 
