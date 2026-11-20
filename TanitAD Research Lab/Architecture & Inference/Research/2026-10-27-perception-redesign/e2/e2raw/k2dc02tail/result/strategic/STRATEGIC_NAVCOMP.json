@@ -1,0 +1,1268 @@
+{
+ "schema": "r9e2-strategic-navcomp-v1",
+ "family": "STRATEGIC (route following vs the TRUE nav command; refcv9 E2 arms are --no-strategic)",
+ "decides": "nothing about the pre-registered E2 rule: report-only (PI 2026-11-16: STRATEGIC reported in full)",
+ "tier": "T1 self-action open loop",
+ "estimator": "episode-cluster bootstrap; cross-arm = PAIRED on windows informative for both",
+ "caveat": "one training run per arm: a separated interval answers 'another draw of EPISODES' only (H-ESTIM-SEED-1)",
+ "labels": "E:/Projects/TanitAD-artifacts/_s2build-copy-20260919/release/v8/s2_labels_v8_eval.jsonl.gz",
+ "ref": "K0t",
+ "arms": {
+  "K0t:s0": {
+   "dump": "C:\\t\\k2dc02tail\\pull\\cmp\\E2_K0_pf\\dump_s0",
+   "status": "OK",
+   "readouts": {
+    "plan": {
+     "n_informative_windows": 270,
+     "n_informative_episodes": 22,
+     "tau": 0.3185405695438385,
+     "powered": true,
+     "compliance_with_TRUE_command": {
+      "mean": 0.6778,
+      "lo": 0.6071,
+      "hi": 0.7424,
+      "ci95": 0.0676,
+      "se": 0.0346,
+      "reducer": "mean",
+      "n_windows": 270,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "paired_true_minus_shuffled": {
+      "delta": 0.2148,
+      "lo": 0.1552,
+      "hi": 0.2815,
+      "ci95": 0.0631,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 270,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_zero": {
+      "delta": 0.2519,
+      "lo": 0.1777,
+      "hi": 0.3263,
+      "ci95": 0.0743,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 270,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_flipped": {
+      "delta": 0.4185,
+      "lo": 0.3275,
+      "hi": 0.51,
+      "ci95": 0.0913,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 270,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "gstr": {
+     "n_informative_windows": 459,
+     "n_informative_episodes": 23,
+     "tau": 0.0784987811399873,
+     "powered": true,
+     "compliance_with_TRUE_command": {
+      "mean": 0.3007,
+      "lo": 0.1401,
+      "hi": 0.4583,
+      "ci95": 0.1591,
+      "se": 0.0821,
+      "reducer": "mean",
+      "n_windows": 459,
+      "n_episodes": 23,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "paired_true_minus_shuffled": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 459,
+      "n_episodes": 23,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_zero": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 459,
+      "n_episodes": 23,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_flipped": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 459,
+      "n_episodes": 23,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "anchor": {
+     "n_informative_windows": 220,
+     "n_informative_episodes": 21,
+     "tau": 0.3185405695438385,
+     "powered": true,
+     "compliance_with_TRUE_command": {
+      "mean": 0.6818,
+      "lo": 0.6034,
+      "hi": 0.7544,
+      "ci95": 0.0755,
+      "se": 0.0386,
+      "reducer": "mean",
+      "n_windows": 220,
+      "n_episodes": 21,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "paired_true_minus_shuffled": {
+      "delta": 0.1818,
+      "lo": 0.1145,
+      "hi": 0.2576,
+      "ci95": 0.0715,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 220,
+      "n_episodes": 21,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_zero": {
+      "delta": 0.2091,
+      "lo": 0.1339,
+      "hi": 0.2976,
+      "ci95": 0.0819,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 220,
+      "n_episodes": 21,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_flipped": {
+      "delta": 0.3273,
+      "lo": 0.2293,
+      "hi": 0.4319,
+      "ci95": 0.1013,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 220,
+      "n_episodes": 21,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "n_excluded_nonfinite_signal": 50
+    }
+   },
+   "sel_bank_scatter": {
+    "nav_true": {
+     "status": "OK",
+     "bank_size_min": 104,
+     "bank_size_max": 117,
+     "n_windows": 2397,
+     "n_windows_selected_beyond_bank": 146,
+     "_rule": "bank size = smallest B with rows == count(sel_idx < B) in every episode; windows with sel_idx >= B are NaN and excluded"
+    },
+    "nav_shuffled": {
+     "status": "OK",
+     "bank_size_min": 113,
+     "bank_size_max": 117,
+     "n_windows": 2397,
+     "n_windows_selected_beyond_bank": 146,
+     "_rule": "bank size = smallest B with rows == count(sel_idx < B) in every episode; windows with sel_idx >= B are NaN and excluded"
+    },
+    "nav_zero": {
+     "status": "OK",
+     "bank_size_min": 105,
+     "bank_size_max": 117,
+     "n_windows": 2397,
+     "n_windows_selected_beyond_bank": 129,
+     "_rule": "bank size = smallest B with rows == count(sel_idx < B) in every episode; windows with sel_idx >= B are NaN and excluded"
+    },
+    "nav_flipped": {
+     "status": "OK",
+     "bank_size_min": 107,
+     "bank_size_max": 117,
+     "n_windows": 2397,
+     "n_windows_selected_beyond_bank": 151,
+     "_rule": "bank size = smallest B with rows == count(sel_idx < B) in every episode; windows with sel_idx >= B are NaN and excluded"
+    }
+   },
+   "_ragged_keys": null
+  },
+  "K0t:s1": {
+   "dump": "C:\\t\\k2dc02tail\\pull\\cmp\\E2_K0_pf\\dump_s1",
+   "status": "OK",
+   "readouts": {
+    "plan": {
+     "n_informative_windows": 270,
+     "n_informative_episodes": 22,
+     "tau": 0.3185405695438385,
+     "powered": true,
+     "compliance_with_TRUE_command": {
+      "mean": 0.6963,
+      "lo": 0.6277,
+      "hi": 0.7588,
+      "ci95": 0.0655,
+      "se": 0.0335,
+      "reducer": "mean",
+      "n_windows": 270,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "paired_true_minus_shuffled": {
+      "status": "UNAVAILABLE",
+      "n": 270,
+      "reason": "nav_shuffled not rolled"
+     },
+     "paired_true_minus_zero": {
+      "status": "UNAVAILABLE",
+      "n": 270,
+      "reason": "nav_zero not rolled"
+     }
+    },
+    "gstr": {
+     "n_informative_windows": 459,
+     "n_informative_episodes": 23,
+     "tau": 0.0784987811399873,
+     "powered": true,
+     "compliance_with_TRUE_command": {
+      "mean": 0.3007,
+      "lo": 0.1401,
+      "hi": 0.4583,
+      "ci95": 0.1591,
+      "se": 0.0821,
+      "reducer": "mean",
+      "n_windows": 459,
+      "n_episodes": 23,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "paired_true_minus_shuffled": {
+      "status": "UNAVAILABLE",
+      "n": 459,
+      "reason": "nav_shuffled not rolled"
+     },
+     "paired_true_minus_zero": {
+      "status": "UNAVAILABLE",
+      "n": 459,
+      "reason": "nav_zero not rolled"
+     }
+    },
+    "anchor": {
+     "n_informative_windows": 249,
+     "n_informative_episodes": 21,
+     "tau": 0.3185405695438385,
+     "powered": true,
+     "compliance_with_TRUE_command": {
+      "mean": 0.6948,
+      "lo": 0.6203,
+      "hi": 0.764,
+      "ci95": 0.0718,
+      "se": 0.0369,
+      "reducer": "mean",
+      "n_windows": 249,
+      "n_episodes": 21,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "paired_true_minus_shuffled": {
+      "status": "UNAVAILABLE",
+      "n": 249,
+      "reason": "nav_shuffled not rolled"
+     },
+     "paired_true_minus_zero": {
+      "status": "UNAVAILABLE",
+      "n": 249,
+      "reason": "nav_zero not rolled"
+     },
+     "n_excluded_nonfinite_signal": 21
+    }
+   },
+   "sel_bank_scatter": {
+    "nav_true": {
+     "status": "OK",
+     "bank_size_min": 115,
+     "bank_size_max": 117,
+     "n_windows": 2397,
+     "n_windows_selected_beyond_bank": 167,
+     "_rule": "bank size = smallest B with rows == count(sel_idx < B) in every episode; windows with sel_idx >= B are NaN and excluded"
+    }
+   },
+   "_ragged_keys": null
+  },
+  "K2DC02t:s0": {
+   "dump": "C:\\t\\k2dc02tail\\pull\\stageB\\E2_K2_pf\\dump_s0",
+   "status": "OK",
+   "readouts": {
+    "plan": {
+     "n_informative_windows": 270,
+     "n_informative_episodes": 22,
+     "tau": 0.3185405695438385,
+     "powered": true,
+     "compliance_with_TRUE_command": {
+      "mean": 0.6704,
+      "lo": 0.5861,
+      "hi": 0.7511,
+      "ci95": 0.0825,
+      "se": 0.0422,
+      "reducer": "mean",
+      "n_windows": 270,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "paired_true_minus_shuffled": {
+      "delta": 0.2296,
+      "lo": 0.1467,
+      "hi": 0.3266,
+      "ci95": 0.0899,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 270,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_zero": {
+      "delta": 0.2481,
+      "lo": 0.1713,
+      "hi": 0.3361,
+      "ci95": 0.0824,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 270,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_flipped": {
+      "delta": 0.3815,
+      "lo": 0.2918,
+      "hi": 0.4739,
+      "ci95": 0.091,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 270,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "gstr": {
+     "n_informative_windows": 459,
+     "n_informative_episodes": 23,
+     "tau": 0.0784987811399873,
+     "powered": true,
+     "compliance_with_TRUE_command": {
+      "mean": 0.2854,
+      "lo": 0.1207,
+      "hi": 0.4538,
+      "ci95": 0.1666,
+      "se": 0.0877,
+      "reducer": "mean",
+      "n_windows": 459,
+      "n_episodes": 23,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "paired_true_minus_shuffled": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 459,
+      "n_episodes": 23,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_zero": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 459,
+      "n_episodes": 23,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_flipped": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 459,
+      "n_episodes": 23,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "anchor": {
+     "n_informative_windows": 222,
+     "n_informative_episodes": 22,
+     "tau": 0.3185405695438385,
+     "powered": true,
+     "compliance_with_TRUE_command": {
+      "mean": 0.7117,
+      "lo": 0.6239,
+      "hi": 0.7921,
+      "ci95": 0.0841,
+      "se": 0.0435,
+      "reducer": "mean",
+      "n_windows": 222,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "paired_true_minus_shuffled": {
+      "delta": 0.1982,
+      "lo": 0.1289,
+      "hi": 0.2727,
+      "ci95": 0.0719,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 222,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_zero": {
+      "delta": 0.2297,
+      "lo": 0.148,
+      "hi": 0.3242,
+      "ci95": 0.0881,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 222,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_flipped": {
+      "delta": 0.3243,
+      "lo": 0.2386,
+      "hi": 0.4279,
+      "ci95": 0.0946,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 222,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "n_excluded_nonfinite_signal": 48
+    }
+   },
+   "sel_bank_scatter": {
+    "nav_true": {
+     "status": "OK",
+     "bank_size_min": 112,
+     "bank_size_max": 117,
+     "n_windows": 2397,
+     "n_windows_selected_beyond_bank": 201,
+     "_rule": "bank size = smallest B with rows == count(sel_idx < B) in every episode; windows with sel_idx >= B are NaN and excluded"
+    },
+    "nav_shuffled": {
+     "status": "OK",
+     "bank_size_min": 111,
+     "bank_size_max": 117,
+     "n_windows": 2397,
+     "n_windows_selected_beyond_bank": 209,
+     "_rule": "bank size = smallest B with rows == count(sel_idx < B) in every episode; windows with sel_idx >= B are NaN and excluded"
+    },
+    "nav_zero": {
+     "status": "OK",
+     "bank_size_min": 113,
+     "bank_size_max": 117,
+     "n_windows": 2397,
+     "n_windows_selected_beyond_bank": 143,
+     "_rule": "bank size = smallest B with rows == count(sel_idx < B) in every episode; windows with sel_idx >= B are NaN and excluded"
+    },
+    "nav_flipped": {
+     "status": "OK",
+     "bank_size_min": 115,
+     "bank_size_max": 117,
+     "n_windows": 2397,
+     "n_windows_selected_beyond_bank": 197,
+     "_rule": "bank size = smallest B with rows == count(sel_idx < B) in every episode; windows with sel_idx >= B are NaN and excluded"
+    }
+   },
+   "_ragged_keys": null
+  },
+  "K2DC02t:s1": {
+   "dump": "C:\\t\\k2dc02tail\\pull\\stageB\\E2_K2_pf\\dump_s1",
+   "status": "OK",
+   "readouts": {
+    "plan": {
+     "n_informative_windows": 270,
+     "n_informative_episodes": 22,
+     "tau": 0.3185405695438385,
+     "powered": true,
+     "compliance_with_TRUE_command": {
+      "mean": 0.6333,
+      "lo": 0.5443,
+      "hi": 0.7121,
+      "ci95": 0.0839,
+      "se": 0.0428,
+      "reducer": "mean",
+      "n_windows": 270,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "paired_true_minus_shuffled": {
+      "status": "UNAVAILABLE",
+      "n": 270,
+      "reason": "nav_shuffled not rolled"
+     },
+     "paired_true_minus_zero": {
+      "status": "UNAVAILABLE",
+      "n": 270,
+      "reason": "nav_zero not rolled"
+     }
+    },
+    "gstr": {
+     "n_informative_windows": 459,
+     "n_informative_episodes": 23,
+     "tau": 0.0784987811399873,
+     "powered": true,
+     "compliance_with_TRUE_command": {
+      "mean": 0.2854,
+      "lo": 0.1207,
+      "hi": 0.4538,
+      "ci95": 0.1666,
+      "se": 0.0877,
+      "reducer": "mean",
+      "n_windows": 459,
+      "n_episodes": 23,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "paired_true_minus_shuffled": {
+      "status": "UNAVAILABLE",
+      "n": 459,
+      "reason": "nav_shuffled not rolled"
+     },
+     "paired_true_minus_zero": {
+      "status": "UNAVAILABLE",
+      "n": 459,
+      "reason": "nav_zero not rolled"
+     }
+    },
+    "anchor": {
+     "n_informative_windows": 250,
+     "n_informative_episodes": 21,
+     "tau": 0.3185405695438385,
+     "powered": true,
+     "compliance_with_TRUE_command": {
+      "mean": 0.66,
+      "lo": 0.576,
+      "hi": 0.7381,
+      "ci95": 0.081,
+      "se": 0.042,
+      "reducer": "mean",
+      "n_windows": 250,
+      "n_episodes": 21,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "paired_true_minus_shuffled": {
+      "status": "UNAVAILABLE",
+      "n": 250,
+      "reason": "nav_shuffled not rolled"
+     },
+     "paired_true_minus_zero": {
+      "status": "UNAVAILABLE",
+      "n": 250,
+      "reason": "nav_zero not rolled"
+     },
+     "n_excluded_nonfinite_signal": 20
+    }
+   },
+   "sel_bank_scatter": {
+    "nav_true": {
+     "status": "OK",
+     "bank_size_min": 112,
+     "bank_size_max": 117,
+     "n_windows": 2397,
+     "n_windows_selected_beyond_bank": 196,
+     "_rule": "bank size = smallest B with rows == count(sel_idx < B) in every episode; windows with sel_idx >= B are NaN and excluded"
+    }
+   },
+   "_ragged_keys": null
+  },
+  "K2DCt:s0": {
+   "dump": "C:\\t\\k2dc02tail\\pull\\cmp_k2dc\\E2_K2_pf\\dump_s0",
+   "status": "OK",
+   "readouts": {
+    "plan": {
+     "n_informative_windows": 270,
+     "n_informative_episodes": 22,
+     "tau": 0.3185405695438385,
+     "powered": true,
+     "compliance_with_TRUE_command": {
+      "mean": 0.6741,
+      "lo": 0.5789,
+      "hi": 0.7638,
+      "ci95": 0.0924,
+      "se": 0.0478,
+      "reducer": "mean",
+      "n_windows": 270,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "paired_true_minus_shuffled": {
+      "delta": 0.237,
+      "lo": 0.1547,
+      "hi": 0.3334,
+      "ci95": 0.0893,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 270,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_zero": {
+      "delta": 0.2704,
+      "lo": 0.1885,
+      "hi": 0.3621,
+      "ci95": 0.0868,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 270,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_flipped": {
+      "delta": 0.4037,
+      "lo": 0.3053,
+      "hi": 0.5116,
+      "ci95": 0.1031,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 270,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "gstr": {
+     "n_informative_windows": 459,
+     "n_informative_episodes": 23,
+     "tau": 0.0784987811399873,
+     "powered": true,
+     "compliance_with_TRUE_command": {
+      "mean": 0.3072,
+      "lo": 0.1513,
+      "hi": 0.4622,
+      "ci95": 0.1554,
+      "se": 0.0811,
+      "reducer": "mean",
+      "n_windows": 459,
+      "n_episodes": 23,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "paired_true_minus_shuffled": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 459,
+      "n_episodes": 23,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_zero": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 459,
+      "n_episodes": 23,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_flipped": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 459,
+      "n_episodes": 23,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    },
+    "anchor": {
+     "n_informative_windows": 186,
+     "n_informative_episodes": 21,
+     "tau": 0.3185405695438385,
+     "powered": true,
+     "compliance_with_TRUE_command": {
+      "mean": 0.5968,
+      "lo": 0.4952,
+      "hi": 0.6995,
+      "ci95": 0.1022,
+      "se": 0.0523,
+      "reducer": "mean",
+      "n_windows": 186,
+      "n_episodes": 21,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "paired_true_minus_shuffled": {
+      "delta": 0.172,
+      "lo": 0.1027,
+      "hi": 0.2583,
+      "ci95": 0.0778,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 186,
+      "n_episodes": 21,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_zero": {
+      "delta": 0.172,
+      "lo": 0.0923,
+      "hi": 0.2595,
+      "ci95": 0.0836,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 186,
+      "n_episodes": 21,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_flipped": {
+      "delta": 0.2312,
+      "lo": 0.1405,
+      "hi": 0.3299,
+      "ci95": 0.0947,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 186,
+      "n_episodes": 21,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "n_excluded_nonfinite_signal": 84
+    }
+   },
+   "sel_bank_scatter": {
+    "nav_true": {
+     "status": "OK",
+     "bank_size_min": 112,
+     "bank_size_max": 117,
+     "n_windows": 2397,
+     "n_windows_selected_beyond_bank": 245,
+     "_rule": "bank size = smallest B with rows == count(sel_idx < B) in every episode; windows with sel_idx >= B are NaN and excluded"
+    },
+    "nav_shuffled": {
+     "status": "OK",
+     "bank_size_min": 115,
+     "bank_size_max": 117,
+     "n_windows": 2397,
+     "n_windows_selected_beyond_bank": 273,
+     "_rule": "bank size = smallest B with rows == count(sel_idx < B) in every episode; windows with sel_idx >= B are NaN and excluded"
+    },
+    "nav_zero": {
+     "status": "OK",
+     "bank_size_min": 103,
+     "bank_size_max": 117,
+     "n_windows": 2397,
+     "n_windows_selected_beyond_bank": 267,
+     "_rule": "bank size = smallest B with rows == count(sel_idx < B) in every episode; windows with sel_idx >= B are NaN and excluded"
+    },
+    "nav_flipped": {
+     "status": "OK",
+     "bank_size_min": 113,
+     "bank_size_max": 117,
+     "n_windows": 2397,
+     "n_windows_selected_beyond_bank": 227,
+     "_rule": "bank size = smallest B with rows == count(sel_idx < B) in every episode; windows with sel_idx >= B are NaN and excluded"
+    }
+   },
+   "_ragged_keys": null
+  },
+  "K2DCt:s1": {
+   "dump": "C:\\t\\k2dc02tail\\pull\\cmp_k2dc\\E2_K2_pf\\dump_s1",
+   "status": "OK",
+   "readouts": {
+    "plan": {
+     "n_informative_windows": 270,
+     "n_informative_episodes": 22,
+     "tau": 0.3185405695438385,
+     "powered": true,
+     "compliance_with_TRUE_command": {
+      "mean": 0.6593,
+      "lo": 0.5684,
+      "hi": 0.75,
+      "ci95": 0.0908,
+      "se": 0.0463,
+      "reducer": "mean",
+      "n_windows": 270,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "paired_true_minus_shuffled": {
+      "status": "UNAVAILABLE",
+      "n": 270,
+      "reason": "nav_shuffled not rolled"
+     },
+     "paired_true_minus_zero": {
+      "status": "UNAVAILABLE",
+      "n": 270,
+      "reason": "nav_zero not rolled"
+     }
+    },
+    "gstr": {
+     "n_informative_windows": 459,
+     "n_informative_episodes": 23,
+     "tau": 0.0784987811399873,
+     "powered": true,
+     "compliance_with_TRUE_command": {
+      "mean": 0.3072,
+      "lo": 0.1513,
+      "hi": 0.4622,
+      "ci95": 0.1554,
+      "se": 0.0811,
+      "reducer": "mean",
+      "n_windows": 459,
+      "n_episodes": 23,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "paired_true_minus_shuffled": {
+      "status": "UNAVAILABLE",
+      "n": 459,
+      "reason": "nav_shuffled not rolled"
+     },
+     "paired_true_minus_zero": {
+      "status": "UNAVAILABLE",
+      "n": 459,
+      "reason": "nav_zero not rolled"
+     }
+    },
+    "anchor": {
+     "n_informative_windows": 234,
+     "n_informative_episodes": 22,
+     "tau": 0.3185405695438385,
+     "powered": true,
+     "compliance_with_TRUE_command": {
+      "mean": 0.5897,
+      "lo": 0.5,
+      "hi": 0.6814,
+      "ci95": 0.0907,
+      "se": 0.0468,
+      "reducer": "mean",
+      "n_windows": 234,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "paired_true_minus_shuffled": {
+      "status": "UNAVAILABLE",
+      "n": 234,
+      "reason": "nav_shuffled not rolled"
+     },
+     "paired_true_minus_zero": {
+      "status": "UNAVAILABLE",
+      "n": 234,
+      "reason": "nav_zero not rolled"
+     },
+     "n_excluded_nonfinite_signal": 36
+    }
+   },
+   "sel_bank_scatter": {
+    "nav_true": {
+     "status": "OK",
+     "bank_size_min": 110,
+     "bank_size_max": 117,
+     "n_windows": 2397,
+     "n_windows_selected_beyond_bank": 251,
+     "_rule": "bank size = smallest B with rows == count(sel_idx < B) in every episode; windows with sel_idx >= B are NaN and excluded"
+    }
+   },
+   "_ragged_keys": null
+  }
+ },
+ "vs_ref": {
+  "K2DC02t-K0t:plan:s0": {
+   "delta": -0.0074,
+   "lo": -0.0517,
+   "hi": 0.0388,
+   "ci95": 0.0452,
+   "p_delta_gt0": 0.339,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 22,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_windows_both_informative": 270,
+   "tau_arm": 0.3185405695438385,
+   "tau_ref": 0.3185405695438385,
+   "row": "compliance_with_TRUE_command, ARM - REF (higher = follows the route more)"
+  },
+  "K2DC02t-K0t:gstr:s0": {
+   "delta": -0.0153,
+   "lo": -0.0774,
+   "hi": 0.0321,
+   "ci95": 0.0547,
+   "p_delta_gt0": 0.271,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 459,
+   "n_episodes": 23,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_windows_both_informative": 459,
+   "tau_arm": 0.0784987811399873,
+   "tau_ref": 0.0784987811399873,
+   "row": "compliance_with_TRUE_command, ARM - REF (higher = follows the route more)"
+  },
+  "K2DC02t-K0t:anchor:s0": {
+   "delta": 0.0205,
+   "lo": -0.0201,
+   "hi": 0.06,
+   "ci95": 0.0401,
+   "p_delta_gt0": 0.812,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 195,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_windows_both_informative": 195,
+   "tau_arm": 0.3185405695438385,
+   "tau_ref": 0.3185405695438385,
+   "row": "compliance_with_TRUE_command, ARM - REF (higher = follows the route more)"
+  },
+  "K2DC02t-K0t:plan:s1": {
+   "delta": -0.063,
+   "lo": -0.1345,
+   "hi": -0.0041,
+   "ci95": 0.0652,
+   "p_delta_gt0": 0.0105,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 22,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_windows_both_informative": 270,
+   "tau_arm": 0.3185405695438385,
+   "tau_ref": 0.3185405695438385,
+   "row": "compliance_with_TRUE_command, ARM - REF (higher = follows the route more)"
+  },
+  "K2DC02t-K0t:gstr:s1": {
+   "delta": -0.0153,
+   "lo": -0.0774,
+   "hi": 0.0321,
+   "ci95": 0.0547,
+   "p_delta_gt0": 0.271,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 459,
+   "n_episodes": 23,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_windows_both_informative": 459,
+   "tau_arm": 0.0784987811399873,
+   "tau_ref": 0.0784987811399873,
+   "row": "compliance_with_TRUE_command, ARM - REF (higher = follows the route more)"
+  },
+  "K2DC02t-K0t:anchor:s1": {
+   "delta": -0.0169,
+   "lo": -0.0676,
+   "hi": 0.0301,
+   "ci95": 0.0488,
+   "p_delta_gt0": 0.2595,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 236,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_windows_both_informative": 236,
+   "tau_arm": 0.3185405695438385,
+   "tau_ref": 0.3185405695438385,
+   "row": "compliance_with_TRUE_command, ARM - REF (higher = follows the route more)"
+  },
+  "K2DCt-K0t:plan:s0": {
+   "delta": -0.0037,
+   "lo": -0.0647,
+   "hi": 0.055,
+   "ci95": 0.0599,
+   "p_delta_gt0": 0.423,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 22,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_windows_both_informative": 270,
+   "tau_arm": 0.3185405695438385,
+   "tau_ref": 0.3185405695438385,
+   "row": "compliance_with_TRUE_command, ARM - REF (higher = follows the route more)"
+  },
+  "K2DCt-K0t:gstr:s0": {
+   "delta": 0.0065,
+   "lo": -0.0231,
+   "hi": 0.038,
+   "ci95": 0.0306,
+   "p_delta_gt0": 0.655,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 459,
+   "n_episodes": 23,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_windows_both_informative": 459,
+   "tau_arm": 0.0784987811399873,
+   "tau_ref": 0.0784987811399873,
+   "row": "compliance_with_TRUE_command, ARM - REF (higher = follows the route more)"
+  },
+  "K2DCt-K0t:anchor:s0": {
+   "delta": -0.0242,
+   "lo": -0.0724,
+   "hi": 0.031,
+   "ci95": 0.0517,
+   "p_delta_gt0": 0.1565,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 165,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_windows_both_informative": 165,
+   "tau_arm": 0.3185405695438385,
+   "tau_ref": 0.3185405695438385,
+   "row": "compliance_with_TRUE_command, ARM - REF (higher = follows the route more)"
+  },
+  "K2DCt-K0t:plan:s1": {
+   "delta": -0.037,
+   "lo": -0.1013,
+   "hi": 0.0268,
+   "ci95": 0.0641,
+   "p_delta_gt0": 0.114,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 22,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_windows_both_informative": 270,
+   "tau_arm": 0.3185405695438385,
+   "tau_ref": 0.3185405695438385,
+   "row": "compliance_with_TRUE_command, ARM - REF (higher = follows the route more)"
+  },
+  "K2DCt-K0t:gstr:s1": {
+   "delta": 0.0065,
+   "lo": -0.0231,
+   "hi": 0.038,
+   "ci95": 0.0306,
+   "p_delta_gt0": 0.655,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 459,
+   "n_episodes": 23,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_windows_both_informative": 459,
+   "tau_arm": 0.0784987811399873,
+   "tau_ref": 0.0784987811399873,
+   "row": "compliance_with_TRUE_command, ARM - REF (higher = follows the route more)"
+  },
+  "K2DCt-K0t:anchor:s1": {
+   "delta": -0.0682,
+   "lo": -0.114,
+   "hi": -0.0137,
+   "ci95": 0.0502,
+   "p_delta_gt0": 0.007,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 220,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_windows_both_informative": 220,
+   "tau_arm": 0.3185405695438385,
+   "tau_ref": 0.3185405695438385,
+   "row": "compliance_with_TRUE_command, ARM - REF (higher = follows the route more)"
+  }
+ },
+ "control_ref_minus_ref": {
+  "plan:s0": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "ci95": 0.0,
+   "p_delta_gt0": 0.0,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 22,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_windows_both_informative": 270,
+   "tau_arm": 0.3185405695438385,
+   "tau_ref": 0.3185405695438385,
+   "row": "compliance_with_TRUE_command, ARM - REF (higher = follows the route more)"
+  },
+  "gstr:s0": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "ci95": 0.0,
+   "p_delta_gt0": 0.0,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 459,
+   "n_episodes": 23,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_windows_both_informative": 459,
+   "tau_arm": 0.0784987811399873,
+   "tau_ref": 0.0784987811399873,
+   "row": "compliance_with_TRUE_command, ARM - REF (higher = follows the route more)"
+  },
+  "anchor:s0": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "ci95": 0.0,
+   "p_delta_gt0": 0.0,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 220,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_windows_both_informative": 220,
+   "tau_arm": 0.3185405695438385,
+   "tau_ref": 0.3185405695438385,
+   "row": "compliance_with_TRUE_command, ARM - REF (higher = follows the route more)"
+  },
+  "plan:s1": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "ci95": 0.0,
+   "p_delta_gt0": 0.0,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 22,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_windows_both_informative": 270,
+   "tau_arm": 0.3185405695438385,
+   "tau_ref": 0.3185405695438385,
+   "row": "compliance_with_TRUE_command, ARM - REF (higher = follows the route more)"
+  },
+  "gstr:s1": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "ci95": 0.0,
+   "p_delta_gt0": 0.0,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 459,
+   "n_episodes": 23,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_windows_both_informative": 459,
+   "tau_arm": 0.0784987811399873,
+   "tau_ref": 0.0784987811399873,
+   "row": "compliance_with_TRUE_command, ARM - REF (higher = follows the route more)"
+  },
+  "anchor:s1": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "ci95": 0.0,
+   "p_delta_gt0": 0.0,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 249,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_windows_both_informative": 249,
+   "tau_arm": 0.3185405695438385,
+   "tau_ref": 0.3185405695438385,
+   "row": "compliance_with_TRUE_command, ARM - REF (higher = follows the route more)"
+  }
+ },
+ "control_status": "PASS: REF - REF reads exactly 0.0 on every readout and seed"
+}
