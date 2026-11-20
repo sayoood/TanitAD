@@ -1,0 +1,191 @@
+{
+ "read": "NATIVE40",
+ "evidence_class": "MEASURED",
+ "tier": "T0",
+ "estimator": "episode-cluster bootstrap B=2000 seed 0 (another draw of EPISODES only)",
+ "windows_file": "F:/TanitAD-scratch/v8proof/leversheet/LS_REF40_WINDOWS.json",
+ "windows_sha256": "166198fb4cbd9da116689cc47380726af053a7dced5e91ca3c1db8448f41c0be",
+ "bars": {
+  "mean_gap_mae_m_max": 5.8,
+  "auroc_min_each_seed": 0.85,
+  "reference_mae_m_INHERITED": 5.04
+ },
+ "seeds": {
+  "s0": {
+   "gap": {
+    "mae_m": 5.711520739254008,
+    "mae_ci95": [
+     4.7825291440747755,
+     6.793362712030492
+    ],
+    "r2": 0.4737095502598859,
+    "r2_ci95": [
+     0.25264140724733997,
+     0.6151756872257055
+    ],
+    "n": 533
+   },
+   "presence": {
+    "auroc": 0.8727001829232313,
+    "auroc_ci95": [
+     0.8277137646995304,
+     0.9149300988847779
+    ],
+    "n_pos": 630,
+    "n_neg": 1614
+   },
+   "head_read_summary": {
+    "presence_prob_mean_all_windows": 0.3045770419608199,
+    "gap_hat_mean_all_windows": 0.6083857380366167,
+    "gap_read_unclipped_min_max_m_on_gap_windows": [
+     3.14983069896698,
+     36.00677490234375
+    ]
+   }
+  },
+  "s1": {
+   "gap": {
+    "mae_m": 5.5343563227536094,
+    "mae_ci95": [
+     4.618091424106759,
+     6.652090863511852
+    ],
+    "r2": 0.47994916688026423,
+    "r2_ci95": [
+     0.25740440896503913,
+     0.6233819533341625
+    ],
+    "n": 533
+   },
+   "presence": {
+    "auroc": 0.9016050038354871,
+    "auroc_ci95": [
+     0.8606322119680518,
+     0.9367201049194653
+    ],
+    "n_pos": 630,
+    "n_neg": 1614
+   },
+   "head_read_summary": {
+    "presence_prob_mean_all_windows": 0.28082121949754163,
+    "gap_hat_mean_all_windows": 0.6178237829868274,
+    "gap_read_unclipped_min_max_m_on_gap_windows": [
+     2.911149561405182,
+     34.6831488609314
+    ]
+   }
+  }
+ },
+ "controls": {
+  "s0": {
+   "shuffle": {
+    "mae_m": 10.584873460059004,
+    "r2": -0.5252990874136187,
+    "mae_exceeds_unshuffled": true,
+    "r2_le_0": true,
+    "presence_auroc_shuffled": 0.5106075804960564,
+    "auroc_in_0.45_0.55": true
+   },
+   "units_x100": {
+    "mae_m_clipped": 14.224945158833297,
+    "mae_m_unclipped": 24.43485787360362,
+    "changes_mae": true
+   },
+   "label_arm": {
+    "mae_m": 0.0,
+    "r2": 1.0,
+    "mae_is_0_r2_is_1": true
+   },
+   "all_pass": true
+  },
+  "s1": {
+   "shuffle": {
+    "mae_m": 10.571667075687184,
+    "r2": -0.5327493496502862,
+    "mae_exceeds_unshuffled": true,
+    "r2_le_0": true,
+    "presence_auroc_shuffled": 0.48978776971342025,
+    "auroc_in_0.45_0.55": true
+   },
+   "units_x100": {
+    "mae_m_clipped": 14.140447762285758,
+    "mae_m_unclipped": 23.356461578077912,
+    "changes_mae": true
+   },
+   "label_arm": {
+    "mae_m": 0.0,
+    "r2": 1.0,
+    "mae_is_0_r2_is_1": true
+   },
+   "all_pass": true
+  }
+ },
+ "dump_meta": {
+  "s0": {
+   "seed": 0,
+   "ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s0_recft_LLR/ckpt_last.pt",
+   "ckpt_sha256": "5a52b28bcf3e2f153baeb0835f1e9dd44eb918319b51b1e804a5d686276817bc",
+   "tool_sha256": "0417c838355a51f6f7084c17b5acada96c5b6cbd9eef54cc2602d377bf3c61e7",
+   "model_sha256": "5fd4baea4d08a5400fc73cfd283c546d0bef528e71459f9845e6442244fc4d57",
+   "n_windows": 2399,
+   "n_episodes": 141,
+   "max_episodes": 0,
+   "keycheck": {},
+   "wall_s": 85.3998486995697,
+   "label_file": "E:/Projects/TanitAD-artifacts/sfresh_inputs/inputs/v9/lead_eval139.npz",
+   "label_file_md5_pinned": "deb1b2a92c860dc924d6fd3ff0d6dc85",
+   "label_rule": "row (sha12(clip), k = 2*t0) of lead_eval139.npz; near = lead==1 & finite gap & gap<=40 (v8f_mini_data.lead_label_arrays:292)",
+   "dump_sha256": "4000d4106df6af70e63a041496d387e8d11a30a0af12acd6163fc05253acae78"
+  },
+  "s1": {
+   "seed": 1,
+   "ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s1_recft_LLR/ckpt_last.pt",
+   "ckpt_sha256": "71ee9feab2683a66a80e6a1fcbd4bc23e8a961ee7ef702ed160b00835cbf40c6",
+   "tool_sha256": "0417c838355a51f6f7084c17b5acada96c5b6cbd9eef54cc2602d377bf3c61e7",
+   "model_sha256": "5fd4baea4d08a5400fc73cfd283c546d0bef528e71459f9845e6442244fc4d57",
+   "n_windows": 2399,
+   "n_episodes": 141,
+   "max_episodes": 0,
+   "keycheck": {},
+   "wall_s": 15.247899055480957,
+   "label_file": "E:/Projects/TanitAD-artifacts/sfresh_inputs/inputs/v9/lead_eval139.npz",
+   "label_file_md5_pinned": "deb1b2a92c860dc924d6fd3ff0d6dc85",
+   "label_rule": "row (sha12(clip), k = 2*t0) of lead_eval139.npz; near = lead==1 & finite gap & gap<=40 (v8f_mini_data.lead_label_arrays:292)",
+   "dump_sha256": "14f8209bbf4dced745eb4b87355ea384a63ae889e6a00192b65896bddf902f4b"
+  }
+ },
+ "map_control": {
+  "rule": "AMENDMENT_1: coordinator window read at (eid, cache step g0); our label raw frame k = 2*g0; head read at cache step g0 (x_* arrays); |our gap - gap_t| <= 1e-3 m",
+  "read_at": "g0",
+  "source": "eval_grid_windows v8f_mini_data.py:622-626 (cache step t); lead_label_arrays kj = 2*arange v8f_mini_data.py:295; ds.item(ci, j=t0) in v8f_t1_eval_ri.build_item",
+  "n_coordinator_windows": 534,
+  "n_found_in_our_grid": 534,
+  "n_matched": 533,
+  "match_share": 0.99812734082397,
+  "high_share_threshold": 0.95,
+  "coordinator_episodes": 54,
+  "coordinator_episodes_in_our_141": 54,
+  "our_episodes": 141
+ },
+ "presence_set": {
+  "n_windows_labelled": 2244,
+  "n_positive": 630,
+  "n_negative": 1614,
+  "n_episodes": 139,
+  "n_frame_not_ok_in_set": 0
+ },
+ "gap_set": {
+  "n_windows": 533,
+  "n_episodes": 54,
+  "n_frame_not_ok": 0
+ },
+ "mean_over_seeds_gap_mae_m": {
+  "point": 5.622938531003809,
+  "ci95": [
+   4.709311790016679,
+   6.658205624659973
+  ]
+ },
+ "controls_admissible": true,
+ "label": "NATIVE-OK"
+}
