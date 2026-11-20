@@ -131,6 +131,10 @@ FLAG_CHECKS = {
     # PREREG_V8F_N1DC: `lever:o_code_skip` = equals built_levers().get("o_code_skip", "off") AND the BUILT module (o_code iff on) AND the config AND the cfg that goes into the checkpoint (bad_o_code): argv -> make_config ->
     # cfg.o_code_skip -> V8FMini (o_code, zero-init, built last) -> run_o (`h = h + o_code(code)`) -> head_o -> the loss / backward -> o_code_probe (G-LIVE: o_code.weight gets a gradient, exact-0.0 controls) -> the checkpoint cfg.
     "o_code_skip": "lever:o_code_skip",
+    # PREREG_V8F_N1DH: `lever:aux_route` / `lever:w_aux_route` = equal built_levers().get("aux_route", "off") / .get("w_aux_route", 0.0) AND the BUILT modules (route_head / route_emb iff cond) AND the config AND the cfg that goes into the checkpoint (bad_aux_route):
+    # argv -> make_config -> cfg.aux_route / cfg.w_aux_route -> V8FMini (route_head, route_emb zero-init, built last) -> run_o (`hf = hf + route_emb(softmax(route_head(hf)).detach())`) -> head_o; route_stage (label) -> batch["route_y"/"route_ok"]
+    # -> loss (T["route"], own-code rows only, `total + w_aux_route * T["route"]`) -> backward -> aux_route_probe (G-LIVE: route_head / route_emb gradients, exact-0.0 controls) -> the checkpoint cfg.
+    "aux_route": "lever:aux_route", "w_aux_route": "lever:w_aux_route",
     # PREREG_V8F_MRATE: `lever:wm_k` = equals built_levers().get("wm_k", 1) (the BUILT modules' window / dilation / causal pad, WMAux.built_k); `lever:wm_only` = the record the WM-only loader read back (bad_wm_only: non-WM tensors bit-equal to the checkpoint,
     # NO WM tensor loaded, the WM re-initialised under --seed, trainable == the WM's parameters exactly, every other lever at its default) -> wm_only_live_check (G-LIVE) + planner_identity_probe -> `model.wm_only_loss(b)` in the loop.
     "wm_k": "lever:wm_k", "wm_only": "lever:wm_only",
@@ -161,6 +165,15 @@ FLAG_CHECKS = {
 LORA_PARSER_DEFAULTS = {"lora_r": 32, "lora_alpha": 32.0, "lora_targets": "q,v", "lora_lr": None, "frames_root": None, "accum": 1, "enc_ckpt": False}
 LIVE_PROBE_WINDOWS_WM = 8            # PREREG_V8F_LADDER: windows of the G-LIVE / identity probe batches in the wmonly mode (<= 8 x hmax frames; the CPU probes run the k-step loss)
 LIVE_PROBE_WINDOWS_LORA = 16          # G-LIVE through the real encoder: windows of the first batch (<= 16 x hmax frames), not all 64
+
+
+def _aux_route_mode(v):
+    """argparse type of ``--aux-route``: off | cond. ``ce`` is refused with a message that names the card (PREREG_V8F_N1DH section 2: the PI approved the two ``cond`` arms; the ``ce`` mode is not built)."""
+    if v == "ce":
+        raise argparse.ArgumentTypeError("--aux-route ce is NOT built: PREREG_V8F_N1DH (sha256 f1df05bc) section 2 names it as a follow-up under its own PI go; the approved arms are `cond` only")
+    if v not in M.AUX_ROUTE_MODES:
+        raise argparse.ArgumentTypeError(f"--aux-route must be one of {M.AUX_ROUTE_MODES} (PREREG_V8F_N1DH), got {v!r}")
+    return v
 
 
 def build_parser():
@@ -194,6 +207,12 @@ def build_parser():
     ap.add_argument("--o-code-skip", dest="o_code_skip", choices=("on", "off"), default="off",
                     help="PREREG_V8F_N1DC: off (default) = nothing built = every earlier arm, bit for bit; on = o_code, Linear(CODE_DIM, n_q * d, bias=False), zero-init, built last under a forked RNG, ADDED to the flattened reader output "
                          "right before O's plan head (the same code tensor e_code reads: after teacher forcing, --detach-upper and --o-interface). Refused with --o-interface cut (O then reads a constant: a lever that does nothing)")
+    ap.add_argument("--aux-route", dest="aux_route", type=_aux_route_mode, default="off",
+                    help="PREREG_V8F_N1DH: off (default) = nothing built = every earlier arm, bit for bit; cond = route_head, Linear(n_q * d, 3) on O's flattened plan feature h, CE on the kinematic TAC-LAT label of the GT 6 s track "
+                         "(own-code rows only), and route_emb, Linear(3, n_q * d, bias=False) zero-init, ADDED to h from softmax(route_head(h)).detach() right before O's plan head. `ce` (PREREG_V8F_N1DH section 2) is NOT built: refused. "
+                         "Needs --w-aux-route > 0, --code-mix whole, --o-interface full, no --t2-bank-p")
+    ap.add_argument("--w-aux-route", dest="w_aux_route", type=float, default=0.0,
+                    help="PREREG_V8F_N1DH: the CE weight of the route head in the total (the card's value is 0.5, untuned). Required > 0 with --aux-route cond (a declared-and-inert head is refused); 0.0 (default) with off")
     ap.add_argument("--level-head", dest="level_head", choices=M.LEVEL_HEAD_MODES, default="off",
                     help="PREREG_V8F_LEVEL: off (default) = nothing is built = every earlier arm, bit for bit (state dict AND outputs). on = a head on the mean of the CURRENT tick frame's adapted VISION tokens -> MLP(d, d, 1) -> v_hat (m/s), "
                          "trained with --w-level x Huber(v_hat, the LOGGED speed at NOW) on every window; O reads e_level(v_hat.detach() / 10) (zero-initialised, added to O's ego conditioning token) at every tick, train and inference alike. "
@@ -488,6 +507,7 @@ def make_config(a) -> M.V8FMiniConfig:
                            nav_rb=a.nav_rb,                                                                             # PREREG_V8F_NAVRB2: the line that applies --nav-rb (a mutation deletes it)
                            nav_rb_feat=a.nav_rb_feat,                                                                   # PREREG_V8F_NAVRBD: the line that applies --nav-rb-feat (a mutation deletes it)
                            rb_window_w=a.rb_window_w,                                                                   # PREREG_V8F_N1DW: the line that applies --rb-window-w (a mutation deletes it)
+                           aux_route=a.aux_route, w_aux_route=a.w_aux_route,                                           # PREREG_V8F_N1DH: the line that applies --aux-route / --w-aux-route (a mutation deletes it)
                            o_code_skip=(a.o_code_skip == "on"),                                                         # PREREG_V8F_N1DC: the line that applies --o-code-skip (a mutation deletes it)
                            lead_head=a.lead_head, w_lead=a.w_lead, aux_cond=a.aux_cond,
                            w_op=a.w_op, w_tac_traj=a.w_tac_traj,                      # PREREG_V8F_OTBAND: the lines that apply the band levers (a mutation deletes them)
@@ -816,7 +836,7 @@ def bad_init_ckpt(a, data_info) -> list:
     elif got.get("skipped") != "resume":
         bad.append(f"init_ckpt: declared but neither applied nor skipped for a resume ({got.get('skipped')!r})")
     if got.get("applied"):                                  # PREREG_V8F_LEVEL: only the declared lever's keys may be fresh, and a lever-ON argv must have declared them
-        if bool(got.get("declared_new_keys")) != (a.level_head == "on" or a.lead_head == "on" or bool(a.t_stok_dir) or a.ctx_heads == "on" or a.nav_rb == "on" or a.o_code_skip == "on"):          # PREREG_LEVELHEAD_A2: the lead head adds keys too; PREREG_V8F_OTBAND: so does the token; PREREG_V8F_NAVRB2: so does e_nav_rb (pod mint 2026-11-18 refused N1R_s0 without this)
+        if bool(got.get("declared_new_keys")) != (a.level_head == "on" or a.lead_head == "on" or bool(a.t_stok_dir) or a.ctx_heads == "on" or a.nav_rb == "on" or a.o_code_skip == "on" or a.aux_route != "off"):          # PREREG_LEVELHEAD_A2: the lead head adds keys too; PREREG_V8F_OTBAND: so does the token; PREREG_V8F_NAVRB2: so does e_nav_rb (pod mint 2026-11-18 refused N1R_s0 without this)
             bad.append(f"init_ckpt: level_head {a.level_head} / lead_head {a.lead_head} / t_stok_dir {a.t_stok_dir!r} declared but the load declared new keys {got.get('declared_new_keys')}")
         if set(got.get("fresh_keys", [])) - set(got.get("declared_new_keys", [])):
             bad.append(f"init_ckpt: keys {sorted(set(got.get('fresh_keys', [])) - set(got.get('declared_new_keys', [])))} were left fresh but are not the declared lever's")
@@ -883,7 +903,7 @@ WM_ONLY_DEFAULT_DESTS = ("navonly", "no_consistency", "cons_absent", "code_mix",
                          "ego_perturb_p", "ego_perturb_yawrate_std", "dagger_p", "dagger_bank", "dagger_bank_sha256", "ego_perturb_with_dagger", "recover_p", "recover_dev_bank", "recover_dev_bank_sha256",
                          "encoder", "lora_lr", "frames_root", "accum", "enc_ckpt", "window_start", "w_op", "w_tac_traj", "t_stok_dir", "t_stok_shuffle", "freeze", "v10_md5",
                          "ctx_heads", "w_ctx", "ctx_detach", "ctx_lr_mult", "ctx_labels", "ctx_labels_sha256", "nav_source", "nav_text_npz", "nav_text_sha256",
-                         "nav_rb", "nav_rb_npz", "nav_rb_sha256", "nav_rb_variant", "nav_rb_lr_mult", "nav_rb_feat", "rb_window_w", "o_code_skip")
+                         "nav_rb", "nav_rb_npz", "nav_rb_sha256", "nav_rb_variant", "nav_rb_lr_mult", "nav_rb_feat", "rb_window_w", "o_code_skip", "aux_route", "w_aux_route")
 
 
 def is_wm_param(name: str) -> bool:
@@ -2041,6 +2061,178 @@ def o_code_probe(model, batch, cfg) -> dict:
     return res
 
 
+ROUTE_DT = 0.2                                                          # the GT track's grid (30 knots at 0.2 s): D1-HO's DT, the dt maneuver_kinematics is given
+
+
+def route_stage(batch: dict) -> tuple:
+    """PREREG_V8F_N1DH: the ONE call that turns a COLLATED batch into the route head's label ``(route_y [B] long, route_ok [B] bool)``: the kinematic TAC-LAT class (lane_keep 0 / turn_left 1 / turn_right 2) of the GT 6 s track,
+    ``taniteval.four_families.maneuver_kinematics(gt, 0.2)`` -> ``refc_tactical.factor_from_kinematics(.., kappa=None)`` (the v1 gate |dyaw| > 0.15), the lat half only: the two calls D1-HO's reader makes. A TRAINING label only (it reads the
+    future; the head's inputs at inference are the model's own inference inputs). ``route_ok`` = every GT knot valid (``gt_ok``) and finite, and, on a batch that carries ``aux_ok``, the row's own supervision. It must run BEFORE
+    ``ego.apply`` / ``dag.apply`` / ``comp.apply`` / ``rcv.apply`` (as ``level_stage`` does) and is refused with ``--t2-bank-p > 0`` (a bank row swaps the whole sample AFTER the label stages)."""
+    from taniteval import four_families as FF
+    from tanitad.refs import refc_tactical as RT
+    gt = batch["gt"].double()                                      # float64, as D1-HO's reader does (``labels``: torch.as_tensor(np.asarray(X, np.float64))): the label is then bit-for-bit the reader's on the same tracks
+    dyaw, dv, v0, v1, _prov = FF.maneuver_kinematics(gt, ROUTE_DT)
+    lat, _lon = RT.factor_from_kinematics(dyaw, dv, v0, v1)
+    B = gt.shape[0]
+    ok = batch["gt_ok"].bool().reshape(B, -1).all(1) & torch.isfinite(gt).reshape(B, -1).all(1)
+    aux = batch.get("aux_ok")
+    if aux is not None:
+        ok = ok & aux.bool().reshape(B)
+    return lat.long(), ok
+
+
+def bad_aux_route(a, cfg, model, opt) -> list:
+    """PREREG_V8F_N1DH: ``--aux-route`` / ``--w-aux-route`` as declared on the argv are what the BUILT model is: ``route_head`` ([3, n_q * d] + bias) and ``route_emb`` ([n_q * d, 3], no bias, ZERO at the start) exist iff cond, the levers and the
+    config say the same, head_o reads the width route_emb writes, and both are in the optimiser exactly once. ``cond`` with a zero weight is declared and inert (refused); ``cond`` with ``--o-interface cut``, ``--code-mix kind``,
+    ``--t2-bank-p > 0`` or ``--wm-only`` is refused; a weight with ``off`` is refused."""
+    bad = []
+    on = a.aux_route != "off"
+    lv, lw = model.built_levers().get("aux_route", "off"), model.built_levers().get("w_aux_route", 0.0)
+    present = getattr(model, "route_head", None) is not None and getattr(model, "route_emb", None) is not None
+    if lv != a.aux_route or present != on or model.cfg.aux_route != a.aux_route or float(model.cfg.w_aux_route) != float(a.w_aux_route) or (on and float(lw) != float(a.w_aux_route)):
+        bad.append(f"lever aux_route: declared {a.aux_route} / weight {a.w_aux_route} but built {lv} / {lw} (cfg {model.cfg.aux_route} / {model.cfg.w_aux_route}, modules {'present' if present else 'absent'})")
+        return bad
+    if not on:
+        if float(a.w_aux_route) != 0.0:
+            bad.append(f"w_aux_route {a.w_aux_route} declared but --aux-route is off: the weight multiplies a term that is not computed -- a lever that is declared and does nothing")
+        return bad
+    if not float(a.w_aux_route) > 0.0:
+        bad.append(f"aux_route {a.aux_route} declared with --w-aux-route {a.w_aux_route}: the CE term enters the total with weight 0 -- a lever that is declared and does nothing (the card's value is 0.5)")
+    want = int(model.cfg.n_q) * int(model.cfg.d)
+    if tuple(model.route_head.weight.shape) != (M.N_ROUTE, want) or model.route_head.bias is None:
+        bad.append(f"aux_route: route_head is {tuple(model.route_head.weight.shape)} (bias {model.route_head.bias is not None}), declared ({M.N_ROUTE}, {want}) with a bias")
+    if tuple(model.route_emb.weight.shape) != (want, M.N_ROUTE) or model.route_emb.bias is not None:
+        bad.append(f"aux_route: route_emb is {tuple(model.route_emb.weight.shape)} (bias {model.route_emb.bias is not None}), declared ({want}, {M.N_ROUTE}) without a bias")
+    if int(model.head_o[0].in_features) != want:
+        bad.append(f"aux_route: head_o reads {int(model.head_o[0].in_features)} features but route_emb writes {want}")
+    if float(model.route_emb.weight.detach().abs().sum()) != 0.0:
+        bad.append("aux_route: route_emb.weight is not zero at the start (the step-0 forward would differ from the parent's)")
+    if a.o_interface == "cut" or cfg.o_interface == "cut":
+        bad.append("aux_route on with --o-interface cut: O reads a constant zero code, so the own-code mask names nothing")
+    if a.code_mix != "whole" or cfg.code_mix != "whole":
+        bad.append(f"aux_route on with --code-mix {a.code_mix}: the own-code mask is the per-sample use_t draw of `whole`")
+    if float(a.t2_bank_p) > 0.0:
+        bad.append("aux_route on with --t2-bank-p > 0: a bank row replaces the whole sample AFTER route_stage, so its route label would be the logged row's, not the swapped one's")
+    if a.wm_only:
+        bad.append("aux_route on with --wm-only: the WM-only mode runs none of the planner")
+    if opt is not None:
+        for nm, p in (("route_head.weight", model.route_head.weight), ("route_head.bias", model.route_head.bias), ("route_emb.weight", model.route_emb.weight)):
+            n = sum(1 for g in opt.param_groups for q in g["params"] if q is p)
+            if n != 1:
+                bad.append(f"aux_route: {nm} is in {n} optimiser groups (exactly one required)")
+    return bad
+
+
+def aux_route_probe(model, batch, cfg) -> dict:
+    """G-LIVE for PREREG_V8F_N1DH (reachability from the caller): on a COPY of the BUILT model and the real probe batch (which carries route_y / route_ok from ``route_stage``, the loop's own call),
+
+      reach_head   the CE term gives route_head.weight a gradient > 0 (p_gt 0: every row reads T's own code). DELETE the ``total + w_aux_route * T["route"]`` line and the TOTAL's gradient reads 0.0 -> RED
+      reach_emb    with head_o's last layer given a small seeded weight (zero at init makes every gradient upstream of it exactly 0.0), the total gives route_emb.weight a gradient > 0. DELETE the conditioning line -> 0.0 -> RED
+      own_mask     on a batch whose every row has a T label and p_gt = 1.0 (every row reads the GT code: no own-code row) the CE term is EXACTLY 0.0 and its gradient on route_head.weight is EXACTLY 0.0. REMOVE the mask -> > 0 -> RED
+      identity     at the zero init the plan, and every loss term but ``route`` / ``total``, equal those of the same model with the head and the embedding REMOVED, bit for bit; the total moves by exactly w x route
+      live         route_emb.weight set to a seeded random matrix moves O's plan on the same batch
+      controls     (a) the decoder terms (ade) put EXACTLY 0.0 on route_head.weight, read with route_emb set to a seeded non-zero matrix (at the zero init the reading is vacuous) -- the posterior is detached; (b) the T/S-side terms put EXACTLY 0.0 on both modules; (c) the same loss twice gives gradients that differ by EXACTLY 0.0;
+                   (d) the frozen P10 prior's gradient is EXACTLY 0.0; (e) at the REAL zero init head_o's last layer is zero, so route_emb.weight reads EXACTLY 0.0 from the total (the seeded head weight is what makes reach_emb non-zero)
+
+    Off: nothing runs. Any violation is an AssertionError, which the caller turns into a refusal."""
+    if getattr(model, "route_head", None) is None:
+        return {"aux_route": "off", "pass": True, "skipped": "--aux-route off: route_head / route_emb are not built (the default run is the pre-change run)"}
+    import dataclasses
+    if "route_y" not in batch or "route_ok" not in batch:
+        raise AssertionError("aux_route probe: the probe batch carries no route_y / route_ok (the loop's own call is route_stage)")
+    m = copy.deepcopy(model).cpu()
+    m.train()
+
+    def agrad(t_, w):
+        g = torch.autograd.grad(t_, [w], retain_graph=True, allow_unused=True)[0]
+        return 0.0 if g is None else float(g.abs().sum())
+
+    def run(mm, b, p_gt, gen_seed=11):
+        for p in mm.parameters():
+            p.grad = None
+        torch.manual_seed(20261120)
+        out = mm.loss(b, p_gt=p_gt, gen=torch.Generator().manual_seed(gen_seed))
+        T = out["terms"]
+        for k, v in T.items():
+            if not torch.isfinite(v):
+                raise AssertionError(f"aux_route probe: loss term {k} is not finite: {float(v)}")
+        return out
+
+    def grads(mm, out):
+        T = out["terms"]
+        wh = mm.route_head.weight if mm.route_head is not None else None
+        we = mm.route_emb.weight if mm.route_emb is not None else None
+        r = {}
+        if wh is not None:
+            r["head_total"], r["head_route"], r["head_ade"] = agrad(T["total"], wh), agrad(T["route"], wh), agrad(T["ade"], wh)
+            r["head_tside"] = sum(agrad(T[k], wh) for k in ("ckpt", "goal", "lat", "lon", "cons") if k in T)
+            r["emb_total"], r["emb_ade"] = agrad(T["total"], we), agrad(T["ade"], we)
+            r["emb_tside"] = sum(agrad(T[k], we) for k in ("ckpt", "goal", "lat", "lon", "cons") if k in T)
+        T["total"].backward(retain_graph=True)
+        r["prior"] = float(sum(float(p.grad.abs().sum()) if p.grad is not None else 0.0 for p in mm.prior.parameters()))
+        r["all"] = {n: (p.grad.detach().clone() if p.grad is not None else torch.zeros_like(p)) for n, p in mm.named_parameters() if p.requires_grad}
+        return r
+
+    o0 = run(m, batch, 0.0)
+    r0 = grads(m, o0)                                                         # the REAL zero init (head_o's last layer is zero after a from-scratch build; after --init-ckpt it is the checkpoint's own trained head)
+    head_zero_at_init = float(m.head_o[2].weight.detach().abs().sum()) == 0.0
+    if head_zero_at_init:
+        with torch.no_grad():
+            w_head = m.head_o[2].weight
+            w_head.copy_(torch.randn(w_head.shape, generator=torch.Generator().manual_seed(7)) * 0.05)
+    o1 = run(m, batch, 0.0)
+    r1 = grads(m, o1)
+    o1b = run(m, batch, 0.0)
+    r1b = grads(m, o1b)
+    m_off = copy.deepcopy(m)
+    m_off.route_head, m_off.route_emb, m_off.cfg = None, None, dataclasses.replace(m.cfg, aux_route="off", w_aux_route=0.0)
+    o_off = run(m_off, batch, 0.0)
+    ident_terms = [k for k in o_off["terms"] if k != "total" and (k not in o1["terms"] or not torch.equal(o1["terms"][k], o_off["terms"][k]))]
+    ident_out = [k for k, v in o_off.items() if torch.is_tensor(v) and not torch.equal(v, o1[k])]
+    ident_total = float((o1["terms"]["total"] - (o_off["terms"]["total"] + m.cfg.w_aux_route * o1["terms"]["route"])).abs())
+    with torch.no_grad():
+        m.route_emb.weight.copy_(torch.randn(m.route_emb.weight.shape, generator=torch.Generator().manual_seed(8)) * 0.05)
+    o2 = run(m, batch, 0.0)
+    r2 = grads(m, o2)                                                         # route_emb NON-zero: only here can a missing detach show (at the zero init the decoder's gradient on route_head is 0.0 whatever the wiring)
+    # the own-code mask control: every row T-labelled, p_gt 1.0 -> every row reads the GT code -> no own-code row
+    b_all = dict(batch)
+    b_all["lab_t"] = {**batch["lab_t"], "has": torch.ones_like(batch["lab_t"]["has"])}
+    o3 = run(m, b_all, 1.0)
+    r3 = grads(m, o3)
+    res = {"head_grad_total": r1["head_total"], "head_grad_route": r1["head_route"], "emb_grad_total": r1["emb_total"], "emb_grad_ade": r1["emb_ade"],
+           "control_decoder_grad_on_head": r2["head_ade"], "control_decoder_grad_on_head_zero_emb": r1["head_ade"], "control_tside_grad_on_head": r1["head_tside"], "control_tside_grad_on_emb": r1["emb_tside"],
+           "control_repeat_grad_diff": float(sum((r1["all"][n] - r1b["all"][n]).abs().sum() for n in r1["all"])), "control_prior_grad": r1["prior"],
+           "control_real_init_emb_grad": r0["emb_total"], "head_o_last_layer_zero_at_init": head_zero_at_init, "head_grad_total_real_init": r0["head_total"],
+           "identity_terms_differing": ident_terms, "identity_outputs_differing": ident_out, "identity_total_abs_diff": ident_total,
+           "plan_move_when_emb_set": float((o2["traj30"] - o1["traj30"]).detach().abs().max()),
+           "own_rows_probe": int((batch["route_ok"].bool() & o0["route_own"]).sum()), "own_rows_all_gt_batch": int((b_all["route_ok"].bool() & o3["route_own"]).sum()) if "route_ok" in b_all else 0,
+           "probe_class_counts": [int(((batch["route_y"] == c_) & batch["route_ok"].bool()).sum()) for c_ in range(M.N_ROUTE)], "probe_labelled_rows": int(batch["route_ok"].sum()), "probe_rows": int(batch["route_ok"].shape[0]),
+           "control_no_own_row_route_term": float(o3["terms"]["route"]), "control_no_own_row_head_grad": r3["head_route"] if "head_route" in r3 else 0.0}
+    if not (res["head_grad_total"] > 0.0 and res["head_grad_route"] > 0.0):
+        raise AssertionError(f"aux_route probe: route_head.weight gets gradient {res['head_grad_total']!r} (total) / {res['head_grad_route']!r} (CE) (both must be > 0): the CE term does not reach the total")
+    if not res["emb_grad_total"] > 0.0:
+        raise AssertionError(f"aux_route probe: route_emb.weight gets gradient {res['emb_grad_total']!r} from the total with head_o live (must be > 0): the conditioning does not reach the loss")
+    if res["control_decoder_grad_on_head"] != 0.0:
+        raise AssertionError(f"aux_route probe: the decoder (ade) term puts {res['control_decoder_grad_on_head']!r} on route_head.weight (must be exactly 0.0: the posterior is detached)")
+    if res["control_tside_grad_on_head"] != 0.0 or res["control_tside_grad_on_emb"] != 0.0:
+        raise AssertionError(f"aux_route probe: the T/S-side terms put {res['control_tside_grad_on_head']!r} / {res['control_tside_grad_on_emb']!r} on the head / embedding (must be exactly 0.0)")
+    if res["control_repeat_grad_diff"] != 0.0:
+        raise AssertionError(f"aux_route probe: the probe is not deterministic (the same loss twice differs by {res['control_repeat_grad_diff']})")
+    if res["control_prior_grad"] != 0.0:
+        raise AssertionError(f"aux_route probe: the frozen P10 prior has gradient {res['control_prior_grad']!r} (must be exactly 0.0)")
+    if res["identity_terms_differing"] or res["identity_outputs_differing"] or res["identity_total_abs_diff"] > 1e-6 * max(1.0, abs(float(o1["terms"]["total"]))):      # the total is x + w * route: equal to fp32 round-off (every term but total is bit-equal above)
+        raise AssertionError(f"aux_route probe: at the zero init the model differs from the same model without the head: terms {res['identity_terms_differing']}, outputs {res['identity_outputs_differing']}, total {res['identity_total_abs_diff']}")
+    if not res["plan_move_when_emb_set"] > 0.0:
+        raise AssertionError("aux_route probe: a non-zero route_emb.weight does not move O's plan: the conditioning does not reach the output")
+    if head_zero_at_init and r0["emb_total"] != 0.0:
+        raise AssertionError(f"aux_route probe: at the real zero init route_emb.weight reads {r0['emb_total']!r} (head_o's last layer is zero, so it must be exactly 0.0): the probe's premise does not hold")
+    if res["control_no_own_row_route_term"] != 0.0 or res["control_no_own_row_head_grad"] != 0.0:
+        raise AssertionError(f"aux_route probe: on a batch with no own-code row the CE term reads {res['control_no_own_row_route_term']!r} / its gradient {res['control_no_own_row_head_grad']!r} (must be exactly 0.0): the own-code mask is not applied")
+    res["pass"] = True
+    return res
+
+
 def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None, rec=None, t2b=None) -> list:
     """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
     bad = bad_encoder(a, enc, data_info)
@@ -2100,6 +2292,7 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
         bad.append(f"rb_window_w {a.rb_window_w} declared but --nav-rb is {a.nav_rb}: the mask is c0 of the nav_rb channel -- a lever that is declared and does nothing")
     if a.rb_window_w > 1.0 and not model.cfg.w_traj > 0.0:
         bad.append(f"rb_window_w {a.rb_window_w} declared but w_traj is {model.cfg.w_traj}: the term enters the total scaled by w_traj -- a lever that is declared and does nothing")
+    bad += bad_aux_route(a, cfg, model, opt)                                                    # PREREG_V8F_N1DH: --aux-route / --w-aux-route read back from the BUILT model (modules, levers, config, optimiser)
     bad += bad_o_code(a, cfg, model, opt)                                                        # PREREG_V8F_N1DC: --o-code-skip read back from the BUILT model (module, levers, config, optimiser)
     if not built["prior_frozen"]:
         bad.append("the P10 prior is not frozen")
@@ -2209,6 +2402,8 @@ def live_check(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> dict:
         expect.add("lead")                                               # PREREG_LEVELHEAD_A2
     if cfg.ctx_heads == "on":
         expect |= {"ctx"} | {f"ctx/{v_}" for v_ in M.CTX_VARS}           # PREREG_V8F_STRAT1
+    if cfg.aux_route != "off":
+        expect.add("route")                                              # PREREG_V8F_N1DH
     missing = sorted(expect - set(terms_seen))
     extra_pen = sorted(k for k in terms_seen if k.startswith("pen") and not cfg.consistency)
     declared_dead = [n for n in acc if cfg.wm == "a" and ".idm_heads." in n]
@@ -2228,7 +2423,7 @@ def live_check(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> dict:
                                                    for g, pre in (("adapter", "adapter"), ("S", "read_s"), ("T", "read_t"),
                                                                   ("O", "read_o"), ("head_s", "head_s"), ("head_o", "head_o"),
                                                                   ("wm", "wm.")) + ((("CTX", "ctx_head"),) if cfg.ctx_heads == "on" else ())
-                                                   + ((("NAVRB", "e_nav_rb"),) if cfg.nav_rb == "on" else ()) + ((("OCODE", "o_code"),) if cfg.o_code_skip else ())}}
+                                                   + ((("NAVRB", "e_nav_rb"),) if cfg.nav_rb == "on" else ()) + ((("OCODE", "o_code"),) if cfg.o_code_skip else ()) + ((("ROUTE", "route_"),) if cfg.aux_route != "off" else ())}}
     ok = (not missing and not extra_pen and not unexpected_dead and not declared_dead_alive
           and res["control_prior_grad_sum"] == 0.0 and head_first > 0.0)
     res["pass"] = bool(ok)
@@ -3728,6 +3923,8 @@ def live_check_lora(model, enc, batch, cfg, a, dev, chunk, steps: int = 3, lr: f
         expect.add("lead")                                               # PREREG_LEVELHEAD_A2
     if cfg.ctx_heads == "on":
         expect |= {"ctx"} | {f"ctx/{v_}" for v_ in M.CTX_VARS}           # PREREG_V8F_STRAT1
+    if cfg.aux_route != "off":
+        expect.add("route")                                              # PREREG_V8F_N1DH
     missing = sorted(expect - set(terms_seen))
     declared_dead = [n for n in acc if cfg.wm == "a" and ".idm_heads." in n]
     if cfg.o_interface == "cut":                  # PREREG_V8F_FLAT: O reads a constant code, so e_code.weight receives EXACTLY 0.0 (its bias still trains): declared dead, and G-LIVE REQUIRES the zero
@@ -4044,6 +4241,8 @@ def main(argv=None):
             probe["launch"] = launch_stage(probe)
         if cfg.rb_window_w > 1.0:                        # PREREG_V8F_N1DW: every probe calls model.loss on this batch, and a lever-ON loss reads b["rb"] (the loop's own call, c0 of the LOGGED nav_rb row at NOW)
             probe["rb"] = rb_mask(probe)
+        if cfg.aux_route != "off":                       # PREREG_V8F_N1DH: every probe calls model.loss on this batch, and a lever-ON loss reads route_y / route_ok (the loop's own call, route_stage, on the LOGGED GT)
+            probe["route_y"], probe["route_ok"] = route_stage(probe)
         if cfg.level_head == "on":                       # PREREG_V8F_LEVEL: every probe calls model.loss on this batch, and a lever-ON loss reads level_y / level_ok (the loop's own call, on the LOGGED state)
             probe["level_y"], probe["level_ok"] = level_stage(probe)
         if cfg.lead_head == "on":                        # PREREG_LEVELHEAD_A2: as above (the lead labels, looked up by the probe's own clip index and step)
@@ -4063,6 +4262,8 @@ def main(argv=None):
             probe_f["launch"] = launch_stage(probe_f)
         if cfg.rb_window_w > 1.0:                        # PREREG_V8F_N1DW: as above (the mask comes from the logged nav_rb row at NOW)
             probe_f["rb"] = rb_mask(probe_f)
+        if cfg.aux_route != "off":                       # PREREG_V8F_N1DH: as above
+            probe_f["route_y"], probe_f["route_ok"] = route_stage(probe_f)
         if cfg.level_head == "on":                       # PREREG_V8F_LEVEL: as above
             probe_f["level_y"], probe_f["level_ok"] = level_stage(probe_f)
         if cfg.lead_head == "on":                        # PREREG_LEVELHEAD_A2: as above
@@ -4124,6 +4325,10 @@ def main(argv=None):
             rwp = rb_window_probe(model, probe, cfg)           # PREREG_V8F_N1DW: G-LIVE on the loop's own mask (rb_mask); the term reaches the loss on the rows the mask names, O's head gets its gradient, an all-False mask reads EXACTLY 0.0 (off: nothing runs)
         except (AssertionError, ValueError) as e:
             raise SystemExit(f"ZZDVB-REFUSEDZZ rb-window: {e}")
+        try:
+            arp = aux_route_probe(model, probe, cfg)           # PREREG_V8F_N1DH: G-LIVE on the BUILT loss; the CE and the conditioning reach the total, the own-code mask, the identity at the zero init, exact-0.0 controls (off: nothing runs)
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ aux-route: {e}")
         try:
             ocp = o_code_probe(model, probe, cfg)              # PREREG_V8F_N1DC: G-LIVE on the BUILT loss; o_code.weight gets its gradient, the identity at the zero init, exact-0.0 controls (off: nothing runs)
         except (AssertionError, ValueError) as e:
@@ -4196,6 +4401,8 @@ def main(argv=None):
     sc["launch_intent_probe"] = lip
     if cfg.rb_window_w > 1.0:                                           # PREREG_V8F_N1DW: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
         sc["rb_window_probe"] = rwp
+    if cfg.aux_route != "off":                                          # PREREG_V8F_N1DH: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
+        sc["aux_route_probe"] = arp
     if cfg.o_code_skip:                                                 # PREREG_V8F_N1DC: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
         sc["o_code_probe"] = ocp
     if a.wm_only:                                                       # WM-only arms only: a flag-off selfcheck.json keeps its key set
@@ -4240,6 +4447,8 @@ def main(argv=None):
     launch_tot = {"rows": 0, "eligible": 0, "n": 0}                # ... run totals: rows seen, GT-valid rows (the along-track label exists), GT-launch rows; carried in the checkpoint of an arm that has the lever ON only
     launch_int = {"rows": 0, "eligible": 0, "n": 0}                # ... and since the last log line
     rb_on = cfg.rb_window_w > 1.0                                  # PREREG_V8F_N1DW: off (the default) = the loop runs no new line
+    route_on = cfg.aux_route != "off"                              # PREREG_V8F_N1DH: off (the default) = the loop runs no new line
+    route_tot = {"rows": 0, "ok": 0, "own_ok": 0, "class0": 0, "class1": 0, "class2": 0}          # ... the class record: rows seen, rows with a label (every GT knot valid), and the per-class counts of those (lane_keep / turn_left / turn_right)
     rb_tot = {"rows": 0, "eligible": 0, "n": 0, "n_eligible": 0}   # ... run totals: rows seen, GT-valid rows, RB rows (c0 at NOW), RB rows that are also GT-valid (the loss mass); carried in the checkpoint of an arm that has the lever ON only
     rb_int = {"rows": 0, "eligible": 0, "n": 0, "n_eligible": 0}   # ... and since the last log line
     perf_rec = None                                                  # AMENDMENT_V8F_LORA_5: set only by a resume across --accum / --enc-ckpt under --resume-perf-levers
@@ -4253,6 +4462,8 @@ def main(argv=None):
             raise SystemExit(f"ZZRESUME-REFUSEDZZ the checkpoint's cfg.rb_window_w is {ck['cfg'].get('rb_window_w', 1.0)} but the argv declares {cfg.rb_window_w}")
         if bool(ck["cfg"].get("o_code_skip", False)) != bool(cfg.o_code_skip):        # PREREG_V8F_N1DC: a checkpoint whose cfg.o_code_skip differs from the declared one is never continued (a key absent = False = every earlier checkpoint)
             raise SystemExit(f"ZZRESUME-REFUSEDZZ the checkpoint's cfg.o_code_skip is {ck['cfg'].get('o_code_skip', False)} but the argv declares {cfg.o_code_skip}")
+        if (str(ck["cfg"].get("aux_route", "off")), float(ck["cfg"].get("w_aux_route", 0.0))) != (cfg.aux_route, float(cfg.w_aux_route)):        # PREREG_V8F_N1DH: a checkpoint whose aux_route / weight differs from the declared one is never continued (keys absent = off / 0.0 = every earlier checkpoint)
+            raise SystemExit(f"ZZRESUME-REFUSEDZZ the checkpoint's aux_route is {ck['cfg'].get('aux_route', 'off')} / {ck['cfg'].get('w_aux_route', 0.0)} but the argv declares {cfg.aux_route} / {cfg.w_aux_route}")
         if comp.on and int(ck.get("ego_perturb_stream", 0)) != ego.stream:        # a composed checkpoint from before the stream separation (no key = stream 0) must not be continued on another generator
             raise SystemExit(f"ZZRESUME-REFUSEDZZ the checkpoint drew the perturbation from stream {int(ck.get('ego_perturb_stream', 0))} but this build draws stream {ego.stream}: a resume would switch generators mid-run")
         model.load_state_dict(ck["model"])
@@ -4266,6 +4477,7 @@ def main(argv=None):
         rec_tot.update(ck.get("recover_totals") or {})
         launch_tot.update(ck.get("launch_totals") or {})
         rb_tot.update(ck.get("rb_totals") or {})
+        route_tot.update(ck.get("route_totals") or {})
         print(f"[resume] step {step} epoch {ep} batch {bi}", flush=True)
     elif a.resume_perf_levers is not None:
         raise SystemExit(f"ZZRESUME-REFUSEDZZ --resume-perf-levers resumes a checkpoint and there is none at {ck_path}")
@@ -4285,6 +4497,8 @@ def main(argv=None):
             blob["launch_totals"] = dict(launch_tot)
         if rb_on:                                                       # PREREG_V8F_N1DW: lever-ON arms only: a flag-off checkpoint keeps its key set
             blob["rb_totals"] = dict(rb_tot)
+        if route_on:                                                    # PREREG_V8F_N1DH: lever-ON arms only
+            blob["route_totals"] = dict(route_tot)
         if a.nav_rb == "on":                                            # PREREG_V8F_NAVRB2: lever-ON arms only
             blob["nav_rb_sha256"], blob["nav_rb_variant"] = a.nav_rb_sha256, a.nav_rb_variant
             if a.nav_rb_feat != "state":                                # PREREG_V8F_NAVRBD: beside cfg["nav_rb_feat"] (cfg is cfg.__dict__); absent for state = an N1R checkpoint keeps its key set
@@ -4322,6 +4536,8 @@ def main(argv=None):
                     lmask = launch_stage(b)
                 if rb_on:                                              # PREREG_V8F_N1DW: the roundabout mask = c0 of the LOGGED nav_rb row at NOW, taken where the launch mask is (before any stage; a DAgger swap holds nav_rb as logged)
                     rmask = rb_mask(b)
+                if route_on:                                           # PREREG_V8F_N1DH: the kinematic TAC-LAT label of the LOGGED GT track, taken BEFORE any ego stage (targets are never touched by a stage, but a swapped row's gt_ok is the own one)
+                    route_lab = route_stage(b)
                 if level_on:                                           # PREREG_V8F_LEVEL: the label is the LOGGED speed at NOW, taken BEFORE any ego stage rebuilds kin3 (the head sees the logged frame)
                     lvl_lab = level_stage(b)
                 if lead_on:                                            # PREREG_LEVELHEAD_A2: the lead label of the LOGGED frame (clip index and step), taken BEFORE any ego stage (a swapped sample's ci / t is the own one)
@@ -4368,6 +4584,12 @@ def main(argv=None):
                         c_["eligible"] += int(b["gt_ok"].sum())
                         c_["n"] += int(rmask.sum())
                         c_["n_eligible"] += int((rmask & b["gt_ok"].bool()).sum())
+                if route_on:                                           # ... and attached AFTER the stages (they return their own batch dict): the loss reads b["route_y"], b["route_ok"]
+                    b["route_y"], b["route_ok"] = route_lab
+                    route_tot["rows"] += int(route_lab[1].shape[0])
+                    route_tot["ok"] += int(route_lab[1].sum())
+                    for c_i in range(M.N_ROUTE):
+                        route_tot[f"class{c_i}"] += int(((route_lab[0] == c_i) & route_lab[1]).sum())
                 if level_on:                                           # ... and attached AFTER the stages (they return their own batch dict): the loss reads b["level_y"], b["level_ok"]
                     b["level_y"], b["level_ok"] = lvl_lab
                 if lead_on:                                            # PREREG_LEVELHEAD_A2: attached AFTER the stages: the loss reads b["lead_y"], b["lead_has"], b["lead_near"]
@@ -4405,6 +4627,8 @@ def main(argv=None):
                 out, gn, gn_l = lora_step(model, enc, b, fr[0], fr[1], a, dev, amp, p_gt, chunk, step)
                 T = out["terms"]
                 opt.step()
+            if route_on:                                               # PREREG_V8F_N1DH: the masked share: rows that carry a label AND where O read T's own code (the CE's rows)
+                route_tot["own_ok"] += int((b["route_ok"].bool() & out["route_own"]).sum())
             step += 1
             bi += 1
             if step % a.log_every == 0 or step == total:
@@ -4469,6 +4693,13 @@ def main(argv=None):
         summary["rb_n"], summary["rb_eligible"], summary["rb_rows"], summary["rb_n_eligible"] = rb_tot["n"], rb_tot["eligible"], rb_tot["rows"], rb_tot["n_eligible"]
         summary["rb_window_w"] = cfg.rb_window_w
         summary["rb_weight_share"] = rb_weight_share(rb_tot["n_eligible"], rb_tot["eligible"], cfg.rb_window_w)
+    if route_on:                                                           # PREREG_V8F_N1DH: the lever-ON arm's run record: training-set class shares of route_y (labelled rows) and the masked (own-code) share
+        n_ok = max(1, route_tot["ok"])
+        summary["aux_route"], summary["w_aux_route"] = cfg.aux_route, cfg.w_aux_route
+        summary["route_rows"], summary["route_ok"], summary["route_own_ok"] = route_tot["rows"], route_tot["ok"], route_tot["own_ok"]
+        summary["route_class_counts"] = {nm: route_tot[f"class{i}"] for i, nm in enumerate(("lane_keep", "turn_left", "turn_right"))}
+        summary["route_class_shares"] = {nm: route_tot[f"class{i}"] / n_ok for i, nm in enumerate(("lane_keep", "turn_left", "turn_right"))}
+        summary["route_masked_share"] = route_tot["own_ok"] / n_ok
     if level_on:                                                           # PREREG_V8F_LEVEL: the lever-ON arm's run record (a flag-off summary.json keeps its key set)
         summary["level_head"], summary["w_level"] = "on", cfg.w_level
     if lead_on or cfg.aux_cond == "token":                                 # PREREG_LEVELHEAD_A2: the lever-ON arm's run record (a flag-off summary.json keeps its key set)

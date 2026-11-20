@@ -158,9 +158,9 @@ def test_every_existing_kind_renders_the_134f5da1_argv_byte_for_byte(kind, seed,
 
 
 def test_kinds_bases_and_the_snapshot_tip():
-    assert REAL.KINDS == OLD_KINDS + ("N1DC",) and REAL.C_KINDS == ("N1DC",) and REAL.C_FLAG == "--o-code-skip"
+    assert REAL.KINDS == OLD_KINDS + ("N1DC", "N1DH") and REAL.C_KINDS == ("N1DC",) and REAL.C_FLAG == "--o-code-skip"
     assert REAL.RB_BASE["N1DC"] == "N1" and "N1DC" in REAL.RB_KINDS and "N1DC" in REAL.NAV_KINDS and "N1DC" not in REAL.CTX_KINDS and "N1DC" not in REAL.W_KINDS and "N1DC" not in REAL.D_KINDS
-    assert REAL.base_kind("N1DC") == "N1" and REAL.DCHAN_KINDS == REAL.D_KINDS + REAL.W_KINDS + REAL.C_KINDS and "--o-code-skip" not in REAL.RB_FLAGS
+    assert REAL.base_kind("N1DC") == "N1" and REAL.DCHAN_KINDS == REAL.D_KINDS + REAL.W_KINDS + REAL.C_KINDS + REAL.H_KINDS and "--o-code-skip" not in REAL.RB_FLAGS
     assert _tip().KINDS == OLD_KINDS and REAL.arm_tag("N1DC", "s0", REAL.RUN_STEPS) == "N1DC_s0"
 
 

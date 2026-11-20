@@ -173,7 +173,12 @@ NAV_RB_KEY_PREFIXES = ("e_nav_rb.",)
 NAV_RB_KEYS = frozenset({"nav_rb"})
 #: PREREG_V8F_N1DC: the skip from T's code into O's plan head (``--o-code-skip``): its state-dict prefix (a fine-tune from a checkpoint without it leaves the key fresh = zero, and the gate must accept exactly that)
 O_CODE_KEY_PREFIXES = ("o_code.",)
-NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + ("e_stok.",) + CTX_KEY_PREFIXES + NAV_RB_KEY_PREFIXES + O_CODE_KEY_PREFIXES      # PREREG_V8F_OTBAND adds the strategic-token embedding
+#: PREREG_V8F_N1DH: the auxiliary route-decision head on O's plan feature (``--aux-route``): K = 3 kinematic TAC-LAT classes (lane_keep / turn_left / turn_right), the modes the build supports (``ce`` is NOT built: the card's section 2,
+#: PI-approved arms are ``cond`` only) and the state-dict prefixes (a fine-tune from a checkpoint without them leaves the keys fresh, and the gate must accept exactly that)
+N_ROUTE = 3
+AUX_ROUTE_MODES = ("off", "cond")
+ROUTE_KEY_PREFIXES = ("route_head.", "route_emb.")
+NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + ("e_stok.",) + CTX_KEY_PREFIXES + NAV_RB_KEY_PREFIXES + O_CODE_KEY_PREFIXES + ROUTE_KEY_PREFIXES      # PREREG_V8F_OTBAND adds the strategic-token embedding
 #: identifiers the lead head's own code (``V8FMini._lead``) and the aux-token assembly (``V8FMini._aux_in``) must not mention (the level list + the lead labels): the head is VISION ONLY
 LEAD_FORBIDDEN_NAMES = LEVEL_FORBIDDEN_NAMES + ("lead_y", "lead_has", "lead_near", "lead_gap_h", "s_h", "pose_now")
 LEAD_ALLOWED_KEYS = frozenset({"frame_ok"})
@@ -261,6 +266,9 @@ class V8FMiniConfig:
                                        # computed and NOT in the total = every earlier arm, bit for bit (no new tensor op, no new T key). > 1 = the batch must carry `rb`; the total gains w_traj x (w - 1) x rb_traj
     o_code_skip: bool = False          # PREREG_V8F_N1DC (`--o-code-skip on|off`): False = nothing built and no RNG draw = every earlier arm, bit for bit; True = o_code, Linear(CODE_DIM, n_q * d, bias=False), zero-init, built LAST under a forked RNG, and
                                        # ``run_o`` adds ``o_code(code)`` to the flattened reader output right before ``head_o`` (the SAME code tensor ``e_code`` reads: after teacher forcing, detach_upper and o_interface)
+    aux_route: str = "off"             # PREREG_V8F_N1DH (`--aux-route off|cond`): off = nothing built, no RNG draw, no loss term = every earlier arm, bit for bit. cond = route_head, Linear(n_q * d, 3) on O's flattened plan feature h, trained by CE on the
+                                       # kinematic TAC-LAT label of the GT track (own-code rows only), and route_emb, Linear(3, n_q * d, bias=False) zero-init, ADDED to h from softmax(route_head(h)).detach() right before head_o
+    w_aux_route: float = 0.0           # PREREG_V8F_N1DH (`--w-aux-route`): the CE weight in the total (cond needs > 0: the build refuses a declared-and-inert head)
     w_op: float = 0.0                  # PREREG_V8F_OTBAND (`--w-op`): weight of the operative-band term (ADE over knots 1-10 / 3 + 0.5 x FDE at knot 10 / 6). 0.0 = NOT in the total and NOT computed = every earlier arm, bit for bit
     w_tac_traj: float = 0.0            # PREREG_V8F_OTBAND (`--w-tac-traj`): weight of the tactical-band term (ADE over knots 11-30 / 3 + 0.5 x FDE at knot 30 / 6). 0.0 = NOT in the total
     stok_dim: int = 0                  # PREREG_V8F_OTBAND (`--t-stok-dir`): the strategic token's dimension, read from the stok file's metadata. 0 = no token = every earlier arm, bit for bit (no module, no key added)
@@ -300,6 +308,14 @@ class V8FMiniConfig:
             raise ValueError(f"rb_window_w must be a finite number >= 1, got {self.rb_window_w!r}")
         if not isinstance(self.o_code_skip, bool):
             raise ValueError(f"o_code_skip must be a bool, got {self.o_code_skip!r}")
+        if self.aux_route not in AUX_ROUTE_MODES:
+            raise ValueError(f"aux_route must be one of {AUX_ROUTE_MODES} (the ce mode of PREREG_V8F_N1DH section 2 is not built), got {self.aux_route!r}")
+        if not (isinstance(self.w_aux_route, (int, float)) and not isinstance(self.w_aux_route, bool) and math.isfinite(self.w_aux_route) and self.w_aux_route >= 0.0):
+            raise ValueError(f"w_aux_route must be a finite number >= 0, got {self.w_aux_route!r}")
+        if self.aux_route != "off" and self.code_mix != "whole":
+            raise ValueError(f"aux_route {self.aux_route} needs code_mix whole: the own-code mask is the per-sample use_t draw (got code_mix {self.code_mix!r})")
+        if self.aux_route != "off" and self.o_interface == "cut":
+            raise ValueError("aux_route needs o_interface full: under cut O reads a constant code, so the own-code mask names nothing")
         for nm in ("w_op", "w_tac_traj"):
             if not (math.isfinite(getattr(self, nm)) and getattr(self, nm) >= 0.0):
                 raise ValueError(f"{nm} must be a finite number >= 0, got {getattr(self, nm)!r}")
@@ -941,6 +957,14 @@ class V8FMini(nn.Module):
             with torch.random.fork_rng(devices=[]):
                 self.o_code = nn.Linear(CODE_DIM, fl, bias=False)          # fl = n_q * d = the flattened width head_o reads
             nn.init.zeros_(self.o_code.weight)
+        self.route_head = None
+        self.route_emb = None
+        self._route_logits = None                                          # PREREG_V8F_N1DH: run_o leaves the head's logits here for ``_forward`` (run_o keeps its return signature); a plain attribute, not in the state dict
+        if cfg.aux_route != "off":                                         # PREREG_V8F_N1DH: built LAST (after o_code) under a forked RNG (no draw reaches the global stream); route_emb zeroed: h + 0.0 == h, so the step-0 forward is the off model's, bit for bit
+            with torch.random.fork_rng(devices=[]):
+                self.route_head = nn.Linear(fl, N_ROUTE)                   # fl = n_q * d = 1024 at the real shape: the plan feature h that head_o reads
+                self.route_emb = nn.Linear(N_ROUTE, fl, bias=False)
+            nn.init.zeros_(self.route_emb.weight)
         self.p_gt = 1.0
 
     # ---- helpers -------------------------------------------------------------------------------------------
@@ -1078,7 +1102,11 @@ class V8FMini(nn.Module):
         if self.o_code is not None:                                     # PREREG_V8F_N1DC: ONE line (a mutation deletes it): head_o reads T's code linearly as well, the SAME tensor e_code read above (zero-init: h + 0.0 == h)
             h = h + self.o_code(code)
         with torch.autocast(device_type=h.device.type, enabled=False):          # geometry + the prior stay fp32
-            coef = self.head_o(h.float()).reshape(-1, 2, cfg.nb) * cfg.res_scale_m      # [B, 2, nb]
+            hf = h.float()
+            if self.route_head is not None:                             # PREREG_V8F_N1DH: the route decision is read from h BEFORE the add (no loop); its softmax is DETACHED into the conditioning (CE alone shapes the posterior)
+                self._route_logits = self.route_head(hf)
+                hf = hf + self.route_emb(torch.softmax(self._route_logits, -1).detach())          # ONE line (a mutation deletes it): zero-init route_emb, so hf + 0.0 == hf at step 0
+            coef = self.head_o(hf).reshape(-1, 2, cfg.nb) * cfg.res_scale_m      # [B, 2, nb]
             res = torch.einsum("tk,bck->btc", self.basis, coef)                # [B, 60, 2]
             p30 = self.prior(self._at(b["p10f"], i).float(), b["base"].float())
             return upsample_prior(p30) + res, p30
@@ -1143,12 +1171,14 @@ class V8FMini(nn.Module):
             tout = self.run_t(b, adapt, last_t, ck_for_t, ck_ok)
         out.update(tout)
         code = self._code_pred(tout)
+        own = torch.ones(B, dtype=torch.bool, device=dev)                # PREREG_V8F_N1DH: True where O reads T's OWN code (inference, and every row whose teacher-forcing draw did not substitute the GT code)
         if use_labels and p_gt > 0:
             if cfg.code_mix == "kind":                                  # PREREG_V8F_MIXO: an independent GT-or-own switch per sample AND per unit
                 code = torch.where(self._code_mix_mask(b["lab_t"]["has"], p_gt, gen), self._code_gt(b["lab_t"]), code)
             else:                                                       # whole: the pre-MIXO lines, verbatim (the RNG stream is B's)
                 use_t = (torch.rand(B, generator=gen, device=dev) < p_gt) & b["lab_t"]["has"]
                 code = torch.where(use_t[:, None], self._code_gt(b["lab_t"]), code)
+                own = ~use_t                                            # PREREG_V8F_N1DH: the substitution mask the line above already drew (no new RNG draw)
         if code_override is not None:                                   # forward_diag only (PREREG_V8F_TAC)
             if code_override.shape != code.shape:
                 raise ValueError(f"code_override {tuple(code_override.shape)} != T's code {tuple(code.shape)}")
@@ -1164,6 +1194,8 @@ class V8FMini(nn.Module):
         traj60, p30 = self.run_o(b, adapt, last_now, ck_for_o, ck_ok, code)
         out["traj60"], out["traj30"], out["p10"] = traj60, subsample_02(traj60), p30
         out["adapt"] = adapt
+        if self.route_head is not None:                                  # PREREG_V8F_N1DH: lever-ON models only (an off model's output keys are the tip's)
+            out["route_logits"], out["route_own"], self._route_logits = self._route_logits, own, None          # the stash is emptied here: a module must not keep a graph (deepcopy of the model)
         return out
 
     def forward_infer(self, batch: dict) -> dict:
@@ -1343,11 +1375,18 @@ class V8FMini(nn.Module):
                 T["wm"] = wm["total"]
             else:
                 T["wm"] = out["adapt"].sum() * 0.0
+        if cfg.aux_route != "off":                                   # PREREG_V8F_N1DH: CE of the route head on the kinematic TAC-LAT label, ONLY on rows where O read T's own code (route_own) and the label exists (route_ok)
+            if "route_y" not in batch or "route_ok" not in batch:
+                raise ValueError("aux_route is on but the batch carries no route_y / route_ok (the loop's own call is route_stage)")
+            rm = (batch["route_ok"].bool() & out["route_own"]).float()      # the own-code mask: a mutation removes ``& out["route_own"]``
+            ce = F.cross_entropy(out["route_logits"].float(), batch["route_y"].long().clamp(0, N_ROUTE - 1), reduction="none")
+            T["route"] = (ce * rm).sum() / rm.sum().clamp_min(1.0)       # no eligible row: exactly 0.0 value and exactly 0.0 gradient
         total = (cfg.w_ckpt * T["ckpt"] + cfg.w_tac * (T["goal"] + 0.5 * (T["lat"] + T["lon"]) + cfg.w_cons * T["cons"])
                  + cfg.w_traj * (T["ade"] / 3.0 + 0.5 * T["fde"] / 6.0))
         total = total + cfg.w_acc * T["acc"] if cfg.w_acc > 0.0 else total          # PREREG_V8F_OACC: ONE line (a mutation deletes it); w_acc 0 adds nothing: B's total, bit for bit
         total = total + cfg.w_traj * cfg.launch_intent_w * T["launch_along"] / 3.0 if cfg.launch_intent_w > 0.0 else total      # PREREG_V8F_LAUNCH_INTENT: ONE line (a mutation deletes it); W 0 adds nothing: the tip's total
         total = total + cfg.w_traj * (cfg.rb_window_w - 1.0) * T["rb_traj"] if cfg.rb_window_w > 1.0 else total      # PREREG_V8F_N1DW: ONE line (a mutation deletes it); w 1.0 adds nothing: the tip's total
+        total = total + cfg.w_aux_route * T["route"] if cfg.aux_route != "off" else total      # PREREG_V8F_N1DH: ONE line (a mutation deletes it); off adds nothing: the tip's total
         total = total + cfg.w_op * T["op"] if cfg.w_op > 0.0 else total                        # PREREG_V8F_OTBAND: ONE line each (a mutation deletes it); weight 0 adds nothing: the tip's total
         total = total + cfg.w_tac_traj * T["tac"] if cfg.w_tac_traj > 0.0 else total
         total = total + cfg.w_level * T["level"] if cfg.level_head == "on" else total          # PREREG_V8F_LEVEL: ONE line (a mutation deletes it); head off adds nothing: the tip's total
@@ -1405,6 +1444,8 @@ class V8FMini(nn.Module):
             g["CTX"] = [self.ctx_head]                                              # PREREG_V8F_STRAT1
         if self.e_nav_rb is not None:
             g["NAVRB"] = [self.e_nav_rb]                                            # PREREG_V8F_NAVRB2: G-LIVE then requires its gradient
+        if self.route_head is not None:
+            g["ROUTE"] = [self.route_head, self.route_emb]                          # PREREG_V8F_N1DH: G-LIVE then requires its gradient
         if self.o_code is not None:
             g["OCODE"] = [self.o_code]                                              # PREREG_V8F_N1DC: G-LIVE then requires its gradient
         return g
@@ -1434,6 +1475,9 @@ class V8FMini(nn.Module):
                       "w_tac": cfg.w_tac, "w_cons": cfg.w_cons}}                       # PREREG_V8F_WC: T's constraint term is w_tac x w_cons
         if self.cfg.rb_window_w != 1.0:
             lv["rb_window_w"] = self.cfg.rb_window_w          # PREREG_V8F_N1DW: ABSENT at 1.0, so every earlier arm's levers equal the tip's (the gate reads .get("rb_window_w", 1.0))
+        if self.route_head is not None:
+            lv["aux_route"] = self.cfg.aux_route                  # PREREG_V8F_N1DH: ABSENT when off, so every earlier arm's levers equal the tip's (the gate reads .get("aux_route", "off") / .get("w_aux_route", 0.0)); the BUILT modules are route_head / route_emb
+            lv["w_aux_route"] = self.cfg.w_aux_route
         if self.o_code is not None:
             lv["o_code_skip"] = "on"          # PREREG_V8F_N1DC: ABSENT when off, so every earlier arm's levers equal the tip's (the gate reads .get("o_code_skip", "off")); the BUILT module is o_code
         if self.e_nav_rb is not None:
