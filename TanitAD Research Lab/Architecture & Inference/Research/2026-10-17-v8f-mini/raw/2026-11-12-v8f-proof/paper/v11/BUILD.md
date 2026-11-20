@@ -31,3 +31,9 @@ Fragments changed: `frag_row127.tex` (a paragraph for row 131 appended), `frag_s
 ## Update after row 133 (2026-11-20)
 
 Fragments changed: `frag_row127.tex` (the paragraphs `frag_row132.tex` and `frag_row133.tex` appended), `frag_status_run.tex` (item iv). Build: rc 0, 41 pages, 0 overfull boxes, 0 undefined references. Number check with `ROW100.md` to `ROW133.md`: 1177 tokens checked, 0 not found. PDF saved as `tanitad_4b_paper_r133.pdf` (sha256 71e6434486cb4c45).
+
+## Update after row 135 (2026-11-20)
+
+Fragments changed: `frag_row127.tex` (the paragraphs `frag_row134.tex` and `frag_row135.tex` appended), `frag_status_run.tex` (item iv). `patch_tex_v11.py`: `ok edits 11`. Build: rc 0, 42 pages, 0 overfull boxes, 0 undefined references. Number check with `ROW100.md` to `ROW135.md`: 1299 tokens checked, 0 not found. PDF saved as `tanitad_4b_paper_r135.pdf` (sha256 61be4db651d04a11); it holds the paragraphs of rows 132 to 135.
+
+Fault of the build after row 133, found here: that build ran the typesetter without the step `patch_tex_v11.py`, which is the step that puts the fragments into the paper source. The file `tanitad_4b_paper_r133.pdf` (sha256 71e6434486cb4c45, 41 pages) therefore has the text of the build after row 131 and does not hold the paragraphs of rows 132 and 133, although the entry above says it was built after them. The number check reads the fragments, not the PDF, so it did not see this. From this build on the page count and the row ids in the paper source are checked after the patch step.
