@@ -806,7 +806,8 @@ _SIDECAR_DOC = {
     "gstr_{cond}": "[3] the strategic goal g_str = (cos, sin, dist_pref) (hier only)",
     "sel_idx_{cond}": "the SELECTED anchor under each conditioning",
     "sel_bank_{cond}": "[S, 2] the selected anchor's UNREFINED bank path "
-                       "(out['anchor_bank'][sel_idx]) — the selection surface",
+                       "(out['anchor_bank'][sel_idx]) — the selection surface; a NaN row "
+                       "when sel_idx lies beyond the bank (one row per window, always)",
     "fan_term_heading_{cond}": "[N_anchors] terminal heading of every REFINED "
                                "candidate (out['anchor_traj']) — fan coverage",
     "reach_keep_{cond}": "[N_anchors] the S2 reach mask (1.0 = survivor)",
@@ -976,6 +977,24 @@ def _p(*a):
 #: "this file is not what you said it was".)
 DEFECT_EXCEPTIONS = (TypeError, AttributeError, NameError, IndexError,
                      UnboundLocalError, ZeroDivisionError)
+
+
+def _sel_bank_row(bank, si):
+    """The nav-compliance ``sel_bank_{cond}`` row of ONE window: ALWAYS ``[1, S, 2]``.
+
+    ``sel_idx`` indexes the REFINED candidate set (``anchor_traj``), which can be wider
+    than ``anchor_bank``. The old ``bank[si:si + 1]`` returned an EMPTY slice for any
+    ``si`` outside ``[0, len(bank))``, so those windows silently vanished from the
+    sidecar, and ``taniteval.nav_compliance.from_refcv3_dump`` crashed on every refcv9
+    E2 dump. MEASURED 2026-11-19 on E2_READ_K2DC/E2_K2_pf/dump_s0: 2,258 of 2,397 rows,
+    and rows == count(sel_idx < 110) in 70/70 episodes. Outside the bank, this writes a
+    NaN row; the reader excludes NaN rows from the anchor readout and reports the count.
+    (MM 4a3d05, hold_refcv3_selbank_writer.)"""
+    import torch
+    si = int(si)
+    if 0 <= si < int(bank.shape[0]):
+        return bank[si:si + 1].cpu().numpy()
+    return torch.full((1,) + tuple(bank.shape[1:]), float("nan"), dtype=bank.dtype).cpu().numpy()
 
 
 def _refused(reason, tier, n=0):
@@ -2634,7 +2653,7 @@ def run_dump(a) -> dict:
                 dec.setdefault(f"sel_idx_{cname}", []).append(si)
                 bank = o["anchor_bank"].float()[r]                          # [N, S, 2]
                 dec.setdefault(f"sel_bank_{cname}", []).append(
-                    bank[si:si + 1].cpu().numpy())                          # [1, S, 2]
+                    _sel_bank_row(bank, si))                                # [1, S, 2]; NaN beyond the bank
                 fan_ = o["anchor_traj"].float()[r]                          # [N, S, 2]
                 d_ = fan_[:, -1] - fan_[:, -2]
                 th = torch.atan2(d_[:, 1], d_[:, 0])
