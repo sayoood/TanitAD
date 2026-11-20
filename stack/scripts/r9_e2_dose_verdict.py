@@ -23,12 +23,17 @@ CPU only.  Usage:
   python r9_e2_dose_verdict.py --k2dc-pf <E2_READ_K2DC/E2_K2_pf> --k2-pf <E2_READ_K2M1N20/E2_K2_pf> --k0-pf <E2_READ_K2M1N20/E2_K0_pf> --dev-split DEV_HOLD_SPLIT.json \
       --metrics <runs/r9e2-K2DC/metrics.jsonl> --out-dir <dir> [--arm K2DC02 (reads target/bounds from runs.d/r9e2_K2DC02.argv.json; default K2DC = unchanged)] [--k2dc-read <E2_READ_K2DC/read> --k2-read <E2_READ_K2M1N20/read>]
   (each --*-pf dir holds dump_s0 / dump_s1; PYTHONPATH = <tree>/stack:<tree>/stack/scripts:<tree>/taniteval, `;` on Windows.)
-EXIT: 0 SUPPORTED | 1 REFUTED | 2 INCONCLUSIVE | 3 DOSE-VOID | 4 REFUSED.
+EXIT: 0 SUPPORTED | 1 REFUTED | 2 INCONCLUSIVE | 3 DOSE-VOID (or OP-VOID, K2SG) | 4 REFUSED.
+
+ARM K2SG (the map->trunk stop-gradient arm; PREREG_K2SG_2026-11-19.md): `--arm K2SG` reads its argv json (default stack/ops/runs.d/r9e2_K2SG.argv.json), REFUSES unless
+`--map-hires-trunk-grad-scale` appears exactly once with value exactly 0.0 and there is no `--map-hires-share-target`.  The decision constants are PREREG_K2SG section 3's (= K2DC's,
+K2 in the comparator slot, the arm's dumps in the `--k2dc-pf` slot); the validity rule is section 2's exact identity (`void_check_sg`, needs --metrics): outcome OP-VOID when invalid.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -48,11 +53,31 @@ ARM_DEFAULT = "K2DC"        # the default arm: every constant above is K2DC's (s
 ARM_ARGV = {"K2DC02": "r9e2_K2DC02.argv.json"}      # arms whose dose settings are READ from stack/ops/runs.d/<file>, never typed here
 ARGV_DIR = Path(__file__).resolve().parents[1] / "ops" / "runs.d"
 BAND_REL = (0.5, 1.5)       # K2DC's band [0.05, 0.15] is 0.5x..1.5x of its target 0.10; a derived arm keeps the same RELATIVE band around its own target
-EXIT = {"SUPPORTED": 0, "REFUTED": 1, "INCONCLUSIVE": 2, "DOSE-VOID": 3}
+EXIT = {"SUPPORTED": 0, "REFUTED": 1, "INCONCLUSIVE": 2, "DOSE-VOID": 3, "OP-VOID": 3}
+ARM_SG = {"K2SG": "r9e2_K2SG.argv.json"}            # the stop-gradient arm: its lever is READ from the argv json, never typed here
+PREREG_SG = "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/e2/e2raw/PREREG_K2SG_2026-11-19.md"
+SG_FLAG = "--map-hires-trunk-grad-scale"
+SG_SHARE_FLAG = "--map-hires-share-target"
+SG_KEY = "gs_trunk_proj_map_hires"                  # must read EXACTLY 0.0 on every row at step >= 1
+SG_CONTROL_KEY = "gs_trunk_proj_tac_v6"             # must read non-zero on those rows (the probe works)
+SG_INFO_KEYS = ("gs_layer2_proj_map_hires", "gs_bev025_proj_map_hires", "gs_bev_pool_proj_map_hires")    # informational only, never in the rule
 RESOLUTIONS = ("'at both seeds' governs the whole SUPPORTED sentence",
                "REFUTED 'lateral rows' = LAT_cross_mae_m and LAT_cross_abs_final_m (the lateral rows that are lengths)",
                "'separated worse' = the paired CI excludes zero AND delta > 0 (lower is better)",
                "jitter clause = the POINT delta of the frame-to-frame |d e| (K2DC - K2) < 0; its interval is reported, no CI is required by the PREREG")
+RESOLUTIONS_SG = ("K2SG: the arm's dumps / reads sit in the `--k2dc-*` slot and the JSON's internal keys keep the `dc_*` names (dc_vs_k0 = K2SG - K0, dc_vs_k2 = K2SG - K2); every label and text is K2SG",
+                  "K2SG validity (PREREG_K2SG section 2, an exact identity, not a band): every telemetry row at step >= 1 that carries gs_trunk_proj_map_hires must read EXACTLY 0.0 (no tolerance); "
+                  "zero such rows = OP-VOID (a missing check is a FAIL)",
+                  "K2SG control: 'the tac_v6 row reads non-zero' = on EVERY such row gs_trunk_proj_tac_v6 is present, finite and != 0.0 (strict); otherwise OP-VOID ('the probe does not work')",
+                  "K2SG informational only, never in the rule: the layer2 / bev025 / bev_pool map_hires proj readings per row and how many read exactly 0.0",
+                  "'at both seeds' governs the whole SUPPORTED sentence",
+                  "REFUTED 'lateral rows' = LAT_cross_mae_m and LAT_cross_abs_final_m (the lateral rows that are lengths)",
+                  "'separated worse' = the paired CI excludes zero AND delta > 0 (lower is better)",
+                  "jitter clause = the POINT delta of the frame-to-frame |d e| (K2SG - K2) < 0; its interval is reported, no CI is required by the PREREG")
+REASON_SG = {"SUPPORTED": "at both seeds K2SG-K0 LAT_cross_mae is not separated worse, K2SG-K2 LAT_cross_mae <= -2.5 mm and the frame-to-frame |d e| K2SG-K2 is negative",
+             "REFUTED": "at both seeds the K2SG-K2 lateral distance rows are within +-1 mm: map gradient reaching the shared trunk is ELIMINATED as the lateral cause; next = K2 minus "
+                        "--r9-hist-supervise-geom, or the planner L2-SP anchor (each its own pre-registration)",
+             "INCONCLUSIVE": "between the bars: next step = a replicate arm (same flags, seed + 1), NOT a reinterpretation"}
 
 
 def _fail(msg: str):
@@ -81,6 +106,35 @@ def arm_dose(arm: str = ARM_DEFAULT, argv_json=None):
         _fail(f"{p}: implausible dose settings target {target}, bounds {lo},{hi}")
     return {"arm": arm, "argv_json": str(p), "target": target, "bounds": [lo, hi],
             "share_band": [round(BAND_REL[0] * target, 6), round(BAND_REL[1] * target, 6)]}
+
+
+def arm_sg(arm: str = "K2SG", argv_json=None) -> dict:
+    """K2SG: read the lever from its argv json and REFUSE unless it is the stop-gradient at exactly 0.0 and has no share controller."""
+    if arm not in ARM_SG:
+        _fail(f"unknown stop-gradient arm {arm!r}")
+    p = Path(argv_json) if argv_json else ARGV_DIR / ARM_SG[arm]
+    try:
+        toks = json.loads(p.read_text(encoding="utf-8"))["argv"]
+        if not isinstance(toks, list) or not all(isinstance(t, str) for t in toks):
+            raise TypeError("argv is not a list of strings")
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        _fail(f"{p}: unreadable argv ({e!r})")
+    for t in toks:
+        if t.startswith(SG_FLAG + "=") or t.startswith(SG_SHARE_FLAG + "="):
+            _fail(f"{p}: `--flag=value` form is not accepted ({t!r})")
+    if SG_SHARE_FLAG in toks:
+        _fail(f"{p}: {SG_SHARE_FLAG} is present: K2SG has no share controller")
+    n = toks.count(SG_FLAG)
+    if n != 1:
+        _fail(f"{p}: {SG_FLAG} appears {n} times, exactly once is required")
+    i = toks.index(SG_FLAG)
+    try:
+        v = float(toks[i + 1])
+    except (IndexError, ValueError) as e:
+        _fail(f"{p}: {SG_FLAG} has no parsable value ({e!r})")
+    if v != 0.0:
+        _fail(f"{p}: {SG_FLAG} = {v!r}, exactly 0.0 is required")
+    return {"arm": arm, "kind": "stop-gradient", "argv_json": str(p), "trunk_grad_scale": 0.0}
 
 
 # ---------------------------------------------------------------------------------------------------------------- #
@@ -172,6 +226,63 @@ def void_check(metrics_path, band=SHARE_BAND, bounds=None) -> dict:
     return out
 
 
+def _num(x):
+    try:
+        v = float(x)
+    except (TypeError, ValueError):
+        return None
+    return v if math.isfinite(v) else None
+
+
+def void_check_sg(metrics_path) -> dict:
+    """PREREG_K2SG section 2: S = 0 is an analytic identity, so the check is EXACT.  Rows with `gs_trunk_proj_map_hires` at step >= 1: none => OP-VOID; any value != 0.0 => OP-VOID
+    (listing them); any such row whose `gs_trunk_proj_tac_v6` is missing / non-finite / 0.0 => OP-VOID (the probe does not work)."""
+    if metrics_path is None:
+        _fail("K2SG needs --metrics: the validity identity cannot be read without it")
+    p = Path(metrics_path)
+    try:
+        lines = p.read_text(encoding="utf-8").splitlines()
+    except OSError as e:
+        _fail(f"--metrics {p}: unreadable ({e})")
+    rows, nonzero, bad_ctl, info = [], [], [], {k: [] for k in SG_INFO_KEYS}
+    for ln in lines:
+        ln = ln.strip()
+        if not ln:
+            continue
+        try:
+            r = json.loads(ln)
+        except ValueError:
+            continue
+        if not isinstance(r, dict) or SG_KEY not in r:
+            continue
+        st = r.get("step")
+        if not isinstance(st, (int, float)) or isinstance(st, bool):
+            nonzero.append({"step": None, "value": r[SG_KEY], "why": "row has no numeric step"})
+            continue
+        if st < 1:
+            continue
+        v, c = _num(r[SG_KEY]), (_num(r[SG_CONTROL_KEY]) if SG_CONTROL_KEY in r else None)
+        rows.append((int(st), v, c))
+        if v is None or v != 0.0:
+            nonzero.append({"step": int(st), "value": r[SG_KEY]})
+        if c is None or c == 0.0:
+            bad_ctl.append({"step": int(st), "value": r.get(SG_CONTROL_KEY)})
+        for k in SG_INFO_KEYS:
+            info[k].append({"step": int(st), "value": r.get(k)})
+    out = {"metrics": str(p), "rule": f"{SG_KEY} == 0.0 EXACTLY on every row at step >= 1 (>= 1 row), and {SG_CONTROL_KEY} present and != 0.0 on each of those rows",
+           "n_rows": len(rows), "n_trunk_nonzero": len(nonzero), "trunk_nonzero": nonzero, "n_control_bad": len(bad_ctl), "control_bad": bad_ctl,
+           "informational_not_in_rule": {k: {"n_rows": len(v), "n_exactly_zero": sum(1 for x in v if _num(x["value"]) == 0.0), "readings": v} for k, v in info.items()}}
+    if not rows and not nonzero:
+        out.update(status="OP-VOID", valid=False, reason=f"metrics.jsonl holds no {SG_KEY} row at step >= 1: a missing check is a FAIL")
+    elif nonzero:
+        out.update(status="OP-VOID", valid=False, reason=f"{SG_KEY} is not exactly 0.0 at {len(nonzero)} row(s): the stop-gradient did not hold; fix the wiring before any claim")
+    elif bad_ctl:
+        out.update(status="OP-VOID", valid=False, reason=f"{SG_CONTROL_KEY} is missing or 0.0 at {len(bad_ctl)} row(s): the probe does not work")
+    else:
+        out.update(status="VALID", valid=True, reason="")
+    return out
+
+
 # ---------------------------------------------------------------------------------------------------------------- #
 # the numbers: families (r9_e2_families.build) and the jitter (lat_jitter.py's dlag)                                #
 # ---------------------------------------------------------------------------------------------------------------- #
@@ -224,14 +335,14 @@ def _slim(r: dict) -> dict:
     return {k: r[k] for k in ("delta", "lo", "hi", "separated", "better", "n", "n_episodes", "a_mean", "b_mean") if k in r}
 
 
-def seed_numbers(k2dc_pf, k2_pf, k0_pf, dev_split, seed: str, n_boot: int = 2000) -> dict:
+def seed_numbers(k2dc_pf, k2_pf, k0_pf, dev_split, seed: str, n_boot: int = 2000, label: str = "K2DC") -> dict:
     F = _families()
     dev = F.load_dev(dev_split)
     sub = lambda root: Path(root) / f"dump_s{seed}"                                  # noqa: E731
     out = {"dumps": {"k2dc": str(sub(k2dc_pf)), "k2": str(sub(k2_pf)), "k0": str(sub(k0_pf))}}
     docs = {}
     for tag, b, lab in (("dc_vs_k0", k0_pf, "K0"), ("dc_vs_k2", k2_pf, "K2")):
-        doc = F.build(sub(k2dc_pf), sub(b), mode="families", dev=dev, n_boot=n_boot, labels=("K2DC", lab))
+        doc = F.build(sub(k2dc_pf), sub(b), mode="families", dev=dev, n_boot=n_boot, labels=(label, lab))
         docs[tag] = doc
         out[tag] = {rid: _slim(r) for fam in F.FAMILIES for rid, r in doc["rows"][fam].items()}
         out[tag + "_ade_m"] = _slim(doc["ade_m"])
@@ -285,8 +396,11 @@ def beside(k2dc_read, k2_read) -> dict:
 # ---------------------------------------------------------------------------------------------------------------- #
 def build(numbers: dict, void: dict, extra: dict | None = None, arm: dict | None = None) -> dict:
     d = decide({s: {k: numbers[s][k] for k in ("dc_vs_k0", "dc_vs_k2", "jitter_dlag_dc_vs_k2")} for s in SEEDS})
+    sg = arm is not None and arm.get("kind") == "stop-gradient"
+    if sg:
+        d["reason"] = REASON_SG[d["outcome_if_valid"]]
     if void.get("valid") is False:
-        outcome = "DOSE-VOID"
+        outcome = "OP-VOID" if sg else "DOSE-VOID"
     elif void.get("valid") is None:
         outcome = d["outcome_if_valid"] + " (UNCHECKED-VOID: the in-training share condition was not read)"
     else:
@@ -303,7 +417,17 @@ def build(numbers: dict, void: dict, extra: dict | None = None, arm: dict | None
            "seeds": numbers}
     if extra:
         doc["beside_no_direction"] = extra
-    if arm is not None:          # a derived arm only; the K2DC document has no `arm` key and its thresholds are untouched
+    if sg:                       # K2SG: its own prereg, validity (`op_validity`), thresholds and labels; nothing below is shared with the dose arms
+        doc.pop("dose_validity")
+        doc["op_validity"] = void
+        doc["prereg"] = PREREG_SG
+        doc["thresholds"] = {"bar_m": -BAR_M, "band_m": BAND_M, "trunk_proj_map_hires": "== 0.0 exactly at every row, step >= 1", "control": f"{SG_CONTROL_KEY} != 0.0 at every such row"}
+        doc["resolutions"] = list(RESOLUTIONS_SG)
+        doc["families_note"] = doc["families_note"].replace("K2DC", "K2SG")
+        doc["arm"] = {**arm, "note": "PREREG_K2SG_2026-11-19.md section 3: PREREG_K2DC_2026-11-12's constants applied UNCHANGED with K2 in the comparator slot; section 2's exact-identity validity; "
+                                     "section 4's next steps replace K2DC's. Pre-registered before any K2SG training step. One training run per arm: a separated interval answers "
+                                     "'another draw of EPISODES' only (H-ESTIM-SEED-1)."}
+    elif arm is not None:          # a derived arm only; the K2DC document has no `arm` key and its thresholds are untouched
         doc["thresholds"]["share_band"] = list(arm["share_band"])
         doc["arm"] = {**arm, "note": "the pre-registered decision constants (bar, band, jitter clause, two seeds) are PREREG_K2DC_2026-11-12's, applied UNCHANGED to this arm; the in-training share band is "
                                      "BAND_REL x this arm's own target (read from its argv json). Pre-registered for K2DC02 in e2/e2raw/PREREG_K2DC02_2026-11-18.md (landed 75d9ca52, before any K2DC02 training step): K2DC is the comparator "
@@ -312,10 +436,20 @@ def build(numbers: dict, void: dict, extra: dict | None = None, arm: dict | None
 
 
 def md(doc: dict) -> str:
-    L = [f"# {doc.get('arm', {}).get('arm', ARM_DEFAULT)} dose hypothesis: **{doc['outcome']}**", "", f"{doc['reason']}", "",
+    if doc.get("arm", {}).get("kind") == "stop-gradient":        # K2SG: same tables, K2SG labels, its own validity block
+        ov = doc["op_validity"]
+        return _md_body(doc, f"# K2SG mechanism (map->trunk stop-gradient): **{doc['outcome']}**",
+                        f"In-training validity (`op_validity`): **{ov.get('status')}** ({ov.get('rule', '')}; {ov.get('n_rows')} telemetry rows, {ov.get('n_trunk_nonzero')} non-zero trunk readings, "
+                        f"{ov.get('n_control_bad')} bad control readings). {ov.get('reason', '')}").replace("K2DC", "K2SG")
+    return _md_body(doc, f"# {doc.get('arm', {}).get('arm', ARM_DEFAULT)} dose hypothesis: **{doc['outcome']}**",
+                    f"In-training validity (`dose_validity`): **{doc['dose_validity'].get('status')}** ({doc['dose_validity'].get('rule', '')}; "
+                    f"{doc['dose_validity'].get('n_inside_band', '-')} of {doc['dose_validity'].get('n_probes_step_ge_3000', '-')} late probes inside the band).")
+
+
+def _md_body(doc: dict, head: str, validity: str) -> str:
+    L = [head, "", f"{doc['reason']}", "",
          f"*{doc['class']}.* Pre-registration: `{doc['prereg']}`. Tier: {doc['tier']}. Windows: {doc['windows']}.", "", f"Estimator: {doc['estimator']}.", "",
-         f"In-training validity (`dose_validity`): **{doc['dose_validity'].get('status')}** ({doc['dose_validity'].get('rule', '')}; "
-         f"{doc['dose_validity'].get('n_inside_band', '-')} of {doc['dose_validity'].get('n_probes_step_ge_3000', '-')} late probes inside the band).", "",
+         validity, "",
          "## Pre-registered rows (delta = A - B, metres; lower is better)", "",
          "| seed | K2DC-K0 LAT_cross_mae | separated worse? | K2DC-K2 LAT_cross_mae | <= -2.5 mm | K2DC-K2 LAT_cross_abs_final | K2DC-K2 jitter abs(d e) | jitter < 0 | supported | refuted |",
          "|" + "---|" * 11]
@@ -351,14 +485,16 @@ def main(argv=None) -> int:
     ap.add_argument("--k2-read", help="E2_READ_K2M1N20/read")
     ap.add_argument("--boot", type=int, default=2000)
     ap.add_argument("--arm", default=ARM_DEFAULT, help=f"{ARM_DEFAULT} (default: unchanged behaviour) or {', '.join(sorted(ARM_ARGV))}: the arm's `--k2dc-*` inputs are that arm's; "
-                    "its share target and bounds are read from stack/ops/runs.d/<arm>.argv.json (or --argv-json)")
+                    f"its share target and bounds are read from stack/ops/runs.d/<arm>.argv.json (or --argv-json); or {', '.join(sorted(ARM_SG))}: the stop-gradient arm "
+                    "(its lever is checked in its argv json, validity is read from --metrics, which is then required)")
     ap.add_argument("--argv-json", help="a derived arm's argv json (default: stack/ops/runs.d/r9e2_<arm>.argv.json next to this script's stack/)")
     ap.add_argument("--out-dir", required=True)
     a = ap.parse_args(argv)
     try:
-        arm = arm_dose(a.arm, a.argv_json)
-        numbers = {s: seed_numbers(a.k2dc_pf, a.k2_pf, a.k0_pf, a.dev_split, s, a.boot) for s in SEEDS}
-        void = void_check(a.metrics) if arm is None else void_check(a.metrics, tuple(arm["share_band"]), tuple(arm["bounds"]))
+        sg = a.arm in ARM_SG
+        arm = arm_sg(a.arm, a.argv_json) if sg else arm_dose(a.arm, a.argv_json)
+        numbers = {s: seed_numbers(a.k2dc_pf, a.k2_pf, a.k0_pf, a.dev_split, s, a.boot, a.arm if sg else "K2DC") for s in SEEDS}
+        void = void_check_sg(a.metrics) if sg else void_check(a.metrics) if arm is None else void_check(a.metrics, tuple(arm["share_band"]), tuple(arm["bounds"]))
         doc = build(numbers, void, beside(a.k2dc_read, a.k2_read)) if arm is None else build(numbers, void, beside(a.k2dc_read, a.k2_read), arm)
     except SystemExit as e:
         print(e, file=sys.stderr)
