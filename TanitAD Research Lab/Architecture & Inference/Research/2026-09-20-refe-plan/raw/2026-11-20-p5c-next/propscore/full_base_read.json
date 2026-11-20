@@ -1,0 +1,114 @@
+{
+ "arm": "base",
+ "n_tokens": 12146,
+ "n_logs": 136,
+ "t_s_median": 0.569,
+ "controls": {
+  "CTRL_T": {
+   "max_abs_diff": {
+    "nc": 0.0,
+    "dac": 0.0,
+    "ddc": 0.0,
+    "ep": 2.5256352564895224e-11,
+    "ttc": 0.0,
+    "c": 0.0,
+    "pdms": 1.0523359961212009e-11
+   },
+   "n_tokens_over_1e-9": 0,
+   "pass": true
+  },
+  "CTRL_P": {
+   "max_abs_diff": {
+    "nc": 0.0,
+    "dac": 0.0,
+    "ddc": 0.0,
+    "ep": 0.0,
+    "ttc": 0.0,
+    "c": 0.0,
+    "pdms": 0.0
+   },
+   "n_tokens_over_1e-9": 0,
+   "n_pass1_rows_found": 12146,
+   "pass": true
+  },
+  "CTRL_S": {
+   "n_agree": 12146,
+   "n": 12146,
+   "pass": true
+  }
+ },
+ "tier": "T1 executed (NAVSIM v1.1 LQR + bicycle, the benchmark's tracker); transparent = no tracker",
+ "evidence": "MEASURED (this run)",
+ "strata": {
+  "zeroed": {
+   "n": 393,
+   "pick": 0.0,
+   "oracle": 86.17062859765795,
+   "random": 28.682572551265558,
+   "share_props_zero": 67.64472010178118,
+   "rule::navsim_v1 (pick)": 0.0,
+   "rule::safety_power_a2": 8.108278261336896,
+   "rule::safety_power_a4": 15.18435519152175,
+   "rule::safety_power_a8": 18.911698074598895,
+   "rule::ttc_weight_10": 8.444351665477388
+  },
+  "nonzeroed": {
+   "n": 11753,
+   "pick": 94.1177302347383,
+   "oracle": 98.17384137963214,
+   "random": 69.15488703313557,
+   "share_props_zero": 23.228377860971666,
+   "rule::navsim_v1 (pick)": 94.1177302347383,
+   "rule::safety_power_a2": 93.7941099477592,
+   "rule::safety_power_a4": 93.42544123726206,
+   "rule::safety_power_a8": 93.00601245003719,
+   "rule::ttc_weight_10": 93.79531829988353
+  }
+ },
+ "zero_split": {
+  "n_zeroed": 393,
+  "selection_bound_any_prop_gt0": 348,
+  "generation_bound_all64_zero": 45,
+  "selection_bound_pct": 88.54961832061069,
+  "zeroed_by_dac": 260,
+  "zeroed_by_nc": 134
+ },
+ "ttc0_nonzeroed": {
+  "n": 431,
+  "share_with_a_prop_ttc1_and_mult_gt0_pct": 97.91183294663574
+ },
+ "transparent": {
+  "share_props_comfort_pass_pct": 99.64828956034908,
+  "pick_comfort_pass_pct": 99.62127449366047,
+  "tokens_with_prop_ge_pick_tracked_and_transp_comfort_pct": 99.85180306273669,
+  "transparent_oracle_pdms": 98.27323395939257,
+  "transparent_pick8_pdms": 91.11496163868826
+ },
+ "paired_log_cluster_bootstrap_unweighted": {
+  "oracle-pick": {
+   "lo": 6.10425112575232,
+   "hi": 7.32615764653191,
+   "point": 6.713012787522495
+  },
+  "safety_power_a2-pick": {
+   "lo": -0.14892542838413017,
+   "hi": 0.05481873368882792,
+   "point": -0.0498877561049379
+  },
+  "safety_power_a4-pick": {
+   "lo": -0.3618823346838544,
+   "hi": 0.009227951492253847,
+   "point": -0.17903064311110278
+  },
+  "safety_power_a8-pick": {
+   "lo": -0.6902729986827719,
+   "hi": -0.24731820624679973,
+   "point": -0.4643152102117345
+  },
+  "ttc_weight_10-pick": {
+   "lo": -0.16236948879574592,
+   "hi": 0.0875178053155659,
+   "point": -0.03766009246394828
+  }
+ }
+}
