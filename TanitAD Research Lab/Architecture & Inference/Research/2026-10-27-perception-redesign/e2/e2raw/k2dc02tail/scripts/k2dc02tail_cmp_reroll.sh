@@ -14,6 +14,7 @@ ev() { echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $*" >> "$ST"; echo "ZZK2DC02TAILCMP-
 die() { ev "ABORT-$1" "${*:2}"; exit 3; }
 mkdir -p $W
 # shellcheck disable=SC1090
+export R9E2_TREE=$TREE R8_LAUNCH_TREE=$TREE   # MM 11-20 fix: export BEFORE sourcing; the env derives PF_NF_HOLD / R9E2_REMAP from R9E2_TREE (else the deleted cf653ca4bb47_lfix default)
 source $ENVF K2DC02 || die ENV "cannot source $ENVF"
 T=$TREE; export R9E2_TREE=$TREE; export R8_LAUNCH_TREE=$TREE
 PYPATH="$T/stack:$T/stack/scripts:$T/taniteval"; OPS=$T/stack/ops/r9e2_read
