@@ -25,6 +25,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import zipfile
 from pathlib import Path
 from typing import NamedTuple
@@ -595,6 +596,37 @@ def swap_item(it: dict, rec1: dict) -> dict:
     return out
 
 
+def readout_token(readout, acc_gain=None, path_exec=False) -> str:
+    """The ONE spelling of what a bank's own history is read as (PREREG_V8F_ROLLHIST section 2 arm table): ``pinned`` -> ``pinned``; ``causal_g`` -> ``causal_g{gain:g}``, plus ``x`` when the path
+    is taken from the executed knots only (``--path-exec``). ``causal_g`` at gain 1 with path-exec is ``causal_g1x``; at gain 0.5 without it ``causal_g0.5``. Used by the bank header read-back
+    (``built_levers``), the trainer's ``--dagger-bank-readout`` and the chain checker."""
+    if readout == "pinned":
+        if acc_gain is not None or path_exec:
+            raise ValueError("readout pinned takes no gain and no path-exec")
+        return "pinned"
+    if readout != "causal_g":
+        raise ValueError(f"unknown readout {readout!r}")
+    if acc_gain is None:
+        raise ValueError("readout causal_g needs a gain")
+    return f"causal_g{float(acc_gain):g}" + ("x" if path_exec else "")
+
+
+_TOKEN_RE = re.compile(r"^causal_g(-?\d+(?:\.\d+)?)(x?)$")
+
+
+def parse_readout_token(tok) -> str:
+    """The canonical token of a declared one, or ValueError: ``pinned`` | ``causal_g<gain>[x]`` where re-spelling the parsed gain must give the same text (``causal_g1.0x`` and ``causal_g01x`` are refused)."""
+    if tok == "pinned":
+        return tok
+    m = _TOKEN_RE.match(str(tok))
+    if not m:
+        raise ValueError(f"{tok!r} is not a readout token: pinned | causal_g<gain>[x] (e.g. causal_g1x)")
+    canon = readout_token("causal_g", float(m.group(1)), m.group(2) == "x")
+    if canon != tok:
+        raise ValueError(f"{tok!r} is not the canonical spelling {canon!r}")
+    return canon
+
+
 class DaggerSwap:
     """The DAgger swap applied to a collated training batch just before ``model.loss`` (the trainer's ``b = dag.apply(b, step)``), with ``EgoPerturb``'s contract.
 
@@ -616,8 +648,11 @@ class DaggerSwap:
         return self.p > 0.0
 
     def built_levers(self) -> dict:
-        """What the BUILT swap applies (the G-DVB 'built' side)."""
-        return {"dagger_p": self.p, "dagger_seed": self.seed, "dagger_bank": getattr(self.bank, "path", None), "dagger_bank_sha256": self.bank_sha256, "kin_mode": self.kin_mode,
+        """What the BUILT swap applies (the G-DVB 'built' side). ``dagger_bank_readout`` / ``dagger_bank_kappa`` (PREREG_V8F_ROLLHIST N3) are read from the LOADED bank's header record ``generator``
+        (written by ``v8f_dagger_bank.py``); a header without it (every bank made before the field existed) reads ``pinned`` / ``none``, and so does no bank."""
+        gen = ({} if self.bank is None else (getattr(self.bank, "header", None) or {}).get("generator")) or {}
+        return {"dagger_bank_readout": readout_token(gen.get("readout", "pinned"), gen.get("acc_gain"), bool(gen.get("path_exec", False))), "dagger_bank_kappa": str(gen.get("kappa_max", "none")),
+                "dagger_p": self.p, "dagger_seed": self.seed, "dagger_bank": getattr(self.bank, "path", None), "dagger_bank_sha256": self.bank_sha256, "kin_mode": self.kin_mode,
                 "bank_hmax": None if self.bank is None else self.bank.hmax, "rebuilt": list(REBUILT), "kept": list(KEPT), "record": list(RECORD), "labels_re_expressed": list(LABELS_RE_EXPRESSED),
                 "nav_rebuild_invalid": NAV_REBUILD_INVALID, "constants_sha256": constants_sha256()}
 
