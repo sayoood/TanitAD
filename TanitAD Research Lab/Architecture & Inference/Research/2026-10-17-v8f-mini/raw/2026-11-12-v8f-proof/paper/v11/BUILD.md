@@ -70,3 +70,7 @@ Fragment added: `frag_row146.tex` (card ADD84, the token head in the rule and th
 ## Update after row 147 (2026-11-20)
 
 Fragment added: `frag_row147.tex` (card ADD85, the requirement for a closing read with a smooth error, with the two statements of the other session), appended to `frag_row127.tex`; the item of this fork in `frag_status_run.tex` changed (cards ADD86 to ADD88 frozen). `patch_tex_v11.py`: `ok edits 11`; row id 147 found once in the patched source. `check_numbers_v11.py`: 2042 tokens, 0 not found. PDF `tanitad_4b_paper_r147.pdf` (a178cffe26020506), 45 pages, xdv 2599760 bytes (the build after row 146: 45 pages, 2572256 bytes).
+
+## Update after rows 148 to 152 (2026-11-20)
+
+Fragments added: `frag_row148.tex` (card ADD86, the full fit of the token head), `frag_row151.tex` (cards ADD88 to ADD90: the gap history and the ego speed, reported with failed controls, and what gap error a closing read tolerates, with the statements of the other session) and `frag_row152.tex` (card ADD91, the reader gap error over range), all appended to `frag_row127.tex`; the item of this fork in `frag_status_run.tex` changed (card ADD87 running, cards ADD86 and ADD88 to ADD91 read). `patch_tex_v11.py`: `ok edits 11`; rows 148 to 152 each once in the TeX; Tectonic rc 0, xdv 46 pages, 2645824 bytes; `check_numbers_v11.py` over rows 100 to 152: 2309 tokens, 0 not found. PDF `tanitad_4b_paper_r152.pdf` 08f72f0be45949e5 (429038 bytes).
