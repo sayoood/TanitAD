@@ -74,3 +74,11 @@ Fragment added: `frag_row147.tex` (card ADD85, the requirement for a closing rea
 ## Update after rows 148 to 152 (2026-11-20)
 
 Fragments added: `frag_row148.tex` (card ADD86, the full fit of the token head), `frag_row151.tex` (cards ADD88 to ADD90: the gap history and the ego speed, reported with failed controls, and what gap error a closing read tolerates, with the statements of the other session) and `frag_row152.tex` (card ADD91, the reader gap error over range), all appended to `frag_row127.tex`; the item of this fork in `frag_status_run.tex` changed (card ADD87 running, cards ADD86 and ADD88 to ADD91 read). `patch_tex_v11.py`: `ok edits 11`; rows 148 to 152 each once in the TeX; Tectonic rc 0, xdv 46 pages, 2645824 bytes; `check_numbers_v11.py` over rows 100 to 152: 2309 tokens, 0 not found. PDF `tanitad_4b_paper_r152.pdf` 08f72f0be45949e5 (429038 bytes).
+
+## Update after row 153 (2026-11-20)
+
+Fragment added: `frag_row153.tex` (card ADD92, what kind of gap error a closing read carries), appended to `frag_row127.tex`; the item of this fork in `frag_status_run.tex` changed (card ADD87 running, card ADD93 frozen, cards ADD86 and ADD88 to ADD92 read). `patch_tex_v11.py`: `ok edits 11`; row 153 once in the TeX; Tectonic rc 0, xdv 46 pages, 2658568 bytes; `check_numbers_v11.py` over rows 100 to 153: 2381 tokens, 0 not found. PDF `tanitad_4b_paper_r153.pdf` 16296e456906bd1c (430357 bytes).
+
+## Update after row 154 (2026-11-20)
+
+Fragment added: `frag_row154.tex` (card ADD93, the reader gap error split by clip, in the terms of the bar of row 153), appended to `frag_row127.tex`; the item of this fork in `frag_status_run.tex` changed (card ADD87 running, cards ADD92 and ADD93 read). `patch_tex_v11.py`: `ok edits 11`; row 154 once in the TeX; Tectonic rc 0, xdv 46 pages, 2667600 bytes; `check_numbers_v11.py` over rows 100 to 154: 2435 tokens, 0 not found. PDF `tanitad_4b_paper_r154.pdf` c560a8314e0c2722 (431368 bytes). The PDF of row 153 (`tanitad_4b_paper_r153.pdf`) was built and is not landed; this one takes its place in the hold.
