@@ -27,3 +27,7 @@ PDF of record after rows 129 and 130: `tanitad_4b_paper_r130.pdf` (40 pages). Th
 ## Update after row 131 (2026-11-20)
 
 Fragments changed: `frag_row127.tex` (a paragraph for row 131 appended), `frag_status_run.tex` (item iv). `patch_tex_v11.py`: `ok edits 11`. Build: rc 0, 41 pages, 0 overfull boxes, 0 undefined references. Number check with `ROW100.md` to `ROW131.md`: 997 tokens checked, 0 not in the rows. A first build of this update printed one macro of the new paragraph as text (a tab had replaced its first two characters when the paragraph was written through a shell); found by a check of the fragment for tab characters, repaired, rebuilt. PDF of record: `tanitad_4b_paper_r131.pdf`.
+
+## Update after row 133 (2026-11-20)
+
+Fragments changed: `frag_row127.tex` (the paragraphs `frag_row132.tex` and `frag_row133.tex` appended), `frag_status_run.tex` (item iv). Build: rc 0, 41 pages, 0 overfull boxes, 0 undefined references. Number check with `ROW100.md` to `ROW133.md`: 1177 tokens checked, 0 not found. PDF saved as `tanitad_4b_paper_r133.pdf` (sha256 71e6434486cb4c45).

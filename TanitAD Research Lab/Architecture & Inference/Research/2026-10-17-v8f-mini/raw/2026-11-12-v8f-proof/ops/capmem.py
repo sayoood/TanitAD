@@ -62,6 +62,7 @@ def main():
     if is_mod and len(rest) < 2:
         _die(94, "-m needs a module name")
     reserve_mb = int(os.environ.get("CAPMEM_RESERVE_MB", "1500"))
+    floor_mb = int(os.environ.get("CAPMEM_FLOOR_MB", "5500"))          # shared dev-box rule (2026-11-19): no capped job starts under 5.5 GB of free commit memory
     wait_s = int(os.environ.get("CAPMEM_WAIT_S", "5400"))
     mutex_s = int(os.environ.get("CAPMEM_MUTEX_S", "14400"))
     log_path = os.environ.get("CAPMEM_LOG", "F:/TanitAD-scratch/v8proof/ops/capmem_peaks.log")
@@ -103,17 +104,17 @@ def main():
     t0 = time.time()
     while True:
         f0 = free_mb()
-        while f0 < lim_mb + reserve_mb:
+        while f0 < max(lim_mb + reserve_mb, floor_mb):
             if time.time() - t0 > wait_s:
                 _die(95, "free commit memory stayed under %d MB (limit %d + reserve %d) for %d s; last read %d MB"
-                     % (lim_mb + reserve_mb, lim_mb, reserve_mb, wait_s, f0))
+                     % (max(lim_mb + reserve_mb, floor_mb), lim_mb, reserve_mb, wait_s, f0))
             time.sleep(30)
             f0 = free_mb()
         r = k32.WaitForSingleObject(hm, mutex_s * 1000)
         if r not in (0x0, 0x80):          # WAIT_OBJECT_0, WAIT_ABANDONED
             _die(96, "another capped job held the mutex for %d s" % mutex_s)
         f0 = free_mb()
-        if f0 >= lim_mb + reserve_mb:
+        if f0 >= max(lim_mb + reserve_mb, floor_mb):
             break
         k32.ReleaseMutex(hm)
         time.sleep(30)

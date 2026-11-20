@@ -1,0 +1,58 @@
+wrapper /workspace/v8proof/integ10k/build/v8f_t1_eval_reader_rule_rzgfhqs.py cd4b043dcf8b219a
+PASS A1 logged: every ego array equals the logged cache on the rows up to t0 and the own array after; nav likewise
+PASS A2 speed_logged: pose x, y, yaw and the yaw rate are the own rows; v, a, kin3 v and a, pose column 3 are the logged rows (up to t0)
+PASS A2 speed_logged: kappa on the history rows = clamp(own omega / max(logged v, 2)); p10f rows follow kin3; base at t0 follows kin3 (err 0.0e+00)
+PASS A3 path_logged: pose x, y, yaw and the yaw rate are the logged rows (up to t0); v, a, kin3 v and a, pose column 3 and nav are the own rows
+PASS A3 path_logged: kappa on the history rows = clamp(logged omega / max(own v, 2)); p10f follows (err 0.0e+00)
+PASS A4 the inputs (own d, logged cache) are not changed by any mode
+PASS A4 the recomposition residual is reported for the partial modes (and is 0 for the stub, which has the form it reproduces)
+PASS planted wrong arm caught: A2/A3 speed_logged and path_logged are the same mixture
+PASS planted wrong arm caught: A1/A2 speed_logged built as logged
+PASS A5 item_diff speed_logged vs own: positions and headings exactly 0.0, speed above 0, nav 0.0 -- pos 0 head 0 speed 0.186
+PASS A5 item_diff path_logged vs own: speed exactly 0.0, positions and headings above 0, nav 0.0 -- pos 4.41 head 0.203 speed 0
+PASS A5 item_diff logged vs own: all three groups and nav above 0
+PASS A5 item_diff of an item with itself: every group 0.0
+PASS planted wrong arm caught: A5 item_diff on positions only (speed column ignored)
+PASS A5 ho_stats_add keeps the largest value per group over the states
+PASS A6 main_kind None (the pre-roll segments): passes through to the original build_item with the state itself
+PASS A6 later ticks, a state without frame pose, a state without logged cache: pass through (3 calls, no statistics)
+PASS A6 main phase, tick 0: two builds (the handed view with the counters, the own reference without them), statistics for the kind
+PASS A7 undoing the wrapper's mapping with (own pose, logged pose) returns the plan knots in the own frame (err 2.7e-15)
+PASS planted wrong arm caught: A7 the logged frame read as the own frame -- offset 1.72 m
+PASS S1 the build_item patch is installed only when the mode is not own (the guard line sits right before the assignment)
+PASS S2 the refusal sits in the P = 0 branch of install_preroll, after the preroll-exec refusal
+PASS S3 the parser takes the four values with default own
+PASS S5 the new block has none of the banned words -- []
+RUN fresh wrapper=v8f_t1_eval_reader_rule_rzgfhqs.py rc=0
+RUN parent_aged wrapper=v8f_t1_eval_reader_rule_rzgfhq.py rc=0
+RUN own wrapper=v8f_t1_eval_reader_rule_rzgfhqs.py rc=0
+RUN logged wrapper=v8f_t1_eval_reader_rule_rzgfhqs.py rc=0
+RUN speed_logged wrapper=v8f_t1_eval_reader_rule_rzgfhqs.py rc=0
+RUN path_logged wrapper=v8f_t1_eval_reader_rule_rzgfhqs.py rc=0
+PASS 1a own with the new wrapper vs the parent wrapper (aged run): every dump array identical, largest difference 0 (3 files) -- []
+FAIL 1b the tick files: every array identical, largest difference 0 -- ['content of tag']
+PASS 1c the pre-roll offsets file of own equals the parent's: largest difference 0 -- []
+PASS 1d the preroll log records the mode for each run -- {'own': 'own', 'logged': 'logged', 'speed_logged': 'speed_logged', 'path_logged': 'path_logged'}
+PASS 1e own: nothing recorded as replaced (empty difference record)
+PASS 2 the tick-0 rows of the five runs are the same windows (27 windows)
+PASS 2a logged vs fresh, tick 0: plan, tau, P identical (largest 0, bar 1e-6) -- {'plan': '0', 'tau': '0', 'P': '0', 'v0': '0', 's_ckpt': '0', 's_pose': '0', 't_goal_prob': '0', 't_lat_logits': '0', 't_lon_logits': '0', 't_cons_pred': '0', 't_pose': '0'}
+PASS 2a logged vs fresh, tick 0: v0, s_pose, t_pose and the head outputs identical (largest 0, bar 1e-6)
+PASS planted wrong arm caught: 2a own (nothing handed over) against fresh: the same measurement must differ -- largest 1.44e+03
+PASS 2b logged, model arm: first replan segment (10 steps) of the aged track in the own frame vs the fresh track, largest difference 3.38e-14 m over 27 windows (bar 1e-3 m)
+FAIL 2b logged, kinematic-prior arm: first replan segment (10 steps) of the aged track in the own frame vs the fresh track, largest difference 19.6 m over 27 windows (bar 1e-3 m)
+PASS planted wrong arm caught: 2b own against fresh in the same measurement (the state part is visible) -- largest 62.4 m
+PASS 3 the offsets are large enough to tell the groups apart: logged differs from own in v0 (14.8) and in s_pose (15.5)
+PASS 3a speed_logged: positions and headings (s_pose, t_pose) equal own exactly (0, 0); v0 equals logged exactly (0) and differs from own (14.8)
+PASS 3b path_logged: v0 equals own exactly (0); s_pose and t_pose equal logged exactly (0, 0) and differ from own (15.5)
+PASS planted wrong arm caught: 3 speed_logged built as path_logged (v0 equal to own)
+PASS 3c log line, speed_logged: positions 0, headings 0, speed above 0 ({'positions_m': 0.0, 'headings_rad': 0.0, 'speed_ms': 14.772039890289307})
+PASS 3c log line, path_logged: speed 0, positions above 0 or headings above 0 ({'positions_m': 15.457151412963867, 'headings_rad': 2.2736214702017605, 'speed_ms': 0.0})
+PASS 3c log line, logged: all three groups above 0 ({'positions_m': 15.457151412963867, 'headings_rad': 2.2736214702017605, 'speed_ms': 14.772039890289307})
+PASS 3c the run log of logged carries the ZZ T0-STATE line for mode logged
+PASS 3c the run log of speed_logged carries the ZZ T0-STATE line for mode speed_logged
+PASS 3c the run log of path_logged carries the ZZ T0-STATE line for mode path_logged
+PASS 3d pre-roll offsets of logged equal those of own exactly (largest difference 0) -- []
+PASS 3d pre-roll offsets of speed_logged equal those of own exactly (largest difference 0) -- []
+PASS 3d pre-roll offsets of path_logged equal those of own exactly (largest difference 0) -- []
+PASS 4 --t0-state logged with --preroll-steps 0 is REFUSED (return code 1) -- REFUSED: --t0-state logged goes with --preroll-steps above 0 (there is no state hand-over without a pre-roll)
+ZZ CHECK-HANDOVER-SRC FAIL 1b the tick files: every array identical, largest difference 0; 2b logged, kinematic-prior arm: first replan segment (10 steps) of the aged track in the own frame vs the fresh track, largest difference 19.6 m over 27 windows (bar 1e-3 m)
