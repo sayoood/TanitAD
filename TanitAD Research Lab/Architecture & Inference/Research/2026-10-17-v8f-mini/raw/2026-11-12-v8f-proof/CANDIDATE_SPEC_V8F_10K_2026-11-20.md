@@ -1,0 +1,68 @@
+# Specification of the integrated 10k candidate (inference side) and the acceptance checks for the training line
+
+Written by the coordinator fork (v8F proof study) on 2026-11-20 after the read of card ADD68 (row H-V8F-PROOF-126); sections 5 (check C5), 6 and 7 updated the same day after the reads of cards ADD69 and ADD70 (rows 127, 128). Basis: the PI's decision on decision card D16, 2026-11-20, verbatim "Approve all four" (row 125): A the candidate is specified with the lead rule and its second look in the label-fed and the reader-fed form and reported under the programme's convention and under readout K side by side; B the instrument of card ADD66 is the STRATEGIC read at T1-kin; C training on the model's own rolled history (the other session's line); D the heading bound in the T1-kin tier. This document specifies A and gives the checks for C. It adopts nothing beyond the decision: the convention of record stays the 2.0 s cycle with the pinned readout, and readout K is not the deployed handover.
+
+Every number below is T1-kin (kinematic rollout on the model's own actions; logged camera frames; the lead does not react), MEASURED (ours), on the two 10k line checkpoints `UE_s0`, `UE_s1` of the other session (INHERITED, code cdbff971), 2,399 windows of 141 episodes, 562 scored lead windows. Stamp: T1-kin/hb0.2 (study wrapper; the executor of record `stack/scripts/v8f_t1_eval_hb.py --kappa-max 0.2` of commit bcf267ce gives the same arrays on the convention, 141 files, 0 differing) unless a line says T1-kin/old. Never driving performance.
+
+## 1. The candidate
+
+| part | setting | source |
+|---|---|---|
+| model | a checkpoint of the 10k line; no weight is changed by the candidate | other session |
+| planning cycle | 2.0 s (`--replan-steps 10`), `--nav deadreckon --scene logged --schedule periodic --limit causal` | coordinator decision D12; card ADD69 reads the 1.0 s cycle worse in all six settings on the bounded executor (row 127) |
+| executor | heading bound 0.2 1/m | decision D; rows 122, 126 |
+| state handed to the planner at a replan | reported twice: (i) the convention (pinned readout); (ii) readout K: speed from the executed steps, own acceleration 0, positions and headings from the executed knots (`--readout causal_g --acc-gain 0 --path-exec`) | rows 119, 121, 126 |
+| lead rule, label-fed form | form `RLc` (gap and closing speed from the labels): the ceiling of the rule, privileged input, not deployable | rows 104, 121 |
+| lead rule, reader-fed form | form `RR` at map level 0.50 (presence and gap from the vision-only token reader): the deployable form | rows 101, 102 |
+| second look | the rule acts again 1.0 s into the plan (`--rule-every 5`) | row 118 |
+
+Run names of the two forms on the bounded executor: `RLcKF5Hb20` and `RQ50KF5Hb20`; their partners in the convention with the rule: `RLcHb20` and `RQ50Hb20`; without a rule: `R0Hb20` (pinned) and `R0KHb20` (readout K). Study wrapper `integ10k/v8f_t1_eval_reader_rule_rzgfh.py` (sha256 373ffe72f2655c35); the pinned tool is not edited.
+
+## 2. How the candidate is reported
+
+1. Four families, never pooled: LONGITUDINAL (speed and along-track error), LATERAL (heading and yaw-rate error; cross-track and curvature beside), TACTICAL (6 s track error; the decision error rates beside), STRATEGIC (route goal at 30, 50, 80 m at the third tick, instrument of card ADD66; a decision between routes is not scored, n = 0). With them the headway shares: unsafe U, contact C, falling behind F.
+2. Each candidate form beside its partner in the convention with the rule, and readout K beside the pinned readout, on identical windows; both sides with the bound.
+3. Estimators: headway by the paired episode-cluster bootstrap pooled over the model seeds; family cells by the two-level family reader of card ADD46 with the spread of the convention run over the model seeds as the bar. Two model seeds are not a replicate study; a new arm of the line is read with at least two seeds.
+4. Every number carries its stamp (T1-kin/hb0.2 or T1-kin/old) and its row.
+
+## 3. What is measured for the candidate (rows 121, 122, 126)
+
+Levels per model seed, U; C; F:
+
+| run | U | C | F |
+|---|---|---|---|
+| `R0Hb20` (convention, no rule) | 0.1121, 0.0712 | 0.0545, 0.0358 | 0.1137, 0.1822 |
+| `R0KHb20` (readout K, no rule) | 0.1032, 0.0907 | 0.0561, 0.0514 | 0.0950, 0.1184 |
+| `RLcHb20` (convention, label-fed rule) | 0.0427, 0.0214 | 0, 0.0031 | 0.1963, 0.2523 |
+| `RLcKF5Hb20` (candidate, label-fed) | 0.0391, 0.0338 | 0, 0 | 0.1402, 0.1698 |
+| `RQ50Hb20` (convention, reader-fed rule) | 0.0854, 0.0712 | 0.0358, 0.0202 | 0.2383, 0.2804 |
+| `RQ50KF5Hb20` (candidate, reader-fed) | 0.0747, 0.0730 | 0.0312, 0.0280 | 0.1745, 0.1620 |
+
+Candidate minus convention with the rule, both bounded (row 126): label-fed: four families BETTER (speed -0.457 m/s, along -0.428 m, heading -1.82 deg, yaw rate -8.20 deg/s, tactical track error -0.731 m [-1.017, -0.496], route goal -3.06, -6.65, -11.44 m), U +0.0044 [-0.0143, +0.0253] not separated, falling behind -0.0693 [-0.1145, -0.0289]. Reader-fed: four families BETTER (speed -0.498 m/s, along -0.484 m, heading -1.97 deg, yaw rate -8.95 deg/s, tactical track error -0.822 m [-1.070, -0.591], route goal -3.29, -7.03, -11.97 m), U -0.0044 [-0.0352, +0.0303] not separated, falling behind -0.0911 [-0.1465, -0.0387]. Readout K minus the pinned readout, no rule, both bounded: four families BETTER (tactical track error -0.591 m, route goal at 80 m -10.70 m [-13.54, -8.12]), U not separated.
+
+What the candidate does not show: a lower unsafe rate than the convention with the rule (the rule delivers the cut in both; the candidate adds the family gains and less falling behind). The reader-fed form stays above the label-fed form (means of the two seeds: U 0.074 against 0.036, contact 0.030 against 0): the quality of the vision-only lead read is the open lever there; more clips of the same collection do not lift it (rows 117, 123, 124), and a finer or unpooled token grid is a PI decision. Lower doses of the bound read better again on LATERAL and STRATEGIC (row 126, beside); the dose of record is 0.2 1/m.
+
+## 4. Why readout K is a study device, and what replaces it
+
+Handing the planner its own acceleration costs on all four families also on the bounded executor (row 126, pair ACC, gain 1 against gain 0 on the executed path): speed +1.258 m/s [+1.087, +1.439], along +1.241 m, heading +4.48 deg, yaw rate +38.4 deg/s, tactical track error +1.917 m [+1.530, +2.304], route goal +4.24, +9.18, +14.82 m, falling behind +0.2843 [+0.2223, +0.3453]. The model was trained on logged history and has not learned to read its own. Readout K hides the acceleration; a car measures it. The repair at the source is training on the model's own rolled history (recommendation C).
+
+## 5. Acceptance checks for an arm trained on its own rolled history (C)
+
+Read with the frozen readers of cards ADD46, ADD66 and ADD68 on the bounded executor, at least two seeds, same windows, paired with the line models where a pair is named. The first training arm's size is the other session's own card to the PI.
+
+* C1 (own acceleration). For the trained arm, the pair "causal readout on the executed path with its own acceleration" minus "readout K" reads no family WORSE and a falling-behind rate not higher. On the line models all four families read WORSE (section 4).
+* C2 (the candidate without the device). The trained arm under the causal readout on the executed path with the rule and its second look, against the line model's candidate under readout K (`RLcKF5Hb20`, `RQ50KF5Hb20`): no family WORSE, U not higher. Passing C2 means readout K can be dropped from the candidate.
+* C3 (strategic on the rollout). The route goal at the third tick of the trained arm against the line model in the same setting: BETTER at 30, 50 and 80 m, or not separated with C1 and C2 passed. On the line models the goal error grows on the rollout (row 120, T1-kin/old, convention: +8.38, +14.77, +22.95 m at the third tick against the reference on logged history).
+* C4 (no loss on logged history). The first-tick plan of the trained arm on logged history (T0) against the line model: not separated worse on the four families.
+* C5 (rollout age; card ADD70 names the cost, row 128). The pair "window after 6 s of own driving" minus "the same window started fresh" (pre-roll of 30 steps, wrapper of record of card ADD70, 1,271 windows) reads not separated or better on every family and U not separated or lower for the trained arm. Reference of the line models in the candidate (label-fed; reader-fed): U +0.4929 [+0.4117, +0.5704]; +0.4661 [+0.3861, +0.5442], speed +2.239; +2.167 m/s, along-track +9.823; +9.723 m, heading +12.83; +13.02 deg, yaw rate +13.55; +13.59 deg/s, tactical track error +14.204 m [+12.955, +15.544]; +14.001 m [+12.798, +15.302], route goal at 30, 50, 80 m +9.77, +12.23, +15.68; +9.78, +12.30, +15.81 m. The cost is there with the logged route too, so it is the own-motion state and not the held route input. Card ADD71 (running) splits it into the carried pose and the own motion state for one setting; where the carried pose is the larger part, C5 is read on the state part.
+
+## 6. Reads since the first version of this specification (2026-11-20)
+
+* Card ADD69, row 127: on the bounded executor the 1.0 s cycle reads worse than the 2.0 s cycle in all six settings (unsafe rate higher by 0.739 in the convention, 0.121 under readout K, 0.046 and 0.061 for the two candidate forms; LONGITUDINAL, TACTICAL and STRATEGIC worse in every one). The 2.0 s cycle stays; nothing is proposed.
+* Card ADD70, row 128: at a rollout age of 6 to 12 s every setting reads worse than fresh (C5 above), and both candidate forms keep four families BETTER than the convention at that age (tactical track error -13.116 m [-16.438, -10.134] label-fed, -13.267 m [-16.563, -10.240] reader-fed; route goal at 80 m -24.00, -23.99 m; U lower for the label-fed form, not separated for the reader-fed form). With the label-fed rule the contact share stays 0 at age while the unsafe rate is 0.56, 0.51: the rule's hold on the unsafe rate is measured for the first 6 s only. A kinematic rollout of the line models beyond 6 s is not a capability read of the strategic band (own pose 6 m and 7 deg off the logged pose after 6 s, 21 m and 14 deg after 12 s under readout K).
+* Coordinator decision D17: the prior-regularised planner on the HWM line (LON-PLAN) is parked; the candidate's plan is the model's own decoder output.
+* Open: card ADD71 (the candidate against the convention with the rule at age; the own-acceleration term at age; carried pose against own motion state).
+
+## 7. Files
+
+Rows H-V8F-PROOF-118 to 128 of the register; cards ADD62 to ADD71 with their notes; result files `integ10k/read_headbound/pod/READ_HEADBOUND10K.json`, `integ10k/read_boundtier/pod/READ_BOUNDTIER10K.json`, `integ10k/read_cyclebound/pod/READ_CYCLEBOUND10K.json` and `integ10k/read_longroll_n3/pod/READ_LONGROLL10K_N3.json`; wrapper and readers in `integ10k/` of the study folder (branch agent/arch-inf-20260803).
