@@ -1,7 +1,7 @@
 """K2DC02s1 (the PREREG_K2DC02_2026-11-18 section 4.4 replicate) is COMPOSED by r9_e2_make_argv.py, never hand-written (MM 4a3d05, 2026-11-20).
 
-K2DC02s1 = K2DC02's argv with ``--seed`` 0 -> 1 and ``--out`` naming the arm: NOTHING else. It is a CANDIDATE arm (running it is a PI decision), so there is NO
-r9e2_K2DC02s1.pi_cost_approval.json and this file pins that absence. No scipy, no GPU.
+K2DC02s1 = K2DC02's argv with ``--seed`` 0 -> 1 and ``--out`` naming the arm: NOTHING else. PI-APPROVED 2026-11-20 ("Yes, train it"): the
+r9e2_K2DC02s1.pi_cost_approval.json carries the PI's words and the 12.3 s/step cap, and this file pins them. No scipy, no GPU.
 
 Mutants (each must turn a test RED): the seed left at 0, and the seed moved to 2.
 """
@@ -83,8 +83,13 @@ def test_K2DC02s1_parses_seed_1_and_the_static_gate_adds_no_refusal_beyond_the_c
     assert LG.dose_controller_static_reasons(d["argv"])[0] == [] and len(LG.dc_reading_rows(d["argv"])) == 24
 
 
-def test_K2DC02s1_has_no_pi_cost_approval_file_because_running_it_is_a_PI_decision():
-    assert not (RUNS / "r9e2_K2DC02s1.pi_cost_approval.json").exists()
+def test_K2DC02s1_pi_cost_approval_carries_the_PIs_words_and_the_cap():
+    # MM 11-20: was "no approval file" until the PI approved the arm ("Yes, train it", 2026-11-20)
+    ap = json.loads((RUNS / "r9e2_K2DC02s1.pi_cost_approval.json").read_text(encoding="utf-8"))
+    assert ap["go_verbatim"] == "Yes, train it" and ap["pi_verbatim"].startswith("Yes, train it  [PI, chat, 2026-11-20")
+    assert ap["max_s_per_step"] == 12.3 and ap["date"] == "2026-11-20" and ap["status"].startswith("PI-APPROVED")
+    # the restart's NOAPPROVAL guard greps the file for this exact text
+    assert '"max_s_per_step": 12.3,' in (RUNS / "r9e2_K2DC02s1.pi_cost_approval.json").read_text(encoding="utf-8")
 
 
 def test_every_existing_variant_still_regenerates_byte_equal_and_the_follow_up_is_registered():
