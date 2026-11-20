@@ -45,3 +45,7 @@ Fragments changed: `frag_row127.tex` (the paragraph of row 135 replaced by `frag
 ## Update after rows 137 and 138 (2026-11-20)
 
 Fragments added: `frag_row137.tex` (card ADD76, the second-look arm), `frag_row138.tex` (card ADD77 without a name), both appended to `frag_row127.tex`; `frag_status_run.tex` item on this fork changed. `patch_tex_v11.py`: `ok edits 11`; row ids 136, 137, 138 found once each in the paper source. Build: rc 0, 42 pages (the page count of the build after row 136; the xdv byte count differs, see the log line below), 0 overfull boxes, 0 undefined references. Number check with `ROW100.md` to `ROW138.md`: 1520 tokens checked, 0 not found. PDF saved as `tanitad_4b_paper_r138.pdf` (sha256 f2c0127a9caf2846).
+
+## Update after rows 139 and 140 (2026-11-20)
+
+Fragment added: `frag_row139.tex` (card ADD78), appended to `frag_row127.tex`; `frag_row137.tex` and its copy in `frag_row127.tex` changed in one place (the at-age setting is a pre-roll of 30 steps, 6 s of own driving; the PDF after rows 137 and 138 says 30 s there, see row 140); `frag_status_run.tex` item on this fork changed. `patch_tex_v11.py`: `ok edits 11`; row ids 137, 138, 139 found once each in the paper source, the old wording 0 times. Build: rc 0, 43 pages, 0 overfull boxes, 0 undefined references. Number check with `ROW100.md` to `ROW140.md`: 1572 tokens checked, 0 not found. PDF saved as `tanitad_4b_paper_r140.pdf` (sha256 b1612da5e8d177b7).
