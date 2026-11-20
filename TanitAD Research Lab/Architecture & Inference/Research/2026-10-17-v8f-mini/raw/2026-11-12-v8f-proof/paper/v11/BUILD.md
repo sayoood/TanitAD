@@ -54,3 +54,7 @@ Fragment added: `frag_row139.tex` (card ADD78), appended to `frag_row127.tex`; `
 
 Fragments added: `frag_row141.tex` (card ADD79, the estimated closing speed in the reader-fed rule) and `frag_row142.tex` (card ADD80, constant closing inputs, with the sign of the input that the card had wrong), both appended to `frag_row127.tex`; the item of this fork in `frag_status_run.tex` changed. `patch_tex_v11.py`: `ok edits 11`; row ids 141 and 142 found once each in `tanitad_4b_paper.tex`. Tectonic 0.17.0 build; number check `check_numbers_v11.py` on the row files 100 to 142: 1672 tokens, 0 not found. PDF copied to `tanitad_4b_paper_r142.pdf` (410587 bytes, sha256 8d8feb9cdf016c63).
 43 pages, xdv 2,496,148 bytes (the build after rows 139 and 140: 43 pages, 2,448,976 bytes).
+
+## Update after row 143 (2026-11-20)
+
+Fragment added: `frag_row143.tex` (card ADD81, the token head as a read of the closing speed), appended to `frag_row127.tex`; the item of this fork in `frag_status_run.tex` changed (cards ADD82, ADD83, ADD84). `patch_tex_v11.py`: `ok edits 11`; row id 143 found once in the patched source. `check_numbers_v11.py`: 1712 tokens, 0 not found. PDF `tanitad_4b_paper_r143.pdf` (c0a6b89a181a9f34), 44 pages, xdv 2,514,452 bytes (the build after rows 141 and 142: 43 pages, 2,496,148 bytes).
