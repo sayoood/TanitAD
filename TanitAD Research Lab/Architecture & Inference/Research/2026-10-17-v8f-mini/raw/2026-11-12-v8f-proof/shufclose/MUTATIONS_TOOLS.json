@@ -1,0 +1,553 @@
+{
+ "mutations": {
+  "t01_map_neighbours_not_exchanged": {
+   "rc": 1,
+   "seconds": 5.5,
+   "tail": [
+    "PASS the identity table is the estimate itself, row for row",
+    "ZZ SURROGATE-SELFTEST FAIL checks 16 failed 9 tmp tmp_selfsurr_pgkchs2j"
+   ],
+   "what": "neighbours map to themselves",
+   "old": "pos[order[a]], pos[order[a + 1]] = order[a + 1], order[a]",
+   "new": "pos[order[a]], pos[order[a + 1]] = order[a], order[a + 1]",
+   "tool": "make_surrogate.py",
+   "red": true
+  },
+  "t02_ties_by_descending_clip_index": {
+   "rc": 1,
+   "seconds": 2.4,
+   "tail": [
+    "PASS the identity table is the estimate itself, row for row",
+    "ZZ SURROGATE-SELFTEST FAIL checks 16 failed 1 tmp tmp_selfsurr_glbrm9gp"
+   ],
+   "what": "ties are broken by the larger clip index",
+   "old": "order = np.lexsort((clip_ids, np.asarray(share, np.float64)))",
+   "new": "order = np.lexsort((-clip_ids, np.asarray(share, np.float64)))",
+   "tool": "make_surrogate.py",
+   "red": true
+  },
+  "t03_cycle_has_a_fixed_point": {
+   "rc": 1,
+   "seconds": 3.3,
+   "tail": [
+    "PASS the identity table is the estimate itself, row for row",
+    "ZZ SURROGATE-SELFTEST FAIL checks 16 failed 7 tmp tmp_selfsurr_7v81tnxy"
+   ],
+   "what": "the last three do not form a cycle",
+   "old": "pos[a], pos[b], pos[c] = b, c, a",
+   "new": "pos[a], pos[b], pos[c] = a, c, b",
+   "tool": "make_surrogate.py",
+   "red": true
+  },
+  "t04_share_threshold_strict": {
+   "rc": 1,
+   "seconds": 3.6,
+   "tail": [
+    "PASS the identity table is the estimate itself, row for row",
+    "ZZ SURROGATE-SELFTEST FAIL checks 16 failed 1 tmp tmp_selfsurr_izy478ur"
+   ],
+   "what": "p equal to 0.5 does not count",
+   "old": "counts = {int(c): int(((ci == c) & (p >= 0.5)).sum()) for c in ids}",
+   "new": "counts = {int(c): int(((ci == c) & (p > 0.5)).sum()) for c in ids}",
+   "tool": "make_surrogate.py",
+   "red": true
+  },
+  "t05_surrogate_frame_shifted": {
+   "rc": 1,
+   "seconds": 3.4,
+   "tail": [
+    "PASS the identity table is the estimate itself, row for row",
+    "ZZ SURROGATE-SELFTEST FAIL checks 16 failed 1 tmp tmp_selfsurr_he55tre8"
+   ],
+   "what": "the surrogate takes the frame after",
+   "old": "tgt = np.array([img[int(c)] for c in est_ci], np.int64) * STRIDE + est_fr",
+   "new": "tgt = np.array([img[int(c)] for c in est_ci], np.int64) * STRIDE + est_fr + 1",
+   "tool": "make_surrogate.py",
+   "red": true
+  },
+  "t06_u1_values_not_judged": {
+   "rc": 1,
+   "seconds": 4.6,
+   "tail": [
+    "PASS the identity table is the estimate itself, row for row",
+    "ZZ SURROGATE-SELFTEST FAIL checks 16 failed 1 tmp tmp_selfsurr_68k__3lc"
+   ],
+   "what": "u1 does not judge the values",
+   "old": "d[\"rows_equal_estimate_rows\"] and bad == 0",
+   "new": "d[\"rows_equal_estimate_rows\"]",
+   "tool": "make_surrogate.py",
+   "red": true
+  },
+  "t07_u4_band_not_judged": {
+   "rc": 1,
+   "seconds": 4.7,
+   "tail": [
+    "PASS the identity table is the estimate itself, row for row",
+    "ZZ SURROGATE-SELFTEST FAIL checks 16 failed 1 tmp tmp_selfsurr_9ehjeb57"
+   ],
+   "what": "u4 passes whatever r is",
+   "old": "ok = bool(np.isfinite(r_s) and -R_BAND <= r_s <= R_BAND)",
+   "new": "ok = True",
+   "tool": "make_surrogate.py",
+   "red": true
+  },
+  "t08_identity_table_is_the_surrogate": {
+   "rc": 1,
+   "seconds": 3.4,
+   "tail": [
+    "FAIL the identity table is the estimate itself, row for row",
+    "ZZ SURROGATE-SELFTEST FAIL checks 16 failed 2 tmp tmp_selfsurr_z3nm_zr2"
+   ],
+   "what": "the identity table holds the surrogate",
+   "old": "idt = {\"clip_index\": ec.copy(), \"frame\": ef.copy(), \"est\": ev.copy()}",
+   "new": "idt = {\"clip_index\": ec.copy(), \"frame\": ef.copy(), \"est\": sv.copy()}",
+   "tool": "make_surrogate.py",
+   "red": true
+  },
+  "t09_const_table_not_2": {
+   "rc": 1,
+   "seconds": 4.0,
+   "tail": [
+    "PASS the identity table is the estimate itself, row for row",
+    "ZZ SURROGATE-SELFTEST FAIL checks 16 failed 1 tmp tmp_selfsurr_z9l24olk"
+   ],
+   "what": "the planted table is 1.0",
+   "old": "est=z0 + 2.0)",
+   "new": "est=z0 + 1.0)",
+   "tool": "make_surrogate.py",
+   "red": true
+  },
+  "t10_existing_out_folder_accepted": {
+   "rc": 1,
+   "seconds": 3.0,
+   "tail": [
+    "PASS the identity table is the estimate itself, row for row",
+    "ZZ SURROGATE-SELFTEST FAIL checks 16 failed 1 tmp tmp_selfsurr_40nio633"
+   ],
+   "what": "an existing out folder is used",
+   "old": "    if os.path.exists(out_dir):\n        raise SystemExit(\"REFUSED: %s exists\" % out_dir)\n    CF = load_fit(fit_dir)\n    os.makedirs(out_dir)\n",
+   "new": "    CF = load_fit(fit_dir)\n    os.makedirs(out_dir, exist_ok=True)\n",
+   "tool": "make_surrogate.py",
+   "red": true
+  },
+  "c01_u0a_closing_not_judged": {
+   "rc": 1,
+   "seconds": 0.3,
+   "tail": [
+    "PASS u0f: a text without the flag name fails",
+    "ZZ CHECK-SHUFCLOSE-SELFTEST FAIL checks 21 failed 1"
+   ],
+   "what": "u0a ignores the closing column",
+   "old": "c[\"c_src_bad\"] == 0 and c[\"est_ok_mismatch\"] == 0",
+   "new": "c[\"est_ok_mismatch\"] == 0",
+   "tool": "check_shufclose.py",
+   "red": true
+  },
+  "c02_u0a_est_ok_not_judged": {
+   "rc": 1,
+   "seconds": 0.3,
+   "tail": [
+    "PASS u0f: a text without the flag name fails",
+    "ZZ CHECK-SHUFCLOSE-SELFTEST FAIL checks 21 failed 1"
+   ],
+   "what": "u0a ignores the rows marked full",
+   "old": "c[\"c_src_bad\"] == 0 and c[\"est_ok_mismatch\"] == 0",
+   "new": "c[\"c_src_bad\"] == 0",
+   "tool": "check_shufclose.py",
+   "red": true
+  },
+  "c03_u0a_plans_not_judged": {
+   "rc": 1,
+   "seconds": 0.3,
+   "tail": [
+    "PASS u0f: a text without the flag name fails",
+    "ZZ CHECK-SHUFCLOSE-SELFTEST FAIL checks 21 failed 1"
+   ],
+   "what": "u0a ignores the first plans",
+   "old": "and bool(pc[\"plan_largest_diff\"] <= tol)",
+   "new": "",
+   "tool": "check_shufclose.py",
+   "red": true
+  },
+  "c04_u0b_tolerance": {
+   "rc": 1,
+   "seconds": 0.3,
+   "tail": [
+    "PASS u0f: a text without the flag name fails",
+    "ZZ CHECK-SHUFCLOSE-SELFTEST FAIL checks 21 failed 2"
+   ],
+   "what": "u0b allows a difference of 1e-3",
+   "old": "ok = worst == 0.0 and not prob",
+   "new": "ok = worst <= 1e-3 and not prob",
+   "tool": "check_shufclose.py",
+   "red": true
+  },
+  "c05_u0c_short_looks_not_judged": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "PASS u0f: a text without the flag name fails",
+    "ZZ CHECK-SHUFCLOSE-SELFTEST FAIL checks 21 failed 1"
+   ],
+   "what": "u0c ignores the looks without a full history",
+   "old": "ok = ok and a2 and a0 and avl and ae",
+   "new": "ok = ok and a2 and avl and ae",
+   "tool": "check_shufclose.py",
+   "red": true
+  },
+  "c06_line_hash_not_judged": {
+   "rc": 1,
+   "seconds": 0.3,
+   "tail": [
+    "PASS u0f: a text without the flag name fails",
+    "ZZ CHECK-SHUFCLOSE-SELFTEST FAIL checks 21 failed 1"
+   ],
+   "what": "the file hash of the run line is not compared",
+   "old": "and m_.group(5) == table_sha)",
+   "new": ")",
+   "tool": "check_shufclose.py",
+   "red": true
+  },
+  "c07_refusal_return_code": {
+   "rc": 1,
+   "seconds": 0.3,
+   "tail": [
+    "PASS u0f: a text without the flag name fails",
+    "ZZ CHECK-SHUFCLOSE-SELFTEST FAIL checks 21 failed 1"
+   ],
+   "what": "a return code of 0 passes the refusal check",
+   "old": "return bool((rc is None or rc != 0) and",
+   "new": "return bool(True and",
+   "tool": "check_shufclose.py",
+   "red": true
+  },
+  "c08_refusal_names": {
+   "rc": 1,
+   "seconds": 0.3,
+   "tail": [
+    "FAIL u0f: a text without the flag name fails",
+    "ZZ CHECK-SHUFCLOSE-SELFTEST FAIL checks 21 failed 1"
+   ],
+   "what": "the flag names are not required in the refusal text",
+   "old": "and all(n in text for n in names))",
+   "new": ")",
+   "tool": "check_shufclose.py",
+   "red": true
+  },
+  "r01_sd_upper_bound": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: False (32 of 33)"
+   ],
+   "what": "the u3 sd ratio may reach 2.0",
+   "old": "SD_LO, SD_HI, MEAN_MAX, SHARE_MIN = 0.80, 1.25, 0.15, 0.90",
+   "new": "SD_LO, SD_HI, MEAN_MAX, SHARE_MIN = 0.80, 2.0, 0.15, 0.90",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r02_sd_lower_bound": {
+   "rc": 1,
+   "seconds": 0.5,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: False (32 of 33)"
+   ],
+   "what": "the u3 sd ratio may go down to 0.5",
+   "old": "SD_LO, SD_HI, MEAN_MAX, SHARE_MIN = 0.80, 1.25, 0.15, 0.90",
+   "new": "SD_LO, SD_HI, MEAN_MAX, SHARE_MIN = 0.50, 1.25, 0.15, 0.90",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r03_mean_bound": {
+   "rc": 1,
+   "seconds": 0.5,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: False (32 of 33)"
+   ],
+   "what": "the u3 mean may reach 0.5",
+   "old": "SD_LO, SD_HI, MEAN_MAX, SHARE_MIN = 0.80, 1.25, 0.15, 0.90",
+   "new": "SD_LO, SD_HI, MEAN_MAX, SHARE_MIN = 0.80, 1.25, 0.50, 0.90",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r04_share_bound": {
+   "rc": 1,
+   "seconds": 0.6,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: False (32 of 33)"
+   ],
+   "what": "the u3 share may be 0.80",
+   "old": "SD_LO, SD_HI, MEAN_MAX, SHARE_MIN = 0.80, 1.25, 0.15, 0.90",
+   "new": "SD_LO, SD_HI, MEAN_MAX, SHARE_MIN = 0.80, 1.25, 0.15, 0.80",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r05_gate_without_mean": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: False (32 of 33)"
+   ],
+   "what": "the u3 gate does not judge the mean",
+   "old": "gate[e] = bool(c1 and c2 and c3)",
+   "new": "gate[e] = bool(c1 and c3)",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r06_c_word_includes_not_separated": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "    ~~^^^^^^^^^^^^^^^",
+    "KeyError: 'VERDICT_N10'"
+   ],
+   "what": "NOT-SEPARATED counts as LOWER in the verdict",
+   "old": "\"AGE C LOWER\", None if w[\"C\"] is None else w[\"C\"] == \"LOWER\")",
+   "new": "\"AGE C LOWER\", None if w[\"C\"] is None else w[\"C\"] in (\"LOWER\", \"NOT-SEPARATED\"))",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r07_u_not_judged": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: False (31 of 33)"
+   ],
+   "what": "U HIGHER does not stop the verdict",
+   "old": "(\"AGE U not HIGHER\", nh(w[\"U\"]))]",
+   "new": "(\"AGE U not HIGHER\", True)]",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r08_beside_name_of_another_pair": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: False (31 of 33)"
+   ],
+   "what": "the beside name is that of SHUF-VS-NO-RULE",
+   "old": "sr = words[\"AGE\"][\"SHUF-VS-RR-\" + e][\"C\"]",
+   "new": "sr = words[\"AGE\"][\"SHUF-VS-NO-RULE-\" + e][\"C\"]",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r09_marks_swapped": {
+   "rc": 1,
+   "seconds": 0.3,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: False (31 of 33)"
+   ],
+   "what": "the N10 mark sits on L25",
+   "old": "MARK_N10 if e == \"N10\" else MARK_L25",
+   "new": "MARK_L25 if e == \"N10\" else MARK_N10",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r10_age_gate_ignored": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: False (31 of 33)"
+   ],
+   "what": "the verdict is written without the u3 gate",
+   "old": "        if not age_ok.get(e):\n            why[key]",
+   "new": "        if False:\n            why[key]",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r11_u2_tolerance": {
+   "rc": 1,
+   "seconds": 0.6,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: False (32 of 33)"
+   ],
+   "what": "u2 allows 1e-3",
+   "old": "TOL_U2 = 1e-9",
+   "new": "TOL_U2 = 1e-3",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r12_u2_pattern_not_judged": {
+   "rc": 1,
+   "seconds": 0.5,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: False (32 of 33)"
+   ],
+   "what": "u2 does not compare est_ok with the table",
+   "old": "pattern_bad = int(((found_all & np.isfinite(tv_all)) != eo).sum())",
+   "new": "pattern_bad = 0",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r13_u2_first_look_not_required": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: False (31 of 33)"
+   ],
+   "what": "u2 takes tick 0 as the first look of the mid-look log",
+   "old": "first = 0 if tag == \"rule\" else (int(kk.min()) if len(kk) else 0)",
+   "new": "first = 0",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r14_sur_hashes_not_compared": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: False (32 of 33)"
+   ],
+   "what": "the surrogate tables are not compared with the record",
+   "old": "bad = [n for n, h in shas.items() if files.get(n) != h]",
+   "new": "bad = []",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r15_sur_u4_not_judged": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: False (32 of 33)"
+   ],
+   "what": "u4 of the record is not judged",
+   "old": "u4_ok = bool(all(e in u4 and u4[e].get(\"passed\") is True for e in ESTS))",
+   "new": "u4_ok = True",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r16_est_line_hash_not_judged": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: False (32 of 33)"
+   ],
+   "what": "the est line file hash is not compared with the table",
+   "old": "sha_ok = bool(pe is not None and pe[\"file_sha256\"] == shas.get((f[len(\"RRe_S\"):], s)))",
+   "new": "sha_ok = True",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r17_estclose_card_not_judged": {
+   "rc": 1,
+   "seconds": 0.6,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: False (32 of 33)"
+   ],
+   "what": "any read is taken as that of card ADD79",
+   "old": "if ej.get(\"card\") != PARENT_CARD:",
+   "new": "if False:",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r18_pair_surrogate_vs_other": {
+   "rc": 1,
+   "seconds": 0.3,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: False (32 of 33)"
+   ],
+   "what": "SHUF-VS-RR is read against no rule",
+   "old": "(\"SHUF-VS-RR\", \"RRe_S\" + _e, \"RR\")",
+   "new": "(\"SHUF-VS-RR\", \"RRe_S\" + _e, \"R0K\")",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r19_f_names_dropped": {
+   "rc": 1,
+   "seconds": 0.3,
+   "tail": [
+    "                                                                                  ~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "KeyError: 'SHUF-VS-NO-RULE-L25_FRESH_F'"
+   ],
+   "what": "no F name is written",
+   "old": "for kind in (\"C\", \"U\", \"F\"):",
+   "new": "for kind in (\"C\", \"U\"):",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  },
+  "r20_x1_fallback_not_judged": {
+   "rc": 1,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: False (32 of 33)"
+   ],
+   "what": "x1 does not judge the closing 0.0 without a full history",
+   "old": "and r.get(\"fallback_closing_exactly_zero\") is True",
+   "new": "",
+   "tool": "read_shufclose10k.py",
+   "red": true
+  }
+ },
+ "controls_before": {
+  "check_shufclose.py": {
+   "rc": 0,
+   "seconds": 0.3,
+   "tail": [
+    "PASS u0f: a text without the flag name fails",
+    "ZZ CHECK-SHUFCLOSE-SELFTEST PASS checks 21 failed 0"
+   ]
+  },
+  "make_surrogate.py": {
+   "rc": 0,
+   "seconds": 4.2,
+   "tail": [
+    "PASS the identity table is the estimate itself, row for row",
+    "ZZ SURROGATE-SELFTEST PASS checks 16 failed 0 tmp tmp_selfsurr_ampp496p"
+   ]
+  },
+  "read_shufclose10k.py": {
+   "rc": 0,
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: True (33 of 33)"
+   ]
+  }
+ },
+ "controls_after": {
+  "check_shufclose.py": {
+   "rc": 0,
+   "seconds": 0.4,
+   "tail": [
+    "PASS u0f: a text without the flag name fails",
+    "ZZ CHECK-SHUFCLOSE-SELFTEST PASS checks 21 failed 0"
+   ]
+  },
+  "make_surrogate.py": {
+   "rc": 0,
+   "seconds": 9.1,
+   "tail": [
+    "PASS the identity table is the estimate itself, row for row",
+    "ZZ SURROGATE-SELFTEST PASS checks 16 failed 0 tmp tmp_selfsurr_8qrow1xj"
+   ]
+  },
+  "read_shufclose10k.py": {
+   "rc": 0,
+   "seconds": 0.6,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-SHUFCLOSE10K ok: True (33 of 33)"
+   ]
+  }
+ },
+ "red": 38,
+ "total": 38,
+ "all_red_and_controls_green": true
+}
