@@ -49,3 +49,8 @@ Fragments added: `frag_row137.tex` (card ADD76, the second-look arm), `frag_row1
 ## Update after rows 139 and 140 (2026-11-20)
 
 Fragment added: `frag_row139.tex` (card ADD78), appended to `frag_row127.tex`; `frag_row137.tex` and its copy in `frag_row127.tex` changed in one place (the at-age setting is a pre-roll of 30 steps, 6 s of own driving; the PDF after rows 137 and 138 says 30 s there, see row 140); `frag_status_run.tex` item on this fork changed. `patch_tex_v11.py`: `ok edits 11`; row ids 137, 138, 139 found once each in the paper source, the old wording 0 times. Build: rc 0, 43 pages, 0 overfull boxes, 0 undefined references. Number check with `ROW100.md` to `ROW140.md`: 1572 tokens checked, 0 not found. PDF saved as `tanitad_4b_paper_r140.pdf` (sha256 b1612da5e8d177b7).
+
+## Update after rows 141 and 142 (2026-11-20)
+
+Fragments added: `frag_row141.tex` (card ADD79, the estimated closing speed in the reader-fed rule) and `frag_row142.tex` (card ADD80, constant closing inputs, with the sign of the input that the card had wrong), both appended to `frag_row127.tex`; the item of this fork in `frag_status_run.tex` changed. `patch_tex_v11.py`: `ok edits 11`; row ids 141 and 142 found once each in `tanitad_4b_paper.tex`. Tectonic 0.17.0 build; number check `check_numbers_v11.py` on the row files 100 to 142: 1672 tokens, 0 not found. PDF copied to `tanitad_4b_paper_r142.pdf` (410587 bytes, sha256 8d8feb9cdf016c63).
+43 pages, xdv 2,496,148 bytes (the build after rows 139 and 140: 43 pages, 2,448,976 bytes).

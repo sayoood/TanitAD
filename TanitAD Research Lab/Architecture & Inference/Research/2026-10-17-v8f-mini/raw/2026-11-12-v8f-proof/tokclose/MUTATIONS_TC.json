@@ -1,0 +1,588 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD81",
+ "tool_sha256_16": "84e82ee9184289c4",
+ "test_sha256_16": "c74fa857d724db85",
+ "runs": {
+  "r2": "37 mutations plus m22 under the earlier test; control before and after 22 passed",
+  "r3": "m22 under the final test; control before and after 22 passed"
+ },
+ "control_r2_before": "22 passed",
+ "control_r2_after": "22 passed",
+ "control_r3_before": "22 passed",
+ "control_r3_after": "22 passed",
+ "red": 38,
+ "total": 38,
+ "mutations": {
+  "m01_window_threshold_off_by_one": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_eligible_frames_rule"
+   ],
+   "summary": "1 failed 2 passed",
+   "seconds": 3.0,
+   "tail": [
+    "FAILED test_tokclose.py::test_eligible_frames_rule - assert (np.int64(14) == 13)",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 2 passed in 2.37s"
+   ],
+   "what": "an eligible frame needs one frame more than the H reads (f >= H+4)",
+   "red": true
+  },
+  "m02_run_minimum_two": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_eligible_frames_rule"
+   ],
+   "summary": "1 failed 2 passed",
+   "seconds": 2.6,
+   "tail": [
+    "FAILED test_tokclose.py::test_eligible_frames_rule - assert (not ({20, 21, 22...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 2 passed in 1.86s"
+   ],
+   "what": "a label from a run of two frames is used",
+   "red": true
+  },
+  "m03_finite_label_not_required": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_eligible_frames_rule"
+   ],
+   "summary": "1 failed 2 passed",
+   "seconds": 2.9,
+   "tail": [
+    "FAILED test_tokclose.py::test_eligible_frames_rule - assert (not ({20, 21, 22...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 2 passed in 2.07s"
+   ],
+   "what": "frames without a finite closing speed are rows",
+   "red": true
+  },
+  "m04_label_of_another_frame": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_rows_equal_build_rows"
+   ],
+   "summary": "1 failed 13 passed",
+   "seconds": 98.7,
+   "tail": [
+    "FAILED test_tokclose.py::test_rows_equal_build_rows - assert 1.04962397655198...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 13 passed in 97.68s (0:01:37)"
+   ],
+   "what": "the target is the label three frames before the row",
+   "red": true
+  },
+  "m05_label_sign_turned": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_rows_equal_build_rows"
+   ],
+   "summary": "1 failed 13 passed",
+   "seconds": 167.7,
+   "tail": [
+    "FAILED test_tokclose.py::test_rows_equal_build_rows - assert 2.87805365482618...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 13 passed in 166.76s (0:02:46)"
+   ],
+   "what": "the target is minus the label closing speed",
+   "red": true
+  },
+  "m06_permutation_dropped": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_permute_labels_keeps_mask_and_multiset_and_moves_values"
+   ],
+   "summary": "1 failed 3 passed",
+   "seconds": 2.5,
+   "tail": [
+    "FAILED test_tokclose.py::test_permute_labels_keeps_mask_and_multiset_and_moves_values",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 3 passed in 1.77s"
+   ],
+   "what": "the planted arm keeps its labels (permutation dropped)",
+   "red": true
+  },
+  "m07_window_includes_next_frame": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_window_is_exactly_the_last_H_embeddings"
+   ],
+   "summary": "1 failed 4 passed",
+   "seconds": 2.8,
+   "tail": [
+    "FAILED test_tokclose.py::test_window_is_exactly_the_last_H_embeddings - asser...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 4 passed in 2.00s"
+   ],
+   "what": "the window of frame f holds the embeddings f-H+1..f+1",
+   "red": true
+  },
+  "m08_window_one_frame_short": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_window_is_exactly_the_last_H_embeddings"
+   ],
+   "summary": "1 failed 4 passed",
+   "seconds": 2.5,
+   "tail": [
+    "FAILED test_tokclose.py::test_window_is_exactly_the_last_H_embeddings - asser...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 4 passed in 1.74s"
+   ],
+   "what": "the window holds H-1 embeddings",
+   "red": true
+  },
+  "m09_first_state_read": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_window_is_exactly_the_last_H_embeddings"
+   ],
+   "summary": "1 failed 4 passed",
+   "seconds": 2.9,
+   "tail": [
+    "FAILED test_tokclose.py::test_window_is_exactly_the_last_H_embeddings - asser...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 4 passed in 2.08s"
+   ],
+   "what": "the head reads the first recurrent state instead of the last",
+   "red": true
+  },
+  "m10_t3_noise_starts_late": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_t3_detects_a_head_that_looks_one_frame_ahead"
+   ],
+   "summary": "1 failed 6 passed",
+   "seconds": 2.5,
+   "tail": [
+    "FAILED test_tokclose.py::test_t3_detects_a_head_that_looks_one_frame_ahead - ...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 6 passed in 1.72s"
+   ],
+   "what": "control t3 replaces the frames from t+2 on, not from t+1",
+   "red": true
+  },
+  "m11_t3_tolerance_loose": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_hyperparameters_are_the_fixed_ones"
+   ],
+   "summary": "1 failed",
+   "seconds": 2.9,
+   "tail": [
+    "FAILED test_tokclose.py::test_hyperparameters_are_the_fixed_ones - assert (0....",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 2.08s"
+   ],
+   "what": "control t3 accepts a difference of 0.1 m/s",
+   "red": true
+  },
+  "m12_better_needs_any_seed": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_name_rule_cases"
+   ],
+   "summary": "1 failed 7 passed",
+   "seconds": 2.6,
+   "tail": [
+    "FAILED test_tokclose.py::test_name_rule_cases - AssertionError: assert 'TOKCL...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 7 passed in 1.77s"
+   ],
+   "what": "BETTER-THAN-OUTPUTS asks r above the cell in one seed only",
+   "red": true
+  },
+  "m13_better_without_seed_condition": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_name_rule_cases"
+   ],
+   "summary": "1 failed 7 passed",
+   "seconds": 2.8,
+   "tail": [
+    "FAILED test_tokclose.py::test_name_rule_cases - AssertionError: assert 'TOKCL...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 7 passed in 1.98s"
+   ],
+   "what": "BETTER-THAN-OUTPUTS does not ask r above the cell",
+   "red": true
+  },
+  "m14_readable_on_point_estimate": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_name_rule_cases"
+   ],
+   "summary": "1 failed 7 passed",
+   "seconds": 2.8,
+   "tail": [
+    "FAILED test_tokclose.py::test_name_rule_cases - AssertionError: assert ('TOKC...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 7 passed in 2.05s"
+   ],
+   "what": "READABLE reads the point estimate, not the lower end of the interval",
+   "red": true
+  },
+  "m15_paired_difference_turned": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_paired_difference_is_x_minus_cell"
+   ],
+   "summary": "1 failed 8 passed",
+   "seconds": 2.7,
+   "tail": [
+    "FAILED test_tokclose.py::test_paired_difference_is_x_minus_cell - assert (2.6...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 8 passed in 1.88s"
+   ],
+   "what": "the paired difference is cell minus X",
+   "red": true
+  },
+  "m16_verdict_needs_all_four": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_name_rule_cases"
+   ],
+   "summary": "1 failed 7 passed",
+   "seconds": 2.7,
+   "tail": [
+    "FAILED test_tokclose.py::test_name_rule_cases - AssertionError: assert ('TOKC...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 7 passed in 2.01s"
+   ],
+   "what": "the verdict asks all four arms BETTER",
+   "red": true
+  },
+  "m17_t2_loss_comparison_turned": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_t2_logic"
+   ],
+   "summary": "1 failed 10 passed",
+   "seconds": 2.7,
+   "tail": [
+    "FAILED test_tokclose.py::test_t2_logic - assert False",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 10 passed in 1.84s"
+   ],
+   "what": "control t2 asks the stopping loss above the loss before",
+   "red": true
+  },
+  "m18_t2_overlap_not_checked": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_t2_logic"
+   ],
+   "summary": "1 failed 10 passed",
+   "seconds": 2.5,
+   "tail": [
+    "FAILED test_tokclose.py::test_t2_logic - assert not True",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 10 passed in 1.71s"
+   ],
+   "what": "control t2 does not check the overlap with the evaluation clips",
+   "red": true
+  },
+  "m19_t2_hp_not_checked": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_t2_logic"
+   ],
+   "summary": "1 failed 10 passed",
+   "seconds": 2.8,
+   "tail": [
+    "FAILED test_tokclose.py::test_t2_logic - assert not True",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 10 passed in 1.88s"
+   ],
+   "what": "control t2 accepts any hyperparameters",
+   "red": true
+  },
+  "m20_t1_band_dropped": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_t_arm_reads_the_planted_signal_and_the_planted_arm_does_not"
+   ],
+   "summary": "1 failed 16 passed",
+   "seconds": 100.8,
+   "tail": [
+    "FAILED test_tokclose.py::test_t_arm_reads_the_planted_signal_and_the_planted_arm_does_not",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 16 passed in 99.91s (0:01:39)"
+   ],
+   "what": "control t1 passes whatever r the planted arm reads",
+   "red": true
+  },
+  "m21_t0_r_tolerance_dropped": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_t0_passes_and_catches_shifted_label_estimator_and_frame_set"
+   ],
+   "summary": "1 failed 14 passed",
+   "seconds": 106.3,
+   "tail": [
+    "FAILED test_tokclose.py::test_t0_passes_and_catches_shifted_label_estimator_and_frame_set",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 14 passed in 105.41s (0:01:45)"
+   ],
+   "what": "control t0 does not compare the reproduced r",
+   "red": true
+  },
+  "m22_t0_frame_sets_not_compared": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_t0_passes_and_catches_shifted_label_estimator_and_frame_set"
+   ],
+   "summary": "1 failed 14 passed",
+   "seconds": 130.1,
+   "tail": [
+    "FAILED test_tokclose.py::test_t0_passes_and_catches_shifted_label_estimator_and_frame_set",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 14 passed in 128.96s (0:02:08)"
+   ],
+   "what": "control t0 accepts any frame set",
+   "red": true,
+   "note": "re-run (tag r3) after the test gained a case that changes only the frame set; first run r2 under the earlier test was not caught"
+  },
+  "m23_t0_label_tolerance_dropped": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_t0_passes_and_catches_shifted_label_estimator_and_frame_set"
+   ],
+   "summary": "1 failed 14 passed",
+   "seconds": 113.3,
+   "tail": [
+    "FAILED test_tokclose.py::test_t0_passes_and_catches_shifted_label_estimator_and_frame_set",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 14 passed in 112.13s (0:01:52)"
+   ],
+   "what": "control t0 does not compare the label values",
+   "red": true
+  },
+  "m24_eval_overlap_guard_removed": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_fit_refuses_existing_outputs_and_eval_overlap"
+   ],
+   "summary": "1 failed 18 passed",
+   "seconds": 414.8,
+   "tail": [
+    "FAILED test_tokclose.py::test_fit_refuses_existing_outputs_and_eval_overlap",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 18 passed in 411.40s (0:06:51)"
+   ],
+   "what": "the fit does not refuse a fit clip that is an evaluation clip",
+   "red": true
+  },
+  "m25_shuffle_flag_ignored": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_t_arm_reads_the_planted_signal_and_the_planted_arm_does_not"
+   ],
+   "summary": "1 failed 16 passed",
+   "seconds": 606.0,
+   "tail": [
+    "FAILED test_tokclose.py::test_t_arm_reads_the_planted_signal_and_the_planted_arm_does_not",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 16 passed in 604.61s (0:10:04)"
+   ],
+   "what": "the planted arm is fitted on the true labels",
+   "red": true
+  },
+  "m26_best_state_not_kept": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_fit_head_early_stopping_state_and_loss_pair"
+   ],
+   "summary": "1 failed 11 passed",
+   "seconds": 7.0,
+   "tail": [
+    "FAILED test_tokclose.py::test_fit_head_early_stopping_state_and_loss_pair - a...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 11 passed in 5.72s"
+   ],
+   "what": "the final state is kept, not the state of the best evaluation",
+   "red": true
+  },
+  "m27_patience_ignored": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_fit_head_early_stopping_state_and_loss_pair"
+   ],
+   "summary": "1 failed 11 passed",
+   "seconds": 15.3,
+   "tail": [
+    "FAILED test_tokclose.py::test_fit_head_early_stopping_state_and_loss_pair - A...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 11 passed in 13.82s"
+   ],
+   "what": "training never stops on patience",
+   "red": true
+  },
+  "m28_loss_before_after_a_pass": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_fit_head_early_stopping_state_and_loss_pair"
+   ],
+   "summary": "1 failed 11 passed",
+   "seconds": 10.9,
+   "tail": [
+    "FAILED test_tokclose.py::test_fit_head_early_stopping_state_and_loss_pair - A...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 11 passed in 9.67s"
+   ],
+   "what": "the loss before the first step is not measured before any step",
+   "red": true
+  },
+  "m29_e_split_by_row": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_fits_counts_losses_and_split"
+   ],
+   "summary": "1 failed 15 passed",
+   "seconds": 118.4,
+   "tail": [
+    "FAILED test_tokclose.py::test_fits_counts_losses_and_split - AssertionError: ...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 15 passed in 117.35s (0:01:57)"
+   ],
+   "what": "the one-fifth split of the E arms is by row",
+   "red": true
+  },
+  "m30_t_arm_fit_and_stop_swapped": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_fits_counts_losses_and_split"
+   ],
+   "summary": "1 failed 15 passed",
+   "seconds": 116.2,
+   "tail": [
+    "FAILED test_tokclose.py::test_fits_counts_losses_and_split - AssertionError: ...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 15 passed in 115.13s (0:01:55)"
+   ],
+   "what": "the T arm fits on the held-out clips and stops on the training clips",
+   "red": true
+  },
+  "m31_table_key_off_by_one": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_t_arm_reads_the_planted_signal_and_the_planted_arm_does_not"
+   ],
+   "summary": "1 failed 16 passed",
+   "seconds": 225.6,
+   "tail": [
+    "FAILED test_tokclose.py::test_t_arm_reads_the_planted_signal_and_the_planted_arm_does_not",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 16 passed in 224.50s (0:03:44)"
+   ],
+   "what": "the estimate of frame f is read from frame f+1 of the table",
+   "red": true
+  },
+  "m32_cells_swapped": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_t0_passes_and_catches_shifted_label_estimator_and_frame_set"
+   ],
+   "summary": "1 failed 14 passed",
+   "seconds": 160.9,
+   "tail": [
+    "FAILED test_tokclose.py::test_t0_passes_and_catches_shifted_label_estimator_and_frame_set",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 14 passed in 159.86s (0:02:39)"
+   ],
+   "what": "the cell of H 10 is the ridge, of H 25 the network",
+   "red": true
+  },
+  "m33_output_files_overwritten": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_fit_refuses_existing_outputs_and_eval_overlap"
+   ],
+   "summary": "1 failed 18 passed",
+   "seconds": 170.7,
+   "tail": [
+    "FAILED test_tokclose.py::test_fit_refuses_existing_outputs_and_eval_overlap",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 18 passed in 169.58s (0:02:49)"
+   ],
+   "what": "the fit overwrites existing output files",
+   "red": true
+  },
+  "m34_score_folder_not_refused": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_score_end_to_end_names_are_consistent"
+   ],
+   "summary": "1 failed 19 passed",
+   "seconds": 122.6,
+   "tail": [
+    "FAILED test_tokclose.py::test_score_end_to_end_names_are_consistent - FileExi...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 19 passed in 120.72s (0:02:00)"
+   ],
+   "what": "the score does not refuse an existing output folder",
+   "red": true
+  },
+  "m35_failed_control_still_writes": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_score_fails_closed_when_a_control_fails"
+   ],
+   "summary": "1 failed 20 passed",
+   "seconds": 156.6,
+   "tail": [
+    "FAILED test_tokclose.py::test_score_fails_closed_when_a_control_fails - asser...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 20 passed in 155.45s (0:02:35)"
+   ],
+   "what": "a failed control does not stop the names",
+   "red": true
+  },
+  "m36_episode_map_ignored": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_score_end_to_end_names_are_consistent"
+   ],
+   "summary": "1 failed 19 passed",
+   "seconds": 195.1,
+   "tail": [
+    "FAILED test_tokclose.py::test_score_end_to_end_names_are_consistent - Asserti...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 19 passed in 194.02s (0:03:14)"
+   ],
+   "what": "every clip is its own episode whatever the map says",
+   "red": true
+  },
+  "m37_better_reads_lower_interval_end": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_name_rule_cases"
+   ],
+   "summary": "1 failed 7 passed",
+   "seconds": 2.6,
+   "tail": [
+    "FAILED test_tokclose.py::test_name_rule_cases - AssertionError: assert 'TOKCL...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 7 passed in 1.77s"
+   ],
+   "what": "BETTER-THAN-OUTPUTS reads the lower end of the paired interval",
+   "red": true
+  },
+  "m38_training_order_from_stopping_clips": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tokclose.py::test_fit_head_early_stopping_state_and_loss_pair"
+   ],
+   "summary": "1 failed 11 passed",
+   "seconds": 5.2,
+   "tail": [
+    "FAILED test_tokclose.py::test_fit_head_early_stopping_state_and_loss_pair - A...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 11 passed in 4.19s"
+   ],
+   "what": "the training order is built from the stopping clips",
+   "red": true
+  }
+ }
+}
