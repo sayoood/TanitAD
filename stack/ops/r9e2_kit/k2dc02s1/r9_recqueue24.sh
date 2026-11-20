@@ -45,7 +45,8 @@ wait_read() {   # MM 2026-11-20: the K2DC02-TAIL read owns the Thor GPU (it take
   local i RS=$TAIL/stageB/ROLL_STATUS.txt ok=0 NB NG
   ev "WAIT-READ: waiting for AWAIT-S6C in $RS, then no roll / trainer / gate process and no compute app on two polls 60 s apart (cap 24 h)"
   for i in $(seq 1 1440); do
-    { grep -q 'ALLSTEP STOP' $TAIL/CHAIN_ALL_STATUS.txt 2>/dev/null || [ -e $TAIL/stageB/ROLL_ABORTED ]; } && fail "WAIT-READ: the K2DC02-TAIL read stopped or aborted ($TAIL): records wait for an MM decision" READSTOP 6
+    # MM 11-20: only lines AFTER the last 'ALLSTEP RESUME' count -- a STOP that a later RESUME answered is history, not a stopped read
+    { awk '/ALLSTEP RESUME/{b=""} {b=b $0 "\n"} END{printf "%s", b}' $TAIL/CHAIN_ALL_STATUS.txt 2>/dev/null | grep -q 'ALLSTEP STOP' || [ -e $TAIL/stageB/ROLL_ABORTED ]; } && fail "WAIT-READ: the K2DC02-TAIL read stopped or aborted ($TAIL): records wait for an MM decision" READSTOP 6
     if grep -q 'AWAIT-S6C' $RS 2>/dev/null; then
       NB=$(ps -eo args | grep -c -E '[r]9e2_roll[.]sh|[r]efc_v3_train[.]py|[r]9gate3_chain[.]sh|[r]9gate3_thor_gate[.]sh')
       NG=$(nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -c .)
