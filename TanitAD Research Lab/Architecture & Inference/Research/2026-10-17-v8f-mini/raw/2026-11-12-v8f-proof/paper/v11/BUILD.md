@@ -62,3 +62,7 @@ Fragment added: `frag_row143.tex` (card ADD81, the token head as a read of the c
 ## Update after rows 144 and 145 (2026-11-20)
 
 Fragments added: `frag_row144.tex` (card ADD83, the estimate of another clip as a control) and `frag_row145.tex` (card ADD82, constants of the cautious sign), both appended to `frag_row127.tex`; the item of this fork in `frag_status_run.tex` changed (card ADD84 running). `patch_tex_v11.py`: `ok edits 11`; row ids 144 and 145 found once each in the patched source. `check_numbers_v11.py`: 1837 tokens, 0 not found. PDF `tanitad_4b_paper_r145.pdf` (24ad9e119473d4d3), 44 pages, xdv 2,546,008 bytes (the build after row 143: 44 pages, 2,514,452 bytes).
+
+## Update after row 146 (2026-11-20)
+
+Fragment added: `frag_row146.tex` (card ADD84, the token head in the rule and the requirement curve of a closing read, with the control that did not pass), appended to `frag_row127.tex`; the item of this fork in `frag_status_run.tex` changed (card ADD85 frozen). `patch_tex_v11.py`: `ok edits 11`; row id 146 found once in the patched source. `check_numbers_v11.py`: 1923 tokens, 0 not found. PDF `tanitad_4b_paper_r146.pdf` (c11d4c7bac483913), 45 pages, 2572256 bytes (the build after rows 144 and 145: 44 pages, 2,546,008 bytes).
