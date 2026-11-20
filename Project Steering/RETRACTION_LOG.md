@@ -18983,3 +18983,35 @@ instruments; only an undeclared one is a finding.
 **Class / rule:** A FLAG IN ARGPARSE IS NOT AN ARM. This is the "built, tested, and unreachable from its caller" class seen from the init side: the flag reaches the loss, but the arm's warm start refuses the model it builds. Before carding an arm as "existing flag, no new code":
 1. Trace the argv through the arm's actual init checkpoint (`INIT_CKPT_MATCH` / `load_init_ckpt`, or the trainer's `--selfcheck-only` on that init) and cite file:line.
 2. Grep GOALS_AND_CLAIMS for the lever's name and read every earlier row on it before writing an expected size.
+
+## 2026-11-20 — R-E2-K2DC02-REC-1: "clause (a) is structural across every K2 arm, so pivot to the map-representation arms M1/M3" (Master Mind)
+
+**What was said (PI chat and LOOP_STATE, 2026-11-20 ~07:40Z, recommending the next arm after the K2DC02 read):**
+* "(a) is structural across every K2 arm (0.41 vs 0.75 at dose 0.10 AND 0.02), so neither a replicate nor the stop-gradient can
+  close it".
+* Recommended option: "pivot to the map-representation lever (M1/M3, REFCV9_DESIGN 4.3)".
+
+**What is true (register rows at 9d54f890, re-read the same morning):**
+* The 0.41 vs 0.75 numbers come from the EMA_6000 read at the DEFAULT map cut. On those weights, K2's new map modules are
+  under-read: K2DC goes from 0.3940 (EMA) to 0.4912 (raw) (H-R9-E2-EMA).
+* At each arm's own FIT thresholds, clause (a) PASSES on the raw and tail weights:
+  * K2DC 0.4912 vs K0 0.4729 (E2-RAW);
+  * K2DC 0.4850 vs K0 0.4665 (E2-TAIL, and again in E2-WISE wire-off).
+* The map-representation levers were already screened:
+  * K2 already bundles M1N20 (H-R9-E2).
+  * M3, the map's own encoder, was DROPPED on its decisive read vs M1N20 (H-R9-E1-M3).
+* What actually fails on the E3-representative weights is (d) LATERAL: K2DC − K0 cross-track +0.0126 [+0.0063, +0.0194] at
+  seed 0 on the tail weights.
+
+**Correction sent:** the same day, to the PI and in LOOP_STATE. No arm was launched on the wrong recommendation.
+**Next step:** the pre-registered tail read of K2DC02 (PREREG_K2DC02TAIL_2026-11-20.md, d20cd6f3).
+
+**Class / rule: A VERDICT ROW READ WITHOUT ITS SIBLING ROWS.** The K2DC02 read applies the E2 rule on EMA weights at the
+default cut, and its README said so. The rows that explain what that read can and cannot see (E2-EMA, E2-RAW, E2-TAIL,
+E2-WISE, E1-M3) were in the register. They were not re-read before the recommendation went out. This is the same family as
+"a flag in argparse is not an arm".
+
+Before recommending a next arm from a verdict:
+1. Grep GOALS_AND_CLAIMS for every row on the same arm family.
+2. State which weight set (EMA / raw / tail) and which threshold (default / FIT) the failing clause was read on.
+3. Name the row that rules each candidate lever in or out.
