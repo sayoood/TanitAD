@@ -96,3 +96,7 @@ Fragments added: `frag_row159.tex` (card ADD97: the mean of the reader seeds and
 ## Update after row 161 (2026-11-21)
 
 Fragment added: `frag_row161.tex` (card ADD99: the pilot of a new read of the lead from camera-frame crops fails its bar on the fixed windows; the bound with the windows on the lead reaches the cut of the gap error), appended to `frag_row127.tex`; the status sentence of the fork in `frag_status_run.tex` now ends at row 161 with cards ADD100 and ADD101 frozen. Build: `patch_tex_v11.py` (ok edits 11), Tectonic 0.17.0, `check_numbers_v11.py` over rows 100 to 161 (ZZ NUMBERS-V11 DONE 0). `tanitad_4b_paper_r161.pdf` b6b0e7f4fb8e1752, 47 pages; the paragraph of row 161 is on page 46.
+
+## Update after row 162 (2026-11-21)
+
+Fragment added: `frag_row162.tex` (card ADD101: the lead rule reading the gap of the pilot; with the label marking the frames with a lead the fixed-window gap lies within half the gap to the label gap, at a price in the longitudinal and tactical reads), appended to `frag_row127.tex`; the status sentence of the fork in `frag_status_run.tex` now ends at row 162 with cards ADD100 and ADD102 frozen. Build: `patch_tex_v11.py` (ok edits 11), Tectonic rc 0, `check_numbers_v11.py` over the rows up to 162 (`ZZ NUMBERS-V11 DONE 0`). PDF copied as `tanitad_4b_paper_r162.pdf` dff3e8c44da8f6fa, 48 pages, row 162 on pages 40 and 46.
