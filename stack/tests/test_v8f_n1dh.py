@@ -635,7 +635,7 @@ def test_r2_cpu_fp32_one_thread_is_deterministic_across_two_runs_of_the_whole_tr
 
 # ------------------------------------------------------------------------------------------------ the loaders: round trip
 LOADERS = ("v8f_mini_eval.py", "v8f_mini_eval_oacc.py", "v8f_mini_eval_rb.py", "v8f_mini_eval_rbd.py", "v8f_mini_eval_speedavg.py", "v8f_mini_eval_speedcal.py", "v8f_t1_eval.py", "v8f_t1_eval_rb.py",
-           "v8f_t1_eval_rbd.py", "v8f_dagger_bank.py", "v8f_kscore.py")
+           "v8f_t1_eval_rbd.py", "v8f_dagger_bank.py", "v8f_kscore.py", "n1dh_klim.py")  # n1dh_klim.py: the K-LIM probe loads an N1DH checkpoint the same way
 CFG_CALL = re.compile(r"V8FMiniConfig\(\*\*((?:[^()]|\([^()]*\))*)\)")
 
 
