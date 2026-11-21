@@ -3628,6 +3628,8 @@ def wsd_smoke_rewrite(base: list[str], steps: int, log_every: int) -> tuple[list
 #: (`drivable_bce`: `logit.sum() * 0.0`), so w scales a zero gradient and no update before that step can depend on w. `smoke_argv` rewrites only `--steps` /
 #: log-cadence / step-valued flags (never `--seed` / `--batch`), and the sampler order is seed-set, so two smokes of the same argv read the same R up to
 #: kernel non-determinism and (across hosts, fp32 CPU vs bf16 CUDA) a few 1e-3 relative -- UNVERIFIED as a number: no pair of W-COST lines exists on disk.
+#: REPLICATE EXCEPTION (PI 2026-11-21 ~13:30Z, "Hold replicate to parent R"): see `WCOST_REPLICATES` below -- K2DC02s1 (seed 1) is held to K2DC02's (seed 0)
+#: R = 1.5450, not to its own smoke's 1.0904 (MEASURED, Thor r9e2/gate3/<arm>/evidence/G-LIVE.json); its own R is recorded (`R_own`), never a refusal.
 #: 0.05 covers the 4-significant-digit rounding of w (<= 5e-4), the printed R's 4 decimals, and that numeric spread, with margin; it cannot admit the
 #: placeholder when R is far from 1 (the placeholder 0.1 has w * R / 0.1 = R, so it passes only for R in [0.95, 1.05], where 0.1 IS the rule's value to
 #: within 5 %). The edge is INCLUSIVE (|w * R / 0.1 - 1| == TOL passes; 1e-12 float slack).
@@ -3636,6 +3638,48 @@ WCOST_TARGET, WCOST_TOL, WCOST_EDGE_SLACK = 0.1, 0.05, 1e-12
 WCOST_CRITIC_FLAG, WCOST_W_FLAG = "--r8-critic-drivable", "--w-r8-drivable"
 WCOST_LINE_KEY = "refcv9 W-COST at step"
 WCOST_LINE_RE = re.compile(r"refcv9 W-COST at step (\d+): critic-BCE / trajectory-loss = (\S+)")
+#: PI RULING 2026-11-21 ~13:30Z ("Hold replicate to parent R"): an arm DECLARED here as a replicate is held to its PARENT's measured R, not to its own
+#: smoke's. WHY (MEASURED on Thor, r9e2/gate3/<arm>/evidence/G-LIVE.json): K2DC02 (seed 0) smoke R = 1.5450 -> passed at w 0.06472; K2DC02s1 (seed 1, the SAME
+#: flags) smoke R = 1.0904 -> refused. R depends on the seed (the sampler order is seed-set, see above), so an identical-flags replicate could never pass the
+#: own-smoke rule. A declared replicate must (a) carry the parent's argv EXCEPT the values of `--seed` and `--out` (anything else moved = not a replicate = FAIL)
+#: and (b) hold w to `parent_R`; its OWN smoke R is kept in the evidence (`R_own`, `R_own_over_parent`) as a seed-noise reading, never a refusal. A missing or
+#: unreadable parent argv json is a FAIL, never a fallback. Keyed by the basename of the launch argv's `--out` value; arms not listed: unchanged behaviour.
+#: `parent_argv` is a file name under `WCOST_RUNS_DIR` (stack/ops/runs.d).
+WCOST_RUNS_DIR = Path(__file__).resolve().parents[1] / "ops" / "runs.d"
+WCOST_REPLICATE_FLAGS = ("--seed", "--out")
+WCOST_REPLICATES: dict[str, dict[str, Any]] = {
+    "r9e2-K2DC02s1": {
+        "parent_argv": "r9e2_K2DC02.argv.json",
+        "parent_R": 1.5450,
+        "evidence": "Thor /home/nvidia/r8ns/r9e2/gate3/K2DC02/evidence/G-LIVE.json (K2DC02 gate at e454e96c6a84: W-COST at step 0 = 1.5450)",
+        "ruling": "PI 2026-11-21 ~13:30Z: Hold replicate to parent R",
+    },
+}
+
+
+def wcost_out_name(launch_argv: list[str]) -> str | None:
+    """Basename of the argv's `--out` value (the key into `WCOST_REPLICATES`), or None."""
+    ov = flag_values(launch_argv, "--out")
+    return os.path.basename(str(ov[0]).replace("\\", "/").rstrip("/")) if ov else None
+
+
+def wcost_replicate_diff(launch_argv: list[str], parent_argv: list[str]) -> list[str]:
+    """Why `launch_argv` is NOT its parent's argv with only `--seed` / `--out` values changed ([] = it is a replicate)."""
+    if len(launch_argv) != len(parent_argv):
+        return [f"argv length {len(launch_argv)} != parent's {len(parent_argv)}"]
+    skip: set[int] = set()
+    out: list[str] = []
+    for fl in WCOST_REPLICATE_FLAGS:
+        li = [i for i, t in enumerate(launch_argv) if t == fl]
+        pi = [i for i, t in enumerate(parent_argv) if t == fl]
+        if len(li) != 1 or li != pi or li[0] + 1 >= len(launch_argv):
+            out.append(f"{fl} must appear exactly once at the same position in both argvs (launch {li}, parent {pi})")
+        else:
+            skip.add(li[0] + 1)
+    for i, (a, b) in enumerate(zip(launch_argv, parent_argv)):
+        if i not in skip and a != b:
+            out.append(f"token {i}: launch {a!r} != parent {b!r}")
+    return out
 
 
 def wcost_in_scope(prof: dict, launch_argv: list[str]) -> bool:
@@ -3682,6 +3726,22 @@ def wcost_reasons(prof: dict, launch_argv: list[str], lines: list[str] | None) -
     if ratio is None or not (ratio == ratio and 0.0 < ratio < float("inf")):
         return [f"G-LIVE W-COST: the smoke's W-COST line carries no finite positive ratio R (line: {lines[0][:200]!r}) -- {WCOST_W_FLAG} cannot be held to 0.1 / R"], det
     det.update(step=step, R=ratio)
+    rep = WCOST_REPLICATES.get(wcost_out_name(launch_argv) or "")
+    if rep is not None:                                   # DECLARED replicate: held to the PARENT's R (PI 2026-11-21); the own smoke R stays visible
+        pr = rep["parent_R"]
+        det.update(replicate_of=rep["parent_argv"], R_parent=pr, R_own=ratio, R_own_over_parent=ratio / pr, replicate_ruling=rep["ruling"])
+        try:
+            pdoc = json.loads((WCOST_RUNS_DIR / rep["parent_argv"]).read_text(encoding="utf-8"))
+            pargv = [str(t) for t in pdoc["argv"]]
+        except Exception as e:                            # noqa: BLE001 -- a declared replicate with no readable parent is a FAIL, never a fallback
+            return [f"G-LIVE W-COST: {wcost_out_name(launch_argv)} is a declared replicate of {rep['parent_argv']} but that parent argv json is missing or unreadable "
+                    f"under {WCOST_RUNS_DIR} ({type(e).__name__}: {str(e)[:120]}) -- it cannot be held to the parent's R and there is no fallback to its own smoke R"], det
+        diff = wcost_replicate_diff(launch_argv, pargv)
+        if diff:
+            det["replicate_diff"] = diff[:8]
+            return [f"G-LIVE W-COST: {wcost_out_name(launch_argv)} is declared a replicate of {rep['parent_argv']} but its argv differs from the parent's beyond "
+                    f"{'/'.join(WCOST_REPLICATE_FLAGS)} values: {'; '.join(diff[:5])} -- a replicate that moves any other lever is not a replicate"], det
+        ratio = pr
     want = wcost_weight_text(ratio)
     det["w_want"] = want
     wv = flag_values(launch_argv, WCOST_W_FLAG)
@@ -3695,7 +3755,8 @@ def wcost_reasons(prof: dict, launch_argv: list[str], lines: list[str] | None) -
     dev = abs(w * ratio / WCOST_TARGET - 1.0)
     det.update(w_argv=w, weighted_ratio=w * ratio, deviation=dev)
     if dev > WCOST_TOL + WCOST_EDGE_SLACK:
-        return [f"G-LIVE W-COST: {WCOST_W_FLAG} {wv[0]} is not 0.1 / R: the smoke's OWN W-COST ratio is R = {ratio:.4g} (critic-BCE / trajectory-loss at step {step}), "
+        own = "the PARENT's W-COST ratio (declared replicate, PI 2026-11-21)" if rep is not None else "the smoke's OWN W-COST ratio"
+        return [f"G-LIVE W-COST: {WCOST_W_FLAG} {wv[0]} is not 0.1 / R: {own} is R = {ratio:.4g} (critic-BCE / trajectory-loss at step {step}), "
                 f"so the weighted critic BCE is {w * ratio:.4g} x the trajectory loss, not {WCOST_TARGET:g} (|w*R/0.1 - 1| = {dev:.3g} > tol {WCOST_TOL:g}) -- "
                 f"write {WCOST_W_FLAG} {want} (= 0.1 / R at 4 significant digits; r9_e2_make_argv.py --w-cost-ratio {ratio:.4g})"], det
     return [], det
