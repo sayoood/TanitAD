@@ -1,0 +1,1390 @@
+--- a/stack/scripts/v8f_mini_train.py
++++ b/stack/scripts/v8f_mini_train.py
+@@ -94,6 +94,9 @@
+     # argv -> make_dagger (bank load + K-B2 + K-B3 + COVERAGE) -> the swap -> declared_vs_built (bad_dagger) -> G-LIVE on a swapped batch + dagger_probe (the swapped own-state tensors reach the loss
+     # gradient, a p = 0 control reads EXACTLY 0.0) -> `b = dag.apply(b, step)` in the loop. With --dagger-p 0 (the default) no bank is read and no row is swapped.
+     "dagger_p": "dagger:dagger_p", "dagger_bank": "dagger:dagger_bank", "dagger_bank_sha256": "dagger:dagger_bank_sha256", "dagger_seed": "dagger:dagger_seed",
++    # PREREG_V8F_ROLLHIST N4: the declaration of WHAT the bank's own history is (the bank sha256 binds the bank, the argv must also NAME it). `dagger:<k>` = equals the LOADED bank header's generator record as read by
++    # DaggerSwap.built_levers(): argv -> make_dagger -> the swap -> declared_vs_built (bad_dagger: declared != the header's -> REFUSED; non-default at --dagger-p 0 -> REFUSED).
++    "dagger_bank_readout": "dagger:dagger_bank_readout", "dagger_bank_kappa": "dagger:dagger_bank_kappa",
+     # AMEND1 (DAG-ORC re-based on DAG-OACC) section 1: the two levers above composed in ONE arm. `compose:<k>` = equals the BUILT stage's lever (EgoDaggerCompose.built_levers(), the object the loop calls `.apply` on):
+     # argv -> make_compose -> the stage -> declared_vs_built (bad_ego_dagger; bad_dagger lifts the exclusivity ONLY for an argv that names it) -> G-LIVE on a COMPOSED batch (ego_dagger_compose_probe: both levers reach the
+     # loss gradient, the p = 0 controls read EXACTLY 0.0) -> `b = comp.apply(b, step)` in the loop. Off (the default): the stage is never called and the loop runs its two original lines.
+@@ -147,6 +150,13 @@
+ LIVE_PROBE_WINDOWS_LORA = 16          # G-LIVE through the real encoder: windows of the first batch (<= 16 x hmax frames), not all 64
+ 
+ 
++def _readout_token_arg(v):
++    try:
++        return DG.parse_readout_token(v)
++    except ValueError as e:
++        raise argparse.ArgumentTypeError(str(e))
++
++
+ def build_parser():
+     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+     ap.add_argument("--arm", choices=sorted(ARM_SPECS), default="M1")
+@@ -219,6 +229,13 @@
+                          "differs. Default \"\" = none")
+     ap.add_argument("--dagger-seed", dest="dagger_seed", type=int, default=DG.DAGGER_DEFAULTS["seed"],
+                     help="the swap's own seed: the draws of step k are a function of (seed, k) only, on a private generator (a resumed run draws what an uninterrupted run drew)")
++    ap.add_argument("--dagger-bank-readout", dest="dagger_bank_readout", type=_readout_token_arg, default="pinned", metavar="TOKEN",
++                    help="PREREG_V8F_ROLLHIST N4: the WHOLE readout the bank's own history was generated under, as the token of the card's arm table: pinned | causal_g<gain>[x] (x = --path-exec; the study readout C* is causal_g1x). "
++                         "Must equal the token of the LOADED bank header's generator record (readout, gain, path-exec; a bank without the record reads pinned) "
++                         "or the launch gate refuses; refused when non-default at --dagger-p 0. Default pinned = every earlier bank")
++    ap.add_argument("--dagger-bank-kappa", dest="dagger_bank_kappa", choices=("none", "0.2"), default="none",
++                    help="PREREG_V8F_ROLLHIST N4: the heading bound the bank's own history was generated under (v8f_dagger_bank.py --kappa-max). Must equal the LOADED bank header's generator.kappa_max (a bank without the field "
++                         "reads none) or the launch gate refuses; refused when non-default at --dagger-p 0. Default none = every earlier bank")
+     ap.add_argument("--ego-perturb-with-dagger", dest="ego_perturb_with_dagger", action="store_true", default=False,
+                     help="AMEND1 section 1: lift the exclusivity of --dagger-p and --ego-perturb-p for THIS arm and compose them. The DAgger swap is drawn first; the ego perturbation is then drawn (its own p, its own seeded "
+                          "generator) ONLY on the samples the swap did not replace, so no sample is both swapped and perturbed (the run record carries ego_dagger_overlap_n, exactly 0). REFUSED unless --dagger-p > 0 AND "
+@@ -598,7 +615,7 @@
+     """The DAgger half of the launch gate (G-DVB). Empty = pass. Every flag is read back from the BUILT swap (``dag``); with no swap built every one must be at its default (a flag that builds nothing is
+     refused, not ignored). Beyond the flags: the bank's path and sha256 against the declaration (the file on disk is re-hashed), K-B2 / K-B3 / COVERAGE were read (the record exists and says so), the bank's
+     generating configuration equals PREREG section 1's and this model's, the exclusivity with --ego-perturb-p, and a lever declared without an effect (DAG-only flags at p = 0) is refused."""
+-    dfl = {k: build_parser().get_default(k) for k in ("dagger_p", "dagger_bank", "dagger_bank_sha256", "dagger_seed")}
++    dfl = {k: build_parser().get_default(k) for k in ("dagger_p", "dagger_bank", "dagger_bank_sha256", "dagger_seed", "dagger_bank_readout", "dagger_bank_kappa")}
+     declared = {k: getattr(a, k) for k in dfl}
+     if dag is None:
+         moved = sorted(k for k in dfl if declared[k] != dfl[k])
+@@ -608,6 +625,11 @@
+     for k in ("dagger_p", "dagger_seed"):
+         if lv.get(k) != declared[k]:
+             bad.append(f"lever {k}: declared {declared[k]!r} but built {lv.get(k)!r}")
++    for k in ("dagger_bank_readout", "dagger_bank_kappa"):                                       # PREREG_V8F_ROLLHIST N4: the declaration against the LOADED bank header (built_levers reads it)
++        if lv.get(k) != declared[k]:
++            bad.append(f"lever {k}: declared {declared[k]!r} but the loaded bank's header says {lv.get(k)!r} (a header without the field reads {dfl[k]!r})")
++        if a.dagger_p <= 0 and declared[k] != dfl[k]:
++            bad.append(f"--{k.replace('_', '-')} {declared[k]!r} is declared while --dagger-p is {a.dagger_p}: a lever that is declared and does nothing (DAG-0 names only --dagger-p 0)")
+     if lv.get("kin_mode") != a.kin_mode:
+         bad.append(f"DAgger swap kin_mode: declared {a.kin_mode} but built {lv.get('kin_mode')}")
+     bad += [f"DAgger swap: {m}" for m in dag.problems()]
+--- a/stack/scripts/v8f_dagger_bank.py
++++ b/stack/scripts/v8f_dagger_bank.py
+@@ -24,6 +24,7 @@
+ from __future__ import annotations
+ 
+ import argparse
++import contextlib
+ import glob
+ import json
+ import math
+@@ -43,16 +44,55 @@
+ from tanitad.data import v8f_mini_data as D  # noqa: E402
+ from tanitad.models import v8f_mini as M  # noqa: E402
+ import v8f_t1_eval as T1  # noqa: E402
++import v8f_t1_eval_hb as HB  # noqa: E402
++import v8f_t1_readout as RO  # noqa: E402
+ 
+ H = D.HORIZON
+ ROLL = {k: v for k, v in G.ROLLOUT.items() if k != "post_map"}        # the decisive T1-kin flags, as v8f_t1_eval.rollout takes them
+-TOOL_FILES = ("stack/tanitad/data/v8f_dagger.py", "stack/scripts/v8f_dagger_bank.py", "stack/scripts/v8f_t1_eval.py", "stack/tanitad/data/v8f_mini_data.py", "stack/tanitad/models/v8f_mini.py")
++TOOL_FILES = ("stack/tanitad/data/v8f_dagger.py", "stack/scripts/v8f_dagger_bank.py", "stack/scripts/v8f_t1_eval.py", "stack/tanitad/data/v8f_mini_data.py", "stack/tanitad/models/v8f_mini.py",
++              "stack/scripts/v8f_t1_readout.py", "stack/scripts/v8f_t1_eval_hb.py")
++KAPPA_CHOICES = ("none", "0.2")                                                         # PREREG_V8F_ROLLHIST N2: no heading bound (today) | the executor of record
+ 
+ 
+ class _Done(Exception):
+     """Raised by the hook once the last bank tick has been captured: the rollout is not carried to its end."""
+ 
+ 
++# ------------------------------------------------------------------------------------------------ the executor the bank is rolled under (PREREG_V8F_ROLLHIST N2)
++def generator_record(a) -> dict:
++    """The flags that decide what the own history IS, as ONE record: written to the bank header (and so to every shard's provenance and to ``bank.json``) and read back by
++    ``DaggerSwap.built_levers`` (``dagger_bank_readout`` / ``dagger_bank_kappa``). The defaults ``pinned`` / ``none`` are today's generator. A parameter that would do nothing is refused."""
++    readout, kappa = getattr(a, "readout", "pinned"), str(getattr(a, "kappa_max", "none"))
++    gain, pex = getattr(a, "acc_gain", None), bool(getattr(a, "path_exec", False))
++    if readout not in RO.READOUTS:
++        raise SystemExit(f"REFUSED: --readout {readout!r} is not one of {RO.READOUTS}")
++    if kappa not in KAPPA_CHOICES:
++        raise SystemExit(f"REFUSED: --kappa-max {kappa!r} is not one of {KAPPA_CHOICES}")
++    if readout == "pinned" and (gain is not None or pex):
++        raise SystemExit("REFUSED: --acc-gain / --path-exec are readout causal_g's parameters; with --readout pinned they are declared and do nothing")
++    if readout == "causal_g" and gain is None:
++        raise SystemExit("REFUSED: --readout causal_g needs --acc-gain (the study readout C* is --acc-gain 1 --path-exec)")
++    return {"readout": readout, "acc_gain": None if gain is None else float(gain), "path_exec": pex, "kappa_max": kappa}
++
++
++def is_default_generator(gen) -> bool:
++    """True for today's generator: readout ``pinned`` (so gain and path-exec are at their defaults, generator_record refuses otherwise) and no heading bound."""
++    return gen["readout"] == "pinned" and gen["acc_gain"] is None and not gen["path_exec"] and gen["kappa_max"] == "none"
++
++
++@contextlib.contextmanager
++def executor_installed(tool, gen):
++    """For the duration of the block ``tool.hermite_frames`` is ``hb.bounded_frames(readout_frames(orig), kappa)``; then the original object is restored. With the defaults both layers return ``orig`` itself, so
++    the pinned tool runs untouched (the very same function object)."""
++    orig = tool.hermite_frames
++    frames = RO.readout_frames(orig, gen["readout"], gen["acc_gain"], gen["path_exec"])
++    tool.hermite_frames = HB.bounded_frames(frames, HB.parse_kappa(gen["kappa_max"]))
++    try:
++        yield tool
++    finally:
++        tool.hermite_frames = orig
++
++
+ # ------------------------------------------------------------------------------------------------ the snapshot of one own state
+ def snapshot(st, tick: int, hmax: int, pose_grid) -> dict:
+     """The bank record of ``WindowState`` ``st`` at its current clock row j: the own history rows j - hmax + 1 ... j (NaN before the clip), the own kin3 at j, and the match against the LOGGED grid."""
+@@ -236,6 +276,8 @@
+         torch.set_num_threads(a.threads)
+     if not (0 <= a.shard < a.n_shards):
+         raise SystemExit(f"REFUSED: --shard {a.shard} is not in [0, {a.n_shards})")
++    gen = generator_record(a)
++    gen_rec = None if is_default_generator(gen) else gen          # PREREG_V8F_ROLLHIST N2: the record is written ONLY for a non-default generator; a default bank is byte-identical to today's
+     model, cfg, ck = load_ckpt(a.ckpt, device)
+     rows = check_readable_rows(cfg)
+     ns, TR = train_list(a)
+@@ -263,7 +305,7 @@
+             "train_sha256": info["train_sha256"], "limit_clips": a.limit_clips, "partial": bool(a.limit_clips), "shard_clips": len(positions), "shard_windows": len(wins_shard),
+             "chunks": n_chunks, "batch": a.batch, "est_records": 2 * len(wins_shard), "est_shard_bytes": 2 * len(wins_shard) * (cfg.hmax * (8 * 4 + 3 * 8 + 8) + 3 * 8 + 48),
+             "replay_chunks": len(replay_chunks), "eval_clips": len(eval_clips), "eval_overlap": 0, "ckpt_sha256": G.sha256_file(a.ckpt) if a.dry_run else None, "hmax": cfg.hmax,
+-            "readable_rows": rows, "device": str(device)}
++            "readable_rows": rows, "device": str(device), **({} if gen_rec is None else {"generator": gen_rec})}
+     if a.dry_run:
+         log(json.dumps(plan, indent=1))
+         return 0
+@@ -275,15 +317,16 @@
+     ckpt_sha = G.sha256_file(a.ckpt)
+     t_roll = time.time()
+     kb5 = G.Kb5Accumulator()                                                            # K-B5, measured on the records this run makes
+-    arrays, k0, replay = run_windows(wins_shard, planner_factory=lambda: T1.model_planner(model, device), store=store, tracks=tracks, J=J, ds_log=ds_log, ds_own=ds_own, proxy=ds_proxy,
+-                                     hmax=cfg.hmax, batch=a.batch, device=device, replay_chunks=replay_chunks, log=log, kb5=kb5)
++    with executor_installed(T1, gen):                                                   # the own history is rolled under THIS executor (defaults: the pinned tool, untouched)
++        arrays, k0, replay = run_windows(wins_shard, planner_factory=lambda: T1.model_planner(model, device), store=store, tracks=tracks, J=J, ds_log=ds_log, ds_own=ds_own, proxy=ds_proxy,
++                                         hmax=cfg.hmax, batch=a.batch, device=device, replay_chunks=replay_chunks, log=log, kb5=kb5)
+     t_roll = time.time() - t_roll
+     controls = {"K-B4": G.kb4_record(), "K-B5": kb5.record()}                           # PREREG section 6: the matcher's synthetic cases and the re-anchoring, RUN HERE and written to this shard's provenance
+     names = {int(c): str(J["clip"][c]) for c in sorted(shard_ci)}
+     inputs = {"ckpt": input_digest(a.ckpt), "m2b_argv": input_digest(a.m2b_argv), "tracks": input_digest(ns.tracks), "join_train": input_digest(ns.join_train), "eval_grid": input_digest(a.eval_grid)}
+     thr = a.thresholds_file or os.path.join(REPO, "TanitAD Research Lab", "Architecture & Inference", "Research", "2026-10-17-v8f-mini", "raw", "2026-10-26-dagger-draft", "probe", "THRESHOLDS_FIXED.txt")
+     header = {"schema": G.SCHEMA, "ckpt_sha256": ckpt_sha, "cfg": {k: getattr(cfg, k) for k in ("hist", "hmax", "max_age_t", "max_age_s", "window_start", "kin_mode")},
+-              "rollout": G.ROLLOUT, "constants": G.constants(), "constants_sha256": G.constants_sha256(), "thresholds_file_sha256": G.sha256_file(thr) if os.path.exists(thr) else None,
++              "rollout": G.ROLLOUT, **({} if gen_rec is None else {"generator": gen_rec}), "constants": G.constants(), "constants_sha256": G.constants_sha256(), "thresholds_file_sha256": G.sha256_file(thr) if os.path.exists(thr) else None,
+               "train": {"n_clips": len(clips), "n_windows": len(wins), "train_sha256": info["train_sha256"], "exclude": ns.exclude, "n_excluded": info["n_excluded"]},
+               "window_list_sha256": wsha, "eval": {"n_clips": len(eval_clips), "clips": sorted(eval_clips), "grid_sha256": inputs["eval_grid"]["sha256"], "overlap": 0},
+               "inputs_sha256": {k: v["sha256"] for k, v in inputs.items() if k != "ckpt"}, "limit_clips": a.limit_clips, "partial": bool(a.limit_clips),
+@@ -298,7 +341,7 @@
+         warnings.append(f"K-B1 FAILED: {replay['mismatch_chunks']} of {replay['chunks']} replayed chunks differ from their stored rows")
+     stem = os.path.join(a.out_dir, f"shard_{a.shard:03d}of{a.n_shards:03d}")
+     G.save_shard(stem + ".npz", arrays, header)
+-    prov = {"schema": G.SCHEMA, "kind": "shard", "created_unix": time.time(), "argv": sys.argv, "plan": plan, "inputs": inputs, "tool_sha256": {f: G.sha256_file(os.path.join(REPO, f)) for f in TOOL_FILES if os.path.exists(os.path.join(REPO, f))},
++    prov = {"schema": G.SCHEMA, "kind": "shard", "created_unix": time.time(), "argv": sys.argv, "plan": plan, **({} if gen_rec is None else {"generator": gen_rec}), "inputs": inputs, "tool_sha256": {f: G.sha256_file(os.path.join(REPO, f)) for f in TOOL_FILES if os.path.exists(os.path.join(REPO, f))},
+             "versions": {"torch": torch.__version__, "numpy": np.__version__, "python": sys.version.split()[0]}, "device": str(device), "threads": torch.get_num_threads(),
+             "n_records": int(len(arrays["ci"])), "reasons_by_tick": by_tick, "coverage": cov, "kb0_tick0_identity": k0, "kb1_replay": {**replay, "frac": a.replay_frac, "seed": a.replay_seed},
+             "kb3_eval_disjoint": {"n_eval_clips": len(eval_clips), "overlap": 0}, "controls": controls, "causal_bucket_stats": T1.CAUSAL_STATS, "file_sha256": G.sha256_file(stem + ".npz"),
+@@ -365,7 +408,7 @@
+            "reasons_by_tick": by_tick, "coverage": cov}
+     prov_path = os.path.join(a.out_dir, "PROVENANCE.json")
+     prov_common = {"schema": G.SCHEMA, "kind": "bank", "created_unix": time.time(), "shard_provenance": [os.path.basename(f)[:-4] + ".provenance.json" for f in files],
+-                   "n_records": man["n_records"], "coverage": cov, "reasons_by_tick": by_tick, "partial": man["partial"], "controls": controls,
++                   "n_records": man["n_records"], "coverage": cov, "reasons_by_tick": by_tick, "partial": man["partial"], "controls": controls, **({"generator": common["generator"]} if "generator" in common else {}),
+                    "warnings": [w for p in provs for w in p["warnings"]]}
+     if failed_controls:                                                                 # a failed control: PROVENANCE.json records PASS false, and NO bank.json is written (a stale one cannot match bank_sha256 = null)
+         with open(prov_path, "w", encoding="utf-8") as fh:
+@@ -405,6 +448,11 @@
+     g.add_argument("--expect-clips", type=int, default=0, help="refuse unless the TRAIN list has this many clips (M2b: 4512)")
+     g.add_argument("--expect-windows", type=int, default=0, help="refuse unless the TRAIN list has this many windows (M2b: 306566)")
+     g.add_argument("--thresholds-file", default="", help="probe/THRESHOLDS_FIXED.txt: its sha256 is recorded in the header")
++    g.add_argument("--readout", choices=RO.READOUTS, default="pinned", help="PREREG_V8F_ROLLHIST N2: how the own history is read off the executed knots. pinned (default) = the pinned tool as it is = today's bank; causal_g = speed and "
++                                                                       "one-frame acceleration (x --acc-gain) from the EXECUTED steps only (v8f_t1_readout.py)")
++    g.add_argument("--acc-gain", type=float, default=None, help="causal_g only: the gain on the executed one-frame acceleration (1.0 = the executed one, 0.0 = none). Required with causal_g, refused with pinned")
++    g.add_argument("--path-exec", action="store_true", help="causal_g only: positions and headings from the executed knots only (the study readout C* = --acc-gain 1 --path-exec)")
++    g.add_argument("--kappa-max", choices=KAPPA_CHOICES, default="none", help="the heading bound of the T1-kin executor of record (v8f_t1_eval_hb.py), 1/m: none (default) = today's old executor | 0.2")
+     g.add_argument("--dry-run", action="store_true", help="apply every guard, print the plan, write nothing")
+     m = sub.add_parser("merge")
+     m.add_argument("--out-dir", required=True)
+--- a/stack/tanitad/data/v8f_dagger.py
++++ b/stack/tanitad/data/v8f_dagger.py
+@@ -25,6 +25,7 @@
+ import json
+ import math
+ import os
++import re
+ import zipfile
+ from pathlib import Path
+ from typing import NamedTuple
+@@ -595,6 +596,37 @@
+     return out
+ 
+ 
++def readout_token(readout, acc_gain=None, path_exec=False) -> str:
++    """The ONE spelling of what a bank's own history is read as (PREREG_V8F_ROLLHIST section 2 arm table): ``pinned`` -> ``pinned``; ``causal_g`` -> ``causal_g{gain:g}``, plus ``x`` when the path
++    is taken from the executed knots only (``--path-exec``). ``causal_g`` at gain 1 with path-exec is ``causal_g1x``; at gain 0.5 without it ``causal_g0.5``. Used by the bank header read-back
++    (``built_levers``), the trainer's ``--dagger-bank-readout`` and the chain checker."""
++    if readout == "pinned":
++        if acc_gain is not None or path_exec:
++            raise ValueError("readout pinned takes no gain and no path-exec")
++        return "pinned"
++    if readout != "causal_g":
++        raise ValueError(f"unknown readout {readout!r}")
++    if acc_gain is None:
++        raise ValueError("readout causal_g needs a gain")
++    return f"causal_g{float(acc_gain):g}" + ("x" if path_exec else "")
++
++
++_TOKEN_RE = re.compile(r"^causal_g(-?\d+(?:\.\d+)?)(x?)$")
++
++
++def parse_readout_token(tok) -> str:
++    """The canonical token of a declared one, or ValueError: ``pinned`` | ``causal_g<gain>[x]`` where re-spelling the parsed gain must give the same text (``causal_g1.0x`` and ``causal_g01x`` are refused)."""
++    if tok == "pinned":
++        return tok
++    m = _TOKEN_RE.match(str(tok))
++    if not m:
++        raise ValueError(f"{tok!r} is not a readout token: pinned | causal_g<gain>[x] (e.g. causal_g1x)")
++    canon = readout_token("causal_g", float(m.group(1)), m.group(2) == "x")
++    if canon != tok:
++        raise ValueError(f"{tok!r} is not the canonical spelling {canon!r}")
++    return canon
++
++
+ class DaggerSwap:
+     """The DAgger swap applied to a collated training batch just before ``model.loss`` (the trainer's ``b = dag.apply(b, step)``), with ``EgoPerturb``'s contract.
+ 
+@@ -616,8 +648,11 @@
+         return self.p > 0.0
+ 
+     def built_levers(self) -> dict:
+-        """What the BUILT swap applies (the G-DVB 'built' side)."""
+-        return {"dagger_p": self.p, "dagger_seed": self.seed, "dagger_bank": getattr(self.bank, "path", None), "dagger_bank_sha256": self.bank_sha256, "kin_mode": self.kin_mode,
++        """What the BUILT swap applies (the G-DVB 'built' side). ``dagger_bank_readout`` / ``dagger_bank_kappa`` (PREREG_V8F_ROLLHIST N3) are read from the LOADED bank's header record ``generator``
++        (written by ``v8f_dagger_bank.py``); a header without it (every bank made before the field existed) reads ``pinned`` / ``none``, and so does no bank."""
++        gen = ({} if self.bank is None else (getattr(self.bank, "header", None) or {}).get("generator")) or {}
++        return {"dagger_bank_readout": readout_token(gen.get("readout", "pinned"), gen.get("acc_gain"), bool(gen.get("path_exec", False))), "dagger_bank_kappa": str(gen.get("kappa_max", "none")),
++                "dagger_p": self.p, "dagger_seed": self.seed, "dagger_bank": getattr(self.bank, "path", None), "dagger_bank_sha256": self.bank_sha256, "kin_mode": self.kin_mode,
+                 "bank_hmax": None if self.bank is None else self.bank.hmax, "rebuilt": list(REBUILT), "kept": list(KEPT), "record": list(RECORD), "labels_re_expressed": list(LABELS_RE_EXPRESSED),
+                 "nav_rebuild_invalid": NAV_REBUILD_INVALID, "constants_sha256": constants_sha256()}
+ 
+--- /dev/null
++++ b/stack/scripts/rollhist_pair_check.py
+@@ -0,0 +1,127 @@
++#!/usr/bin/env python3
++"""PREREG_V8F_ROLLHIST section 4.1, the chain checker's C-checks for the ROLLHIST stage-B pair (CPU, no model, no data): G-NAME and G-PAIR.
++
++  G-NAME  the RH arm's argv NAMES both declaration flags (``--dagger-bank-readout causal_g1x``, ``--dagger-bank-kappa 0.2``) and the bank sha256 (``--dagger-bank-sha256``, 64 hex; equal to the
++          bank's when ``--bank-sha256`` is given). CLAUDE.md: a flag whose default disables it must be named in the arm's argv, or the arm did not test it.
++  G-PAIR  the B0 control's argv differs from RH's in EXACTLY the DAgger flags (``--dagger-p``, ``--dagger-bank``, ``--dagger-bank-sha256``), the two declaration flags and ``--out``; ``--dagger-seed`` may
++          differ or not (the card's "four DAgger flags" count it; a B0 that names the same seed is still the same arm). Any other flag that differs (a lever moved, a path, a step count) is a problem.
++          B0 names no non-default declaration (they are refused at ``--dagger-p 0``).
++
++The stage-A/B tokens are minted by the chain checker (``gate_block3/block3_files/block3_prep.sh``, ``chk_arm3.sh mint``, ``study/dscale10k_check.py``): those are STUDY files outside ``stack/``, so this is a
++separate stack script. Plug-in: ``import rollhist_pair_check as P; problems = P.pair_problems(rh_argv, b0_argv, bank_sha256=SHA)`` next to ``dscale10k_check.dagger_problems``; mint the token only on ``[]``.
++CLI: ``python rollhist_pair_check.py --rh RH.argv.json --b0 B0.argv.json [--bank-sha256 SHA]`` (argv files: ``{"argv": [...]}`` or a bare list); exit 0 = PASS, 1 = problems printed.
++"""
++from __future__ import annotations
++
++import argparse
++import json
++import re
++import sys
++
++import os  # noqa: E402
++
++_STACK = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
++if _STACK not in sys.path:
++    sys.path.insert(0, _STACK)
++from tanitad.data.v8f_dagger import readout_token  # noqa: E402     the ONE spelling of the readout
++
++RH_READOUT = readout_token("causal_g", 1.0, True)                  # the card's RH arm: causal_g1x (readout causal_g, gain 1, executed path)
++DECL = {"--dagger-bank-readout": RH_READOUT, "--dagger-bank-kappa": "0.2"}
++DECL_DEFAULT = {"--dagger-bank-readout": "pinned", "--dagger-bank-kappa": "none"}
++REQUIRED_DIFF = {"--dagger-p", "--dagger-bank", "--dagger-bank-sha256", "--dagger-bank-readout", "--dagger-bank-kappa", "--out"}
++OPTIONAL_DIFF = {"--dagger-seed"}
++HEX64 = re.compile(r"^[0-9a-fA-F]{64}$")
++
++
++def parse(argv) -> dict:
++    """argv tokens -> {flag: value | True | [values]}; a flag given twice keeps the last value (argparse's rule)."""
++    out, toks, i = {}, [str(t) for t in argv], 0
++    while i < len(toks):
++        t = toks[i]
++        if t.startswith("--"):
++            if "=" in t:
++                k, v = t.split("=", 1)
++                out[k] = v
++                i += 1
++                continue
++            vals, j = [], i + 1
++            while j < len(toks) and not (toks[j].startswith("--") and not re.match(r"^--?\d", toks[j])):
++                vals.append(toks[j])
++                j += 1
++            out[t] = True if not vals else (vals[0] if len(vals) == 1 else vals)
++            i = j
++        else:
++            i += 1
++    return out
++
++
++def name_problems(rh_argv, bank_sha256=None) -> list:
++    a, bad = parse(rh_argv), []
++    for k, want in DECL.items():
++        if k not in a:
++            bad.append(f"RH argv does not name {k} (a flag whose default disables it must be named): the arm would not test the declaration")
++        elif a[k] != want:
++            bad.append(f"RH argv names {k} {a[k]!r}, the RH bank is {want!r}")
++    s = a.get("--dagger-bank-sha256")
++    if s is None or s is True:
++        bad.append("RH argv does not name --dagger-bank-sha256")
++    elif not HEX64.match(str(s)) and not str(s).startswith("@"):
++        bad.append(f"RH --dagger-bank-sha256 {s!r} is not 64 hex digits")
++    elif bank_sha256 and str(s).lower() != str(bank_sha256).lower():
++        bad.append(f"RH --dagger-bank-sha256 {str(s)[:12]} is not the bank's {str(bank_sha256)[:12]}")
++    if "--dagger-bank" not in a:
++        bad.append("RH argv does not name --dagger-bank")
++    p = a.get("--dagger-p")
++    try:
++        if p is None or float(p) <= 0.0:
++            bad.append(f"RH --dagger-p is {p!r}: the swap must be on")
++    except (TypeError, ValueError):
++        bad.append(f"RH --dagger-p {p!r} is not a number")
++    return bad
++
++
++def pair_problems(rh_argv, b0_argv, bank_sha256=None) -> list:
++    bad = name_problems(rh_argv, bank_sha256)
++    r, b = parse(rh_argv), parse(b0_argv)
++    diff = {k for k in set(r) | set(b) if r.get(k) != b.get(k)}
++    missing = sorted(REQUIRED_DIFF - diff)
++    extra = sorted(diff - REQUIRED_DIFF - OPTIONAL_DIFF)
++    if missing:
++        bad.append(f"B0 does not differ from RH in {missing}: the pair is not the pair")
++    if extra:
++        bad.append(f"B0 differs from RH in {extra} beyond the DAgger flags, the two declarations and --out: a lever moved, the contrast is not attributable")
++    for k, dflt in DECL_DEFAULT.items():
++        if b.get(k, dflt) != dflt:
++            bad.append(f"B0 names {k} {b[k]!r}: a declaration at --dagger-p 0 is refused by the trainer")
++    try:
++        if float(b.get("--dagger-p", 0.0)) != 0.0:
++            bad.append(f"B0 --dagger-p is {b.get('--dagger-p')!r}: the control must name --dagger-p 0")
++    except (TypeError, ValueError):
++        bad.append(f"B0 --dagger-p {b.get('--dagger-p')!r} is not a number")
++    if "--dagger-p" not in b:
++        bad.append("B0 does not NAME --dagger-p (DAG-0 names only --dagger-p 0)")
++    if r.get("--out") == b.get("--out"):
++        bad.append("B0 and RH write to the same --out")
++    return bad
++
++
++def _load(p):
++    o = json.load(open(p, encoding="utf-8"))
++    return o["argv"] if isinstance(o, dict) else o
++
++
++def main(argv=None):
++    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
++    ap.add_argument("--rh", required=True)
++    ap.add_argument("--b0", required=True)
++    ap.add_argument("--bank-sha256", default=None)
++    a = ap.parse_args(argv)
++    bad = pair_problems(_load(a.rh), _load(a.b0), a.bank_sha256)
++    for m in bad:
++        print("PROBLEM", m)
++    print("ZZ ROLLHIST-PAIR", "PASS" if not bad else "FAIL")
++    return 0 if not bad else 1
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+--- /dev/null
++++ b/stack/scripts/v8f_t1_readout.py
+@@ -0,0 +1,85 @@
++"""v8f_t1_readout.py -- the causal readouts of the T1-kin own history, promoted from the integ10k study wrapper (card PREREG_V8F_ROLLHIST, item N1).
++
++``backward_frames``, ``causal_frames`` and ``causal_g_frames`` are the functions of card ADD63 (ACCGAIN10K), copied from
++``integ10k/v8f_t1_eval_reader_rule_rzg.py`` (at the tip 7b26a8ac, lines 251-296) with their arithmetic UNCHANGED, so that a training chain does not import a
++Research-Lab study file by path. Each takes the pinned frames function ``orig`` (``v8f_t1_eval.hermite_frames``) as its first argument and returns
++``(xy, psi, v)`` for the executed frames of one committed plan:
++
++  backward_frames   the pinned function given the executed knots only (its last tangent is then a backward difference)
++  causal_frames     positions and headings as pinned; the speed column from executed steps only (acc "step" | "zero" | "window")
++  causal_g_frames   the speed column ``s[i] - 0.5 x gain x (s[i] - s[i-1])`` at the half step before executed step i; gain 1.0 routes through ``causal`` and
++                    gain 0.0 through ``causal_z`` (identities, array for array); ``path_exec`` takes positions and headings from ``backward_frames``
++
++``readout_frames(orig, readout, gain, path_exec)`` (new, no arithmetic) returns the frames function of the named readout; ``pinned`` returns ``orig`` ITSELF.
++The pinned tool (``v8f_t1_eval.py``) is not edited; ``v8f_dagger_bank.py`` installs the result in its place for the duration of one generator run.
++"""
++from __future__ import annotations
++
++import numpy as np
++
++DT_S = 0.2                                          # seconds per cache step (the pinned tool: 30 steps = 6 s)
++READOUTS = ("pinned", "causal_g")
++
++
++def backward_frames(orig, k_prev, knots, m, psi0):
++    """the pinned frames function on the executed knots only: its last tangent is then the backward difference."""
++    return orig(k_prev, np.asarray(knots, np.float64)[:m + 1], m, psi0)
++
++
++def causal_frames(orig, k_prev, knots, m, psi0, acc="step"):
++    """positions and headings of the pinned frames function; the speed column from executed steps only. s[0] = the step into the current knot (the last executed step
++    before this block, or the logged step before the window), s[i] = executed step i; frame 2i-1 (half step) = (s[i-1] + s[i]) / 2, frame 2i (knot) = s[i]."""
++    xy, psi, v = orig(k_prev, knots, m, psi0)
++    K = np.vstack([np.asarray(k_prev, np.float64)[None], np.asarray(knots, np.float64)[:m + 1]])
++    s = np.linalg.norm(np.diff(K, axis=0), axis=-1) / DT_S
++    v = np.asarray(v, np.float64).copy()
++    for i in range(1, m + 1):
++        if acc == "zero":
++            v[2 * (i - 1)] = s[i]
++        elif acc == "window":
++            n_w = min(i, 5)
++            v[2 * (i - 1)] = s[i] - 0.5 * DT_S * (s[i] - s[i - n_w]) / (DT_S * n_w)
++        else:
++            v[2 * (i - 1)] = 0.5 * (s[i - 1] + s[i])
++        v[2 * (i - 1) + 1] = s[i]
++    return xy, psi, v
++
++
++def causal_g_frames(orig, k_prev, knots, m, psi0, gain, path_exec=False, force_general=False):
++    """the readout causal_g. Speed column: at the knot of executed step i the step speed s[i], at the half step before it s[i] - 0.5 * gain * (s[i] - s[i-1]); s as in
++    causal_frames. gain == 1.0 -> the formula of causal, gain == 0.0 -> the formula of causal_z (both unchanged, unless force_general, used by the tool check only);
++    other gains -> the general formula. path_exec: positions and headings from the pinned frames function given the executed knots only (backward_frames)."""
++    base = orig
++    if path_exec:
++        def base(kp, kn, mm, p0):
++            return backward_frames(orig, kp, kn, mm, p0)
++    g = float(gain)
++    if not force_general and g == 1.0:
++        return causal_frames(base, k_prev, knots, m, psi0, "step")
++    if not force_general and g == 0.0:
++        return causal_frames(base, k_prev, knots, m, psi0, "zero")
++    xy, psi, v = base(k_prev, knots, m, psi0)
++    K = np.vstack([np.asarray(k_prev, np.float64)[None], np.asarray(knots, np.float64)[:m + 1]])
++    s = np.linalg.norm(np.diff(K, axis=0), axis=-1) / DT_S
++    v = np.asarray(v, np.float64).copy()
++    for i in range(1, m + 1):
++        v[2 * (i - 1)] = s[i] - 0.5 * g * (s[i] - s[i - 1])
++        v[2 * (i - 1) + 1] = s[i]
++    return xy, psi, v
++
++
++def readout_frames(orig, readout="pinned", gain=None, path_exec=False):
++    """the frames function of the named readout. ``pinned`` -> ``orig`` itself (nothing is installed: today's generator, bit for bit)."""
++    if readout not in READOUTS:
++        raise ValueError(f"unknown readout {readout!r}; one of {READOUTS}")
++    if readout == "pinned":
++        if gain is not None or path_exec:
++            raise ValueError("--acc-gain / --path-exec are readout causal_g's parameters: declared with readout pinned they would do nothing")
++        return orig
++    if gain is None:
++        raise ValueError("readout causal_g needs --acc-gain")
++
++    def frames(k_prev, knots, m, psi0):
++        return causal_g_frames(orig, k_prev, knots, m, psi0, gain, path_exec)
++    frames.__wrapped__ = orig
++    return frames
+--- /dev/null
++++ b/stack/scripts/v8f_t1_eval_hb.py
+@@ -0,0 +1,155 @@
++"""v8f_t1_eval_hb.py -- the T1-kin executor of record from 2026-11-20: the pinned T1 tool with a heading bound a car obeys.
++
++PI ruling 2026-11-20 (decision card D16, recommendation D, "Approve all four", confirmed to the MM first-hand): the T1-kin tier gets a
++heading bound, with one overlap read old/new executor; then the bounded executor is the tier of record.
++
++Why: the pinned tool's ``hermite_frames`` holds the heading only while the tangent is below ``EPS_M`` = 1e-3 m per 0.2 s, so near a
++standstill the executed heading follows millimetres of plan jitter (MEASURED, card ADD67, row 122 at bb061af6: heading offset below
++2 m/s 52.9 deg without the bound, 6.6 deg with it). That heading sets the frame of the next plan and the yaw history the model reads.
++
++The bound: frame by frame from the current knot's heading ``psi0`` and position ``knots[0]``, a heading step is at most
++``kappa`` x the distance between the two frame positions (0.2 1/m = a 5 m turning radius). Positions and speeds pass through
++unchanged. ``bound_heading`` is the function of card ADD67 (integ10k/v8f_t1_eval_reader_rule_rzgfh.py at bb061af6), copied
++unchanged in its arithmetic so the tier of record and the study read share one definition.
++
++The pinned tool (``stack/scripts/v8f_t1_eval.py``) is NOT edited. This wrapper replaces its module-level ``hermite_frames`` for
++the duration of one run and restores it afterwards; any wrapper that imports the tool as the module ``v8f_t1_eval`` and calls its
++``main`` (for example a study wrapper of a build tree) composes with it through ``--inner``.
++
++Usage:
++  python v8f_t1_eval_hb.py [--kappa-max 0.2|none] [--inner MODULE] [--hb-log JSON] <the argv of the inner tool, e.g. run ...>
++  --kappa-max none runs the old executor (for the overlap read only); the default 0.2 is the tier of record.
++"""
++from __future__ import annotations
++
++import argparse
++import contextlib
++import hashlib
++import importlib
++import json
++import math
++import os
++import sys
++
++import numpy as np
++
++KAPPA_RECORD = 0.2                       # 1/m, the tier of record (PI 2026-11-20, D16-D; card ADD67)
++KB_BINS = (("lt2", 0.0, 2.0), ("2to8", 2.0, 8.0), ("gt8", 8.0, float("inf")))
++
++
++def wrap_pi(a):
++    """angle into [-pi, pi)"""
++    return (float(a) + math.pi) % (2.0 * math.pi) - math.pi
++
++
++def kb_new():
++    """the counters of the heading bound, written to --hb-log"""
++    return {"frames_total": 0, "frames_bound_acted": 0, "max_excess_rad": None, "max_abs_diff_where_not_acted": 0.0,
++            "by_speed": {n: {"frames_total": 0, "frames_bound_acted": 0} for n, _, _ in KB_BINS}}
++
++
++def bound_heading(xy, psi, v, xy0, psi0, kappa, rec=None):
++    """the heading bound: frame by frame from psi0 and the position xy0 of the current knot; a heading step is at most kappa x the
++    distance between the two frame positions. The output heading is psi[f] itself when its step from the previous output heading is
++    within the bound, else the previous output heading turned by exactly the bound towards psi[f]. Counters into rec when given."""
++    xy = np.asarray(xy, np.float64)
++    psi = np.asarray(psi, np.float64)
++    vv = np.asarray(v, np.float64)
++    out = np.empty(len(psi), np.float64)
++    prev, pxy = float(psi0), np.asarray(xy0, np.float64)
++    for f in range(len(psi)):
++        lim = float(kappa) * float(np.hypot(xy[f, 0] - pxy[0], xy[f, 1] - pxy[1]))
++        d = wrap_pi(float(psi[f]) - prev)
++        acted = not (abs(d) <= lim)
++        o = wrap_pi(prev + (1.0 if d > 0 else -1.0) * lim) if acted else float(psi[f])
++        if rec is not None:
++            ex = abs(wrap_pi(o - prev)) - lim
++            rec["max_excess_rad"] = ex if rec["max_excess_rad"] is None else max(rec["max_excess_rad"], ex)
++            rec["frames_total"] += 1
++            rec["frames_bound_acted"] += int(acted)
++            if not acted:
++                rec["max_abs_diff_where_not_acted"] = max(rec["max_abs_diff_where_not_acted"], abs(o - float(psi[f])))
++            for n, lo, hi in KB_BINS:
++                if lo <= float(vv[f]) < hi:
++                    rec["by_speed"][n]["frames_total"] += 1
++                    rec["by_speed"][n]["frames_bound_acted"] += int(acted)
++        out[f] = o
++        prev, pxy = o, xy[f]
++    return out
++
++
++def bounded_frames(orig, kappa, rec=None):
++    """``orig``'s frames with the heading bound applied; ``kappa`` None returns ``orig`` itself (the old executor)."""
++    if kappa is None:
++        return orig
++
++    def frames(k_prev, knots, m, psi0):
++        xy, psi, v = orig(k_prev, knots, m, psi0)
++        psi = bound_heading(xy, psi, v, np.asarray(knots, np.float64)[0], psi0, kappa, rec)
++        return xy, psi, v
++    frames.__wrapped__ = orig
++    return frames
++
++
++@contextlib.contextmanager
++def installed(tool, kappa, rec=None):
++    """replace ``tool.hermite_frames`` by the bounded frames for the duration of the block, then restore the original object."""
++    orig = tool.hermite_frames
++    tool.hermite_frames = bounded_frames(orig, kappa, rec)
++    try:
++        yield tool
++    finally:
++        tool.hermite_frames = orig
++
++
++def parse_kappa(s):
++    if str(s).lower() == "none":
++        return None
++    k = float(s)
++    if not (math.isfinite(k) and k > 0.0):
++        raise SystemExit(f"REFUSED: --kappa-max must be a positive finite number or none, got {s}")
++    return k
++
++
++def sha256_file(p):
++    h = hashlib.sha256()
++    with open(p, "rb") as f:
++        for b in iter(lambda: f.read(1 << 20), b""):
++            h.update(b)
++    return h.hexdigest()
++
++
++def main(argv=None):
++    argv = list(sys.argv[1:] if argv is None else argv)
++    ap = argparse.ArgumentParser(add_help=False)
++    ap.add_argument("--kappa-max", default=str(KAPPA_RECORD))
++    ap.add_argument("--inner", default="v8f_t1_eval")
++    ap.add_argument("--hb-log", default=None)
++    mine, rest = ap.parse_known_args(argv)
++    kappa = parse_kappa(mine.kappa_max)
++    here = os.path.dirname(os.path.abspath(__file__))
++    if here not in sys.path:
++        sys.path.insert(0, here)
++    inner = importlib.import_module(mine.inner)
++    tool = sys.modules.get("v8f_t1_eval")
++    if tool is None or not hasattr(tool, "hermite_frames"):
++        raise SystemExit(f"REFUSED: --inner {mine.inner} did not import the T1 tool as the module v8f_t1_eval")
++    if not hasattr(inner, "main"):
++        raise SystemExit(f"REFUSED: --inner {mine.inner} has no main()")
++    rec = kb_new() if kappa is not None else None
++    log = {"executor": "T1-kin heading bound" if kappa is not None else "T1-kin old executor (no heading bound)",
++           "kappa_max_per_m": kappa, "inner": mine.inner, "tool_file": tool.__file__, "tool_sha256": sha256_file(tool.__file__),
++           "argv": argv}
++    print(f"[v8f_t1_eval_hb] {log['executor']}; kappa_max={kappa}; tool sha256 {log['tool_sha256'][:12]}", flush=True)
++    try:
++        with installed(tool, kappa, rec):
++            return inner.main(rest)
++    finally:
++        if mine.hb_log:
++            log["bound_counters"] = rec
++            with open(mine.hb_log, "w", encoding="utf-8") as f:
++                json.dump(log, f, indent=1)
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+--- /dev/null
++++ b/stack/tests/test_rollhist_pair_check.py
+@@ -0,0 +1,80 @@
++"""PREREG_V8F_ROLLHIST section 4.1: the chain checker's G-NAME / G-PAIR (stack/scripts/rollhist_pair_check.py). Each rule has a deliberate-regression arm that must read RED; the control reads PASS."""
++from __future__ import annotations
++
++import copy
++import json
++import sys
++from pathlib import Path
++
++import pytest
++
++REPO = Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(REPO / "stack" / "scripts"))
++import rollhist_pair_check as P  # noqa: E402
++
++SHA = "ab" * 32
++COMMON = ["--arm", "M2b", "--seed", "0", "--grid", "pool4x10", "--kin-mode", "yaw", "--batch", "64", "--init-ckpt", "/x/init.pt", "--steps", "3000", "--lr", "1e-4", "--warmup", "100",
++          "--p-gt-start", "0.2", "--p-gt-end", "0.2", "--ego-perturb-p", "0", "--w-acc", "49.6969", "--detach-upper", "--fit-join"]
++RH = [*COMMON, "--out", "/r/RH", "--dagger-p", "0.1", "--dagger-bank", "/b/rh", "--dagger-bank-sha256", SHA, "--dagger-seed", "0", "--dagger-bank-readout", "causal_g1x", "--dagger-bank-kappa", "0.2"]
++B0 = [*COMMON, "--out", "/r/B0", "--dagger-p", "0"]
++
++
++def test_control_the_pair_passes():
++    assert P.pair_problems(RH, B0, SHA) == []
++    assert P.pair_problems(RH, [*B0, "--dagger-seed", "0"], SHA) == [], "a B0 that names the same seed is the same arm"
++
++
++def _without(argv, flag, n=1):
++    i = argv.index(flag)
++    return argv[:i] + argv[i + 1 + n:]
++
++
++@pytest.mark.parametrize("flag", ["--dagger-bank-readout", "--dagger-bank-kappa", "--dagger-bank-sha256", "--dagger-bank"])
++def test_g_name_an_unnamed_declaration_or_bank_is_refused(flag):
++    bad = P.pair_problems(_without(RH, flag), B0, SHA)
++    assert any(flag in m for m in bad), bad
++
++
++@pytest.mark.parametrize("tok", ["causal_g", "causal_g1", "causal_g0.5x", "causal_g1.0x"])
++def test_g_name_the_whole_token_is_required_not_the_base_name(tok):
++    r = copy.deepcopy(RH)
++    r[r.index("--dagger-bank-readout") + 1] = tok
++    assert any("--dagger-bank-readout" in m and "causal_g1x" in m for m in P.pair_problems(r, B0, SHA))
++
++
++def test_the_expected_token_is_the_one_function_s_spelling():
++    from tanitad.data.v8f_dagger import readout_token
++    assert P.RH_READOUT == readout_token("causal_g", 1.0, True) == "causal_g1x"
++
++
++def test_g_name_a_wrong_value_or_a_wrong_sha_is_refused():
++    r = copy.deepcopy(RH)
++    r[r.index("--dagger-bank-readout") + 1] = "pinned"
++    assert any("--dagger-bank-readout" in m for m in P.pair_problems(r, B0, SHA))
++    assert any("not the bank's" in m for m in P.pair_problems(RH, B0, "cd" * 32))
++    r = copy.deepcopy(RH)
++    r[r.index("--dagger-bank-sha256") + 1] = "abc123"
++    assert any("64 hex" in m for m in P.pair_problems(r, B0))
++
++
++def test_g_pair_an_extra_difference_is_refused_and_so_is_a_missing_one():
++    moved = copy.deepcopy(B0)
++    moved[moved.index("--lr") + 1] = "2e-4"
++    assert any("--lr" in m and "beyond" in m for m in P.pair_problems(RH, moved, SHA))
++    same_out = copy.deepcopy(B0)
++    same_out[same_out.index("--out") + 1] = "/r/RH"
++    bad = P.pair_problems(RH, same_out, SHA)
++    assert any("--out" in m for m in bad)
++    named = [*B0, "--dagger-bank-readout", "causal_g1x"]
++    assert any("declaration at --dagger-p 0" in m for m in P.pair_problems(RH, named, SHA))
++    assert any("NAME --dagger-p" in m for m in P.pair_problems(RH, _without(B0, "--dagger-p"), SHA))
++    assert any("must name --dagger-p 0" in m for m in P.pair_problems(RH, [*_without(B0, "--dagger-p"), "--dagger-p", "0.1"], SHA))
++
++
++def test_cli_exit_codes(tmp_path, capsys):
++    (tmp_path / "rh.json").write_text(json.dumps({"argv": RH}), encoding="utf-8")
++    (tmp_path / "b0.json").write_text(json.dumps(B0), encoding="utf-8")
++    assert P.main(["--rh", str(tmp_path / "rh.json"), "--b0", str(tmp_path / "b0.json"), "--bank-sha256", SHA]) == 0
++    (tmp_path / "bad.json").write_text(json.dumps(_without(RH, "--dagger-bank-kappa")), encoding="utf-8")
++    assert P.main(["--rh", str(tmp_path / "bad.json"), "--b0", str(tmp_path / "b0.json")]) == 1
++    assert "ZZ ROLLHIST-PAIR FAIL" in capsys.readouterr().out
+--- /dev/null
++++ b/stack/tests/test_v8f_rollhist.py
+@@ -0,0 +1,410 @@
++"""PREREG_V8F_ROLLHIST items N2-N4 (the bank generator's executor flags, the bank-header levers, the declaration flags) and the card's reachability table (section 4.2): R4, R5, and R1-R3 on CPU.
++
++CPU, fp32, one thread (R2 of the card: every bit-identity test). Each test builds its bank with the DATA generator on the trainer's own synthetic world (the ``pack`` fixture of
++``test_v8f_dagger_train.py``); a generator that breaks fails the test, not a fixture. WHAT A CPU FIXTURE CANNOT SHOW (left to the pod-side pilot, HANDOFF_B1.md): that the real checkpoint's
++rollout reaches the same bounds on real data, and the real-bank coverage / K-B2 on the pod's checkpoint.
++
++  R4  the bank holds readout C* under hb0.2     bank-level: the stored last-knot acceleration a0 = the executed one (gain 1); per call: heading step <= 0.2 x distance + 1e-12 and the a3 control;
++                                                the control: ``--readout pinned --kappa-max none`` = today's generator, array for array, max abs difference 0.0
++  R5  the argv declares what the bank is        declared != the loaded header -> REFUSED (both flags, both directions); non-default at --dagger-p 0 -> REFUSED; a header without the field reads pinned / none
++  R1-R3 the swap of an RH bank reaches the loss  dagger_probe PASS on the RH bank with its p = 0 controls EXACTLY 0.0; S's own loss and O's loss reach read_s/head_s and read_o/head_o, p = 0 reads 0.0
++"""
++from __future__ import annotations
++
++import contextlib
++import copy
++import json
++import os
++import subprocess
++import sys
++from pathlib import Path
++from types import SimpleNamespace
++
++import numpy as np
++import pytest
++import torch
++
++REPO = Path(__file__).resolve().parents[2]
++for p in (REPO / "stack", REPO / "taniteval", REPO / "stack" / "scripts", REPO / "stack" / "tests"):
++    if str(p) not in sys.path:
++        sys.path.insert(0, str(p))
++from tanitad.data import v8f_dagger as DG  # noqa: E402
++import v8f_dagger_bank as B  # noqa: E402
++import v8f_mini_train as TR  # noqa: E402
++import v8f_t1_eval as T1  # noqa: E402
++import v8f_t1_eval_hb as HB  # noqa: E402
++import v8f_t1_readout as RO  # noqa: E402
++from test_v8f_dagger_train import GATE_ARGV, _bank_sha, clone_bank, dvb, gate_parts, pack, probe_parts  # noqa: E402,F401  (pack is a fixture)
++
++torch.set_num_threads(1)
++PINNED_FN = T1.hermite_frames                                          # the pinned tool's own function, captured before any run installs anything
++RH_FLAGS = ["--readout", "causal_g", "--acc-gain", "1", "--path-exec", "--kappa-max", "0.2"]
++PINNED = {"readout": "pinned", "acc_gain": None, "path_exec": False, "kappa_max": "none"}
++RH = {"readout": "causal_g", "acc_gain": 1.0, "path_exec": True, "kappa_max": "0.2"}
++DECL_RH = ["--dagger-bank-readout", "causal_g1x", "--dagger-bank-kappa", "0.2"]
++CONSTANTS_SHA256 = "8f94b3b5e35f4457be51d695842457a340d1228ab48c5862f4db1e5063f3ffaf"      # DG.constants_sha256() of the tip 7b26a8ac (N3 does not change constants())
++
++
++def gen_argv(pk, out, *extra, replay="0.1"):
++    w = pk.world
++    return ["gen", "--ckpt", str(pk.ck), "--m2b-argv", str(pk.root / "argv.json"), "--cache-dir", str(w), "--tracks", str(w / "native_tracks.pt"), "--join-train", str(w / "join_train.npz"),
++            "--eval-grid", str(w / "eval_grid_windows.json"), "--out-dir", str(out), "--batch", "8", "--replay-frac", replay, *extra]
++
++
++def _arrays(out):
++    return DG.load_shard(Path(out) / "shard_000of001.npz")
++
++
++def _same_arrays(a, b):
++    assert sorted(a) == sorted(b)
++    return all((np.asarray(a[k]).shape == np.asarray(b[k]).shape) and bool(np.array_equal(np.asarray(a[k]), np.asarray(b[k]), equal_nan=True)) for k in a)
++
++
++def _max_abs_diff(a, b):
++    worst = 0.0
++    for k in a:
++        x, y = np.asarray(a[k]), np.asarray(b[k])
++        if x.size and x.dtype.kind == "f":
++            d = np.abs(x.astype(np.float64) - y.astype(np.float64))
++            worst = max(worst, float(np.nanmax(d)) if np.isfinite(d).any() else 0.0)
++    return worst
++
++
++@pytest.fixture(scope="module")
++def banks(pack, tmp_path_factory):
++    """pinned (defaults), pinned (named), pinned through a NULL executor (today's code path, nothing installed), RH; plus the per-call record of the RH run's installed frames function."""
++    root = tmp_path_factory.mktemp("rollhist")
++    k = SimpleNamespace(pk=pack)
++    k.default, k.named, k.null, k.rh = root / "default", root / "named", root / "null", root / "rh"
++    assert B.main(gen_argv(pack, k.default)) == 0
++    assert B.main(gen_argv(pack, k.named, "--readout", "pinned", "--kappa-max", "none")) == 0
++    real = B.executor_installed
++    B.executor_installed = lambda tool, gen: contextlib.nullcontext(tool)                     # today's generator: nothing installed, the pinned tool as it is
++    try:
++        assert B.main(gen_argv(pack, k.null)) == 0
++    finally:
++        B.executor_installed = real
++    calls = []
++
++    @contextlib.contextmanager
++    def recording(tool, gen):
++        with real(tool, gen):
++            inner = tool.hermite_frames
++
++            def shim(k_prev, knots, m, psi0):
++                out = inner(k_prev, knots, m, psi0)
++                calls.append((np.array(k_prev, np.float64), np.array(knots, np.float64), int(m), float(psi0), tuple(np.array(x, np.float64) for x in out)))
++                return out
++            tool.hermite_frames = shim
++            try:
++                yield tool
++            finally:
++                tool.hermite_frames = inner
++    B.executor_installed = recording
++    try:
++        assert B.main(gen_argv(pack, k.rh, *RH_FLAGS)) == 0
++    finally:
++        B.executor_installed = real
++    k.calls = calls
++    return k
++
++
++# ------------------------------------------------------------------------------------------------ N2 / R4
++def test_r4_control_pinned_none_is_todays_generator_array_for_array_max_abs_difference_zero(banks):
++    a_def, _ = _arrays(banks.default)
++    a_named, _ = _arrays(banks.named)
++    a_null, _ = _arrays(banks.null)
++    assert _same_arrays(a_def, a_null) and _same_arrays(a_named, a_null)
++    assert _max_abs_diff(a_def, a_null) == 0.0 and _max_abs_diff(a_named, a_null) == 0.0
++    assert DG.content_sha256(a_def) == DG.content_sha256(a_null) == DG.content_sha256(a_named)
++    assert DG.sha256_file(banks.default / "bank.json") == DG.sha256_file(banks.named / "bank.json")
++
++
++def test_r4_rh_bank_is_not_the_pinned_bank_the_non_vacuity_control(banks):
++    a_rh, _ = _arrays(banks.rh)
++    a_p, _ = _arrays(banks.default)
++    assert not _same_arrays(a_rh, a_p)
++    assert _max_abs_diff(a_rh, a_p) > 1e-6
++
++
++def _a3_worst(arrays, gain):
++    """the stored one-frame acceleration at the last executed knot (kin3[:, 1]) minus ``gain`` x the executed one, from the stored knot positions of rows j-2 .. j"""
++    worst, n = 0.0, 0
++    for i in range(len(arrays["ci"])):
++        if int(arrays["reason"][i]) == DG.NONFINITE:
++            continue
++        P = np.asarray(arrays["pose"][i], np.float64)[-3:, :2]
++        if not np.isfinite(P).all():
++            continue
++        s1, s2 = np.hypot(*(P[1] - P[0])) / 0.2, np.hypot(*(P[2] - P[1])) / 0.2
++        worst, n = max(worst, abs(float(arrays["kin3"][i][1]) - gain * (s2 - s1) / 0.2)), n + 1
++    return worst, n
++
++
++def test_r4_the_rh_bank_holds_the_executed_acceleration_and_the_pinned_bank_does_not(banks):
++    a_rh, _ = _arrays(banks.rh)
++    worst, n = _a3_worst(a_rh, 1.0)
++    assert n > 0 and worst <= 1e-6, (worst, n)
++    a_p, _ = _arrays(banks.default)
++    worst_p, n_p = _a3_worst(a_p, 1.0)
++    assert n_p > 0 and worst_p > 1e-3, f"the control: the pinned bank carries the next-plan-knot acceleration (read {worst_p}); the check would pass vacuously otherwise"
++
++
++def test_r4_every_call_of_the_installed_frames_obeys_the_bound_and_the_acceleration_control(banks):
++    assert len(banks.calls) > 50
++    worst_a3, bound_acted = 0.0, 0
++    for k_prev, knots, m, psi0, (xy, psi, v) in banks.calls:
++        prev, pxy = psi0, knots[0]
++        for f in range(len(psi)):
++            step = abs(HB.wrap_pi(float(psi[f]) - prev))
++            lim = 0.2 * float(np.hypot(*(xy[f] - pxy)))
++            assert step <= lim + 1e-12, (f, step, lim)
++            prev, pxy = float(psi[f]), xy[f]
++        raw = RO.backward_frames(PINNED_FN, k_prev, knots, m, psi0)
++        bound_acted += int(not np.array_equal(psi, raw[1]))
++        assert np.array_equal(xy, raw[0])                                                       # --path-exec: positions from the executed knots only
++        K = np.vstack([k_prev[None], knots[:m + 1]])
++        s = np.linalg.norm(np.diff(K, axis=0), axis=-1) / 0.2
++        worst_a3 = max(worst_a3, abs((v[-1] - v[-2]) / 0.1 - (s[m] - s[m - 1]) / 0.2))
++    assert worst_a3 <= 1e-6
++
++
++def test_the_executor_is_installed_for_the_run_and_restored_after(pack, tmp_path):
++    seen = []
++    real = B.executor_installed
++
++    @contextlib.contextmanager
++    def spy(tool, gen):
++        with real(tool, gen):
++            seen.append((tool.hermite_frames is not PINNED_FN, getattr(tool.hermite_frames, "__wrapped__", None) is not None))
++            yield tool
++    B.executor_installed = spy
++    try:
++        assert B.main(gen_argv(pack, tmp_path / "b", *RH_FLAGS, replay="0")) == 0
++        assert B.main(gen_argv(pack, tmp_path / "c", replay="0")) == 0
++    finally:
++        B.executor_installed = real
++    assert T1.hermite_frames is PINNED_FN
++    assert seen == [(True, True), (False, False)], "RH installs a wrapped function; the defaults install NOTHING (the same function object)"
++
++
++def test_defaults_install_nothing_by_identity():
++    gen = B.generator_record(SimpleNamespace())
++    assert gen == PINNED
++    with B.executor_installed(T1, gen):
++        assert T1.hermite_frames is PINNED_FN
++    assert RO.readout_frames(PINNED_FN, "pinned") is PINNED_FN and HB.bounded_frames(PINNED_FN, None) is PINNED_FN
++
++
++@pytest.mark.parametrize("extra", [["--acc-gain", "1"], ["--path-exec"], ["--readout", "causal_g"]])
++def test_the_generator_refuses_a_declared_and_inert_or_missing_parameter(pack, tmp_path, extra):
++    with pytest.raises(SystemExit) as e:
++        B.main(gen_argv(pack, tmp_path / "x", *extra, replay="0"))
++    assert "REFUSED" in str(e.value)
++    assert not (tmp_path / "x" / "bank.json").exists()
++
++
++def test_tool_files_name_the_two_new_tools_and_provenance_carries_the_generator(banks):
++    for f in ("stack/scripts/v8f_t1_readout.py", "stack/scripts/v8f_t1_eval_hb.py"):
++        assert f in B.TOOL_FILES
++    for out, want in ((banks.default, None), (banks.rh, RH)):                   # N2: a default bank carries NO generator record anywhere; a non-default one carries it everywhere
++        sp = json.loads((out / "shard_000of001.provenance.json").read_text(encoding="utf-8"))
++        bj, pj = json.loads((out / "bank.json").read_text(encoding="utf-8")), json.loads((out / "PROVENANCE.json").read_text(encoding="utf-8"))
++        _, h = _arrays(out)
++        if want is None:
++            assert "generator" not in sp and "generator" not in sp["plan"] and "generator" not in bj["common"] and "generator" not in pj and "generator" not in h
++        else:
++            assert sp["generator"] == want == sp["plan"]["generator"] == bj["common"]["generator"] == pj["generator"] == h["generator"]
++        assert "stack/scripts/v8f_t1_readout.py" in sp["tool_sha256"] and "stack/scripts/v8f_t1_eval_hb.py" in sp["tool_sha256"]
++
++
++def _vol(o):
++    """a provenance with the fields that differ between ANY two runs (clock, argv paths, threads, the tool files' own sha) removed"""
++    o = copy.deepcopy(o)
++    for k in ("created_unix", "argv", "tool_sha256", "versions", "threads", "seconds", "causal_bucket_stats"):          # wall clock; a process-global counter that accumulates across runs in one process
++        o.pop(k, None)
++    return o
++
++
++def test_n2_a_default_bank_is_byte_identical_to_todays_generator(banks):
++    """The control that matters: the defaults write today's files, byte for byte -- the shard npz, bank.json (whose sha IS the bank's sha256), PROVENANCE.json -- against a run through a NULL executor
++    (nothing installed, no record: the unpatched code path)."""
++    for name in ("shard_000of001.npz", "bank.json"):
++        assert (banks.default / name).read_bytes() == (banks.null / name).read_bytes(), name
++    assert sorted(p.name for p in banks.default.iterdir()) == sorted(p.name for p in banks.null.iterdir())
++    for name in ("PROVENANCE.json", "shard_000of001.provenance.json"):
++        a, b = (json.loads((d / name).read_text(encoding="utf-8")) for d in (banks.default, banks.null))
++        assert _vol(a) == _vol(b), name
++    assert banks.default.joinpath("bank.json").read_bytes() == banks.named.joinpath("bank.json").read_bytes(), "an explicit --readout pinned --kappa-max none is the same bank"
++
++
++@pytest.mark.skipif(not os.environ.get("ROLLHIST_ORIG_STACK"), reason="needs ROLLHIST_ORIG_STACK = the UNPATCHED tip export's stack/ directory")
++def test_n2_a_default_bank_is_byte_identical_to_the_unpatched_generators_files(banks, tmp_path):
++    out = tmp_path / "unpatched"
++    r = subprocess.run([sys.executable, str(Path(os.environ["ROLLHIST_ORIG_STACK"]) / "scripts" / "v8f_dagger_bank.py"), *gen_argv(banks.pk, out)], capture_output=True, text=True, encoding="utf-8", errors="replace",
++                       env={**os.environ, "PYTHONPATH": os.environ["ROLLHIST_ORIG_STACK"], "PYTHONDONTWRITEBYTECODE": "1"})
++    assert r.returncode == 0, r.stdout[-800:] + r.stderr[-800:]
++    for name in ("shard_000of001.npz", "bank.json"):
++        assert (banks.default / name).read_bytes() == (out / name).read_bytes(), name
++    assert sorted(p.name for p in banks.default.iterdir()) == sorted(p.name for p in out.iterdir())
++    for name in ("PROVENANCE.json", "shard_000of001.provenance.json"):
++        a, b = (json.loads((d / name).read_text(encoding="utf-8")) for d in (banks.default, out))
++        assert _vol(a) == _vol(b), name
++
++
++# ------------------------------------------------------------------------------------------------ N3
++def _strip_generator(src, dst):
++    def sh(arrays, header):
++        header = copy.deepcopy(header)
++        header.pop("generator", None)
++        return arrays, header
++
++    def cm(common):
++        common = copy.deepcopy(common)
++        common.pop("generator", None)
++        return common
++    return clone_bank(src, dst, shard_fn=sh, common_fn=cm)
++
++
++def test_n3_built_levers_read_the_loaded_header_and_default_to_pinned_none(banks, tmp_path):
++    J = banks.pk.J
++    rh = DG.DaggerSwap(DG.DaggerBank.load(banks.rh, clip_names=J["clip"]), p=0.1)
++    pn = DG.DaggerSwap(DG.DaggerBank.load(banks.default, clip_names=J["clip"]), p=0.1)
++    old = DG.DaggerSwap(DG.DaggerBank.load(_strip_generator(banks.default, tmp_path / "old"), clip_names=J["clip"]), p=0.1)
++    for dag, want in ((rh, ("causal_g1x", "0.2")), (pn, ("pinned", "none")), (old, ("pinned", "none")), (DG.DaggerSwap(), ("pinned", "none"))):
++        lv = dag.built_levers()
++        assert (lv["dagger_bank_readout"], lv["dagger_bank_kappa"]) == want
++    assert not any(k in DG.constants() for k in ("generator", "readout", "kappa"))
++
++
++def test_n3_constants_are_unchanged():
++    assert DG.constants_sha256() == CONSTANTS_SHA256
++
++
++# ------------------------------------------------------------------------------------------------ N4 / R5
++def _bad(pk, bank, extra, p="0.1"):
++    parts = gate_parts(pk, ["--init-ckpt", str(pk.ck), "--dagger-p", p, "--dagger-bank", str(bank), "--dagger-bank-sha256", _bank_sha(bank), *extra])
++    return dvb(parts)
++
++
++def test_n4_flag_checks_name_both_dests_and_the_defaults_are_the_legacy_bank():
++    assert TR.FLAG_CHECKS["dagger_bank_readout"] == "dagger:dagger_bank_readout" and TR.FLAG_CHECKS["dagger_bank_kappa"] == "dagger:dagger_bank_kappa"
++    a = TR.build_parser().parse_args(["--out", "x", *GATE_ARGV])
++    assert (a.dagger_bank_readout, a.dagger_bank_kappa) == ("pinned", "none")
++
++
++def test_r5_declared_equals_the_header_passes_and_each_mismatch_is_refused(banks):
++    pk = banks.pk
++    assert _bad(pk, banks.rh, DECL_RH) == [], "the control: RH declared, RH bank"
++    assert _bad(pk, banks.default, []) == [], "the control: pinned declared (the default), pinned bank"
++    for extra, key in (([], "dagger_bank_readout"), (["--dagger-bank-kappa", "0.2"], "dagger_bank_readout"), (["--dagger-bank-readout", "causal_g1x"], "dagger_bank_kappa")):
++        bad = _bad(pk, banks.rh, extra)
++        assert any(key in m and "loaded bank's header" in m for m in bad), (extra, bad)
++    for extra, key in ((DECL_RH, "dagger_bank_readout"), (["--dagger-bank-kappa", "0.2"], "dagger_bank_kappa"), (["--dagger-bank-readout", "causal_g1x"], "dagger_bank_readout")):
++        bad = _bad(pk, banks.default, extra)
++        assert any(key in m and "loaded bank's header" in m for m in bad), (extra, bad)
++
++
++def test_r5_a_header_without_the_field_reads_pinned_none(banks, tmp_path):
++    old = _strip_generator(banks.default, tmp_path / "old")
++    assert _bad(banks.pk, old, []) == []
++    assert any("dagger_bank_readout" in m for m in _bad(banks.pk, old, ["--dagger-bank-readout", "causal_g1x"]))
++
++
++def _set_generator(src, dst, gen):
++    def sh(arrays, header):
++        header = copy.deepcopy(header)
++        header["generator"] = gen
++        return arrays, header
++
++    def cm(common):
++        common = copy.deepcopy(common)
++        common["generator"] = gen
++        return common
++    return clone_bank(src, dst, shard_fn=sh, common_fn=cm)
++
++
++def test_the_readout_token_is_one_spelling():
++    assert DG.readout_token("pinned") == "pinned"
++    assert DG.readout_token("causal_g", 1.0, True) == "causal_g1x" and DG.readout_token("causal_g", 1, False) == "causal_g1"
++    assert DG.readout_token("causal_g", 0.5, False) == "causal_g0.5" and DG.readout_token("causal_g", 0.5, True) == "causal_g0.5x"
++    for bad in (("pinned", 1.0, False), ("pinned", None, True), ("causal_g", None, False), ("backward", 1.0, False)):
++        with pytest.raises(ValueError):
++            DG.readout_token(*bad)
++    for tok in ("pinned", "causal_g1x", "causal_g1", "causal_g0.5", "causal_g0.5x"):
++        assert DG.parse_readout_token(tok) == tok
++    for tok in ("causal_g", "causal_g1.0x", "causal_g01x", "causal_gx", "causal_g1xx", "backward", ""):
++        with pytest.raises(ValueError):
++            DG.parse_readout_token(tok)
++
++
++def test_r5_the_declaration_names_the_whole_readout_gain_and_path_exec_included(banks, tmp_path):
++    pk = banks.pk
++    nopath = _set_generator(banks.rh, tmp_path / "g1_nopath", {"readout": "causal_g", "acc_gain": 1.0, "path_exec": False, "kappa_max": "0.2"})
++    half = _set_generator(banks.rh, tmp_path / "g05_path", {"readout": "causal_g", "acc_gain": 0.5, "path_exec": True, "kappa_max": "0.2"})
++    for bank, ok, wrong in ((nopath, "causal_g1", "causal_g1x"), (half, "causal_g0.5x", "causal_g1x")):
++        assert DG.DaggerSwap(DG.DaggerBank.load(bank, clip_names=pk.J["clip"]), p=0.1).built_levers()["dagger_bank_readout"] == ok
++        assert _bad(pk, bank, ["--dagger-bank-readout", ok, "--dagger-bank-kappa", "0.2"]) == [], "the control: the matching token is accepted"
++        bad = _bad(pk, bank, ["--dagger-bank-readout", wrong, "--dagger-bank-kappa", "0.2"])
++        assert any("dagger_bank_readout" in m and ok in m for m in bad), (wrong, bad)
++    for tok in ("causal_g", "causal_g1.0x"):                                                         # the bare base name and a non-canonical spelling are no tokens
++        with pytest.raises(SystemExit):
++            TR.build_parser().parse_args(["--out", "x", *GATE_ARGV, "--dagger-bank-readout", tok])
++
++
++@pytest.mark.parametrize("extra", [["--dagger-bank-readout", "causal_g1x"], ["--dagger-bank-kappa", "0.2"], DECL_RH])
++def test_r5_a_declaration_at_dagger_p_zero_is_refused(banks, extra):
++    bad = dvb(gate_parts(banks.pk, ["--dagger-p", "0", *extra]))
++    assert any("does nothing" in m for m in bad), bad
++    assert dvb(gate_parts(banks.pk, ["--dagger-p", "0"])) == [], "the control: p = 0 with the defaults"
++
++
++def test_r5_choices_are_closed():
++    for flag, val in (("--dagger-bank-readout", "backward"), ("--dagger-bank-kappa", "0.3")):
++        with pytest.raises(SystemExit):
++            TR.build_parser().parse_args(["--out", "x", *GATE_ARGV, flag, val])
++
++
++# ------------------------------------------------------------------------------------------------ R1-R3 on CPU, tiny model, the RH bank
++def _rh_pack(banks):
++    return SimpleNamespace(bank=banks.rh, world=banks.pk.world, J=banks.pk.J)
++
++
++def test_r1_dagger_probe_passes_on_the_rh_bank_and_the_p0_controls_read_exactly_zero(banks):
++    model, batch, cfg, dag = probe_parts(_rh_pack(banks), p=0.5, n=24)
++    assert dag.built_levers()["dagger_bank_readout"] == "causal_g1x"
++    res = TR.dagger_probe(model, batch, cfg, dag)
++    assert res["pass"] is True
++    assert res["control_p0_loss_diff"] == 0.0 and res["control_p0_grad_diff"] == 0.0 and res["control_p0_same_object"] is True
++    assert res["control_prior_grad_diff"] == 0.0 and res["control_wm_grad_diff"] == 0.0
++    assert res["loss_diff"] != 0.0 and res["grad_diff_all"] > 0.0
++
++
++def _grad_sum_diff(model, b_a, b_b, term, prefixes):
++    def grads(b):
++        for p in model.parameters():
++            p.grad = None
++        torch.manual_seed(7)
++        T = model.loss(b, p_gt=0.5, gen=torch.Generator().manual_seed(13))["terms"]
++        T[term].backward()
++        return {n: (p.grad.detach().clone() if p.grad is not None else torch.zeros_like(p)) for n, p in model.named_parameters() if n.startswith(prefixes)}
++    ga, gb = grads(b_a), grads(b_b)
++    return float(sum((ga[n] - gb[n]).abs().sum() for n in ga)), float(sum(g.abs().sum() for g in ga.values()))
++
++
++def test_r2_r3_s_and_o_train_on_the_swapped_rolled_history_and_the_p0_controls_read_exactly_zero(banks):
++    model, batch, cfg, dag = probe_parts(_rh_pack(banks), p=1.0, n=24)
++    g = torch.Generator().manual_seed(5)
++    with torch.no_grad():
++        for name in ("head_s",):
++            for p in getattr(model, name).parameters():
++                p.copy_(torch.randn(p.shape, generator=g) * 0.05)
++    pert = dag.apply(batch, dag.PROBE_STEP)
++    zero = dag.apply(batch, dag.PROBE_STEP, p=0.0)
++    assert zero is batch
++    d_s, n_s = _grad_sum_diff(model, pert, batch, "ckpt", ("read_s", "head_s"))
++    d_o, n_o = _grad_sum_diff(model, pert, batch, "ade", ("read_o", "head_o"))
++    assert n_s > 0 and n_o > 0 and d_s > 0.0 and d_o > 0.0, (d_s, n_s, d_o, n_o)
++    z_s, _ = _grad_sum_diff(model, zero, batch, "ckpt", ("read_s", "head_s"))
++    z_o, _ = _grad_sum_diff(model, zero, batch, "ade", ("read_o", "head_o"))
++    assert z_s == 0.0 and z_o == 0.0
+--- /dev/null
++++ b/stack/tests/test_v8f_t1_readout.py
+@@ -0,0 +1,127 @@
++"""Contract tests for stack/scripts/v8f_t1_readout.py (PREREG_V8F_ROLLHIST item N1): the causal readouts of the T1-kin own history, promoted from the integ10k study wrapper.
++
++CPU, fp32 torch not involved (numpy float64), one thread. What is pinned:
++
++* ADD63's identity controls, array for array: gain 1.0 equals ``causal``, gain 0.0 equals ``causal_z``; the general formula agrees with both to <= 1e-12;
++* the promoted functions equal the STUDY file's own functions bit for bit: ``GOLDEN_SHA256`` is the digest of the study functions' outputs on the seeded cases below
++  (computed by exec'ing ``integ10k/v8f_t1_eval_reader_rule_rzg.py`` at the tip 7b26a8ac, ``b1/study_vs_promoted.py``); a changed digit anywhere in the arithmetic changes it;
++* control a3 (ported): the one-frame acceleration read at the last executed knot is ``gain`` x the executed one, to <= 1e-6;
++* ``--path-exec``: positions and headings equal ``backward_frames`` bit for bit, the speed column equals that of the same gain without it;
++* ``readout_frames("pinned")`` is ``orig`` ITSELF (nothing installed), and a declared-and-inert parameter is refused;
++* planted faults are caught: the gain ignored, the path taken from the pinned call although --path-exec is on.
++"""
++from __future__ import annotations
++
++import hashlib
++import sys
++from pathlib import Path
++
++import numpy as np
++import pytest
++
++REPO = Path(__file__).resolve().parents[2]
++for p in (REPO / "stack", REPO / "taniteval", REPO / "stack" / "scripts"):
++    if str(p) not in sys.path:
++        sys.path.insert(0, str(p))
++
++import v8f_t1_eval as T1  # noqa: E402
++import v8f_t1_readout as RO  # noqa: E402
++
++GOLDEN_SHA256 = "1c42d85fdbe040c9e10c3967c4df34fa405fe39a0ad45c91a5f5a9cf0cd4a8e9"
++DT = 0.2
++
++
++def cases():
++    rng = np.random.default_rng(20261120)
++    for c in range(40):
++        m = int(rng.choice([5, 10]))
++        th = np.cumsum(rng.normal(0, 0.05, m + 3))
++        sp = 0.2 * np.abs(8 + rng.normal(0, 2.0, m + 3)) * (0.0 if c % 7 == 0 else 1.0)
++        pts = np.cumsum(np.stack([sp * np.cos(th), sp * np.sin(th)], -1), 0)
++        yield pts[0], pts[1:], m, float(rng.uniform(-3, 3))
++
++
++def _same(a, b):
++    return all(np.array_equal(np.asarray(u), np.asarray(w)) for u, w in zip(a, b))
++
++
++def test_promoted_functions_equal_the_study_functions_bit_for_bit_golden_digest():
++    h = hashlib.sha256()
++    for kp, kn, m, p0 in cases():
++        outs = [RO.backward_frames(T1.hermite_frames, kp, kn, m, p0)]
++        outs += [RO.causal_frames(T1.hermite_frames, kp, kn, m, p0, acc) for acc in ("step", "zero", "window")]
++        outs += [RO.causal_g_frames(T1.hermite_frames, kp, kn, m, p0, g, px, fg) for g in (-0.25, 0.0, 0.5, 1.0, 1.7) for px in (False, True) for fg in (False, True)]
++        for o in outs:
++            for w in o:
++                h.update(np.ascontiguousarray(w, np.float64).tobytes())
++    assert h.hexdigest() == GOLDEN_SHA256
++
++
++def test_gain_one_is_causal_and_gain_zero_is_causal_z_array_for_array():
++    n = 0
++    for kp, kn, m, p0 in cases():
++        for px in (False, True):
++            base = (lambda *a: RO.backward_frames(T1.hermite_frames, *a)) if px else T1.hermite_frames
++            assert _same(RO.causal_g_frames(T1.hermite_frames, kp, kn, m, p0, 1.0, px), RO.causal_frames(base, kp, kn, m, p0, "step"))
++            assert _same(RO.causal_g_frames(T1.hermite_frames, kp, kn, m, p0, 0.0, px), RO.causal_frames(base, kp, kn, m, p0, "zero"))
++            n += 1
++    assert n == 80
++    for kp, kn, m, p0 in cases():                                    # the GENERAL formula (forced) agrees with both identities to rounding
++        for g, acc in ((1.0, "step"), (0.0, "zero")):
++            a = RO.causal_g_frames(T1.hermite_frames, kp, kn, m, p0, g, False, True)
++            b = RO.causal_frames(T1.hermite_frames, kp, kn, m, p0, acc)
++            assert max(float(np.abs(np.asarray(u) - np.asarray(w)).max()) for u, w in zip(a, b)) <= 1e-12
++
++
++@pytest.mark.parametrize("gain", [-0.25, 0.0, 0.5, 1.0])
++@pytest.mark.parametrize("path_exec", [False, True])
++def test_a3_the_acceleration_at_the_last_executed_knot_is_gain_times_the_executed_one(gain, path_exec):
++    worst = 0.0
++    for kp, kn, m, p0 in cases():
++        xy, psi, v = RO.causal_g_frames(T1.hermite_frames, kp, kn, m, p0, gain, path_exec)
++        K = np.vstack([np.asarray(kp, np.float64)[None], np.asarray(kn, np.float64)[:m + 1]])
++        s = np.linalg.norm(np.diff(K, axis=0), axis=-1) / DT
++        a_read = (v[-1] - v[-2]) / (DT / 2.0)
++        worst = max(worst, abs(a_read - gain * (s[m] - s[m - 1]) / DT), abs(v[-1] - s[m]))
++    assert worst <= 1e-6
++
++
++def test_path_exec_takes_the_path_from_the_executed_knots_and_leaves_the_speed_column_alone():
++    nonvac = 0.0
++    for kp, kn, m, p0 in cases():
++        xb, pb, _ = RO.backward_frames(T1.hermite_frames, kp, kn, m, p0)
++        xo, po, _ = T1.hermite_frames(kp, kn, m, p0)
++        nonvac = max(nonvac, float(np.abs(np.asarray(xo) - np.asarray(xb)).max()), float(np.abs(np.asarray(po) - np.asarray(pb)).max()))
++        for g in (0.0, 0.5, 1.0):
++            xp, pp, vp = RO.causal_g_frames(T1.hermite_frames, kp, kn, m, p0, g, True)
++            xn, pn, vn = RO.causal_g_frames(T1.hermite_frames, kp, kn, m, p0, g, False)
++            assert np.array_equal(xp, xb) and np.array_equal(pp, pb) and np.array_equal(vp, vn)
++    assert nonvac > 1e-6, "pinned against backward must differ on these plans, else the comparison says nothing"
++
++
++def test_planted_faults_are_caught():
++    kp, kn, m, p0 = list(cases())[1]
++    good = RO.causal_g_frames(T1.hermite_frames, kp, kn, m, p0, 0.5, True)
++    gain_ignored = RO.causal_g_frames(T1.hermite_frames, kp, kn, m, p0, 1.0, True)
++    path_pinned = RO.causal_g_frames(T1.hermite_frames, kp, kn, m, p0, 0.5, False)
++    assert not np.array_equal(good[2], gain_ignored[2])                          # (a) a gain that is ignored changes the speed column: visible
++    assert not np.array_equal(good[0], path_pinned[0])                           # (b) a path taken from the pinned call although --path-exec is on: visible
++
++
++def test_readout_frames_pinned_is_orig_itself_and_causal_g_matches_the_function():
++    assert RO.readout_frames(T1.hermite_frames, "pinned") is T1.hermite_frames
++    for kp, kn, m, p0 in list(cases())[:6]:
++        f = RO.readout_frames(T1.hermite_frames, "causal_g", 1.0, True)
++        assert _same(f(kp, kn, m, p0), RO.causal_g_frames(T1.hermite_frames, kp, kn, m, p0, 1.0, True))
++        assert f.__wrapped__ is T1.hermite_frames
++
++
++def test_declared_and_inert_or_missing_parameters_are_refused():
++    with pytest.raises(ValueError):
++        RO.readout_frames(T1.hermite_frames, "pinned", 1.0)
++    with pytest.raises(ValueError):
++        RO.readout_frames(T1.hermite_frames, "pinned", None, True)
++    with pytest.raises(ValueError):
++        RO.readout_frames(T1.hermite_frames, "causal_g")
++    with pytest.raises(ValueError):
++        RO.readout_frames(T1.hermite_frames, "backward")
+--- /dev/null
++++ b/stack/tests/test_v8f_t1_eval_hb.py
+@@ -0,0 +1,127 @@
++"""Contract tests for the T1-kin executor of record (stack/scripts/v8f_t1_eval_hb.py, PI 2026-11-20, decision card D16-D).
++
++The wrapper adds one thing to the pinned T1 tool: a heading bound (a heading step is at most kappa x the distance travelled). These
++tests pin that it does exactly that and nothing else:
++
++* identity where the bound cannot act (huge kappa; a straight drive through the real ``hermite_frames``), bit for bit;
++* a standstill holds the heading exactly, and an acting step turns by exactly kappa x distance (the analytic value);
++* the seam at +-pi is a small step, not a full turn;
++* positions and speeds pass through untouched, and the pinned module's function is restored after the run;
++* the old executor (``--kappa-max none``) installs nothing: the very same function object (the deliberate-regression arm).
++"""
++from __future__ import annotations
++
++import math
++import sys
++import types
++from pathlib import Path
++
++import numpy as np
++import pytest
++
++REPO = Path(__file__).resolve().parents[2]
++for p in (REPO / "stack", REPO / "taniteval", REPO / "stack" / "scripts"):
++    if str(p) not in sys.path:
++        sys.path.insert(0, str(p))
++
++import v8f_t1_eval_hb as HB  # noqa: E402
++
++
++def _walk(n, step, rng=None, jitter=0.0):
++    """n frame positions along +x, ``step`` metres apart, optional jitter"""
++    xy = np.stack([np.arange(1, n + 1) * step, np.zeros(n)], 1)
++    if jitter and rng is not None:
++        xy = xy + rng.normal(0.0, jitter, xy.shape)
++    return xy
++
++
++def test_identity_when_kappa_is_huge():
++    rng = np.random.default_rng(0)
++    xy = _walk(40, 1.0, rng, 0.1)
++    psi = rng.uniform(-math.pi, math.pi, 40)
++    rec = HB.kb_new()
++    out = HB.bound_heading(xy, psi, np.full(40, 5.0), np.zeros(2), float(psi[0]), 1e9, rec)
++    assert np.array_equal(out, psi)                                               # never acted: the tool's own values
++    assert rec["frames_bound_acted"] == 0 and rec["frames_total"] == 40
++
++
++def test_standstill_holds_the_heading_exactly():
++    rng = np.random.default_rng(1)
++    xy = np.zeros((20, 2))
++    psi = rng.uniform(-math.pi, math.pi, 20)
++    out = HB.bound_heading(xy, psi, np.zeros(20), np.zeros(2), 0.3, HB.KAPPA_RECORD)
++    assert np.max(np.abs(out - 0.3)) <= 1e-15                                     # wrap_pi rounds by at most one ulp
++
++
++def test_acting_step_turns_by_exactly_kappa_times_distance():
++    out = HB.bound_heading(np.array([[1.0, 0.0]]), np.array([0.5]), np.array([5.0]), np.zeros(2), 0.0, 0.2)
++    assert out[0] == pytest.approx(0.2, abs=1e-15)
++    out = HB.bound_heading(np.array([[0.0, 2.0]]), np.array([-1.0]), np.array([5.0]), np.zeros(2), 0.0, 0.2)
++    assert out[0] == pytest.approx(-0.4, abs=1e-15)
++    out = HB.bound_heading(np.array([[1.0, 0.0]]), np.array([0.15]), np.array([5.0]), np.zeros(2), 0.0, 0.2)
++    assert out[0] == 0.15                                                         # within the bound: the tool's own value
++
++
++def test_seam_is_a_small_step():
++    a0, a1 = math.pi - 0.05, -math.pi + 0.05                                      # +0.1 rad across the seam
++    out = HB.bound_heading(np.array([[1.0, 0.0]]), np.array([a1]), np.array([5.0]), np.zeros(2), a0, 0.2)
++    assert out[0] == a1
++    out = HB.bound_heading(np.array([[1.0, 0.0]]), np.array([a1]), np.array([5.0]), np.zeros(2), a0, 0.05)
++    assert out[0] == pytest.approx(HB.wrap_pi(a0 + 0.05), abs=1e-12)
++
++
++def test_old_executor_installs_nothing():
++    def orig(k_prev, knots, m, psi0):
++        return None
++    assert HB.bounded_frames(orig, None) is orig
++    mod = types.SimpleNamespace(hermite_frames=orig)
++    with HB.installed(mod, None):
++        assert mod.hermite_frames is orig
++    assert mod.hermite_frames is orig
++    assert HB.parse_kappa("none") is None and HB.parse_kappa("0.2") == 0.2
++    for bad in ("0", "-1", "nan", "inf"):
++        with pytest.raises(SystemExit):
++            HB.parse_kappa(bad)
++
++
++def test_install_passes_positions_and_speeds_and_restores():
++    xy0 = np.array([[0.001, 0.0], [0.002, 0.001], [0.003, -0.001], [0.004, 0.0]])
++    v0 = np.array([0.01, 0.01, 0.01, 0.01])
++    psi_raw = np.array([0.0, 1.2, -1.3, 0.9])                                    # plan jitter near a standstill
++
++    def orig(k_prev, knots, m, psi0):
++        return xy0.copy(), psi_raw.copy(), v0.copy()
++    mod = types.SimpleNamespace(hermite_frames=orig)
++    rec = HB.kb_new()
++    with HB.installed(mod, 0.2, rec):
++        assert mod.hermite_frames is not orig
++        xy, psi, v = mod.hermite_frames(np.zeros(2), np.zeros((3, 2)), 2, 0.0)
++    assert mod.hermite_frames is orig
++    assert np.array_equal(xy, xy0) and np.array_equal(v, v0)
++    assert rec["frames_bound_acted"] == 3 and rec["by_speed"]["lt2"]["frames_total"] == 4
++    assert np.max(np.abs(psi)) <= 0.2 * 0.01                                       # 1 cm travelled in all
++    assert rec["max_excess_rad"] <= 1e-12
++
++
++def test_real_hermite_frames_straight_drive_is_untouched_and_jitter_is_bounded():
++    import v8f_t1_eval as T
++    knots = np.stack([np.arange(0, 12) * 2.0, np.zeros(12)], 1)                  # 10 m/s straight
++    xy, psi, v = T.hermite_frames(np.array([-2.0, 0.0]), knots, 8, 0.0)
++    rec = HB.kb_new()
++    with HB.installed(T, HB.KAPPA_RECORD, rec):
++        xy_b, psi_b, v_b = T.hermite_frames(np.array([-2.0, 0.0]), knots, 8, 0.0)
++    assert np.array_equal(np.asarray(xy), np.asarray(xy_b)) and np.array_equal(np.asarray(v), np.asarray(v_b))
++    assert np.array_equal(np.asarray(psi, np.float64), psi_b) and rec["frames_bound_acted"] == 0
++    rng = np.random.default_rng(3)
++    jit = np.cumsum(rng.normal(0.0, 0.004, (12, 2)), 0)                          # ~4 mm per step: the tool's heading swings
++    xy, psi, v = T.hermite_frames(np.zeros(2), jit, 8, 0.0)
++    with HB.installed(T, HB.KAPPA_RECORD):
++        xy_b, psi_b, v_b = T.hermite_frames(np.zeros(2), jit, 8, 0.0)
++    assert T.hermite_frames.__name__ == "hermite_frames"
++    assert np.array_equal(np.asarray(xy), np.asarray(xy_b)) and np.array_equal(np.asarray(v), np.asarray(v_b))
++    prev, pxy = 0.0, np.asarray(jit[0], np.float64)
++    for f in range(len(psi_b)):
++        dist = float(np.hypot(*(np.asarray(xy_b[f]) - pxy)))
++        assert abs(HB.wrap_pi(psi_b[f] - prev)) <= HB.KAPPA_RECORD * dist + 1e-12
++        prev, pxy = psi_b[f], np.asarray(xy_b[f])
++    assert np.max(np.abs(np.asarray(psi) - psi_b)) > 0.1                          # the bound did act on this plan

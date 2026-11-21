@@ -1,0 +1,22 @@
+--- ../b2/rh_gsuite.sh	2026-11-20 18:46:03.564933300 +0100
++++ rh_gsuite.sh	2026-11-21 01:00:17.829640000 +0100
+@@ -1,6 +1,6 @@
+ #!/bin/bash
+-# rh_gsuite.sh -- G-SUITE (full stack/tests, CPU ONLY) for 2bda9e1a on the pod. Pattern: gsuite_um.sh (DSCALE10K UM) and n1dc_gsuite.sh.
+-# tree = /root/rollhist/tree (stack + taniteval of 2bda9e1a, blob-verified). BASE = the STAGEB tree's base: /root/strat1/junit/base, the cdbff971 run on /root/strat1/base (same pod; the DSCALE10K tree is "identity" to it).
++# rh_gsuite.sh -- G-SUITE (full stack/tests, CPU ONLY) for 43319227 on the pod. Pattern: gsuite_um.sh (DSCALE10K UM) and n1dc_gsuite.sh.
++# tree = /root/rollhist/tree_cdb (stack + taniteval of 43319227, blob-verified). BASE = the STAGEB tree's base: /root/strat1/junit/base, the cdbff971 run on /root/strat1/base (same pod; the DSCALE10K tree is "identity" to it).
+ # 8 shards in the base run's composition (/root/strat1/shards_like_base.py), waves of 3, 3, 2 (the pod is capped at ~15.3 cores: at most ~3 busy processes), pinned to cores 48-95, nice 10, OMP/MKL 2 threads,
+ # memory guard on the container's own added anon memory (< 20 GB; the watchdog kills the shards by PID). The comparison tool is the overlay /root/strat1/overlay_strat1_check.py (read only).
+ # PASS = 0 regressions AND 0 new-test failures AND 0 missing. Result: /root/rollhist/gsuite_result_rh.json. Sentinel (last line of $R/logs/rh_gsuite.log): ZZ RH GSUITE DONE ZZ or ZZ RH GSUITE FAIL ZZ <why>.
+@@ -14,8 +14,8 @@
+ rssb() { grep -E "^total_rss " /sys/fs/cgroup/memory/memory.stat | awk '{printf "%d", $2}'; }
+ echo "$(date -u +%FT%TZ) start" > "$LOG"
+ [ -d "$TREE" ] || fail "no $TREE"
+-$PY $R/blobcheck.py $TREE $R/all_blobs.txt >> "$LOG" 2>&1 || fail "tree blob check"
+-[ "$(find $TREE -type f -not -path '*/__pycache__/*' | wc -l)" = "$(wc -l < $R/all_blobs.txt)" ] || fail "extra or missing file in the tree"
++$PY $R/blobcheck.py $TREE $R/all_blobs_43319227.txt >> "$LOG" 2>&1 || fail "tree blob check"
++[ "$(find $TREE -type f -not -path '*/__pycache__/*' | wc -l)" = "$(wc -l < $R/all_blobs_43319227.txt)" ] || fail "extra or missing file in the tree"
+ for k in 0 1 2 3 4 5 6 7; do [ -s "$JB/shard$k.xml" ] && [ -s "$JB/shard$k.files" ] || fail "base junit $JB shard $k missing"; done
+ rm -rf "$JN" "$T"; mkdir -p "$JN" "$T"
+ export OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 CUDA_VISIBLE_DEVICES= HF_HUB_DISABLE_XET=1 PYTHONDONTWRITEBYTECODE=1
