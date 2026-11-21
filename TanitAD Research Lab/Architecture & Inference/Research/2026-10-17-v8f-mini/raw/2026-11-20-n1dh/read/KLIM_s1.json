@@ -1,0 +1,90 @@
+{
+ "tool": "n1dh_klim_run.py",
+ "card": "PREREG_V8F_N1DH.md sha256 f1df05bc, MM review item 1 (K-LIM); code of record f2e91e33",
+ "profile": "e141",
+ "klim_module": "F:\\TanitAD-scratch\\n1dc\\read_n1dh\\tree\\stack\\scripts\\n1dh_klim.py",
+ "ckpt": "F:/TanitAD-scratch/n1dc/read_n1dh/eval141/ckpts/N1DH_s1/ckpt_last.pt",
+ "evidence_class": "SMOKE on eval-141 inputs: machinery only, NOT a D1-HO number",
+ "max_windows": 480,
+ "report_only": true,
+ "controls": {
+  "K-ALIGN": {
+   "n_recorded": 480,
+   "n_dump": 480,
+   "pass_": true,
+   "order": "identical",
+   "max_abs": 0.0
+  },
+  "K-SELF": {
+   "klim_logged_acc": 0.8812500238418579,
+   "tool_logits_acc": 0.88125,
+   "acc_abs_diff": 2.384185793236071e-08,
+   "acc_equal": true,
+   "fresh_forward_max_abs_logit_diff": 0.0,
+   "pass": true,
+   "note": "the 'logged' variant of klim() is the tool's own forward: same accuracy (to 1e-6: klim() averages in float32), logits bit-equal"
+  },
+  "K-ZERO": {
+   "logged_plan_l1_to_logged": 0.0,
+   "pass": true
+  },
+  "K-PERM": {
+   "permuted_label_acc": 0.5791666666666667,
+   "chance_expected": 0.5667968750000001,
+   "abs_diff": 0.01236979166666663,
+   "pass": true,
+   "n": 480,
+   "note": "tolerance 0.05 (a small probe batch); labels permuted across rows must read the chance level"
+  }
+ },
+ "klim": {
+  "logged": {
+   "acc": 0.8812500238418579,
+   "mean_max_posterior": 0.8697680234909058,
+   "plan_l1_to_logged": 0.0,
+   "argmax_class_counts": [
+    354,
+    45,
+    81
+   ]
+  },
+  "causal": {
+   "acc": 0.8854166865348816,
+   "mean_max_posterior": 0.870936393737793,
+   "plan_l1_to_logged": 0.28591057658195496,
+   "argmax_class_counts": [
+    351,
+    47,
+    82
+   ]
+  },
+  "off": {
+   "acc": 0.8645833134651184,
+   "mean_max_posterior": 0.8583873510360718,
+   "plan_l1_to_logged": 1.2306709289550781,
+   "argmax_class_counts": [
+    333,
+    58,
+    89
+   ]
+  },
+  "n_labelled_rows": 480,
+  "majority_share": 0.7125,
+  "gap_logged_minus_causal": -0.004166662693023682,
+  "gap_logged_minus_off": 0.016666710376739502,
+  "note": "REPORT ONLY (PREREG_V8F_N1DH K-LIM). causal = speed_max_bin of the measured speed at NOW (the one-row form of the evaluator's 4 s rule). A large logged-minus-causal gap names the logged-bucket shortcut; a near-zero gap does not clear the 4 s form.",
+  "causal_4s_evaluator_rule": {
+   "acc": 0.88125,
+   "gap_logged_minus_causal_4s": 2.384185793236071e-08,
+   "bucket_share_equal_logged_vs_causal_4s": 0.7791666666666667,
+   "same_windows_as_logged_run": true,
+   "note": "the evaluator's own 4 s rule at tick 0 (the limit the T1-kin dumps carry); this is the number the card's K-LIM is about, the one-row form in 'causal' is its lower-bound sibling"
+  }
+ },
+ "bucket_agreement_logged_vs_causal_onerow": {
+  "share_equal": 0.7979166666666667,
+  "n": 480
+ },
+ "status": "VALID",
+ "wall_s": 135.2
+}
