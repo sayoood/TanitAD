@@ -158,9 +158,9 @@ def test_every_existing_kind_renders_the_0c3b374f_argv_byte_for_byte(kind, seed,
 
 
 def test_kinds_bases_and_the_hygiene_of_the_snapshot_tip():
-    assert REAL.KINDS == OLD_KINDS + ("N1DW4", "N1DW2", "N1DC", "N1DH") and REAL.W_KINDS == ("N1DW4", "N1DW2") and REAL.W_VALUE == {"N1DW4": "4", "N1DW2": "2"}
+    assert REAL.KINDS == OLD_KINDS + ("N1DW4", "N1DW2", "N1DC", "N1DH", "N1DM") and REAL.W_KINDS == ("N1DW4", "N1DW2") and REAL.W_VALUE == {"N1DW4": "4", "N1DW2": "2"}
     assert REAL.RB_BASE["N1DW4"] == REAL.RB_BASE["N1DW2"] == "N1" and set(REAL.W_KINDS) <= set(REAL.RB_KINDS) <= set(REAL.NAV_KINDS) and not set(REAL.W_KINDS) & set(REAL.CTX_KINDS)
-    assert REAL.base_kind("N1DW4") == "N1" and REAL.DCHAN_KINDS == REAL.D_KINDS + REAL.W_KINDS + REAL.C_KINDS + REAL.H_KINDS and "--rb-window-w" not in REAL.RB_FLAGS and REAL.RB_W_FLAG == "--rb-window-w"
+    assert REAL.base_kind("N1DW4") == "N1" and REAL.DCHAN_KINDS == REAL.D_KINDS + REAL.W_KINDS + REAL.C_KINDS + REAL.H_KINDS + REAL.M_KINDS and "--rb-window-w" not in REAL.RB_FLAGS and REAL.RB_W_FLAG == "--rb-window-w"
     assert _tip().KINDS == OLD_KINDS and REAL.arm_tag("N1DW4", "s0", REAL.RUN_STEPS) == "N1DW4_s0"
 
 

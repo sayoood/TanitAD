@@ -162,8 +162,8 @@ def test_existing_arm_argv_sha_is_unchanged(key, tmp_path):
 
 
 def test_kinds_and_bases():
-    assert REAL.KINDS == ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx", "N1DW4", "N1DW2", "N1DC", "N1DH")      # PREREG_V8F_NAVRBD adds the two D kinds, PREREG_V8F_N1DW the two W kinds, PREREG_V8F_N1DC the C kind, PREREG_V8F_N1DH the H kind
-    assert REAL.RB_BASE == {"N1R": "N1", "S1R": "S1", "S1dR": "S1d", "N1Z": "N1", "N1D": "N1", "N1Dx": "N1", "N1DW4": "N1", "N1DW2": "N1", "N1DC": "N1", "N1DH": "N1"} and set(REAL.RB_KINDS) <= set(REAL.NAV_KINDS)
+    assert REAL.KINDS == ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx", "N1DW4", "N1DW2", "N1DC", "N1DH", "N1DM")      # PREREG_V8F_NAVRBD adds the two D kinds, PREREG_V8F_N1DW the two W kinds, PREREG_V8F_N1DC the C kind, PREREG_V8F_N1DH the H kind
+    assert REAL.RB_BASE == {"N1R": "N1", "S1R": "S1", "S1dR": "S1d", "N1Z": "N1", "N1D": "N1", "N1Dx": "N1", "N1DW4": "N1", "N1DW2": "N1", "N1DC": "N1", "N1DH": "N1", "N1DM": "N1"} and set(REAL.RB_KINDS) <= set(REAL.NAV_KINDS)
     assert set(REAL.CTX_KINDS) == {"S1", "S1d", "S1R", "S1dR"}
     assert "--nav-rb-npz" in REAL.DATA_FLAGS_RB and "--nav-rb-npz" not in REAL.DATA_FLAGS
 

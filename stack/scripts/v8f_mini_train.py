@@ -168,7 +168,7 @@ LIVE_PROBE_WINDOWS_LORA = 16          # G-LIVE through the real encoder: windows
 
 
 def _aux_route_mode(v):
-    """argparse type of ``--aux-route``: off | cond. ``ce`` is refused with a message that names the card (PREREG_V8F_N1DH section 2: the PI approved the two ``cond`` arms; the ``ce`` mode is not built)."""
+    """argparse type of ``--aux-route``: off | cond | modes (modes: PREREG_V8F_N1DM). ``ce`` is refused with a message that names the card (PREREG_V8F_N1DH section 2: the PI approved the two ``cond`` arms; the ``ce`` mode is not built)."""
     if v == "ce":
         raise argparse.ArgumentTypeError("--aux-route ce is NOT built: PREREG_V8F_N1DH (sha256 f1df05bc) section 2 names it as a follow-up under its own PI go; the approved arms are `cond` only")
     if v not in M.AUX_ROUTE_MODES:
@@ -208,9 +208,9 @@ def build_parser():
                     help="PREREG_V8F_N1DC: off (default) = nothing built = every earlier arm, bit for bit; on = o_code, Linear(CODE_DIM, n_q * d, bias=False), zero-init, built last under a forked RNG, ADDED to the flattened reader output "
                          "right before O's plan head (the same code tensor e_code reads: after teacher forcing, --detach-upper and --o-interface). Refused with --o-interface cut (O then reads a constant: a lever that does nothing)")
     ap.add_argument("--aux-route", dest="aux_route", type=_aux_route_mode, default="off",
-                    help="PREREG_V8F_N1DH: off (default) = nothing built = every earlier arm, bit for bit; cond = route_head, Linear(n_q * d, 3) on O's flattened plan feature h, CE on the kinematic TAC-LAT label of the GT 6 s track "
+                    help="PREREG_V8F_N1DM: modes = route_head (CE, own-code rows) + K = 3 zero-init residual plan branches of head_o, plan = head_o(h) + sum_k p_k branch_k(h), p = softmax(route_head(h)).detach(), NO route_emb. PREREG_V8F_N1DH: off (default) = nothing built = every earlier arm, bit for bit; cond = route_head, Linear(n_q * d, 3) on O's flattened plan feature h, CE on the kinematic TAC-LAT label of the GT 6 s track "
                          "(own-code rows only), and route_emb, Linear(3, n_q * d, bias=False) zero-init, ADDED to h from softmax(route_head(h)).detach() right before O's plan head. `ce` (PREREG_V8F_N1DH section 2) is NOT built: refused. "
-                         "Needs --w-aux-route > 0, --code-mix whole, --o-interface full, no --t2-bank-p")
+                         "Needs (cond / modes) --w-aux-route > 0, --code-mix whole, --o-interface full, no --t2-bank-p")
     ap.add_argument("--w-aux-route", dest="w_aux_route", type=float, default=0.0,
                     help="PREREG_V8F_N1DH: the CE weight of the route head in the total (the card's value is 0.5, untuned). Required > 0 with --aux-route cond (a declared-and-inert head is refused); 0.0 (default) with off")
     ap.add_argument("--level-head", dest="level_head", choices=M.LEVEL_HEAD_MODES, default="off",
@@ -2089,9 +2089,11 @@ def bad_aux_route(a, cfg, model, opt) -> list:
     bad = []
     on = a.aux_route != "off"
     lv, lw = model.built_levers().get("aux_route", "off"), model.built_levers().get("w_aux_route", 0.0)
-    present = getattr(model, "route_head", None) is not None and getattr(model, "route_emb", None) is not None
-    if lv != a.aux_route or present != on or model.cfg.aux_route != a.aux_route or float(model.cfg.w_aux_route) != float(a.w_aux_route) or (on and float(lw) != float(a.w_aux_route)):
-        bad.append(f"lever aux_route: declared {a.aux_route} / weight {a.w_aux_route} but built {lv} / {lw} (cfg {model.cfg.aux_route} / {model.cfg.w_aux_route}, modules {'present' if present else 'absent'})")
+    has_emb, has_br = getattr(model, "route_emb", None) is not None, getattr(model, "route_br", None) is not None
+    present = getattr(model, "route_head", None) is not None and (has_emb if a.aux_route == "cond" else has_br if a.aux_route == "modes" else False)
+    wrong_extra = has_emb != (a.aux_route == "cond") or has_br != (a.aux_route == "modes")          # PREREG_V8F_N1DM: route_emb iff cond, route_br iff modes, never both
+    if lv != a.aux_route or present != on or wrong_extra or model.cfg.aux_route != a.aux_route or float(model.cfg.w_aux_route) != float(a.w_aux_route) or (on and float(lw) != float(a.w_aux_route)):
+        bad.append(f"lever aux_route: declared {a.aux_route} / weight {a.w_aux_route} but built {lv} / {lw} (cfg {model.cfg.aux_route} / {model.cfg.w_aux_route}, modules {'present' if present else 'absent'}, route_emb {has_emb}, route_br {has_br})")
         return bad
     if not on:
         if float(a.w_aux_route) != 0.0:
@@ -2102,11 +2104,20 @@ def bad_aux_route(a, cfg, model, opt) -> list:
     want = int(model.cfg.n_q) * int(model.cfg.d)
     if tuple(model.route_head.weight.shape) != (M.N_ROUTE, want) or model.route_head.bias is None:
         bad.append(f"aux_route: route_head is {tuple(model.route_head.weight.shape)} (bias {model.route_head.bias is not None}), declared ({M.N_ROUTE}, {want}) with a bias")
-    if tuple(model.route_emb.weight.shape) != (want, M.N_ROUTE) or model.route_emb.bias is not None:
+    if a.aux_route == "cond" and (tuple(model.route_emb.weight.shape) != (want, M.N_ROUTE) or model.route_emb.bias is not None):
         bad.append(f"aux_route: route_emb is {tuple(model.route_emb.weight.shape)} (bias {model.route_emb.bias is not None}), declared ({want}, {M.N_ROUTE}) without a bias")
+    if a.aux_route == "modes":                                                                      # PREREG_V8F_N1DM: K = N_ROUTE branches, each [head_o's output width, n_q * d], no bias, ZERO at the start
+        do = int(model.head_o[2].out_features)
+        if len(model.route_br) != M.N_ROUTE:
+            bad.append(f"aux_route modes: {len(model.route_br)} branches built, declared {M.N_ROUTE}")
+        for k, br in enumerate(model.route_br):
+            if tuple(br.weight.shape) != (do, want) or br.bias is not None:
+                bad.append(f"aux_route modes: route_br.{k} is {tuple(br.weight.shape)} (bias {br.bias is not None}), declared ({do}, {want}) without a bias (do = head_o's output width)")
+            if float(br.weight.detach().abs().sum()) != 0.0:
+                bad.append(f"aux_route modes: route_br.{k}.weight is not zero at the start (the step-0 plan would differ from N1D's)")
     if int(model.head_o[0].in_features) != want:
-        bad.append(f"aux_route: head_o reads {int(model.head_o[0].in_features)} features but route_emb writes {want}")
-    if float(model.route_emb.weight.detach().abs().sum()) != 0.0:
+        bad.append(f"aux_route: head_o reads {int(model.head_o[0].in_features)} features but the route modules read/write {want}")
+    if a.aux_route == "cond" and float(model.route_emb.weight.detach().abs().sum()) != 0.0:
         bad.append("aux_route: route_emb.weight is not zero at the start (the step-0 forward would differ from the parent's)")
     if a.o_interface == "cut" or cfg.o_interface == "cut":
         bad.append("aux_route on with --o-interface cut: O reads a constant zero code, so the own-code mask names nothing")
@@ -2117,7 +2128,7 @@ def bad_aux_route(a, cfg, model, opt) -> list:
     if a.wm_only:
         bad.append("aux_route on with --wm-only: the WM-only mode runs none of the planner")
     if opt is not None:
-        for nm, p in (("route_head.weight", model.route_head.weight), ("route_head.bias", model.route_head.bias), ("route_emb.weight", model.route_emb.weight)):
+        for nm, p in (("route_head.weight", model.route_head.weight), ("route_head.bias", model.route_head.bias)) + ((("route_emb.weight", model.route_emb.weight),) if a.aux_route == "cond" else tuple((f"route_br.{k}.weight", br.weight) for k, br in enumerate(model.route_br))):
             n = sum(1 for g in opt.param_groups for q in g["params"] if q is p)
             if n != 1:
                 bad.append(f"aux_route: {nm} is in {n} optimiser groups (exactly one required)")
@@ -2144,9 +2155,15 @@ def aux_route_probe(model, batch, cfg) -> dict:
     m = copy.deepcopy(model).cpu()
     m.train()
 
+    modes = model.route_br is not None                                                                  # PREREG_V8F_N1DM: the conditioning path is the K branches (cond: route_emb)
+
     def agrad(t_, w):
-        g = torch.autograd.grad(t_, [w], retain_graph=True, allow_unused=True)[0]
-        return 0.0 if g is None else float(g.abs().sum())
+        ws = list(w) if isinstance(w, (list, tuple)) else [w]
+        gs = torch.autograd.grad(t_, ws, retain_graph=True, allow_unused=True)
+        return float(sum(float(g.abs().sum()) for g in gs if g is not None))
+
+    def cond_params(mm):
+        return [br.weight for br in mm.route_br] if mm.route_br is not None else [mm.route_emb.weight]
 
     def run(mm, b, p_gt, gen_seed=11):
         for p in mm.parameters():
@@ -2162,12 +2179,13 @@ def aux_route_probe(model, batch, cfg) -> dict:
     def grads(mm, out):
         T = out["terms"]
         wh = mm.route_head.weight if mm.route_head is not None else None
-        we = mm.route_emb.weight if mm.route_emb is not None else None
+        we = cond_params(mm) if (mm.route_emb is not None or mm.route_br is not None) else None
         r = {}
         if wh is not None:
             r["head_total"], r["head_route"], r["head_ade"] = agrad(T["total"], wh), agrad(T["route"], wh), agrad(T["ade"], wh)
             r["head_tside"] = sum(agrad(T[k], wh) for k in ("ckpt", "goal", "lat", "lon", "cons") if k in T)
             r["emb_total"], r["emb_ade"] = agrad(T["total"], we), agrad(T["ade"], we)
+            r["emb_each"] = [agrad(T["total"], w_) for w_ in we]                                         # one entry per conditioning module (cond: one; modes: each of the K branches)
             r["emb_tside"] = sum(agrad(T[k], we) for k in ("ckpt", "goal", "lat", "lon", "cons") if k in T)
         T["total"].backward(retain_graph=True)
         r["prior"] = float(sum(float(p.grad.abs().sum()) if p.grad is not None else 0.0 for p in mm.prior.parameters()))
@@ -2186,13 +2204,14 @@ def aux_route_probe(model, batch, cfg) -> dict:
     o1b = run(m, batch, 0.0)
     r1b = grads(m, o1b)
     m_off = copy.deepcopy(m)
-    m_off.route_head, m_off.route_emb, m_off.cfg = None, None, dataclasses.replace(m.cfg, aux_route="off", w_aux_route=0.0)
+    m_off.route_head, m_off.route_emb, m_off.route_br, m_off.cfg = None, None, None, dataclasses.replace(m.cfg, aux_route="off", w_aux_route=0.0)
     o_off = run(m_off, batch, 0.0)
     ident_terms = [k for k in o_off["terms"] if k != "total" and (k not in o1["terms"] or not torch.equal(o1["terms"][k], o_off["terms"][k]))]
     ident_out = [k for k, v in o_off.items() if torch.is_tensor(v) and not torch.equal(v, o1[k])]
     ident_total = float((o1["terms"]["total"] - (o_off["terms"]["total"] + m.cfg.w_aux_route * o1["terms"]["route"])).abs())
     with torch.no_grad():
-        m.route_emb.weight.copy_(torch.randn(m.route_emb.weight.shape, generator=torch.Generator().manual_seed(8)) * 0.05)
+        for w_ in cond_params(m):
+            w_.copy_(torch.randn(w_.shape, generator=torch.Generator().manual_seed(8)) * 0.05)
     o2 = run(m, batch, 0.0)
     r2 = grads(m, o2)                                                         # route_emb NON-zero: only here can a missing detach show (at the zero init the decoder's gradient on route_head is 0.0 whatever the wiring)
     # the own-code mask control: every row T-labelled, p_gt 1.0 -> every row reads the GT code -> no own-code row
@@ -2200,10 +2219,18 @@ def aux_route_probe(model, batch, cfg) -> dict:
     b_all["lab_t"] = {**batch["lab_t"], "has": torch.ones_like(batch["lab_t"]["has"])}
     o3 = run(m, b_all, 1.0)
     r3 = grads(m, o3)
+    plan_perm = None
+    if modes:                                                                                           # PREREG_V8F_N1DM: p permuted across ROWS must change the plan (the selection reaches the output per row)
+        hk = m.route_head.register_forward_hook(lambda mod_, i_, out_: out_.roll(1, 0))
+        try:
+            o_perm = run(m, batch, 0.0)
+        finally:
+            hk.remove()
+        plan_perm = float((o_perm["traj30"] - o2["traj30"]).detach().abs().max())
     res = {"head_grad_total": r1["head_total"], "head_grad_route": r1["head_route"], "emb_grad_total": r1["emb_total"], "emb_grad_ade": r1["emb_ade"],
            "control_decoder_grad_on_head": r2["head_ade"], "control_decoder_grad_on_head_zero_emb": r1["head_ade"], "control_tside_grad_on_head": r1["head_tside"], "control_tside_grad_on_emb": r1["emb_tside"],
            "control_repeat_grad_diff": float(sum((r1["all"][n] - r1b["all"][n]).abs().sum() for n in r1["all"])), "control_prior_grad": r1["prior"],
-           "control_real_init_emb_grad": r0["emb_total"], "head_o_last_layer_zero_at_init": head_zero_at_init, "head_grad_total_real_init": r0["head_total"],
+           "control_real_init_emb_grad": r0["emb_total"], "real_init_emb_each": r0["emb_each"], "emb_each": r1["emb_each"], "plan_move_when_p_permuted": plan_perm, "head_o_last_layer_zero_at_init": head_zero_at_init, "head_grad_total_real_init": r0["head_total"],
            "identity_terms_differing": ident_terms, "identity_outputs_differing": ident_out, "identity_total_abs_diff": ident_total,
            "plan_move_when_emb_set": float((o2["traj30"] - o1["traj30"]).detach().abs().max()),
            "own_rows_probe": int((batch["route_ok"].bool() & o0["route_own"]).sum()), "own_rows_all_gt_batch": int((b_all["route_ok"].bool() & o3["route_own"]).sum()) if "route_ok" in b_all else 0,
@@ -2225,7 +2252,12 @@ def aux_route_probe(model, batch, cfg) -> dict:
         raise AssertionError(f"aux_route probe: at the zero init the model differs from the same model without the head: terms {res['identity_terms_differing']}, outputs {res['identity_outputs_differing']}, total {res['identity_total_abs_diff']}")
     if not res["plan_move_when_emb_set"] > 0.0:
         raise AssertionError("aux_route probe: a non-zero route_emb.weight does not move O's plan: the conditioning does not reach the output")
-    if head_zero_at_init and r0["emb_total"] != 0.0:
+    if modes:                                                                                           # PREREG_V8F_N1DM: the branch add is BEHIND head_o's zero last layer, so every branch reads a NON-ZERO gradient at the REAL init (no seeding needed), and p permuted across rows moves the plan
+        if not all(g_ > 0.0 for g_ in res["real_init_emb_each"]) or not all(g_ > 0.0 for g_ in res["emb_each"]):
+            raise AssertionError(f"aux_route probe: a plan branch has no gradient (real init {res['real_init_emb_each']!r}, seeded {res['emb_each']!r}): the branch add does not reach the loss")
+        if not (plan_perm is not None and plan_perm > 0.0):
+            raise AssertionError(f"aux_route probe: permuting p across rows moves the plan by {plan_perm!r} (must be > 0): the selection does not reach the output per row")
+    elif head_zero_at_init and r0["emb_total"] != 0.0:
         raise AssertionError(f"aux_route probe: at the real zero init route_emb.weight reads {r0['emb_total']!r} (head_o's last layer is zero, so it must be exactly 0.0): the probe's premise does not hold")
     if res["control_no_own_row_route_term"] != 0.0 or res["control_no_own_row_head_grad"] != 0.0:
         raise AssertionError(f"aux_route probe: on a batch with no own-code row the CE term reads {res['control_no_own_row_route_term']!r} / its gradient {res['control_no_own_row_head_grad']!r} (must be exactly 0.0): the own-code mask is not applied")

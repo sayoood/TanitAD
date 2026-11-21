@@ -176,9 +176,11 @@ O_CODE_KEY_PREFIXES = ("o_code.",)
 #: PREREG_V8F_N1DH: the auxiliary route-decision head on O's plan feature (``--aux-route``): K = 3 kinematic TAC-LAT classes (lane_keep / turn_left / turn_right), the modes the build supports (``ce`` is NOT built: the card's section 2,
 #: PI-approved arms are ``cond`` only) and the state-dict prefixes (a fine-tune from a checkpoint without them leaves the keys fresh, and the gate must accept exactly that)
 N_ROUTE = 3
-AUX_ROUTE_MODES = ("off", "cond")
+#: PREREG_V8F_N1DM adds ``modes``: route_head + K = N_ROUTE zero-init residual plan branches (``route_br.k``), NO route_emb. Branch k is Linear(n_q * d, 2 * nb): the width of head_o's output (the coefficient vector before the basis).
+AUX_ROUTE_MODES = ("off", "cond", "modes")
 ROUTE_KEY_PREFIXES = ("route_head.", "route_emb.")
-NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + ("e_stok.",) + CTX_KEY_PREFIXES + NAV_RB_KEY_PREFIXES + O_CODE_KEY_PREFIXES + ROUTE_KEY_PREFIXES      # PREREG_V8F_OTBAND adds the strategic-token embedding
+ROUTE_BR_KEY_PREFIXES = ("route_br.",)
+NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + ("e_stok.",) + CTX_KEY_PREFIXES + NAV_RB_KEY_PREFIXES + O_CODE_KEY_PREFIXES + ROUTE_KEY_PREFIXES + ROUTE_BR_KEY_PREFIXES      # PREREG_V8F_OTBAND adds the strategic-token embedding
 #: identifiers the lead head's own code (``V8FMini._lead``) and the aux-token assembly (``V8FMini._aux_in``) must not mention (the level list + the lead labels): the head is VISION ONLY
 LEAD_FORBIDDEN_NAMES = LEVEL_FORBIDDEN_NAMES + ("lead_y", "lead_has", "lead_near", "lead_gap_h", "s_h", "pose_now")
 LEAD_ALLOWED_KEYS = frozenset({"frame_ok"})
@@ -959,12 +961,20 @@ class V8FMini(nn.Module):
             nn.init.zeros_(self.o_code.weight)
         self.route_head = None
         self.route_emb = None
+        self.route_br = None                                               # PREREG_V8F_N1DM: the K residual plan branches of the ``modes`` mode (None in every other mode)
         self._route_logits = None                                          # PREREG_V8F_N1DH: run_o leaves the head's logits here for ``_forward`` (run_o keeps its return signature); a plain attribute, not in the state dict
         if cfg.aux_route != "off":                                         # PREREG_V8F_N1DH: built LAST (after o_code) under a forked RNG (no draw reaches the global stream); route_emb zeroed: h + 0.0 == h, so the step-0 forward is the off model's, bit for bit
             with torch.random.fork_rng(devices=[]):
                 self.route_head = nn.Linear(fl, N_ROUTE)                   # fl = n_q * d = 1024 at the real shape: the plan feature h that head_o reads
-                self.route_emb = nn.Linear(N_ROUTE, fl, bias=False)
-            nn.init.zeros_(self.route_emb.weight)
+                if cfg.aux_route == "cond":
+                    self.route_emb = nn.Linear(N_ROUTE, fl, bias=False)
+                else:                                                      # PREREG_V8F_N1DM ``modes``: K branches of head_o, Linear(fl -> head_o's output width), no bias, built under the same forked RNG AFTER route_head
+                    self.route_br = nn.ModuleList([nn.Linear(fl, int(self.head_o[2].out_features), bias=False) for _ in range(N_ROUTE)])
+            if self.route_emb is not None:
+                nn.init.zeros_(self.route_emb.weight)
+            else:
+                for br in self.route_br:
+                    nn.init.zeros_(br.weight)                              # step 0: every branch is 0.0, so coef + 0.0 == coef (the N1D plan, bit for bit)
         self.p_gt = 1.0
 
     # ---- helpers -------------------------------------------------------------------------------------------
@@ -1105,8 +1115,14 @@ class V8FMini(nn.Module):
             hf = h.float()
             if self.route_head is not None:                             # PREREG_V8F_N1DH: the route decision is read from h BEFORE the add (no loop); its softmax is DETACHED into the conditioning (CE alone shapes the posterior)
                 self._route_logits = self.route_head(hf)
-                hf = hf + self.route_emb(torch.softmax(self._route_logits, -1).detach())          # ONE line (a mutation deletes it): zero-init route_emb, so hf + 0.0 == hf at step 0
-            coef = self.head_o(hf).reshape(-1, 2, cfg.nb) * cfg.res_scale_m      # [B, 2, nb]
+                if self.route_emb is not None:
+                    hf = hf + self.route_emb(torch.softmax(self._route_logits, -1).detach())          # ONE line (a mutation deletes it): zero-init route_emb, so hf + 0.0 == hf at step 0
+            coef = self.head_o(hf)
+            if self.route_br is not None:                               # PREREG_V8F_N1DM: ONE block (a mutation deletes the add): plan coefficients = head_o(h) + sum_k p_k * branch_k(h), p = softmax(route_head(h)) DETACHED (CE alone trains the route head),
+                p_mode = torch.softmax(self._route_logits.float(), -1).detach()       # the SAME soft form at training and at inference (no argmax); p reads h, an inference-input function, and no label source
+                for k, br in enumerate(self.route_br):
+                    coef = coef + p_mode[:, k:k + 1] * br(hf)
+            coef = coef.reshape(-1, 2, cfg.nb) * cfg.res_scale_m      # [B, 2, nb]
             res = torch.einsum("tk,bck->btc", self.basis, coef)                # [B, 60, 2]
             p30 = self.prior(self._at(b["p10f"], i).float(), b["base"].float())
             return upsample_prior(p30) + res, p30
@@ -1445,7 +1461,7 @@ class V8FMini(nn.Module):
         if self.e_nav_rb is not None:
             g["NAVRB"] = [self.e_nav_rb]                                            # PREREG_V8F_NAVRB2: G-LIVE then requires its gradient
         if self.route_head is not None:
-            g["ROUTE"] = [self.route_head, self.route_emb]                          # PREREG_V8F_N1DH: G-LIVE then requires its gradient
+            g["ROUTE"] = [m_ for m_ in (self.route_head, self.route_emb, self.route_br) if m_ is not None]                          # PREREG_V8F_N1DH: G-LIVE then requires its gradient
         if self.o_code is not None:
             g["OCODE"] = [self.o_code]                                              # PREREG_V8F_N1DC: G-LIVE then requires its gradient
         return g

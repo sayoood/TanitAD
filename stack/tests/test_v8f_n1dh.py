@@ -112,7 +112,7 @@ def test_flags_default_off_have_flag_checks_a_choice_check_and_a_wm_only_default
     assert c.aux_route == "cond" and c.w_aux_route == 0.5
     assert TR.make_config(ps.parse_args(["--out", "x"])).aux_route == "off"
     assert M.ROUTE_KEY_PREFIXES == ("route_head.", "route_emb.") and all(p in M.NEW_LEVER_KEY_PREFIXES for p in M.ROUTE_KEY_PREFIXES), "the init-ckpt gate must admit exactly these fresh keys"
-    assert M.N_ROUTE == 3 and M.AUX_ROUTE_MODES == ("off", "cond")
+    assert M.N_ROUTE == 3 and M.AUX_ROUTE_MODES == ("off", "cond", "modes")
 
 
 def test_the_ce_mode_is_refused_in_argparse_naming_the_card(capsys):

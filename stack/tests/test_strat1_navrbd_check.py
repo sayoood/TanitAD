@@ -218,7 +218,7 @@ def test_existing_r_kind_argv_sha_is_the_e71782a3_value(key, tmp_path):
 
 
 def test_kinds_and_bases():
-    assert REAL.KINDS == ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx", "N1DW4", "N1DW2", "N1DC", "N1DH") and REAL.D_KINDS == ("N1D", "N1Dx")      # PREREG_V8F_N1DW adds the two W kinds, PREREG_V8F_N1DC the C kind, PREREG_V8F_N1DH the H kind
+    assert REAL.KINDS == ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx", "N1DW4", "N1DW2", "N1DC", "N1DH", "N1DM") and REAL.D_KINDS == ("N1D", "N1Dx")      # PREREG_V8F_N1DW adds the two W kinds, PREREG_V8F_N1DC the C kind, PREREG_V8F_N1DH the H kind
     assert REAL.RB_BASE["N1D"] == REAL.RB_BASE["N1Dx"] == "N1" and set(REAL.D_KINDS) <= set(REAL.RB_KINDS) <= set(REAL.NAV_KINDS) and not set(REAL.D_KINDS) & set(REAL.CTX_KINDS)
     assert REAL.base_kind("N1D") == "N1" and "--nav-rb-feat" not in REAL.RB_FLAGS and REAL.RB_FEAT_FLAG == "--nav-rb-feat"
 

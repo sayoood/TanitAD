@@ -180,9 +180,9 @@ def test_every_existing_kind_renders_the_bcf3ba3f_argv_byte_for_byte(kind, seed,
 
 
 def test_kinds_bases_and_the_snapshot_tip():
-    assert REAL.KINDS == OLD_KINDS + ("N1DH",) and REAL.H_KINDS == ("N1DH",) and REAL.H_FLAGS == ("--aux-route", "--w-aux-route") and REAL.H_WEIGHT == "0.5"
+    assert REAL.KINDS == OLD_KINDS + ("N1DH", "N1DM") and REAL.H_KINDS == ("N1DH",) and REAL.H_FLAGS == ("--aux-route", "--w-aux-route") and REAL.H_WEIGHT == "0.5"
     assert REAL.RB_BASE["N1DH"] == "N1" and "N1DH" in REAL.RB_KINDS and "N1DH" in REAL.NAV_KINDS and "N1DH" not in REAL.CTX_KINDS and "N1DH" not in REAL.W_KINDS and "N1DH" not in REAL.D_KINDS and "N1DH" not in REAL.C_KINDS
-    assert REAL.base_kind("N1DH") == "N1" and REAL.DCHAN_KINDS == REAL.D_KINDS + REAL.W_KINDS + REAL.C_KINDS + REAL.H_KINDS and not set(REAL.H_FLAGS) & set(REAL.RB_FLAGS)
+    assert REAL.base_kind("N1DH") == "N1" and REAL.DCHAN_KINDS == REAL.D_KINDS + REAL.W_KINDS + REAL.C_KINDS + REAL.H_KINDS + REAL.M_KINDS and not set(REAL.H_FLAGS) & set(REAL.RB_FLAGS)
     assert _tip().KINDS == OLD_KINDS and REAL.arm_tag("N1DH", "s0", REAL.RUN_STEPS) == "N1DH_s0"
 
 
